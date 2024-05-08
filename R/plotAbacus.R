@@ -86,7 +86,7 @@ plotAbacus <- function(data, tagging.dates, date.format="%b", date.interval=4, d
   }
 
   # create data table
-  table <- createWideTable(data, start.dates=tagging.dates, value.type="receiver")
+  table <- createWideTable(data, start.dates=tagging.dates, value.col="receiver")
 
   # retrieve last detections dates
   last_detections <- tapply(X=data$timebin, INDEX=data[,id.col], FUN=max)
