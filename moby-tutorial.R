@@ -91,7 +91,7 @@ write.csv2(data_filtered, file="./data/curated_detections.csv", row.names=F)
 #######################################################################################################
 
 # create data matrix from binned data
-data_table <- createWideTable(data_filtered, start.dates=tagging_dates, value.col="station")
+data_table <- createWideTable(data_filtered, start.dates=data_tags$tagging_date, value.col="station")
 
 # define study region coordinates (used to retrieve sunrise and sunset times)
 study_coords <- matrix(colMeans(coordinates_wsg84@coords), ncol=2)

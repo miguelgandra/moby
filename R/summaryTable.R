@@ -10,6 +10,7 @@
 #'
 #' @param data A data frame containing binned animal detections.
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
+#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
 #' @param tags.info A data frame containing additional informations about the tagged animals,
 #' such as length, sex or transmitter type. If more than one row exists per animal,
 #' variables are collapsed before being merged with the remaining stats.
@@ -26,9 +27,15 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
                          id.groups=NULL, error.stat="sd") {
 
 
-  ####################################################################
-  ## Set error function ##############################################
+  ##################################################################################
+  # Initial checks #################################################################
 
+  # check if data contains id.col
+  if(!id.col %in% colnames(data)) {
+    stop("'id.col' variable not found in the supplied data")
+  }
+
+  # check error function
   if(!error.stat %in% c("sd", "se")){
     stop("Wrong error.stat argument, please choose either 'sd' or 'se'.")
   }
@@ -38,22 +45,24 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
     if(error.stat=="se"){return(plotrix::std.error(x))}
   }
 
-  ####################################################################
-  ## Prepare data ####################################################
-
-  # set id groups
-  if(is.null(id.groups)) {
-    id.groups<-list(levels(data$ID))
-  } else {
+  # reorder ID levels if ID groups are defined
+  if(!is.null(id.groups)){
     if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% colnames(table))) {"Some of the ID(s) in id.groups don't match the IDs in the data"}
+    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {cat("Warning: Some of the ID(s) in id.groups don't match the IDs in the data")}
+    data <- data[data[,id.col] %in% unlist(id.groups),]
+    tagging.dates <- tagging.dates[match(unlist(id.groups), levels(data[,id.col]))]
+    data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
   }
+
+
+  ##################################################################################
+  ## Prepare data ##################################################################
 
   # format tagging dates
   tag_dates <- strftime(tagging.dates, format="%d/%m/%Y", tz="UTC")
 
   # retrieve last detections dates
-  last_detections <- tapply(X=data$timebin, INDEX=data$ID, FUN=max)
+  last_detections <- tapply(X=data$timebin, INDEX=data[,id.col], FUN=max)
   last_detections <- as.POSIXct(last_detections, origin='1970-01-01', tz="UTC")
   last_dates <- strftime(last_detections, format="%d/%m/%Y", tz="UTC")
 
@@ -67,7 +76,7 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
   detections[detections==0] <- NA
 
   #number of receivers
-  receivers <- aggregate(data$station, by=list(data$ID), function(x) length(unique(x)), drop=F)$x
+  receivers <- aggregate(data$station, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
 
   # days between 1st and last detection (Di)
   getTimeSeqs <- function(start, end) {if(is.na(end)) {return(NA)}else{seq.POSIXt(start, end, by="day")}}
@@ -77,7 +86,7 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
 
   # days with detections (Dd)
   data$date <- strftime(data$timebin, format="%d-%m-%Y", tz="UTC")
-  Dd <- aggregate(data$date, by=list(data$ID), function(x) length(unique(x)), drop=F)$x
+  Dd <- aggregate(data$date, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
 
   # complete IR
   Ir <- round(Dd/Di, 2)
@@ -88,13 +97,13 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
     Ir_partial <- list()
     for(i in 1:length(data_groupped)){
       data_subset <- data_groupped[[i]]
-      Dd_partial <-  aggregate(data_subset$date, by=list(data_subset$ID), function(x) length(unique(x)), drop=F)$x
+      Dd_partial <-  aggregate(data_subset$date, by=list(data_subset[,id.col]), function(x) length(unique(x)), drop=F)$x
       Ir_partial[[i]] <- round(Dd_partial/Di, 2)
     }
   }
 
   # aggregate stats
-  stats <- data.frame("ID"=levels(data$ID), "Tagging date"=tag_dates, "Last detection"=last_dates,
+  stats <- data.frame("ID"=levels(data[,id.col]), "Tagging date"=tag_dates, "Last detection"=last_dates,
                       "N Detect"=detections, "N Receiv"=receivers, "Detection span (d)"=Di,
                       "N days detected"=Dd, "IR"=Ir, row.names=NULL, check.names=F)
 
@@ -108,7 +117,7 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
   if(!is.null(tags.info)) {
     column_types <- sapply(1:ncol(tags.info),function(c) class(tags.info[,c]))
     numeric_cols <- which(column_types %in% c("numeric", "integer"))
-    animal_info <- aggregate(tags.info[,-1], by=list(tags.info$ID), function(x) paste(unique(x), collapse="/"), drop=F)
+    animal_info <- aggregate(tags.info[,-1], by=list(tags.info[,id.col]), function(x) paste(unique(x), collapse="/"), drop=F)
     animal_info[animal_info=="NA"] <- NA
     animal_info[,numeric_cols] <- as.numeric(animal_info[,numeric_cols] )
     colnames(animal_info)[1] <- "ID"
