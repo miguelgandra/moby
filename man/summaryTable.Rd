@@ -29,6 +29,8 @@ Defaults to NULL.}
 visually aggregate animals belonging to the same class (e.g. different species or life stages).}
 
 \item{error.stat}{Statistic to present with the mean. Either standard deviation (sd) or standard error (se).}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 }
 \description{
 Creates a table containing information about the

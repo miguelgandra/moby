@@ -91,7 +91,7 @@ write.csv2(data_filtered, file="./data/curated_detections.csv", row.names=F)
 #######################################################################################################
 
 # create data matrix from binned data
-data_table <- createWideTable(data_filtered, start.dates=data_tags$tagging_date, value.col="station")
+data_table <- createWideTable(data=data_filtered, id.col="ID", start.dates=data_tags$tagging_date, value.col="station")
 
 # define study region coordinates (used to retrieve sunrise and sunset times)
 study_coords <- matrix(colMeans(coordinates_wsg84@coords), ncol=2)
@@ -124,7 +124,7 @@ data_filtered$hour <- strftime(data_filtered$timebin, "%H", tz="UTC")
 
 animal_info <- data_tags[,c("ID", "transmitter", "length", "sex", "size")]
 colnames(animal_info) <- c("ID", "Transmitter", "Fork Length (cm)", "Sex", "Tag")
-summary_table <- summaryTable(data=data_filtered, tagging.dates=tagging_dates, tags.info=animal_info, error.stat="se")
+summary_table <- summaryTable(data=data_filtered, tagging.dates=data_tags$tagging_date, tags.info=animal_info, error.stat="se")
 
 #save detection periods table
 write.csv2(summary_table, "./summary_table.csv", row.names=F, fileEncoding="Windows-1252")
