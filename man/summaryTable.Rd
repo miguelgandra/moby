@@ -7,7 +7,8 @@
 summaryTable(
   data,
   tagging.dates,
-  tags.info = NULL,
+  id.metadata = NULL,
+  id.col = "ID",
   residency.by = NULL,
   id.groups = NULL,
   error.stat = "sd"
@@ -16,11 +17,14 @@ summaryTable(
 \arguments{
 \item{data}{A data frame containing binned animal detections.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.}
+\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
+If a single value is provided, it will be used to all IDs.}
 
-\item{tags.info}{A data frame containing additional informations about the tagged animals,
+\item{id.metadata}{A data frame containing additional information about the tagged animals,
 such as length, sex or transmitter type. If more than one row exists per animal,
 variables are collapsed before being merged with the remaining stats.}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{residency.by}{Variable used to calculate partial residencies (e.g. array or habitat).
 Defaults to NULL.}
@@ -29,8 +33,6 @@ Defaults to NULL.}
 visually aggregate animals belonging to the same class (e.g. different species or life stages).}
 
 \item{error.stat}{Statistic to present with the mean. Either standard deviation (sd) or standard error (se).}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 }
 \description{
 Creates a table containing information about the

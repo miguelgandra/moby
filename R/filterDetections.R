@@ -10,9 +10,10 @@
 #' @param data A data frame containing raw animal detections.
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
 #' @param id.col Name of the column containing animal identifications. Defaults to "ID".
-#' @param min.detections Optional. Discard individuals with less than this number of detections. 
-#' @param min.days Optional. Minimum number of days an individual must be detected for it to be included; 
-#' individuals with fewer detections will be discarded.
+#' @param datetime.col Name of the column containing datetimes (in POSIXct format). Defaults to "datetime".
+#' @param min.detections Optional. Discard individuals with less than this number of detections.
+#' @param min.days Optional. Minimum number of days an individual must be detected for it to be included;
+#' individuals with fewer days of detections will be discarded.
 #' @param hours.threshold Discard single detections occurring alone within a predefined time interval.
 #' @param max.speed Maximum allowed speed between detections. If null, no speed-based checks are performed.
 #' @param speed.unit Units of supplied maximum speed. Either 'm/s' or 'km/h'.
@@ -26,9 +27,10 @@
 #' @export
 
 
-filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0, min.days=0,
-                             hours.threshold=24, max.speed=NULL, speed.unit="m/s",
-                             acoustic.range=600, land.shape=NULL, epsg.code=NULL,... ) {
+filterDetections <- function(data, tagging.dates, id.col="ID", datetime.col="datetime",
+                             min.detections=0, min.days=0, hours.threshold=24,
+                             max.speed=NULL, speed.unit="m/s", acoustic.range=600,
+                              land.shape=NULL, epsg.code=NULL,... ) {
 
   ##############################################################################
   ## Prepare data ##############################################################
@@ -50,8 +52,8 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
     stop("Wrong speed unit. Please select either 'm/s' or 'km/h'")
   }
 
-  if(!c("datetime") %in% colnames(data)) {
-    stop("Data needs to contain a 'datetime' column")
+  if(!datetime.col %in% colnames(data)) {
+    stop("Datetime column not found. Please specify the right name using the 'datetime.col' argument")
   }
 
   # initialize variables
@@ -59,6 +61,7 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
   rejected_isolated <- vector(mode="list", length=nfish)
   rejected_speed <- vector(mode="list", length=nfish)
   rejected_min <- vector(mode="list", length=nfish)
+  rejected_days <- vector(mode="list", length=nfish)
 
   # split data by individual
   data_individual <- split(data, f=data[,id.col])
@@ -75,15 +78,15 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
   # run loop and apply filters
   for (i in 1:nfish) {
     data_subset <- data_individual[[i]]
-    data_subset <- data_subset[order(data_subset$datetime),]
+    data_subset <- data_subset[order(data_subset[,datetime.col]),]
     tag_date <- tagging.dates[i]
 
     # calculate time differences between consecutive detections (in hours)
-    data_subset$hour_diff <- difftime(data.table::shift(data_subset$datetime, type="lead"), data_subset$datetime, units="hours")
+    data_subset$hour_diff <- difftime(data.table::shift(data_subset[,datetime.col], type="lead"), data_subset[,datetime.col], units="hours")
     data_subset$hour_diff <- as.numeric(data_subset$hour_diff)
 
     # filter out detections occurring before tagging date
-    detections_prior <- which(data_subset$datetime<tag_date)
+    detections_prior <- which(data_subset[,datetime.col]<tag_date)
     if(length(detections_prior)>1){
       rejected_start[[i]] <- data_subset[detections_prior,]
       rejected_start[[i]]$reason <- "before tagging date"
@@ -132,7 +135,7 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
       data_subset$dist_min <- data_subset$dist_m - (acoustic.range*2)
       data_subset$dist_min[data_subset$dist_min<0] <- 0
       # re-calculate time differences between consecutive detections (in hours)
-      data_subset$hour_diff <- difftime(data.table::shift(data_subset$datetime, type="lead"), data_subset$datetime,  units="hours")
+      data_subset$hour_diff <- difftime(data.table::shift(data_subset[,datetime.col], type="lead"), data_subset[,datetime.col],  units="hours")
       data_subset$hour_diff <- as.numeric(data_subset$hour_diff)
       # calculate speed
       if(speed.unit=="m/s"){data_subset$speed <- data_subset$dist_min / (data_subset$hour_diff*3600)}
@@ -147,7 +150,7 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
     }
     # reassemble data
     data_filtered <- do.call("rbind", data_distances)
-    data_filtered <- data_filtered[order(data_filtered$datetime, data_filtered[,id.col]),]
+    data_filtered <- data_filtered[order(data_filtered[,datetime.col], data_filtered[,id.col]),]
   }
 
   ##############################################################################
@@ -166,25 +169,27 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
     data_filtered <- do.call("rbind", data_individual)
   }
 
-  
+
   ##############################################################################
   ## Apply minimum days filter  ################################################
 
-  
   # if number logged dats < min days threshold remove animal from dataset
   if(min.days>0){
     data_individual <- split(data_filtered, f=data_filtered[,id.col])
     for (i in 1:nfish) {
-      if(nrow(data_individual[[i]])<min.detections & nrow(data_individual[[i]])>0){
-        rejected_min[[i]] <- data_individual[[i]]
-        rejected_min[[i]]$reason <- paste("individual with less than", min.detections, "detections")
+      data_individual[[i]]$day <- strftime(data_individual[[i]][,datetime.col], "%d-%m-%Y", tz="UTC")
+      ndays <- length(unique(data_individual[[i]]$day))
+      #ndays <- difftime(max(data_individual[[i]][,datetime.col], na.rm=T), min(data_individual[[i]][,datetime.col], na.rm=T),  units="days")
+      if(ndays<min.days & nrow(data_individual[[i]])>0){
+        rejected_days[[i]] <- data_individual[[i]]
+        rejected_days[[i]]$reason <- paste("individual with detections on fewer than", min.days)
         data_individual[[i]] <- data_filtered[0,]
       }
     }
     data_filtered <- do.call("rbind", data_individual)
   }
-  
-  
+
+
   ##############################################################################
   ## Format and return results #################################################
 
@@ -194,18 +199,20 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
   n_removed_isolated <- unlist(lapply(rejected_isolated, function(x) ifelse(!is.null(x), nrow(x), 0)))
   n_removed_speed <- unlist(lapply(rejected_speed, function(x) ifelse(!is.null(x), nrow(x), 0)))
   n_removed_min <- unlist(lapply(rejected_min, function(x) ifelse(!is.null(x), nrow(x), 0)))
+  n_removed_days <- unlist(lapply(rejected_days, function(x) ifelse(!is.null(x), nrow(x), 0)))
   rejected_start <- do.call("rbind", rejected_start)
   rejected_isolated <- do.call("rbind", rejected_isolated)
   rejected_speed <- do.call("rbind", rejected_speed)
   rejected_min <- do.call("rbind", rejected_min)
-  data_rejected <- do.call(plyr::rbind.fill, list(rejected_start, rejected_isolated, rejected_speed, rejected_min))
+  rejected_days <- do.call("rbind", rejected_days)
+  data_rejected <- do.call(plyr::rbind.fill, list(rejected_start, rejected_isolated, rejected_speed, rejected_min, rejected_days))
   if(!is.null(data_rejected)) {
     data_rejected <- data_rejected %>% dplyr::select(-reason, reason)
   }else{
     data_rejected <- data_filtered[0,]
   }
 
-  data_rejected <- data_rejected[order(data_rejected[,id.col], data_rejected$datetime),]
+  data_rejected <- data_rejected[order(data_rejected[,id.col], data_rejected[,datetime.col]),]
   rownames(data_rejected) <- NULL
 
   # calculate stats
@@ -219,11 +226,15 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
   percent_speed <- ifelse(length(percent_speed)>0, paste0(" (", percent_speed, "%)"), "")
   percent_min <- sprintf("%.0f",  nrow(rejected_min)/n_total*100)
   percent_min <- ifelse(length(percent_min)>0, paste0(" (", percent_min, "%)"), "")
+  percent_days <- sprintf("%.0f",  nrow(rejected_days)/n_total*100)
+  percent_days <- ifelse(length(percent_days)>0, paste0(" (", percent_days, "%)"), "")
+
   ids_total <- length(which(unlist(lapply(data_individual, nrow))<n_individual))
   ids_start <- length(which(n_removed_start>0))
   ids_isolated <- length(which(n_removed_isolated>0))
   ids_speed <- length(which(n_removed_speed>0))
   ids_min <- length(which(n_removed_min>0))
+  ids_days <- length(which(n_removed_days>0))
   ids_discarded <- nlevels(data[,id.col]) - length(which(table(data_filtered[,id.col])>0))
   percent_discarded <- sprintf("%.0f", ids_discarded/nfish*100)
   percent_discarded <- ifelse(length(percent_discarded)>0, paste0(" (", percent_discarded, "%)"), "")
@@ -238,6 +249,8 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
     cat(paste0("  • above max speed (", max.speed, " ", speed.unit, "): ", sum(n_removed_speed), percent_speed, " from ", ids_speed, " individuals\n"))}
   if(min.detections>0){
     cat(paste0("  • < ", min.detections, " detections: ", sum(n_removed_min), percent_min, " from ", ids_min, " individuals\n"))}
+  if(min.days>0){
+    cat(paste0("  • < ", min.days, " days with detection(s): ", sum(n_removed_days), percent_days, " from ", ids_days, " individuals\n"))}
   cat(paste0("Individuals discarded = ", ids_discarded, percent_discarded, " from a total of ", nfish, "\n"))
 
   # create detailed summary table
@@ -245,7 +258,7 @@ filterDetections <- function(data, tagging.dates, id.col="ID", min.detections=0,
   filter_summary <- data.frame("ID"=levels(data[,id.col]), "Raw Detections"=n_individual,
                         "Before tagging"=n_removed_start, "Isolated"=n_removed_isolated,
                         "Speed Threshold"=n_removed_speed, "Min Detections Threshold"=n_removed_min,
-                        "Total removed"=n_removed_invidual, check.names=F, row.names=NULL)
+                        "Min Days Threshold"=n_removed_days, "Total removed"=n_removed_invidual, check.names=F, row.names=NULL)
   percent_removed <- sprintf("%.0f", n_removed_invidual/n_individual*100)
   filter_summary$`Total removed` <- paste0(filter_summary$`Total removed`, " (",  percent_removed, "%)")
   filter_summary$`Total removed`[percent_removed=="0"] <- "-"

@@ -11,7 +11,8 @@ createWideTable(
   start.dates = NULL,
   end.dates = NULL,
   agg.fun = NULL,
-  round.dates = F
+  round.dates = F,
+  verbose = T
 )
 }
 \arguments{
@@ -41,6 +42,8 @@ the sum of all observations within each timebin.}
 
 \item{round.dates}{Boolean to indicate if start and end dates should be rounded
 (floor of earliest tagging and ceiling of last detection).}
+
+\item{verbose}{Output ties info to console? Defaults to TRUE.}
 }
 \description{
 Returns a data frame object containing binned detections in the wide format

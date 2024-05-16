@@ -8,6 +8,7 @@ filterDetections(
   data,
   tagging.dates,
   id.col = "ID",
+  datetime.col = "datetime",
   min.detections = 0,
   min.days = 0,
   hours.threshold = 24,
@@ -26,10 +27,12 @@ filterDetections(
 
 \item{id.col}{Name of the column containing animal identifications. Defaults to "ID".}
 
+\item{datetime.col}{Name of the column containing datetimes (in POSIXct format). Defaults to "datetime".}
+
 \item{min.detections}{Optional. Discard individuals with less than this number of detections.}
 
 \item{min.days}{Optional. Minimum number of days an individual must be detected for it to be included;
-individuals with fewer detections will be discarded.}
+individuals with fewer days of detections will be discarded.}
 
 \item{hours.threshold}{Discard single detections occurring alone within a predefined time interval.}
 
