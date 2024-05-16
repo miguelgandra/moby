@@ -83,13 +83,13 @@ filled.contour3 <-
 ##################################################################################################
 ## Updated shape::colorlegend function  ##########################################################
 ## adapted from https://rdrr.io/cran/shape/src/R/colorlegend.R  ##################################
-## added main.adj + support for scientific notation
+## added main.adj + main.inset + support for scientific notation
 
 
 colorlegend2 <- function(col=femmecol(100), zlim, zlevels=5,
                          dz=NULL, zval=NULL, log=FALSE, posx=c(0.9,0.93), posy=c(0.05,0.9),
                          main=NULL, main.cex=1.0, main.col="black", main.adj=0.5, lab.col="black",
-                         digit=0, left=FALSE, lab.scientific=FALSE, ...) {
+                         main.inset=1, digit=0, left=FALSE, lab.scientific=FALSE, ...) {
 
   ncol   <- length (col)
   par (new=TRUE)
@@ -172,7 +172,7 @@ colorlegend2 <- function(col=femmecol(100), zlim, zlevels=5,
   if  (!is.null(main)) {
     for (i in length(main):1)
       if(main.adj==0){main_pos<-xmin}else if(main.adj==1){main_pos<-xmax}else{main_pos<-mean(c(xmin,xmax))}
-    text (x=main_pos,y=ymax+0.05*(length(main)-i+1),
+    text (x=main_pos,y=(ymax+0.05*(length(main)-i+1))*main.inset,
           labels=main[i], adj=c(main.adj, 0.5), cex=main.cex, col=main.col)
   }
   par (new=FALSE)

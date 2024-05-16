@@ -63,8 +63,11 @@ plotAbacus <- function(data, tagging.dates, date.format="%b", date.interval=4, d
       data[,color.by] <- as.factor(data[,color.by])
       cat("Warning: 'color.by' variable converted to factor\n")}
 
-    if(!is.null(color.pal) & length(color.pal)<nlevels(data[,color.by])){
+    if(length(color.pal)<nlevels(data[,color.by])){
       stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels")}
+
+    if(length(color.pal)>nlevels(data[,color.by])){
+      cat("Warning: The number of specified colors exceeds the number of levels in color.by.")}
   }
 
   # reorder ID levels if ID groups are defined
@@ -86,7 +89,7 @@ plotAbacus <- function(data, tagging.dates, date.format="%b", date.interval=4, d
   }
 
   # create data table
-  table <- createWideTable(data, start.dates=tagging.dates, value.col="receiver")
+  table <- createWideTable(data, start.dates=tagging.dates, value.col="receiver", id.col=id.col, verbose=F)
 
   # retrieve last detections dates
   last_detections <- tapply(X=data$timebin, INDEX=data[,id.col], FUN=max)

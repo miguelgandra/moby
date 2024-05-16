@@ -48,6 +48,7 @@ data_tags <- read.csv2("./data/tagged_animals.csv", header=T)
 colnames(data_tags) <- c("ID", "length", "transmitter", "tagging_date", "dead_date", "tagging_location")
 data_tags$tagging_date <- as.POSIXct(data_tags$tagging_date, "%Y-%m-%d", tz="UTC")
 
+
 # import coastline shapefile
 coastline <- raster::shapefile("./layers/coastline/GSHHS_shp/GSHHS_h_L1.shp")
 eastern_atlantic <- matrix(c(-15, 8, 32, 55), ncol=2, byrow=T)
@@ -124,7 +125,7 @@ data_filtered$hour <- strftime(data_filtered$timebin, "%H", tz="UTC")
 
 animal_info <- data_tags[,c("ID", "transmitter", "length", "sex", "size")]
 colnames(animal_info) <- c("ID", "Transmitter", "Fork Length (cm)", "Sex", "Tag")
-summary_table <- summaryTable(data=data_filtered, tagging.dates=data_tags$tagging_date, tags.info=animal_info, error.stat="se")
+summary_table <- summaryTable(data=data_filtered, tagging.dates=data_tags$tagging_date, id.metadata=animal_info, error.stat="se")
 
 #save detection periods table
 write.csv2(summary_table, "./summary_table.csv", row.names=F, fileEncoding="Windows-1252")
@@ -134,11 +135,11 @@ write.csv2(summary_table, "./summary_table.csv", row.names=F, fileEncoding="Wind
 # Generate abacus plot ################################################################################
 #######################################################################################################
 
-nstations <- nlevels(data_bins$receiver)
+nstations <- length(unique(data_filtered$receiver))
 color_pal <- pals::ocean.haline(nstations)
 
-pdf("./abacus_plot.pdf", height=7.5, width=10,  useDingbats=F)
-plotAbacus(binned.data=data_filtered, tagging.dates=tagging_dates, color.by="receiver",
+pdf("./abacus-plot.pdf", height=7.5, width=10,  useDingbats=F)
+plotAbacus(data=data_filtered, tagging.dates=data_tags$tagging_date, color.by="receiver",
            color.pal=color_pal, discard.missing=T, season.shade=T, date.start=3,
            top.mural="%Y", date.format="%b", date.interval=6, pt.cex=1.25, highlight.isolated=T)
 dev.off()

@@ -10,8 +10,9 @@
 #'
 #' @param data A data frame containing binned animal detections.
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
+#' If a single value is provided, it will be used to all IDs.
 #' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param tags.info A data frame containing additional informations about the tagged animals,
+#' @param id.metadata A data frame containing additional information about the tagged animals,
 #' such as length, sex or transmitter type. If more than one row exists per animal,
 #' variables are collapsed before being merged with the remaining stats.
 #' @param residency.by Variable used to calculate partial residencies (e.g. array or habitat).
@@ -23,8 +24,8 @@
 #' @export
 
 
-summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
-                         id.groups=NULL, error.stat="sd") {
+summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
+                         residency.by=NULL, id.groups=NULL, error.stat="sd") {
 
 
   ##################################################################################
@@ -32,12 +33,23 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
 
   # check if data contains id.col
   if(!id.col %in% colnames(data)) {
-    stop("'id.col' variable not found in the supplied data")
+    stop("ID column not found. Please specify the correct column using 'id.col'")
+  }
+
+  # check if id.metadata contains id.col
+  if(!id.col %in% colnames(id.metadata)){
+    stop("ID column not found in id.metadata. Please assign the correct column name with 'id.col'")
+  }
+
+  # convert IDs to factor
+  if(class(data[,id.col])!="factor") {
+    data[,id.col] <- as.factor(data[,id.col])
+    cat("Warning: 'id.col' converted to factor\n")
   }
 
   # check error function
   if(!error.stat %in% c("sd", "se")){
-    stop("Wrong error.stat argument, please choose either 'sd' or 'se'.")
+    stop("Wrong error.stat argument, please choose between 'sd' and 'se'.")
   }
 
   getError <- function(x) {
@@ -52,6 +64,20 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
     data <- data[data[,id.col] %in% unlist(id.groups),]
     tagging.dates <- tagging.dates[match(unlist(id.groups), levels(data[,id.col]))]
     data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
+  }else{
+    id.groups <- list(levels(data[,id.col]))
+  }
+
+  # check tagging.dates
+  if(!grepl("POSIXct", paste(class(tagging.dates), collapse=" "))){
+    stop("'tagging.dates' must be provided in POSIXct format")
+  }
+  if(length(tagging.dates)>1 & length(tagging.dates)!=nlevels(data[,id.col])){
+    stop("Incorrect number of tagging.dates. Must be either a single value or
+           a vector containing a tagging date for each individual")
+  }
+  if(length(tagging.dates)==1){
+    tagging.dates <- rep(tagging.dates, nlevels(data[,id.col]))
   }
 
 
@@ -68,10 +94,10 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
 
   # number of detections
   if("detections" %in% colnames(data)){
-    detections <- as.integer(aggregate(detections~ID, data=data, FUN=sum, drop=F)$detections)
+    detections <- as.integer(aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
   }else{
     print("Warning: No 'detections' column found, assuming one detection per row\n")
-    detections <- as.integer(table(data$ID))
+    detections <- as.integer(table(data[,id.col]))
   }
   detections[detections==0] <- NA
 
@@ -114,10 +140,10 @@ summaryTable <- function(data, tagging.dates, tags.info=NULL, residency.by=NULL,
     }}
 
   # format additional tag info (if available) and merge
-  if(!is.null(tags.info)) {
-    column_types <- sapply(1:ncol(tags.info),function(c) class(tags.info[,c]))
+  if(!is.null(id.metadata)) {
+    column_types <- sapply(1:ncol(id.metadata),function(c) class(id.metadata[,c]))
     numeric_cols <- which(column_types %in% c("numeric", "integer"))
-    animal_info <- aggregate(tags.info[,-1], by=list(tags.info[,id.col]), function(x) paste(unique(x), collapse="/"), drop=F)
+    animal_info <- aggregate(id.metadata[,-1], by=list(id.metadata[,id.col]), function(x) paste(unique(x), collapse="/"), drop=F)
     animal_info[animal_info=="NA"] <- NA
     animal_info[,numeric_cols] <- as.numeric(animal_info[,numeric_cols] )
     colnames(animal_info)[1] <- "ID"

@@ -28,11 +28,12 @@
 #' the sum of all observations within each timebin.
 #' @param round.dates Boolean to indicate if start and end dates should be rounded
 #' (floor of earliest tagging and ceiling of last detection).
+#' @param verbose Output ties info to console? Defaults to TRUE.
 #' @export
 
 
 createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.dates=NULL,
-                            agg.fun=NULL, round.dates=F) {
+                            agg.fun=NULL, round.dates=F, verbose=T) {
 
 
   ##############################################################################
@@ -40,7 +41,7 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
   ##############################################################################
 
   if(!id.col %in% colnames(data)) {
-    stop("'id.col' variable not found in the supplied data")
+    stop("ID column not found. Please specify the correct column using 'id.col'")
   }
 
   if(!value.col %in% colnames(data)) {
@@ -48,7 +49,7 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
       cat("Warning: No 'detections' column found, assuming one detection per row\n")
       data$detections <- 1
     }else{
-      stop("'value.col' variable not found in the supplied data")
+      stop("Value column not found. Please specify the correct column using 'value.col'")
     }
   }
 
@@ -119,7 +120,7 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
                               fill=NA_character_, fun.aggregate=checkTies, drop=F)
       ties$count <- apply(ties[,-1], 1, function(x) length(which(!is.na(x))))
       ties <- ties[ties$count>0,]
-      if(nrow(ties)>0){
+      if(verbose==T & nrow(ties)>0){
         ties <- reshape2::melt(ties[,-ncol(ties)], id.vars="timebin")
         colnames(ties) <- c("timebin", "ID", "ties")
         ties <- ties[!is.na(ties$ties),]

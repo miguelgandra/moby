@@ -1,2 +1,2 @@
 # moby
-A R package for streamlined biotelemetry analyses and data visualization.
+An R package for streamlined biotelemetry analyses and data visualization.
