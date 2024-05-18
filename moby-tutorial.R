@@ -51,8 +51,8 @@ data_tags$tagging_date <- as.POSIXct(data_tags$tagging_date, "%Y-%m-%d", tz="UTC
 
 # import coastline shapefile
 coastline <- raster::shapefile("./layers/coastline/GSHHS_shp/GSHHS_h_L1.shp")
-eastern_atlantic <- matrix(c(-15, 8, 32, 55), ncol=2, byrow=T)
-coastline <- crop(coastline, extent(eastern_atlantic))
+study_region <- matrix(c(-15, 8, 32, 55), ncol=2, byrow=T)
+coastline <- crop(coastline, extent(study_region))
 coastline <- sp::spTransform(coastline, epsg_code)
 
 
@@ -135,11 +135,11 @@ write.csv2(summary_table, "./summary_table.csv", row.names=F, fileEncoding="Wind
 # Generate abacus plot ################################################################################
 #######################################################################################################
 
-nstations <- length(unique(data_filtered$receiver))
+nstations <- length(unique(data_filtered$station))
 color_pal <- pals::ocean.haline(nstations)
 
 pdf("./abacus-plot.pdf", height=7.5, width=10,  useDingbats=F)
-plotAbacus(data=data_filtered, tagging.dates=data_tags$tagging_date, color.by="receiver",
+plotAbacus(data=data_filtered, tagging.dates=data_tags$tagging_date, color.by="station",
            color.pal=color_pal, discard.missing=T, season.shade=T, date.start=3,
            top.mural="%Y", date.format="%b", date.interval=6, pt.cex=1.25, highlight.isolated=T)
 dev.off()

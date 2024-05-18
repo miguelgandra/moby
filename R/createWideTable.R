@@ -8,12 +8,13 @@
 #' (time bin x individual matrix, with values corresponding either to the receiver > detections
 #' or the number of detections).
 #'
-#' @param data A data frame containing animal detections with corresponding time-bins
-#' (must contain a 'timebin' column).
+#' @param data A data frame containing animal detections with corresponding time-bins.
+#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
+#' @param timebin.col Name of the column containing timebins . Defaults to 'timebin'.
+#' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
 #' @param value.col The values to be assigned to each entry, should match a column
 #' in the supplied data (except if set to "detections"). If set to "detections" and no detections
 #' column is found in the dataset, the function automatically assumes one detection per row.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
 #' @param start.dates Optional. A POSIXct vector containing the start date of the monitoring period of each
 #' animal (e.g.tag/release date of each individual). If left null, defaults to each individual's first detection.
 #' If a single value is provided, it will be used to all IDs.
@@ -32,16 +33,27 @@
 #' @export
 
 
-createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.dates=NULL,
-                            agg.fun=NULL, round.dates=F, verbose=T) {
+createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
+                            start.dates=NULL, end.dates=NULL, agg.fun=NULL, round.dates=F, verbose=T) {
 
 
   ##############################################################################
   # Initial checks #############################################################
   ##############################################################################
 
+  # check if data contains id.col
   if(!id.col %in% colnames(data)) {
     stop("ID column not found. Please specify the correct column using 'id.col'")
+  }
+
+  # check if data contains timebin.col
+  if(!timebin.col %in% colnames(data)){
+    stop("Timebin column not found. Please specify the correct column using 'timebin.col'")
+  }
+
+  # check if timebins are in the right format
+  if(!grepl("POSIXct", paste(class(data[,timebin.col]), collapse=" "))){
+    stop("Timebins must be provided in POSIXct format")
   }
 
   if(!value.col %in% colnames(data)) {
@@ -56,10 +68,6 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
   if(class(data[,id.col])!="factor") {
     data[,id.col] <- as.factor(data[,id.col])
     cat("Warning: 'id.col' converted to factor\n")
-  }
-
-  if(!c("timebin") %in% colnames(data)) {
-    stop("'timebin' column not found in the supplied data")
   }
 
   if(!is.null(start.dates)){
@@ -114,14 +122,14 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
     # aggregate values (assign most frequent one)
     if(value_type %in% c("character", "factor")){
       assignVal <- function(x){names(which.max(table(x)))}
-      data_table <- reshape2::dcast(data, formula=paste0("timebin~", id.col), value.var=value.col,
+      data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
                                     fill=NA_character_, fun.aggregate=assignVal, drop=F)
-      ties <- reshape2::dcast(data, formula=paste0("timebin~", id.col), value.var=value.col,
+      ties <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
                               fill=NA_character_, fun.aggregate=checkTies, drop=F)
       ties$count <- apply(ties[,-1], 1, function(x) length(which(!is.na(x))))
       ties <- ties[ties$count>0,]
       if(verbose==T & nrow(ties)>0){
-        ties <- reshape2::melt(ties[,-ncol(ties)], id.vars="timebin")
+        ties <- reshape2::melt(ties[,-ncol(ties)], id.vars=timebin.col)
         colnames(ties) <- c("timebin", "ID", "ties")
         ties <- ties[!is.na(ties$ties),]
         cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
@@ -132,14 +140,14 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
 
     # aggregate values (assign sum)
     if(value_type %in% c("numeric", "integer")){
-      data_table <- reshape2::dcast(data, formula=paste0("timebin~", id.col), value.var=value.col,
+      data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
                                     fill=0, fun.aggregate=sum, drop=F)
     }
 
   # else use supplied function to aggregate values
   }else{
 
-    data_table <- reshape2::dcast(data, formula=paste0("timebin~", id.col), value.var=value.col,
+    data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
                                   fill=0, fun.aggregate=agg.fun, drop=F)
 }
 
@@ -150,18 +158,18 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
 
   # if start.dates were not provided, retrieve first detections dates
   if(is.null(start.dates)){
-    start.dates <- tapply(X=data$timebin, INDEX=data[,id.col], FUN=min)
+    start.dates <- tapply(X=data[,timebin.col], INDEX=data[,id.col], FUN=min)
     start.dates <- as.POSIXct(start.dates, origin='1970-01-01', tz="UTC")
   }
 
   # if end.dates were not provided, retrieve last detections dates
   if(is.null(end.dates)){
-    end.dates <- tapply(X=data$timebin, INDEX=data[,id.col], FUN=max)
+    end.dates <- tapply(X=data[,timebin.col], INDEX=data[,id.col], FUN=max)
     end.dates <- as.POSIXct(end.dates, origin='1970-01-01', tz="UTC")
   }
 
   # get time bins interval (in minutes)
-  interval <- difftime(data$timebin, data.table::shift(data$timebin), units="min")
+  interval <- difftime(data[,timebin.col], data.table::shift(data[,timebin.col]), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=T))
 
 
@@ -175,12 +183,12 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
     end <- max(end.dates, na.rm=T)
   }
   time_seq <- seq.POSIXt(from=start, to=end, by=interval*60)
-  time_seq <- as.POSIXct(setdiff(time_seq, data_table$timebin), origin='1970-01-01', tz="UTC")
+  time_seq <- as.POSIXct(setdiff(time_seq, data_table[,timebin.col]), origin='1970-01-01', tz="UTC")
   empty_bins <- data.frame(time_seq, matrix(NA, ncol=nlevels(data[,id.col])))
-  colnames(empty_bins) <- c("timebin", levels(data[,id.col]))
+  colnames(empty_bins) <- c(timebin.col, levels(data[,id.col]))
   # create complete matrix
   data_table <- rbind(data_table, empty_bins)
-  data_table <- data_table[with(data_table, order(timebin)), ]
+  data_table <- data_table[order(data_table[,timebin.col]), ]
 
   # set table entries before start date and after end date to NA
   if(value_type %in% c("numeric", "integer")){
@@ -191,8 +199,8 @@ createWideTable <- function(data, value.col, id.col="ID", start.dates=NULL, end.
     if(length(missing_ids)>=1){data_table[,missing_ids] <- NA_integer_}
     for (i in detected_ids) {
       index <- which(levels(data[,id.col])==i)
-      data_table[data_table$timebin<start.dates[index],i] <- NA_integer_
-      data_table[data_table$timebin>end.dates[index],i] <- NA_integer_
+      data_table[data_table[,timebin.col]<start.dates[index],i] <- NA_integer_
+      data_table[data_table[,timebin.col]>end.dates[index],i] <- NA_integer_
     }
   }
 

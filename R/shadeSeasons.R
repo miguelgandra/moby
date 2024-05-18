@@ -16,7 +16,7 @@
 #' @seealso \code{\link{getSeason}}
 #' @export
 
-shadeSeasons <- function(start.time, end.time, interval, color.pal=c("white", "grey95", "grey80", "grey87"),
+shadeSeasons <- function(start.time, end.time, interval, color.pal=c("white", "grey96", "grey83", "grey90"),
                          hemisphere="Northern") {
 
   color_pal <- data.frame("season"=c("winter", "spring", "summer", "autumn"),

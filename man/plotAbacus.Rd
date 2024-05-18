@@ -6,28 +6,56 @@
 \usage{
 plotAbacus(
   data,
+  id.col = "ID",
+  datetime.col = "datetime",
+  color.by = NULL,
   tagging.dates,
+  tag.durations = NULL,
+  id.groups = NULL,
+  discard.missing = F,
+  color.pal = NULL,
   date.format = "\%b",
   date.interval = 4,
   date.start = 1,
-  discard.missing = F,
-  id.groups = NULL,
   top.mural = F,
   season.shade = F,
   background.col = "grey96",
-  color.by = NULL,
-  color.pal = NULL,
-  id.col = "ID",
   pch = 16,
   pt.cex = 1,
   transparency = 0,
-  highlight.isolated = T
+  highlight.isolated = T,
+  cex.lab = 0.8,
+  cex.axis = 0.7,
+  cex.legend = 0.7,
+  cex.mural = 0.7,
+  legend.intersp = 1.2,
+  legend.cols = NULL
 )
 }
 \arguments{
-\item{data}{A data frame containing binned animal detections.}
+\item{data}{A data frame containing animal detections.}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{datetime.col}{Name of the column containing time bins in POSIXct format.
+Defaults to 'datetime'.}
+
+\item{color.by}{Variable defining the color group of individual detections.
+Can be used for example to display detections by receiver, animal trait or temporal category.}
 
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.}
+
+\item{tag.durations}{Optional. A  numeric vector containing the estimated battery
+duration of the deployed tags (in days). If a single value is provided, it will be used to all IDs.}
+
+\item{id.groups}{Optional. A list containing ID groups, used to
+visually aggregate animals belonging to the same class (e.g. different species).}
+
+\item{discard.missing}{If true, animals without detections are not included. Defaults to false.}
+
+\item{color.pal}{Color palette used to plot detections per group level
+(as defined by the color.by argument). Defaults to ggthemes::economist_pal or
+rainbow, depending on the number of 'color.by' levels.}
 
 \item{date.format}{Date-time format (as used in \code{\link[base]{strptime}}),
 defining the x-axis labels. Defaults to month ("\%b").}
@@ -38,11 +66,6 @@ displayed date (x-axis label). Defaults to 4.}
 \item{date.start}{Integer defining the first displayed date (can be used in combination
 with 'date.interval" to better control the x-axis labels). Defaults to 1.}
 
-\item{discard.missing}{If true, animals without detections are not included. Defaults to false.}
-
-\item{id.groups}{Optional. A list containing ID groups, used to
-visually aggregate animals belonging to the same class (e.g. different species).}
-
 \item{top.mural}{Include top mural containing additional time labels?
 If so, defines the date-time format of the labels (as used by \code{\link[base]{strptime}}).}
 
@@ -51,15 +74,6 @@ according with the respective season. See \code{\link{shadeSeasons}}.}
 
 \item{background.col}{If season.shade is set to false, defines the background
 color of the plot.}
-
-\item{color.by}{Variable defining the color group of individual detections.
-Can be used for example to display detections by receiver, animal trait or temporal category.}
-
-\item{color.pal}{Color palette used to plot detections per group level
-(as defined by the color.by argument). Defaults to ggthemes::economist_pal or
-rainbow, depending on the number of 'color.by' levels.}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{pch}{Plotting ‘character’, i.e., symbol to use. Defaults to 16.}
 
@@ -70,6 +84,20 @@ rainbow, depending on the number of 'color.by' levels.}
 \item{highlight.isolated}{If a 'color.by' variable is defined, detections are ordered
 and plotted according to their "density", with isolated detections being brought forward
 to prevent them from being hidden behind denser point clouds.}
+
+\item{cex.lab}{Determines the size of the y-axis and y-axis labels. Defaults to 0.8.}
+
+\item{cex.axis}{Determines the size of the text labels on the axes. Defaults to 0.7.}
+
+\item{cex.legend}{Determines the size of the color legend. Defaults to 0.7.}
+
+\item{cex.mural}{Determines the size of the labels in the optional date top mural. Defaults to 0.7.}
+
+\item{legend.intersp}{Vertical distances between legend elements
+(in lines of text shared above/below each legend entry). Defaults to 1.2.}
+
+\item{legend.cols}{Determines the  number of columns in which to set the legend items.
+If left null, it is set automatically based on the number of levels.}
 }
 \description{
 Produces an abacus plot, displaying color-coded detections of

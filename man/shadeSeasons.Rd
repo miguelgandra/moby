@@ -8,7 +8,7 @@ shadeSeasons(
   start.time,
   end.time,
   interval,
-  color.pal = c("white", "grey95", "grey80", "grey87"),
+  color.pal = c("white", "grey96", "grey83", "grey90"),
   hemisphere = "Northern"
 )
 }

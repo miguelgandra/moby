@@ -6,8 +6,9 @@
 \usage{
 createWideTable(
   data,
-  value.col,
   id.col = "ID",
+  timebin.col = "timebin",
+  value.col,
   start.dates = NULL,
   end.dates = NULL,
   agg.fun = NULL,
@@ -16,14 +17,15 @@ createWideTable(
 )
 }
 \arguments{
-\item{data}{A data frame containing animal detections with corresponding time-bins
-(must contain a 'timebin' column).}
+\item{data}{A data frame containing animal detections with corresponding time-bins.}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
 \item{value.col}{The values to be assigned to each entry, should match a column
 in the supplied data (except if set to "detections"). If set to "detections" and no detections
 column is found in the dataset, the function automatically assumes one detection per row.}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{start.dates}{Optional. A POSIXct vector containing the start date of the monitoring period of each
 animal (e.g.tag/release date of each individual). If left null, defaults to each individual's first detection.
