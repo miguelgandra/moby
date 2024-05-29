@@ -30,6 +30,7 @@ Imports:
 	doParallel,
 	foreach
 Suggests:
+	data.table,
 	adehabitatHR,
 	qgraph,
 	wavScalogram,

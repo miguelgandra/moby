@@ -25,16 +25,13 @@
 
 getDefaults <- function(var) {
 
-  if(tolower(var)=="id") var <- id.col
-  if(tolower(var)=="datetime") var <- datetime.col
-  if(tolower(var)=="timebin") var <- timebin.col
+  if(tolower(var)=="id") var <- "id.col"
+  if(tolower(var)=="datetime") var <- "datetime.col"
+  if(tolower(var)=="timebin") var <- "timebin.col"
 
   if(!var %in% c("id.col", "datetime.col", "timebin.col", "tagging.dates", "tag.durations")){
     stop("Invalid variable specified.")
   }
-
-  # access the environment
-  #mobyEnv <- get(".mobyEnv", envir=.GlobalEnv)
 
   # retrieve default setting
   return(mobyEnv$defaults[var])
