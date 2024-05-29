@@ -35,19 +35,17 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
   start.time <- Sys.time()
 
   # check if data contains id.col
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please assign the correct column name with 'id.col'")
-  }
+  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
+  # check if data contains lon.col
+  if(!lon.col %in% colnames(data)) stop("Longitude column not found. Please specify the correct column using 'lon.col'")
+  # check if data contains lon.col
+  if(!lat.col %in% colnames(data)) stop("Latitude column not found. Please specify the correct column using 'lat.col'")
+
 
   # check if id.col is a factor
   if(class(data[,id.col])!="factor"){
     data[,id.col] <- as.factor(data[,id.col])
     cat(paste("Converting", id.col, "to factor\n"))
-  }
-
-  # check if data contains lon.col and lat.col
-  if(any(!c(lon.col, lat.col) %in% colnames(data))){
-    stop("Longitude/latitude columns not found. Please assign the correct column names with 'lon.col' and 'lat.col'")
   }
 
   # check if dataset coordinates are in geographic format (unprojected)

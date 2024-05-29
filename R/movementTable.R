@@ -90,13 +90,13 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
 
    # get time bins interval (in minutes) and interpolate distances if required
    individual_data <- split(data, f=data[,id.col])
-   interval <- lapply(individual_data, function(x) difftime(x$timebin, data.table::shift(x$timebin), units="min"))
+   interval <- lapply(individual_data, function(x) difftime(x$timebin, dplyr::lag(x$timebin), units="min"))
    interval <- unlist(lapply(interval, unique))
    interval <- unique(interval[!is.na(interval)])
    if(length(unique(interval))>2) {
      data <- interpolateDistances(data, keep.intermediate=T)
      individual_data <- split(data, f=data[,id.col])
-     interval <- lapply(individual_data, function(x) difftime(x$timebin, data.table::shift(x$timebin), units="min"))
+     interval <- lapply(individual_data, function(x) difftime(x$timebin, dplyr::lag(x$timebin), units="min"))
      interval <- unlist(lapply(interval, unique))
      interval <- unique(interval[!is.na(interval)])
    }

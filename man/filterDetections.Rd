@@ -2,11 +2,12 @@
 % Please edit documentation in R/filterDetections.R
 \name{filterDetections}
 \alias{filterDetections}
-\title{Filter data}
+\title{Filter Detections}
 \usage{
 filterDetections(
   data,
   tagging.dates,
+  cutoff.dates = NULL,
   id.col = "ID",
   datetime.col = "datetime",
   min.detections = 0,
@@ -23,13 +24,19 @@ filterDetections(
 \arguments{
 \item{data}{A data frame containing raw animal detections.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.}
+\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
+The length of this vector should match the number of unique animal IDs.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
-\item{id.col}{Name of the column containing animal identifications. Defaults to "ID".}
+\item{cutoff.dates}{Optional. A POSIXct vector containing the estimated expiration dates of the tags
+or any other cut-off date beyond which detections should be discarded. The length of this vector
+should match the number of unique animal IDs. Alternatively, if a single value is provided, it will be applied to all IDs.}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to "ID".}
 
 \item{datetime.col}{Name of the column containing datetimes (in POSIXct format). Defaults to "datetime".}
 
-\item{min.detections}{Optional. Discard individuals with less than this number of detections.}
+\item{min.detections}{Optional. Discard individuals with fewer than this number of detections.}
 
 \item{min.days}{Optional. Minimum number of days an individual must be detected for it to be included;
 individuals with fewer days of detections will be discarded.}
@@ -41,7 +48,8 @@ individuals with fewer days of detections will be discarded.}
 \item{speed.unit}{Units of supplied maximum speed. Either 'm/s' or 'km/h'.}
 
 \item{acoustic.range}{Maximum assumed detection range of the acoustic receivers (in metres).
-Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers.}
+Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers,
+when estimating minimum consecutive distances.}
 
 \item{...}{Further arguments passed to the \code{\link{calculateDistances}} function
 (e.g. land.shape, epsg.code, grid.resolution and mov.directions).}
@@ -51,6 +59,21 @@ A list containing both the filtered data and the rejected detections,
 as well as a detailed summary of the filtered out data by individual.
 }
 \description{
-Function to remove spurious detections, based on tagging date and/or
-isolated occurrences.
+This function filters out spurious animal detections based on
+multiple criteria to ensure data accuracy. It helps users identify and remove
+false positives and discard individuals with few or no valid detections.
+It implements six distinct criteria:
+\enumerate{
+\item detections occurring before the animal's tagging date
+\item detections occurring after an optional cut-off date
+\item isolated detections within a specified time interval
+\item detections implying unrealistic movement speeds
+\item the total number of detections
+\item the total number of logged days
+}
+
+Unlike other methods, \code{filterDetections} accounts for land topographies and
+complex coastlines when calculating animal speeds if a
+\code{land.shape} (shape file containing coastlines) is provided,
+leading to more accurate distance estimates.
 }

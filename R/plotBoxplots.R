@@ -78,7 +78,7 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
   # Prepare data #################################################################
 
   # get time bins interval (in minutes)
-  interval <- difftime(data$timebin, data.table::shift(data$timebin), units="min")
+  interval <- difftime(data$timebin, dplyr::lag(data$timebin), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=T))
 
   rows <- ceiling(length(responses)/cols)

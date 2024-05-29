@@ -1,23 +1,23 @@
 #######################################################################################################
-# Function to generate level plots  #################################################################
+# Function to generate chronograms (heatmaps) #########################################################
 #######################################################################################################
 
-#' Generate level plots
+#' Generate chronograms (heatmaps)
 #'
 #' @description Function to represent a given metric (nº detections, presences, individuals or co-occurrences)
 #' per time bin. It generates 2-dimensional plots (hour x date) highlighting the chosen variable
 #' either through color-coded cells or size-variable points, and illustrating the
 #' variation in diel phases' hours across the study duration (annual variation of daylight time).
 #'
-#' @param data A data frame containing binned animal detections. Needs to include a 'timebin' column.
+#' @param data A data frame containing binned animal detections.
 #' @param tagging.dates Optional. A POSIXct vector containing the tag/release date of each animal.
-#' If supplied, plots start is set the earliest release date, instead of the first detection.
+#' If supplied, the plot start is set the earliest release date, instead of the first detection.
 #' @param split.by Optional. If defined, plots are generated individually for each level
 #' of this variable (e.g. species, ontogeny or habitat).
 #' @param variables The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".
 #' @param style Style of the plot. Either "raster" (nº represented by color) or "points" (nº represented by size).
 #' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param station.col Name of the column containing station/receiver IDs Defaults to 'station'.
+#' @param station.col Name of the column containing station/receiver IDs. Defaults to 'station'.
 #' @param color.by Variable defining the color group of the plotted metric, when style = "points".
 #' Can be used for example to display detections by receiver, animal trait or temporal category.
 #' @param color.pal Color palette for the level plot.
@@ -46,92 +46,125 @@
 #' @param pt.cex Defines the min and max point radius when style="point. Defaults to c(0,3).
 #' @param uniformize.scale Use the same color scale for all plots when 'split.by' is defined.
 #' @param uniformize.dates Use the same date range for all plots when 'split.by' is defined.
+#' @param cex.axis Determines the size of the text labels on the axes. Defaults to 1.
+#' @param cex.legend Determines the size of the color legend. Defaults to 0.8.
+#' @param legend.intersp Vertical distances between legend elements
+#' (in lines of text shared above/below each legend entry). Defaults to 1.2.
+#' @param legend.cols Integer. The number of columns in which to set the legend items.
+#' If NULL, it is set automatically based on the number of levels. Defaults to NULL.
 #' @param cols Number of columns in the final panel (passed to the mfrow argument).
 #' @param ... Further arguments passed to the \code{\link[graphics]{image}} function (if style="raster"),
 #' or to the \code{\link[graphics]{plot}} function (if style="points").
 #' @export
 
 
-plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.by=NULL, style="raster",  id.col="ID",
-                       station.col="station", color.by=NULL, color.pal=NULL, date.format="%d/%b",
-                       date.interval=4, date.start=1, diel.lines=2, sunriset.coords, solar.depth=18, polygons=F, lunar.info=F,
-                       background.col="white", grid=T, grid.color="white", highlight.isolated=F,
-                       pt.cex=c(0.5, 3), uniformize.scale=F, uniformize.dates=T, cols=NULL, ...) {
+plotChronogram <- function(data, tagging.dates=NULL, variables="detections", split.by=NULL, style="raster",
+                       id.col="ID", timebin.col="timebin", station.col="station", color.by=NULL, color.pal=NULL,
+                       date.format="%d/%b", date.interval=4, date.start=1, diel.lines=2, sunriset.coords, solar.depth=18,
+                       polygons=F, lunar.info=F, background.col="white", grid=T, grid.color="white", highlight.isolated=F,
+                       pt.cex=c(0.5, 3), uniformize.scale=F, uniformize.dates=T, cex.axis=1, cex.legend=0.8,
+                       legend.intersp=1.2, legend.cols=NULL, cols=NULL, ...) {
 
   #####################################################################################
   # Initial checks ####################################################################
   #####################################################################################
 
   # print to console
-  cat("Generating level plot(s)\n")
-
-  if(any(!variables %in% c("detections", "individuals", "co-occurrences"))){
-    stop("Wrong variable(s) specified. Accepted values: 'detections','individuals' or 'co-occurrences'")
-  }
-
-  # check if style contains one of the accepted types
-  if(!style %in% c("raster", "points")){
-    stop("Style should be either 'raster' or 'points'")
-  }
+  cat("Generating chronogram(s)\n")
 
   # check if data contains id.col
-  if(!id.col %in% colnames(data)) {
-    stop("'id.col' variable not found in the supplied data")
+  if(!id.col %in% colnames(data)) stop("ID column not found in input. Please specify the correct column using 'id.col'")
+  # check if data contains timebin.col
+  if(!timebin.col %in% colnames(data)) stop("Time-bin column not found. Please specify the correct column using 'timebin.col'")
+  # check if data contains station.col
+  if(!station.col %in% colnames(data)) stop("Station column not found. Please specify the correct column using 'station.col'")
+  # check if data contains split.by col
+  if(!is.null(split.by) && !split.by %in% colnames(data)) stop("split.by column not found. Please specify the correct column using 'split.by'")
+  # validate style
+  if(!style %in% c("raster", "points")) stop("Invalid style specified. Accepted values are: 'raster' or 'points'.")
+  # validate variables
+  if(length(variables) == 0 || any(!variables %in% c("detections", "individuals", "co-occurrences"))) stop("Invalid variable(s) specified. Accepted values are: 'detections', 'individuals', or 'co-occurrences'.")
+  # check if timebins are in the right format
+  if(!inherits(data[, timebin.col], "POSIXct")) stop("Time-bins must be provided in POSIXct format")
+  # check if tagging.dates are in the right format
+  if(!is.null(tagging.dates) && !inherits(tagging.dates, "POSIXct")) stop("'tagging.dates' must be provided in POSIXct format")
+  # validate polygons
+  if(!polygons %in% c(FALSE, "diel","season")) stop("Invalid 'polygons' specified. Accepted values are: 'diel', 'season' or 'FALSE' (disabled)")
+  # validate diel.lines
+  if(!diel.lines %in% c(2, 4)) stop("Invalid 'diel.lines' specified. Accepted values are '2' (sunrise and sunset) or '4' (dawn, sunrise, sunset, dusk)")
+  # validate pt.cex
+  if(length(pt.cex)!=2) stop("pt.cex should be a vector of length 2 (min and max)")
+  # validate color.pal
+  if(!is.null(color.pal) && !inherits(color.pal, c("character", "function"))) stop("Invalid color palette. Please supply either a character vector w/ the colors or a function that generates colors.")
+
+  # check if the lunar package is installed
+  if(lunar.info==T & !requireNamespace("lunar", quietly=TRUE)){
+    stop("The 'lunar' package is required but is not installed. Please install 'lunar' using install.packages('lunar') and try again.")
   }
 
-  # check if data contains timebin column
-  if(!c("timebin") %in% colnames(data)) {
-    stop("'timebin' column not found in the supplied data")
-  }
+  #####################################################################################
+  # Validate color-coding and color palette ###########################################
+  #####################################################################################
 
-  # check if data contains the station variable
-  if(!station.col %in% colnames(data)){
-    stop("'station.col' variable not found in the supplied data")
-  }
+  #######################################################
+  # set color palette if a color.by variable was supplied (style=="points")
+  if(!is.null(color.by) && style=="points"){
 
-  # check if data contains the split.by variable
-  if(!is.null(split.by) && !split.by %in% colnames(data)){
-    stop("'split.by' variable not found in the supplied data")
-  }
+    # check if data contains the color.by variable
+    if(!color.by %in% colnames(data)) stop("'color.by' variable not found in the supplied data")
+    if(any(is.na(data[,color.by]))) stop("Missing values in 'color.by' variable")
 
-  # check if data contains the color.by variable
-  if(!is.null(color.by)){
-
-    if(!color.by %in% colnames(data)) {
-      stop("'color.by' variable not found in the supplied data")}
-
-    if(any(is.na(data[,color.by]))) {
-      stop("Missing values in 'color.by' variable")}
-
-    if(class(data[,color.by])!="factor"){
+    # if class character, convert to factor
+    if(inherits(data[,color.by], "character")) {
       data[,color.by] <- as.factor(data[,color.by])
-      cat("Warning: 'color.by' variable converted to factor\n")}
+      warning("'color.by' variable converted to factor")}
 
-    if(!is.null(color.pal)){
-      n_groups <- length(unique(data[,color.by])[!is.na(unique(data[,color.by]))])
-      if(!class(data[,color.by])[1] %in% c("integer", "numeric") & length(color.pal)!=n_groups){
-        cat("Warning: The nº of colors doesn't match the number of levels in 'color.by' variable")
-      }}
-
+    # set color palette for categorical levels (style = "points")
+    if(inherits(data[,color.by], "factor")){
+      ngroups <- nlevels(data[,color.by])
+      if(!is.null(color.pal)){
+        if(style=="points" && inherits(color.pal, "function")) color.pal <- color.pal(ngroups)
+        if(length(color.pal)!=ngroups)  warning("The nº of colors doesn't match the number of levels in 'color.by' variable")
+      }else{
+        if(ngroups==3) color.pal <- c("#326FA5","#D73134","#1C8E43")
+        else if (ngroups>3 & ngroups<10) color.pal <- moby:::economist_pal(ngroups)
+        else color.pal <- rainbow(ngroups)
+      }
+    # set color palette for numeric scale (style=="points")
+    }else if(inherits(data[, color.by], "numeric")) {
+      if(!is.null(color.pal)) {
+        if(style == "points" && inherits(color.pal, "function")) {
+          color.pal <- color.pal(100)
+        }else{
+          color.pal <- colorRampPalette(color.pal)(100)
+          warning("The color palette was generated using the provided colors")
+        }
+      }else{
+        color.pal <- moby:::viridis_pal(100)
+      }
+    }
+  #######################################################
+  # set color palette if no color.by variable was supplied (style=="points")
+  }else if(is.null(color.by) && style=="points"){
+    if(!is.null(color.pal)) color.pal <- color.pal(1)
+    else color.pal <- "grey25"
   }
 
-  if(!polygons %in% c(F, "diel","season")) {
-    stop("polygons variable can only be set to 'diel', 'season' or 'F' (disabled)")
-  }
-
-  if(length(pt.cex)!=2) {
-    stop("pt.cex should be a vector of length 2 (min and max)")
-  }
-
+  #######################################################
+  # set color palette for style=="raster"
   if(style=="raster"){
-    if(!is.null(color.by)){
-      cat("Warning: 'color.by' argument is discarded when plot if of type raster")
-    }
+    if(!is.null(color.pal) && inherits(color.pal, "function")) color.pal <- colorRampPalette(color.pal)
+    if(!is.null(color.by)) warning("'color.by' argument is discarded when plot if of type raster")
+  }
 
-    if(!is.null(color.pal) & class(color.pal)!="function"){
-      stop("Please supply a color palette *function* when plot if of type raster")
-    }
 
+  #######################################################
+  # set nº of columns in legend
+  if(is.null(legend.cols)){
+    legend.cols <- 1
+    if(!is.null(color.by) && inherits(data[,color.by], "factor")){
+      if(nlevels(data[,color.by])>=8) legend.cols<-2
+    }
   }
 
 
@@ -172,18 +205,27 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
     # set dates scale
     if(uniformize.dates==T){
       if(!is.null(tagging.dates)){first_dates <- min(tagging.dates)}
-      if(is.null(tagging.dates)){first_dates <- min(data$timebin, na.rm=T)}
-      last_dates <- max(data$timebin, na.rm=T)
+      if(is.null(tagging.dates)){first_dates <- min(data[,timebin.col], na.rm=T)}
+      last_dates <- max(data[,timebin.col], na.rm=T)
     }else{
       if(!is.null(tagging.dates)){first_dates <- tagging.dates[group_ids]}
-      if(is.null(tagging.dates)){first_dates <- min(data_group$timebin, na.rm=T)}
-      last_dates <- max(data_group$timebin, na.rm=T)
+      if(is.null(tagging.dates)){first_dates <- min(data_group[,timebin.col], na.rm=T)}
+      last_dates <- max(data_group[,timebin.col], na.rm=T)
     }
 
-    # create table with complete seq of timebins
-    all_timebins <- createWideTable(data_group, start.dates=first_dates, end.dates=last_dates, value.col="detections", round.dates=T)
+    #round dates
+    first_dates <- lubridate::floor_date(first_dates, unit="day")
+    last_dates <- lubridate::ceiling_date(last_dates, unit="day")-60*60*(interval/60)
+
+    # get time bins interval (in minutes)
+    interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
+    interval <- as.numeric(min(interval[interval>0], na.rm=T))
+
+    # create complete seq of time-bins
+    all_timebins <- seq.POSIXt(first_dates, last_dates, by=paste(interval, "mins"))
 
     # create day x time matrix
+    all_timebins <- data.frame("timebin"=all_timebins)
     all_timebins$day <- strftime(all_timebins$timebin,"%Y-%m-%d", tz="UTC")
     all_timebins$time <- strftime(all_timebins$timebin,"%H:%M:%S", tz="UTC")
     days <- unique(all_timebins$day)
@@ -193,8 +235,12 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
     colnames(plot_matrix) <- bins
 
     # aggregate data by timebin, station and ID
-    data_group$row <- 1:nrow(data_group)
-    detections_table <- aggregate(data_group$row, by=list(data_group$timebin, data_group[,id.col], data_group[,station.col]), length)
+    if("detections" %in% colnames(data)){
+      data_group$row <- data_group$detections
+    }else{
+      data_group$row <- 1:nrow(data_group)
+    }
+    detections_table <- aggregate(data_group$row, by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), length)
     colnames(detections_table) <- c("timebin", "id", "station", "detections")
 
     # calculate metrics
@@ -214,17 +260,16 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
 
     # calculate stats for color-by variable if required
     if(!is.null(color.by)){
-      color_data <- aggregate(data_group[,color.by], by=list(data_group$timebin, data_group[,id.col], data_group[,station.col]), aggFun)
+      color_data <- aggregate(data_group[,color.by], by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), aggFun)
       colnames(color_data) <- c("timebin", "id", "station", "level")
       color_data <-  aggregate(color_data$level, by=list(color_data$timebin, color_data$station), aggFun)
       colnames(color_data) <- c("timebin", "station", "level")
-      if(class(color_data$level)[1] %in% c("numeric","integer")){
-        color_data$color <- round(scales::rescale(color_data$level, to=c(1,256)))
+      color_data <- color_data[order(color_data$timebin),]
+      if(inherits(color_data$level, "numeric")){
+        color_data$color <- round(scales::rescale(color_data$level, to=c(1,100)))
       }else{
         color_data$level <- factor(color_data$level, levels=levels(data_group[,color.by]))
-        color_data$color <- color_data$level
-        levels(color_data$color) <- 1:nlevels(color_data$color)
-        color_data$color <- as.integer(color_data$color)
+        color_data$color <- as.integer(color_data$level)
       }
       plot_data <- plyr::join(plot_data, color_data, by=c("timebin", "station"), type="left")
     }else{
@@ -299,22 +344,23 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
   if(lunar.info==T){bottom_plots <- bottom_plots-cols}
   right_plots <- apply(plot_grid, 1, min, na.rm=T)
 
-  # set color palette
-  if(is.null(color.pal)){
-    if(style=="points"){
-      if(is.null(color.by)){
-        color.pal <- "grey25"
-      } else{
-        if(class(data[,color.by])[1] %in% c("numeric","integer")){
-          color.pal <- viridis::viridis(256)
-        }else{
-          ngroups <- length(unique(data[,color.by]))
-          if(ngroups==3) {color.pal <- c("#326FA5","#D73134","#1C8E43")
-          }else if (ngroups>3 & ngroups<10){color.pal <- ggthemes::economist_pal()(ngroups)
-          }else {color.pal <- rainbow(ngroups)}
-        }
-      }
+
+  # set par margins
+  if(style=="raster"){
+    mars <- c(5,4,3,4)
+  }else if (style=="points"){
+    if(!is.null(color.by)){
+      if(inherits(data[,color.by], "numeric")) mars <- c(5,4,3,12)
+      else
+        if (legend.cols>1) mars <- c(5,4,3,10)
+        labels_size <- max(unlist(sapply(levels(data[,color.by]), nchar)))
+        if(labels_size>8 && legend.cols>1) mars <- c(5,4,3,14)
+    }else{
+      mars <- c(5,4,3,4)
     }
+  }
+  if(lunar.info==TRUE){
+    mars[3] <- 7
   }
 
 
@@ -328,14 +374,14 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
     lunar_illumination$phase <- as.character(lunar::lunar.phase(timebins, name=T))
 
     for(l in 1:cols){
-      par(mar=c(2,5,7,6), xpd=T)
+      par(mar=c(bottom_mar, left_mar, top_mar, right_mar), xpd=T)
       xcoords <- c(1, seq(1, nrow(lunar_illumination)), nrow(lunar_illumination))
       ycoords <- c(0, lunar_illumination$fraction, 0)
       plot(lunar_illumination$fraction, type="l", lwd=0.5, axes=F, ylim=c(0,1), xlim=c(1, nrow(lunar_illumination)),
            xlab="", ylab="Lunar\nIllumination", xaxs="i", yaxs="i")
       rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="#3C3C3C", border=NULL)
       polygon(x=xcoords, y=ycoords, col=adjustcolor("#FFFBEB", alpha.f=0.8), lwd=0.6)
-      axis(2, at=seq(0,1,by=0.5), labels=sprintf("%.1f", seq(0,1,by=0.5)), cex.axis=0.8, las=1)
+      axis(2, at=seq(0,1,by=0.5), labels=sprintf("%.1f", seq(0,1,by=0.5)), cex.axis=cex.axis, las=1)
       box()
       moon_cycles <- rle(lunar_illumination$phase)
       lunar_illumination$cycle <- rep(1:length(moon_cycles$lengths), moon_cycles$lengths)
@@ -364,6 +410,8 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
   ############################################################################
   # iterate through each data group/variable #################################
 
+  par(mar=mars, mgp=c(3,0.7,0))
+
   for(i in 1:nrow(plot_combs)){
 
     # set variables
@@ -374,12 +422,10 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
                          "co-occurrences"="Nº of co-occurring animals")
     if(!is.null(split.by)){plot_title <- paste(group, "-", plot_title)}
 
-    par(mar=c(5,5,3,6), mgp=c(3,0.7,0))
-
     # get diel phase timelines
     days <- as.POSIXct(rownames(plot_template[[i]]), "%Y-%m-%d", tz="UTC")
     bins <- colnames(plot_template[[i]])
-    interval <- as.numeric(difftime(data$timebin, data.table::shift(data$timebin), units="mins"))
+    interval <- as.numeric(difftime(data[,timebin.col],  dplyr::lag(data[,timebin.col]), units="mins"))
     interval <- min(interval[interval>0], na.rm=T)
     daytimes_table <- getSunTimes(sunriset.coords, min(days), max(days), by="%Y-%m-%d", solar.depth)
     daytimes_table[,-1] <- daytimes_table[,-1] * (60/interval)
@@ -413,21 +459,37 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
     ##########################################################
     # if style is set to raster use "image"   ################
     if(style=="raster"){
-      if(is.null(color.pal)){raster_pal <- grey.colors(max(var_range)+1, start=1, end=0)}
-      if(!is.null(color.pal)){raster_pal <- color.pal(max(var_range)+1)}
-      image(y=1:length(bins), x=1:length(days), zlim=var_range, z=plot_template[[i]],  xlab="", ylab="",
+      if(is.null(color.pal)){raster_pal <- viridis::viridis(max(var_range))}
+      if(!is.null(color.pal)){raster_pal <- color.pal(max(var_range))}
+      plot_matrix <- reshape2::dcast(plot_data, formula="day~hour", value.var="var", fill=0, fun.aggregate=max, drop=F)
+      missing_hours <- base::setdiff(colnames(plot_template[[i]]), colnames(plot_matrix))
+      missing_days <- base::setdiff(rownames(plot_template[[i]]), plot_matrix$day)
+      if(length(missing_hours)>0) {
+        plot_matrix[missing_hours] <- NA
+        plot_matrix <- plot_matrix[,order(colnames(plot_matrix))]
+      }
+      if(length(missing_days)>0) {
+        missing_days <- data.frame("day"=missing_days)
+        plot_matrix <- dplyr::bind_rows(plot_matrix, missing_days)
+      }
+      rownames(plot_matrix) <- plot_matrix$day
+      plot_matrix <- plot_matrix[,-which(colnames(plot_matrix)=="day")]
+      plot_matrix <- plot_matrix[order(rownames(plot_matrix)),]
+      plot_matrix <- as.matrix(plot_matrix)
+      image(y=1:length(bins), x=1:length(days), zlim=var_range, z=plot_matrix,  xlab="", ylab="",
             main="", col=raster_pal, axes=F, cex.lab=0.9, ...)
     }
 
     ##########################################################
-    # else, if style is set to points use "plot"
+    # else, if style is set to points use "plot" ############
     if(style=="points"){
 
       # create empty plot and fill background
       plot(0,0, type="n", xlim=c(1, nrow(plot_template[[i]])), ylim=c(1, ncol(plot_template[[i]])), pch=16,
-           xlab="", ylab="", axes=F, xaxs="i", ...)
+           xlab="", ylab="", axes=F, xaxs="i")
+      coords_list <- list()
       if(polygons=="season"){
-        seasons_table <- shadeSeasons(min(data$timebin, na.rm=T), max(data$timebin, na.rm=T), interval)
+        seasons_table <- shadeSeasons(min(data[,timebin.col], na.rm=T), max(data[,timebin.col], na.rm=T), interval)
         seasons_table$start <- strftime(seasons_table$start, "%Y-%m-%d", tz="UTC")
         seasons_table$end <- strftime(seasons_table$end, "%Y-%m-%d", tz="UTC")
         seasons_table$start <- sapply(seasons_table$start, function(x) min(which(as.character(days)==x)))
@@ -437,8 +499,10 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
         rect(xleft=seasons_table$start, xright=seasons_table$end, ybottom=par("usr")[3], ytop=par("usr")[4], col=seasons_table$color, border=NA)
         seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
         seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
-        moby:::legend2("right", legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
-                           inset=c(-0.18, 0), xpd=T, y.intersp=1.6, box.cex=c(1.6, 1.2), cex=0.8, horiz=F)
+        coords <- moby:::legend2(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
+                                 xpd=T, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=F)
+        coords_list <- c(coords_list, list(coords))
+
       } else if(polygons=="diel"){
         rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="grey98", border=NULL)
         x <- 1:length(daytimes_table$sunrises)
@@ -463,17 +527,26 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
       y_indexes <- unlist(sapply(plot_data$hour, function(x) which(colnames(plot_template[[i]])==x), simplify=F))
       points(x=x_indexes, y=y_indexes, pch=16, cex=plot_data$cex, col=adjustcolor(color.pal[plot_data$color], alpha.f=0.7))
 
-      # draw legend
+      # draw legend for point sizes
       size_labs <- pretty(var_range)
       size_labs <- unique(round(size_labs))
       size_labs <- size_labs[size_labs>=min(var_range) & size_labs<=max(var_range) & size_labs>0]
       size_scale <- scales::rescale(size_labs, from=var_range, to=pt.cex)
-      legend("topright", inset=c(-0.12, 0), legend=size_labs, pch=16, pt.cex=size_scale,
-             bty="n", col=adjustcolor("grey25", alpha.f=0.7), cex=0.7, y.intersp=1.6, xpd=T)
+      if(length(coords_list)==0){legend.y<-par("usr")[4]
+      }else{legend.y<-abs(coords_list[[1]]$rect$top-coords$rect$h)+1}
+      legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
+      coords <- legend(x=legend.x, y=legend.y, legend=size_labs, pch=16, pt.cex=size_scale,
+                       bty="n", col=adjustcolor("grey25", alpha.f=0.7), cex=cex.legend, y.intersp=legend.intersp+0.2, xpd=T)
+      coords_list <- c(coords_list, list(coords))
+
+      # plot color.by legend
       if(!is.null(color.by)){
-        if(!class(data[,color.by])[1] %in% c("numeric", "integer")){
-          legend("bottomright", inset=c(-0.12, 0), pch=16, pt.cex=1.4, legend=levels(data[,color.by]), col=color.pal, bty="n",
-                 cex=0.8, y.intersp=1.2, xpd=T)
+        if(inherits(data[,color.by], "factor")) {
+          # plot legend
+          legend.y<-abs(coords$rect$top-coords$rect$h)+1
+          legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
+          legend(x=legend.x, y=legend.y, pch=16, pt.cex=1.4, legend=levels(data[,color.by]), col=color.pal, bty="n",
+                 cex=cex.legend, y.intersp=legend.intersp, ncol=legend.cols, xpd=T)
         }
       }
     }
@@ -485,12 +558,12 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
     if(same_dates==T){
       if(i %in% bottom_plots){
         title(xlab="Date", cex.lab=1)
-        axis(side=1, labels=disp_dates, at=disp_indexes, cex.axis=1)
+        axis(side=1, labels=disp_dates, at=disp_indexes, cex.axis=cex.axis)
         axis(side=1, labels=F, at=indexes, tck=-0.015, lwd.ticks=0.5)
       }
     }else{
       title(xlab="Date", cex.lab=1)
-      axis(side=1, labels=disp_dates, at=disp_indexes, cex.axis=1)
+      axis(side=1, labels=disp_dates, at=disp_indexes, cex.axis=cex.axis)
       axis(side=1, labels=F, at=indexes, tck=-0.015, lwd.ticks=0.5)
     }
 
@@ -498,17 +571,15 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
     if(i %in% right_plots){
       title(ylab="Hour", cex.lab=1)
       axis(2, at=hour_indexes[c(F,T)], labels=F, tck=-0.015, lwd.ticks=0.5)
-      axis(2, at=hour_indexes[c(T,F)], labels=disp_hours[c(T,F)], cex.axis=1, las=1)
+      axis(2, at=hour_indexes[c(T,F)], labels=disp_hours[c(T,F)], cex.axis=cex.axis, las=1)
     }
 
     # draw grid
     if(grid==T) {
-      usr <- par("usr")
-      grid_x <- seq.int(usr[1], usr[2], length.out=length(days)+1)[-c(1, length(days) + 1)]
-      grid_y <- seq.int(usr[3], usr[4], length.out=length(bins)+1)[-c(1, length(bins) + 1)]
-      segments(x0=usr[1], x1=usr[2], y0=grid_y, lty="solid", lwd=0.05, col=grid.color)
-      segments(x0=grid_x, y0=usr[3], y1=usr[4], lty="solid", lwd=0.05, col=grid.color)
+      segments(x0=par("usr")[1], x1=par("usr")[2], y0=hour_indexes, lty="solid", lwd=0.05, col=grid.color)
+      segments(x0=indexes, y0=par("usr")[3], y1=par("usr")[4], lty="solid", lwd=0.05, col=grid.color)
     }
+
     # draw diel lines
     lines(1:length(daytimes_table$sunrises), daytimes_table$sunrises, lty=2)
     if(diel.lines==4){lines(1:length(daytimes_table$dawn), daytimes_table$dawn, lty=2)}
@@ -518,16 +589,28 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
 
     # draw color legend
     if(style=="raster"){
-      fields::image.plot(y=1:length(bins), x=1:length(days), zlim=var_range, z=plot_template[[i]], legend.only=T,
-                         col=raster_pal, add=T, graphics.reset=T, axis.args=list(cex.axis=0.7), legend.mar=3)
-    } else if (!is.null(color.by)){
-      if(class(data[,color.by])[1] %in% c("numeric", "integer")){
-        color_labs <- pretty(c(min(plot_data$level), max(plot_data$level)), min.n=4)
-        color_labs <- color_labs[color_labs>=min(plot_data$level) & color_labs<=max(plot_data$level)]
-        shape::colorlegend(col=color.pal, zlim=range(plot_data$level), zval=color_labs,
-                           posx=c(0.935, 0.95), posy=c(0, 0.45), main=color.by, main.cex=0.6, digit=1, cex=0.7)
-      }
+      scale_labs <- pretty(var_range, min.n=4)
+      scale_labs <- unique(round(scale_labs))
+      fields::image.plot(y=1:length(bins), x=1:length(days), zlim=var_range, z=plot_matrix, legend.only=T, legend.shrink=0.7, legend.width=1,
+                        col=raster_pal, add=T, graphics.reset=T, axis.args=list(scale_labs, cex.axis=cex.axis), legend.mar=3, legend.cex=cex.legend)
+      #shape::colorlegend(col=raster_pal, zlim=var_range, zval=scale_labs, digit=1, xpd=T,
+      #                   posx=c(0.89, 0.91), posy=c(0.25,0.75), main="", main.cex=cex.legend, cex=cex.legend-0.1)
+
+
+    }else if(!is.null(color.by) && inherits(data[,color.by], "numeric")){
+      # plot color scale
+      dx <- par("usr")[2]-par("usr")[1]
+      legend.x <- max(unlist(lapply(coords_list, function(x) x$rect$left+x$rect$w)))
+      legend.x <- legend.x + dx*0.025
+      legend.x <- c(legend.x, legend.x + dx*0.016)
+      legend.x <- graphics::grconvertX(legend.x, from="user", to="ndc")
+      scale_labs <- pretty(data[,color.by], min.n=4)
+      scale_labs <- scale_labs[scale_labs>=min(data[,color.by]) & scale_labs<=max(data[,color.by])]
+      digits <- max(moby:::decimalPlaces(scale_labs))
+      shape::colorlegend(col=color.pal, zlim=range(data[,color.by], na.rm=T), zval=scale_labs, digit=digits, xpd=T,
+                         posx=c(legend.x[1], legend.x[2]), posy=c(0.4,0.9), main=color.by, main.cex=cex.legend, cex=cex.legend-0.1)
     }
+
 
   }
 
@@ -540,7 +623,7 @@ plotLevels <- function(data, tagging.dates=NULL, variables="detections", split.b
 #######################################################################################################
 
 aggFun <- function(data){
-  if(class(data)[1] %in% c("numeric","integer")){
+  if(inherits(data, "numeric")){
     return(mean(data, na.rm=T))
   }else{
     return(names(table(data))[which.max(table(data))])

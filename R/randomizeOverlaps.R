@@ -252,7 +252,7 @@ randomize <- function(data, id.cols) {
   data_subset <- split(data, f=data$subset)
   data_subset <- lapply(data_subset, function(x) x[,c(1,id.cols)])
   data_random <- lapply(data_subset, sampleCols)
-  data_random <- data.table::rbindlist(data_random)
+  data_random <- dplyr::bind_rows(data_random)
   data_random <- data_random[order(data_random$timebin),]
   return(as.data.frame(data_random))
 }

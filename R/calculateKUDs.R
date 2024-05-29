@@ -39,6 +39,11 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
   # measure running time
   start.time <- Sys.time()
 
+  # check if adehabitatHR package is installed
+  if (!requireNamespace("adehabitatHR", quietly=TRUE)) {
+    stop("The 'adehabitatHR' package is required for this function but is not installed. Please install 'adehabitatHR' using install.packages('adehabitatHR') and try again.")
+  }
+
   # check if data contains id.col
   if(!id.col %in% colnames(data)){
     stop("ID column not found. Please assign the correct column name with 'id.col'")

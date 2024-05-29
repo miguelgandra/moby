@@ -17,8 +17,8 @@ plotAbacus(
   date.format = "\%b",
   date.interval = 4,
   date.start = 1,
-  top.mural = F,
-  season.shade = F,
+  top.mural = "\%Y",
+  season.shade = T,
   background.col = "grey96",
   pch = 16,
   pt.cex = 1,
@@ -37,69 +37,78 @@ plotAbacus(
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{datetime.col}{Name of the column containing time bins in POSIXct format.
-Defaults to 'datetime'.}
+\item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
-\item{color.by}{Variable defining the color group of individual detections.
-Can be used for example to display detections by receiver, animal trait or temporal category.}
+\item{color.by}{Name of the column used to color-code individual detections.
+This parameter can be used for example to differentiate detections by station,
+animal trait, or temporal category. If NULL, all detections will be plotted in a single color.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.}
+\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
+The length of this vector should match the number of unique animal IDs.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
-\item{tag.durations}{Optional. A  numeric vector containing the estimated battery
-duration of the deployed tags (in days). If a single value is provided, it will be used to all IDs.}
+\item{tag.durations}{Optional. A numeric vector containing the estimated battery
+duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
 
-\item{id.groups}{Optional. A list containing ID groups, used to
-visually aggregate animals belonging to the same class (e.g. different species).}
+\item{id.groups}{Optional. A named list containing ID groups used to visually aggregate
+animals belonging to the same class (e.g., different species, sexes or ages). Each element of
+the list should be a vector of IDs that belong to the same group.}
 
-\item{discard.missing}{If true, animals without detections are not included. Defaults to false.}
+\item{discard.missing}{Logical. If TRUE, animals without detections will not be
+included in the plot. Defaults to FALSE.}
 
-\item{color.pal}{Color palette used to plot detections per group level
-(as defined by the color.by argument). Defaults to ggthemes::economist_pal or
-rainbow, depending on the number of 'color.by' levels.}
+\item{color.pal}{A vector of colors defining the color palette used to plot detections per group level
+(as defined by the 'color.by' argument).}
 
-\item{date.format}{Date-time format (as used in \code{\link[base]{strptime}}),
-defining the x-axis labels. Defaults to month ("\%b").}
+\item{date.format}{A string defining the date-time format for the x-axis labels
+(as used in \code{\link[base]{strptime}}). Defaults to month ("\%b").}
 
-\item{date.interval}{Number defining the interval between each
-displayed date (x-axis label). Defaults to 4.}
+\item{date.interval}{A numeric value defining the interval between each
+displayed date on the x-axis. Defaults to 4.}
 
-\item{date.start}{Integer defining the first displayed date (can be used in combination
-with 'date.interval" to better control the x-axis labels). Defaults to 1.}
+\item{date.start}{An integer defining the first displayed date (can be used in
+combination with 'date.interval' to better control the x-axis labels). Defaults to 1.}
 
-\item{top.mural}{Include top mural containing additional time labels?
-If so, defines the date-time format of the labels (as used by \code{\link[base]{strptime}}).}
+\item{top.mural}{A string defining the date-time format for the optional top mural
+containing additional time labels (as used in \code{\link[base]{strptime}}).
+If set to FALSE, the top mural is not included. Defaults to year ("\%Y").}
 
-\item{season.shade}{Boolean indicating if the background should be shaded
-according with the respective season. See \code{\link{shadeSeasons}}.}
+\item{season.shade}{Logical. If TRUE, the background is shaded based on
+annual seasons. See \code{\link{shadeSeasons}} for details. Defaults to TRUE.}
 
-\item{background.col}{If season.shade is set to false, defines the background
-color of the plot.}
+\item{background.col}{A string specifying the background color of the plot.
+Used if season.shade is set to FALSE. Defaults to "grey96".}
 
-\item{pch}{Plotting ‘character’, i.e., symbol to use. Defaults to 16.}
+\item{pch}{Plotting character, i.e., the symbol to use for detections. Defaults to 16 (filled circle).}
 
-\item{pt.cex}{Expansion factor(s) for the points (detections).}
+\item{pt.cex}{Numeric. The expansion factor for the points (detections). Defaults to 1.}
 
-\item{transparency}{Transparency level of the detections (points).}
+\item{transparency}{Numeric. The transparency level of the detections (points),
+ranging from 0 (fully opaque) to 1 (fully transparent). Defaults to 0.}
 
-\item{highlight.isolated}{If a 'color.by' variable is defined, detections are ordered
-and plotted according to their "density", with isolated detections being brought forward
-to prevent them from being hidden behind denser point clouds.}
-
-\item{cex.lab}{Determines the size of the y-axis and y-axis labels. Defaults to 0.8.}
+\item{highlight.isolated}{Logical. If TRUE and a 'color.by' variable is defined,
+detections are sorted and plotted based on their "density" distribution, with isolated detections
+brought forward to prevent them from being hidden behind denser point clouds
+(i.e., more densely clustered points of the same 'color.by' class). Defaults to TRUE.}
 
 \item{cex.axis}{Determines the size of the text labels on the axes. Defaults to 0.7.}
 
 \item{cex.legend}{Determines the size of the color legend. Defaults to 0.7.}
 
-\item{cex.mural}{Determines the size of the labels in the optional date top mural. Defaults to 0.7.}
+\item{cex.mural}{Determines the size of the labels in the optional top mural. Defaults to 0.7.}
 
 \item{legend.intersp}{Vertical distances between legend elements
 (in lines of text shared above/below each legend entry). Defaults to 1.2.}
 
-\item{legend.cols}{Determines the  number of columns in which to set the legend items.
-If left null, it is set automatically based on the number of levels.}
+\item{legend.cols}{Integer. The number of columns in which to set the legend items.
+If NULL, it is set automatically based on the number of levels. Defaults to NULL.}
+}
+\value{
+Generates an abacus plot
 }
 \description{
 Produces an abacus plot, displaying color-coded detections of
-tagged individuals over the monitoring period.
+tagged individuals over the monitoring period. The function allows for various
+customization options to cater to specific visualization needs, including
+different color schemes, date formats, and handling of missing data.
 }

@@ -129,7 +129,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
 
 
   # get time bins interval (in minutes)
-  interval <- difftime(data$timebin, data.table::shift(data$timebin), units="min")
+  interval <- difftime(data$timebin, dplyr::lag(data$timebin), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=T))
 
 

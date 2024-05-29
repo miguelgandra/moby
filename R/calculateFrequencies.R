@@ -34,7 +34,7 @@ calculateFrequencies <- function(table, n.individuals, tagging.dates, type="dete
   missing_individuals <- names(which(is.na(last.detections)))
 
   # get time bins interval (in hours)
-  interval <- unique(as.numeric(difftime(data.table::shift(table$timebin, type="lead"), table$timebin, units="mins")))
+  interval <- unique(as.numeric(difftime(dplyr::lead(table$timebin), table$timebin, units="mins")))
   interval <- interval[!is.na(interval)]
 
   # retrieve animal IDs

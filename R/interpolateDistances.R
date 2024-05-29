@@ -48,7 +48,7 @@ interpolateDistances <- function(data, id.col="ID", dist.col="dist_m", keep.inte
     if(nrow(data_out)<=1) {data_list[[i]] <- data_out; next}
 
     # add missing (in-between) timebins
-    interval <- difftime(data_out$timebin, data.table::shift(data_out$timebin), units="min")
+    interval <- difftime(data_out$timebin, dplyr::lag(data_out$timebin), units="min")
     interval <- as.numeric(min(interval[interval>0], na.rm=T))
     complete_seq <- seq.POSIXt(from=min(data_out$timebin), to=max(data_out$timebin), by=interval*60)
     complete_seq <- data.frame("timebin"=complete_seq, "ID"=unique(data_out[,id.col]))

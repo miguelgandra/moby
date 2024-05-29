@@ -55,7 +55,7 @@ plotFFTs <- function(data, tagging.dates, type="detections", axis.periods=c(48,2
   }
 
   # get time bin interval
-  interval <- difftime(data$timebin, data.table::shift(data$timebin), units="min")
+  interval <- difftime(data$timebin, dplyr::lag(data$timebin), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=T))
   time_fraction <- 60/interval
 

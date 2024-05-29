@@ -79,7 +79,7 @@ calculateLandDists <- function(data, land.shape, mov.threshold=0.5, id.col="ID",
   pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)
   for(i in 1:length(data_individual)){
     data_animal <- data_individual[[i]]
-    data_animal$land_diff <- data.table::shift(data_animal$land_dist, type="lead") - data_animal$land_dist
+    data_animal$land_diff <- dplyr::lead(data_animal$land_dist) - data_animal$land_dist
     data_animal$land_diff <- round(data_animal$land_diff, 2)
     if(!is.null(dist.col)){
       data_animal$land_ratio <- round(abs(data_animal$land_diff)/data_animal[,dist.col], 2)

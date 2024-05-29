@@ -1,37 +1,41 @@
 Package: moby
 Title: A R package for streamlined biotelemetry analyses and data visualization.
 Version: 1.0.0
-Authors@R: 
-    person("Miguel", "Gandra", , "m3gandra@gmail.com", role = c("aut", "cre"),
-           comment = c(ORCID = "0000-0003-1506-5141"))
-Description: moby provides a comprehensive suite of functions and methods specifically tailored for processing, visualizing, and interpreting passive acoustic telemetry data.
+Authors@R: person("Miguel", "Gandra", , "m3gandra@gmail.com", role = c("aut", "cre"), 
+		  comment = c(ORCID = "0000-0003-1506-5141"))
+Description: moby provides a comprehensive suite of functions and methods specifically tailored 
+	     for processing, visualizing, and interpreting passive acoustic telemetry data.
 License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a license
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
-	data.table,
+	dplyr,
+	plyr,
 	raster,
 	gdistance,
 	geosphere,
 	sp,
 	plotrix,
 	proxy,
-	dplyr,
-	plyr,
 	suntools,
-	adehabitatHR,
 	zoo,
 	reshape2,
-	ggthemes,
-	TSA,
-	qgraph,
 	knitr,
 	lubridate,
-	lunar,
 	fields,
 	scales,
 	packcircles,
 	parallel,
 	doParallel,
 	foreach
+Suggests:
+	adehabitatHR,
+	qgraph,
+	wavScalogram,
+	TSA,
+	TropFishR,
+	igraph,
+	lunar
+URL: https://github.com/miguelgandra/moby
+BugReports: https://github.com/miguelgandra/moby/issues

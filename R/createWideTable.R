@@ -10,7 +10,6 @@
 #'
 #' @param data A data frame containing animal detections with corresponding time-bins.
 #' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param timebin.col Name of the column containing timebins . Defaults to 'timebin'.
 #' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
 #' @param value.col The values to be assigned to each entry, should match a column
 #' in the supplied data (except if set to "detections"). If set to "detections" and no detections
@@ -42,20 +41,13 @@ createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
   ##############################################################################
 
   # check if data contains id.col
-  if(!id.col %in% colnames(data)) {
-    stop("ID column not found. Please specify the correct column using 'id.col'")
-  }
-
+  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
   # check if data contains timebin.col
-  if(!timebin.col %in% colnames(data)){
-    stop("Timebin column not found. Please specify the correct column using 'timebin.col'")
-  }
-
+  if(!timebin.col %in% colnames(data)) stop("Time-bin column not found. Please specify the correct column using 'timebin.col'")
   # check if timebins are in the right format
-  if(!grepl("POSIXct", paste(class(data[,timebin.col]), collapse=" "))){
-    stop("Timebins must be provided in POSIXct format")
-  }
+  if(!inherits(data[, timebin.col], "POSIXct")) stop("Time-bins must be provided in POSIXct format")
 
+  # check if data containes value.col
   if(!value.col %in% colnames(data)) {
     if(value.col=="detections"){
       cat("Warning: No 'detections' column found, assuming one detection per row\n")
@@ -65,15 +57,16 @@ createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
     }
   }
 
+  # convert IDs to factor
   if(class(data[,id.col])!="factor") {
     data[,id.col] <- as.factor(data[,id.col])
     cat("Warning: 'id.col' converted to factor\n")
   }
 
+  # validate start dates
   if(!is.null(start.dates)){
-    if(!grepl("POSIXct", paste(class(start.dates), collapse=" "))){
-      stop("'start.dates' must be provided in POSIXct format")
-    }
+    if(!inherits(start.dates, "POSIXct")) stop("'start.dates' must be provided in POSIXct format")
+
     if(length(start.dates)>1 & length(start.dates)!=nlevels(data[,id.col])){
       stop("Incorrect number of start.dates. Must be either a single value or
            a vector containing a start date for each individual")
@@ -83,10 +76,10 @@ createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
     }
   }
 
+  # validate end dates
   if(!is.null(end.dates)){
-    if(!grepl("POSIXct", paste(class(end.dates), collapse=" "))){
-      stop("'end.dates' must be provided in POSIXct format")
-    }
+    if(!inherits(end.dates, "POSIXct")) stop("'end.dates' must be provided in POSIXct format")
+
     if(length(end.dates)>1 & length(end.dates)!=nlevels(data[,id.col])){
       stop("Incorrect number of end.dates. Must be either a single value or
              a vector containing a end date for each individual")
@@ -169,13 +162,15 @@ createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
   }
 
   # get time bins interval (in minutes)
-  interval <- difftime(data[,timebin.col], data.table::shift(data[,timebin.col]), units="min")
+  interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=T))
 
 
   # create complete sequence of timebins for the study duration
   # round dates if needed
   if(round.dates==T){
+    start <- as.POSIXct(floor(as.numeric(min(start.dates, na.rm=T))/(24*60*60))*24*60*60, origin='1970-01-01')
+
     start <-  lubridate::floor_date(min(start.dates, na.rm=T), unit="day")
     end <- lubridate::ceiling_date(max(end.dates, na.rm=T), unit="day")-60*60*(interval/60)
   } else {
