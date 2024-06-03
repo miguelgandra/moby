@@ -24,7 +24,6 @@ Imports:
 	knitr,
 	lubridate,
 	fields,
-	scales,
 	packcircles,
 	parallel,
 	doParallel,

@@ -6,10 +6,10 @@
 \usage{
 filterDetections(
   data,
-  tagging.dates,
+  tagging.dates = getDefaults("tagging.dates"),
   cutoff.dates = NULL,
-  id.col = "ID",
-  datetime.col = "datetime",
+  id.col = getDefaults("id"),
+  datetime.col = getDefaults("datetime"),
   min.detections = 0,
   min.days = 0,
   hours.threshold = 24,

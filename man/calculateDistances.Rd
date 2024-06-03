@@ -10,9 +10,9 @@ calculateDistances(
   epsg.code = NULL,
   grid.resolution = 100,
   mov.directions = 16,
-  id.col = "ID",
-  lon.col = "lon",
-  lat.col = "lat",
+  id.col = getDefaults("id"),
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat"),
   verbose = TRUE
 )
 }

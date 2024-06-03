@@ -12,22 +12,30 @@ getDielPhase(datetime, coordinates, phases = 2, solar.depth = 18)
 \item{coordinates}{A SpatialPoints or matrix object containing longitude and
 latitude coordinates (in that order) at which to estimate sunrise and sunset times.}
 
-\item{phases}{Number of diel phases to return.}
+\item{phases}{Integer indicating the number of diel phases to return (2, 3, or 4).}
 
-\item{solar.depth}{Angle of the sun below the horizon (in degrees). Passed the
-solarDep argument in \code{\link[suntools]{crepuscule}} function.}
+\item{solar.depth}{Numeric value indicating the angle of the sun below the horizon (in degrees).
+Passed to the \code{\link[suntools]{crepuscule}} function.}
 }
 \value{
-Factor with diel phase
+A factor indicating the diel phase.
 }
 \description{
-Function to retrieve diel phase (e.g. day/night) in which detections occurred.
-Number of retrieved levels can be set by the 'phases' argument:
-• phases=2:  day | night
-• phases=3:  day| crepuscule | night
-• phases=4:  dawn | day | dusk | night
-Crepuscular periods can be defined based on the different solar elevation angles:
-• solar.depth=6: civil twilight
-• solar.depth=12: nautical twilight
-• solar.depth=18: astronomical twilight
+Function to retrieve diel phase (e.g. day/night) for given datetimes and coordinates.\cr
+
+The number of retrieved levels can be set by the 'phases' argument:\cr
+• phases=2:  day | night\cr
+• phases=3:  day | crepuscule | night\cr
+• phases=4:  dawn | day | dusk | night\cr
+
+Crepuscular periods can be defined based on different solar elevation angles:\cr
+• solar.depth=6: civil twilight\cr
+• solar.depth=12: nautical twilight\cr
+• solar.depth=18: astronomical twilight\cr
+}
+\examples{
+datetime <- as.POSIXct("2024-05-30 12:00:00")
+coordinates <- c(-7.997, 37.008)
+getDielPhase(datetime, coordinates, phases=4, solar.depth=12)
+
 }

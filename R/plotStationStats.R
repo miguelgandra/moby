@@ -304,7 +304,7 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
 
     # add legend if more than two types
      if(length(type)>=2){
-      moby:::legend2(legend.pos, legend=rownames(station_freqs), horiz=legend.style, fill=color.pal, bty="n",
+      moby:::legend(legend.pos, legend=rownames(station_freqs), horiz=legend.style, fill=color.pal, bty="n",
                          y.intersp=1.4, cex=0.7, box.cex=c(1.2, 1))
      }
 

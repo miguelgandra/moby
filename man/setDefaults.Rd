@@ -8,8 +8,9 @@ setDefaults(
   id.col = NULL,
   datetime.col = NULL,
   timebin.col = NULL,
-  tagging.dates = NULL,
-  tag.durations = NULL
+  lon.col = NULL,
+  lat.col = NULL,
+  tagging.dates = NULL
 )
 }
 \arguments{
@@ -19,12 +20,13 @@ setDefaults(
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
+\item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
+
+\item{lat.col}{Name of the column containing latitude values (unprojected). Defaults to 'lat'.}
+
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
 The length of this vector should match the number of unique animal IDs.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
-
-\item{tag.durations}{A numeric vector containing the estimated battery
-duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
 }
 \description{
 This function updates the default parameters for the 'moby' package.
@@ -39,7 +41,6 @@ setDefaults(
   datetime.col = "timestamp",
   timebin.col = "time_bin",
   tagging.dates = c("2020-01-01", "2020-06-01"),
-  tag.durations = c(365, 820)
 )
 
 # Retrieving default parameters using getDefaults

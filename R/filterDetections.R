@@ -48,7 +48,8 @@
 #' @export
 
 
-filterDetections <- function(data, tagging.dates, cutoff.dates=NULL, id.col="ID", datetime.col="datetime",
+filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), cutoff.dates=NULL,
+                             id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
                              min.detections=0, min.days=0, hours.threshold=24,
                              max.speed=NULL, speed.unit="m/s", acoustic.range=600,
                              land.shape=NULL, epsg.code=NULL,... ) {
@@ -63,8 +64,12 @@ filterDetections <- function(data, tagging.dates, cutoff.dates=NULL, id.col="ID"
   if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
   # check if data contains datetime.col
   if(!datetime.col %in% colnames(data)) stop("Datetime column not found. Please specify the correct column using 'datetime.col'")
+  # check if tagging.dates were supplied
+  if(is.null(tagging.dates)) stop("Tagging dates not specified. Please provide the required dates via the 'tagging.dates' argument")
   # check if datetimes are in the right format
   if(!grepl("POSIXct", paste(class(data[, datetime.col]), collapse = " "))) stop("Datetimes must be provided in POSIXct format")
+  # check if tagging.dates were supplied
+  if(is.null(tagging.dates)) stop("Tagging dates not specified. Please provide the required dates via the 'tagging.dates' argument")
   # check if tagging.dates are in the right format
   if(!grepl("POSIXct", paste(class(tagging.dates), collapse = " "))) stop("'tagging.dates' must be provided in POSIXct format")
   # check if tagging.dates are in the right format

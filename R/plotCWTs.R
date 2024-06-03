@@ -229,7 +229,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
     axis(1, labels=F, at=indexes, tck=-0.02, lwd.ticks=0.5)
 
     # plot scale axis
-    period_indexes <- scales::rescale(log2(axis.periods*60), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    period_indexes <- moby:::rescale(log2(axis.periods*60), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
     axis(2, at=period_indexes, labels=axis.periods, cex.axis=cex.axis, las=1)
 
     # add guide lines
@@ -237,7 +237,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
 
     # plot cone of influence
     x <- 1:nrow(cwt$coefs)
-    coi_indexes <- scales::rescale(cwt$coi_maxscale, from=range(cwt$scales), to=c(1, length(cwt$scales)))
+    coi_indexes <- moby:::rescale(cwt$coi_maxscale, from=range(cwt$scales), to=c(1, length(cwt$scales)))
     segments(x0=x[-nrow(cwt$coefs)], y0=coi_indexes[-nrow(cwt$coefs)], x1=x[-1], y1=coi_indexes[-1])
     polygon(c(x, rev(x)), c(coi_indexes, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=F)
 

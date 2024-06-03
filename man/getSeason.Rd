@@ -2,30 +2,35 @@
 % Please edit documentation in R/getSeason.R
 \name{getSeason}
 \alias{getSeason}
-\title{Estimate annual season.}
+\title{Estimate annual season}
 \usage{
 getSeason(date, hemisphere = "Northern")
 }
 \arguments{
 \item{date}{A POSIXct object containing the respective datetimes or time-bins.}
 
-\item{hemisphere}{Earth hemisphere for which to calculate seasons.}
+\item{hemisphere}{A character string specifying the hemisphere ("Northern" or "Southern").}
 }
 \value{
-Factor with season
+A factor indicating the season.
 }
 \description{
-In temperate and sub-polar regions, 4 seasons based on the Gregorian calendar
-(meteorological definition) are generally recognized:
-Northern Hemisphere:
-• Spring: March - May
-• Summer: June - August
-• Autumn: September - November
-• Winter: December - February
+This function determines the meteorological season for a given date based on the
+meteorological definition, which divides the year into four seasons of three months each:\cr
 
-Southern Hemisphere
-• Spring: September - November
-• Summer: December - February
-• March - May
-• Winter: June - August
+Northern Hemisphere:\cr
+• Spring: March - May\cr
+• Summer: June - August\cr
+• Autumn: September - November\cr
+• Winter: December - February\cr
+
+Southern Hemisphere:\cr
+• Spring: September - November\cr
+• Summer: December - February\cr
+• Autumn: March - May\cr
+• Winter: June - August\cr
+}
+\examples{
+date <- as.POSIXct("2024-05-30")
+getSeason(date, hemisphere="Northern")
 }

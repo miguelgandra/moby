@@ -228,7 +228,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
       plot_sub <- paste0("(n=", plot_sub, ")")
 
       # generate plot
-      moby:::filled.contour3(x=1:12, y=0:24, z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
+      moby:::filled.contour(x=1:12, y=0:24, z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
                       xlab="Months", ylab="Hours", nlevels=100, color.palette=color.pal, cex.lab=cex.lab, zlim=scale,
                       plot.axes = {
                         axis(1, labels=month.abb, at=1:12, cex.axis=cex.axis, pos=0)

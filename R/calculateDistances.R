@@ -7,6 +7,7 @@
 #' @description Function to calculate the shortest path in water between consecutive positions.
 #' If no land.shape is provided, linear ('great-circle') distances are calculated instead.
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame with animal positions, containing longitude and latitude values (unprojected).
 #' @param land.shape A  shape file containing coastlines.
 #' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
@@ -14,9 +15,6 @@
 #' @param grid.resolution Grid cell size in meters  over which shortest paths are going to be estimated.
 #' @param mov.directions Number of directions allowed for shortest path calculation.
 #' Passed to \link[gdistance]{transition}.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param lon.col Name of the column containing longitude values (unprojected). Defaults to 'lon'.
-#' @param lat.col Name of the column containing latitude values (unprojected). Defaults to 'lat'.
 #' @param verbose Output process info and progress bar to console? Defaults to TRUE.
 #' @return A data frame containing (minimum) distances traveled between each consecutive animal position,
 #' calculated separately for each individual.
@@ -24,7 +22,8 @@
 
 
 calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resolution=100, mov.directions=16,
-                               id.col="ID", lon.col="lon", lat.col="lat", verbose=TRUE){
+                               id.col=getDefaults("id"), lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
+                               verbose=TRUE){
 
 
   ############################################################################
@@ -34,19 +33,9 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
   # measure running time
   start.time <- Sys.time()
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
-  # check if data contains lon.col
-  if(!lon.col %in% colnames(data)) stop("Longitude column not found. Please specify the correct column using 'lon.col'")
-  # check if data contains lon.col
-  if(!lat.col %in% colnames(data)) stop("Latitude column not found. Please specify the correct column using 'lat.col'")
-
-
-  # check if id.col is a factor
-  if(class(data[,id.col])!="factor"){
-    data[,id.col] <- as.factor(data[,id.col])
-    cat(paste("Converting", id.col, "to factor\n"))
-  }
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- validateArguments()
+  data <- reviewed_params$data
 
   # check if dataset coordinates are in geographic format (unprojected)
   geographic_coords <-  all(data[,lon.col]>=(-180) & data[,lon.col]<=180 & data[,lat.col]>=(-90) & data[,lat.col]<=90)

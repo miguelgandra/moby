@@ -7,9 +7,9 @@
 getDefaults(var)
 }
 \arguments{
-\item{var}{A character string specifying the variable name for which to retrieve the default
-setting. Accepted values are "id.col", "datetime.col", "timebin.col", "tagging.dates", and "tag.durations".
-The first three can also be accessed using their abbreviated forms: "id", "datetime", and "timebin".}
+\item{var}{A character string specifying the variable name for which to retrieve the default setting.
+Accepted values are "id.col", "datetime.col", "timebin.col", "tagging.dates", and "tag.durations".
+Alternatively, these values can also be accessed using their abbreviated forms: "id", "datetime", "timebin", and "tagdates".}
 }
 \value{
 The current default setting for the specified variable.

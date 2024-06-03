@@ -5,21 +5,23 @@
 \title{Detection plots}
 \usage{
 plotDetections(
-  binned.data,
-  tagging.dates,
+  data,
+  id.col = getDefaults("id"),
+  datetime.col = getDefaults("datetime"),
+  tagging.dates = getDefaults("tagging.dates"),
+  tag.durations = NULL,
   id.groups = NULL,
+  discard.missing = T,
   color.by = NULL,
   color.pal = NULL,
   date.format = "\%b/\%y",
   date.interval = 4,
   date.start = 1,
   sunriset.coords,
-  id.col = "ID",
-  discard.missing = T,
+  diel.lines = 2,
   background.color = "gray96",
   highlight.isolated = T,
   pt.cex = 1.5,
-  crepuscular.lines = F,
   grid = F,
   grid.color = "white",
   cols = 2,
@@ -27,12 +29,21 @@ plotDetections(
 )
 }
 \arguments{
-\item{binned.data}{A data frame containing animal detections with corresponding time-bins (must contain a 'timebin' column).}
+\item{data}{A data frame containing animal detections.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
+
+\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
+The length of this vector should match the number of unique animal IDs.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}
+
+\item{discard.missing}{If true, only individuals with detections are included.
+If false, empty plots are drawn for missing individuals.}
 
 \item{color.by}{Optional. Variable defining the color group of individual detections.
 Can be used for example to depict detections of different receivers or in different habitats.}
@@ -51,10 +62,9 @@ with 'date.interval" to better control the x-axis labels). Defaults to 1.}
 \item{sunriset.coords}{A SpatialPoints or matrix object containing longitude and
 latitude coordinates (in that order) at which to estimate sunrise and sunset times.}
 
-\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
-
-\item{discard.missing}{If true, only individuals with detections are included.
-If false, empty plots are drawn for missing individuals.}
+\item{diel.lines}{Number indicating the number of diel phase lines (boundaries)
+to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
+(depicting dawn, sunrise, sunset, dusk).}
 
 \item{background.color}{Color for the plot background. Defaults to "gray96".}
 
@@ -63,8 +73,6 @@ and plotted according to their "density", with isolated detections being brought
 to prevent them from being hidden behind points' clouds. Defaults to True.}
 
 \item{pt.cex}{Expansion factor(s) for the points (detections). Defaults to 1.5.}
-
-\item{crepuscular.lines}{Boolean to indicate if "dawn" and "dusk" lines should be plotted. Defaults to False.}
 
 \item{grid}{If true, a grid is plotted (horizontal and vertical guides across the entire plot). Defaults to False.}
 

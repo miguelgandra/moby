@@ -125,7 +125,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   # (between 1% and 5% of the longitudinal axis)
   pie_min <- (extent(coordinates)[2] - extent(coordinates)[1]) * 0.01
   pie_max <- (extent(coordinates)[2] - extent(coordinates)[1])* 0.05
-  data_plot$total_freq <- scales::rescale(data_plot$total_freq, c(pie_min,pie_max))
+  data_plot$total_freq <- moby:::rescale(data_plot$total_freq, c(pie_min,pie_max))
 
   # set color palette
   if(is.null(pie.color)){
@@ -153,7 +153,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   if(is.null(scale.meters)){scale.meters <- min(pretty((par("usr")[2]-par("usr")[1])*0.15))}
   scale_xy <- moby:::getPosition(scale.pos, inset=scale.inset)
   scale_km <- scale.meters/1000
-  moby:::scalebar2(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.5, bar.lwd=0.2)
+  moby:::scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.5, bar.lwd=0.2)
   points(coordinates, pch=16, bg="black", cex=0.2)
   for(i in 1:nrow(data_plot)){segments(x0=coordinates@coords[i,1], y0=coordinates@coords[i,2], x1=pie_coords$x[i], y1=pie_coords$y[i], lwd=0.2, lty=2)}
   for(i in sector_pies){

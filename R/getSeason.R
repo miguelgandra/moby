@@ -2,40 +2,51 @@
 # Function to determine season (meteorological definition) ############################################
 #######################################################################################################
 
-#' Estimate annual season.
+#' Estimate annual season
 #'
-#' @description In temperate and sub-polar regions, 4 seasons based on the Gregorian calendar
-#' (meteorological definition) are generally recognized:
-
-#' Northern Hemisphere:
-#'  • Spring: March - May
-#'  • Summer: June - August
-#'  • Autumn: September - November
-#'  • Winter: December - February
+#' @description This function determines the meteorological season for a given date based on the
+#' meteorological definition, which divides the year into four seasons of three months each:\cr
 #'
-#' Southern Hemisphere
-#'  • Spring: September - November
-#'  • Summer: December - February
-#'  • March - May
-#'  • Winter: June - August
+#' Northern Hemisphere:\cr
+#'  • Spring: March - May\cr
+#'  • Summer: June - August\cr
+#'  • Autumn: September - November\cr
+#'  • Winter: December - February\cr
+#'
+#' Southern Hemisphere:\cr
+#'  • Spring: September - November\cr
+#'  • Summer: December - February\cr
+#'  • Autumn: March - May\cr
+#'  • Winter: June - August\cr
 #'
 #' @param date A POSIXct object containing the respective datetimes or time-bins.
-#' @param hemisphere Earth hemisphere for which to calculate seasons.
-#' @return Factor with season
+#' @param hemisphere A character string specifying the hemisphere ("Northern" or "Southern").
+#' @return A factor indicating the season.
+#' @examples
+#' date <- as.POSIXct("2024-05-30")
+#' getSeason(date, hemisphere="Northern")
 #' @export
-
 
 getSeason <- function(date, hemisphere="Northern") {
 
-  # convert dates to year/month and add one month (1/12)
-  yq <- zoo::as.yearqtr(zoo::as.yearmon(date, "%m/%d/%Y") + 1/12)
-  if(hemisphere=="Northern") {
-    season <- factor(format(yq, "%q"), levels=1:4, labels=c("winter", "spring", "summer", "autumn"))}
-  if(hemisphere=="Southern") {
-    season <- factor(format(yq, "%q"), levels=1:4, labels=c("summer", "autumn", "winter", "spring"))}
-  return(season)
-}
+  # validate hemisphere input
+  if (!hemisphere %in% c("Northern", "Southern")) stop("Hemisphere must be 'Northern' or 'Southern'")
 
+  # extract month
+  month <- as.integer(format(date, "%m"))
+
+  # determine season based on hemisphere
+  if (hemisphere == "Northern") {
+    season <- c("winter", "winter", "spring", "spring", "spring", "summer",
+                "summer", "summer", "autumn", "autumn", "autumn", "winter")[month]
+  } else {
+    season <- c("summer", "summer",  "autumn", "autumn", "autumn", "winter",
+                "winter", "winter", "spring", "spring", "spring", "summer")[month]
+  }
+
+  return(factor(season, levels=c("spring", "summer", "autumn", "winter")))
+
+}
 
 
 

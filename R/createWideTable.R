@@ -2,52 +2,48 @@
 ## Plot receiver statistics ###########################################################################
 #######################################################################################################
 
-#' Create detections table in wide format.
+#' Create detections table in wide format
 
 #' @description Returns a data frame object containing binned detections in the wide format
-#' (time bin x individual matrix, with values corresponding either to the receiver > detections
+#' (time bin x individual matrix, with values corresponding either to the receiver detections
 #' or the number of detections).
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing animal detections with corresponding time-bins.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
-#' @param value.col The values to be assigned to each entry, should match a column
-#' in the supplied data (except if set to "detections"). If set to "detections" and no detections
-#' column is found in the dataset, the function automatically assumes one detection per row.
+#' @param value.col The column name in the data frame whose values will be assigned
+#'  to each entry in the resulting wide-format table. If set to "detections" and no
+#'  such column exists in the dataset, the function will assume one detection per row
+#'  and create a corresponding column.
 #' @param start.dates Optional. A POSIXct vector containing the start date of the monitoring period of each
-#' animal (e.g.tag/release date of each individual). If left null, defaults to each individual's first detection.
-#' If a single value is provided, it will be used to all IDs.
-#' @param end.dates Optional. A POSIXct vector containing the tag/release date
-#' of each animal.If left null, defaults to the individual's last detections.
-#' If a single value is provided, it will be used to all IDs.
-#' @param agg.fun Function to assign the final value across each time bin.
-#' By default (if left null), it automatically adjusts based on the class type of the value.col.
-#' If this column is of type character or factor (e.g., 'station' or 'habitat'),
-#' the value is assigned based on the most frequently occurring observation within each timebin (i.e., mode).
-#' If it is numeric (e.g., number of detections), the assigned value will correspond to
-#' the sum of all observations within each timebin.
-#' @param round.dates Boolean to indicate if start and end dates should be rounded
-#' (floor of earliest tagging and ceiling of last detection).
+#' animal (e.g., tag/release date of each individual). If left null, defaults to each individual's first detection.
+#' If a single value is provided, it will be used for all IDs.
+#' @param end.dates Optional. A POSIXct vector containing a cut-off date for each animal.
+#' If left null, defaults to the individual's last detection.
+#' If a single value is provided, it will be used for all IDs.
+#' @param agg.fun A function to determine how values within each time bin are aggregated.
+#' If left NULL, the aggregation method is automatically chosen based on the type of `value.col`:
+#' for character or factor columns (e.g., 'station'), the most frequent value (mode) is used;
+#' for numeric columns (e.g., 'detections'), the sum of values is used.
+#' @param round.dates Logical. If TRUE, the start and end dates are rounded to the nearest day:
+#' the earliest start date is floored to the beginning of the day, and the latest end date is
+#' rounded up to the end of the day. This ensures that the time bins cover whole days. Defaults to FALSE.
 #' @param verbose Output ties info to console? Defaults to TRUE.
 #' @export
 
 
-createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
-                            start.dates=NULL, end.dates=NULL, agg.fun=NULL, round.dates=F, verbose=T) {
+createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"), value.col,
+                            start.dates=NULL, end.dates=NULL, agg.fun=NULL, round.dates=FALSE, verbose=TRUE) {
 
 
   ##############################################################################
   # Initial checks #############################################################
   ##############################################################################
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
-  # check if data contains timebin.col
-  if(!timebin.col %in% colnames(data)) stop("Time-bin column not found. Please specify the correct column using 'timebin.col'")
-  # check if timebins are in the right format
-  if(!inherits(data[, timebin.col], "POSIXct")) stop("Time-bins must be provided in POSIXct format")
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- moby:::validateArguments()
+  data <- reviewed_params$data
 
-  # check if data containes value.col
+  # check if data contains value.col
   if(!value.col %in% colnames(data)) {
     if(value.col=="detections"){
       cat("Warning: No 'detections' column found, assuming one detection per row\n")
@@ -57,36 +53,14 @@ createWideTable <- function(data, id.col="ID", timebin.col="timebin", value.col,
     }
   }
 
-  # convert IDs to factor
-  if(class(data[,id.col])!="factor") {
-    data[,id.col] <- as.factor(data[,id.col])
-    cat("Warning: 'id.col' converted to factor\n")
-  }
-
-  # validate start dates
-  if(!is.null(start.dates)){
-    if(!inherits(start.dates, "POSIXct")) stop("'start.dates' must be provided in POSIXct format")
-
-    if(length(start.dates)>1 & length(start.dates)!=nlevels(data[,id.col])){
-      stop("Incorrect number of start.dates. Must be either a single value or
-           a vector containing a start date for each individual")
-    }
-    if(length(start.dates)==1){
+  # check and replicate start.dates if it is a single value
+  if(!is.null(start.dates) && length(start.dates)==1){
       start.dates <- rep(start.dates, nlevels(data[,id.col]))
-    }
   }
 
-  # validate end dates
-  if(!is.null(end.dates)){
-    if(!inherits(end.dates, "POSIXct")) stop("'end.dates' must be provided in POSIXct format")
-
-    if(length(end.dates)>1 & length(end.dates)!=nlevels(data[,id.col])){
-      stop("Incorrect number of end.dates. Must be either a single value or
-             a vector containing a end date for each individual")
-    }
-    if(length(end.dates)==1){
+  # check and replicate end.dates if it is a single value
+  if(!is.null(end.dates) && length(end.dates)==1){
       end.dates <- rep(end.dates, nlevels(data[,id.col]))
-    }
   }
 
   ##############################################################################

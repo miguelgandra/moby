@@ -2,44 +2,52 @@
 ## Create summary table ###############################################################################
 #######################################################################################################
 
-#' Create summary table
+#' Generate summary table for tagged animals
 #'
-#' @description Creates a table containing information about the
-#' tagged animals (tagging dates, last detections, etc.) as well
-#' as residency metrics.
+#' @description This function generates a summary table with information about tagged animals,
+#' including tagging dates, last detection dates, and various monitoring and residency metrics. It allows for the
+#' inclusion of additional metadata and the calculation of overall means and error metrics.
 #'
-#' @param data A data frame containing binned animal detections.
-#' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
-#' If a single value is provided, it will be used to all IDs.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param id.metadata A data frame containing additional information about the tagged animals,
-#' such as length, sex or transmitter type. If more than one row exists per animal,
-#' variables are collapsed before being merged with the remaining stats.
-#' @param residency.by Variable used to calculate partial residencies (e.g. array or habitat).
+#' @inheritParams setDefaults
+#' @param data A data frame containing animal detections. Each row should represent an individual detection event,
+#' unless a 'detections' column is included to indicate the number of detections for each row.
+#' @param id.metadata A data frame containing metadata about the tagged animals, such as their length,
+#' sex, or transmitter type. If there are multiple rows per animal, variables will be collapsed before merging with other statistics.
+#' @param residency.by Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 #' Defaults to NULL.
-#' @param id.groups Optional. A list containing ID groups, used to
-#' visually aggregate animals belonging to the same class (e.g. different species or life stages).
-#' @param error.stat Statistic to present with the mean. Either standard deviation (sd) or standard error (se).
+#' @param id.groups Optional. A list where each element is a group of IDs, used for visually aggregating
+#' animals belonging to the same class (e.g., different species or life stages). If supplied, averages
+#' will be calculated independently for each group.
+#' @param error.stat The statistic to use for variability/error calculation, either 'sd' (standard deviation)
+#' or 'se' (standard error). Defaults to 'sd'.
 #' @importFrom plotrix std.error
 #' @export
 
 
-summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
-                         residency.by=NULL, id.groups=NULL, error.stat="sd") {
+summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadata=NULL, id.col=getDefaults("id"),
+                         datetime.col=getDefaults("datetime"), residency.by=NULL, id.groups=NULL, error.stat="sd") {
 
 
-  ##################################################################################
-  # Initial checks #################################################################
+  ##############################################################################
+  # Initial checks #############################################################
+  ##############################################################################
 
   # check if data contains id.col
-  if(!id.col %in% colnames(data)) {
-    stop("ID column not found. Please specify the correct column using 'id.col'")
-  }
-
-  # check if id.metadata contains id.col
-  if(!id.col %in% colnames(id.metadata)){
-    stop("ID column not found in id.metadata. Please assign the correct column name with 'id.col'")
-  }
+  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
+  # check if data contains id.col
+  if(!id.col %in% colnames(id.metadata)) stop("ID column not found in id.metadata. Please specify the correct column using 'id.col'")
+  # check if data contains datetime.col
+  if(!datetime.col %in% colnames(data)) stop("Datetime column not found. Please specify the correct column using 'datetime.col'")
+  # check if datetimes are in the right format
+  if(!grepl("POSIXct", paste(class(data[, datetime.col]), collapse = " "))) stop("Datetimes must be provided in POSIXct format")
+  # check if tagging.dates were supplied
+  if(is.null(tagging.dates)) stop("Tagging dates not specified. Please provide the required dates via the 'tagging.dates' argument")
+  # check if tagging.dates are in the right format
+  if(!grepl("POSIXct", paste(class(tagging.dates), collapse = " "))) stop("'tagging.dates' must be provided in POSIXct format")
+  # check if data contains datetime.col
+  if(!residency.by %in% colnames(data)) stop("Variable for partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'")
+   # check error function
+  if(!error.stat %in% c("sd", "se")) stop("Wrong error.stat argument, please choose between 'sd' and 'se'.")
 
   # convert IDs to factor
   if(class(data[,id.col])!="factor") {
@@ -47,12 +55,15 @@ summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
     cat("Warning: 'id.col' converted to factor\n")
   }
 
-  # check error function
-  if(!error.stat %in% c("sd", "se")){
-    stop("Wrong error.stat argument, please choose between 'sd' and 'se'.")
+  # check number of tagging dates
+  if(length(tagging.dates)>1 & length(tagging.dates)!=nlevels(data[,id.col])){
+    stop("Incorrect number of tagging.dates. Must be either a single value or
+           a vector containing a tagging date for each individual")
+  }else if(length(tagging.dates)==1){
+    tagging.dates <- rep(tagging.dates, nlevels(data[,id.col]))
   }
 
-  getError <- function(x) {
+  getErrorFun <- function(x) {
     if(error.stat=="sd"){return(sd(x, na.rm=T))}
     if(error.stat=="se"){return(plotrix::std.error(x))}
   }
@@ -68,27 +79,16 @@ summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
     id.groups <- list(levels(data[,id.col]))
   }
 
-  # check tagging.dates
-  if(!grepl("POSIXct", paste(class(tagging.dates), collapse=" "))){
-    stop("'tagging.dates' must be provided in POSIXct format")
-  }
-  if(length(tagging.dates)>1 & length(tagging.dates)!=nlevels(data[,id.col])){
-    stop("Incorrect number of tagging.dates. Must be either a single value or
-           a vector containing a tagging date for each individual")
-  }
-  if(length(tagging.dates)==1){
-    tagging.dates <- rep(tagging.dates, nlevels(data[,id.col]))
-  }
 
-
-  ##################################################################################
-  ## Prepare data ##################################################################
+  ##############################################################################
+  ## Generate table ############################################################
+  ##############################################################################
 
   # format tagging dates
   tag_dates <- strftime(tagging.dates, format="%d/%m/%Y", tz="UTC")
 
   # retrieve last detections dates
-  last_detections <- tapply(X=data$timebin, INDEX=data[,id.col], FUN=max)
+  last_detections <- tapply(X=data[,datetime.col], INDEX=data[,id.col], FUN=max)
   last_detections <- as.POSIXct(last_detections, origin='1970-01-01', tz="UTC")
   last_dates <- strftime(last_detections, format="%d/%m/%Y", tz="UTC")
 
@@ -96,6 +96,7 @@ summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
   if("detections" %in% colnames(data)){
     detections <- as.integer(aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
   }else{
+    warnin
     print("Warning: No 'detections' column found, assuming one detection per row\n")
     detections <- as.integer(table(data[,id.col]))
   }
@@ -111,7 +112,7 @@ summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
   Di[Di==0] <- NA
 
   # days with detections (Dd)
-  data$date <- strftime(data$timebin, format="%d-%m-%Y", tz="UTC")
+  data$date <- strftime(data[,datetime.col], format="%d-%m-%Y", tz="UTC")
   Dd <- aggregate(data$date, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
 
   # complete IR
@@ -164,7 +165,7 @@ summaryTable <- function(data, tagging.dates, id.metadata=NULL, id.col="ID",
     group[nrow(group)+1,] <- NA
     group$ID[nrow(group)] <- "mean"
     group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols], na.rm=T))
-    errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols], 2, getError)))
+    errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols], 2, getErrorFun)))
     group[nrow(group), numeric_cols] <- paste(group[nrow(group), numeric_cols], "±", errors)
     for(c in 1:length(numeric_cols)){
       col_number <- numeric_cols[c]

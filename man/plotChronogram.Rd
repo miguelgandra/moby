@@ -6,11 +6,11 @@
 \usage{
 plotChronogram(
   data,
-  tagging.dates = NULL,
+  tagging.dates = getDefaults("tagging.dates"),
   variables = "detections",
   split.by = NULL,
   style = "raster",
-  id.col = "ID",
+  id.col = getDefaults("id"),
   timebin.col = "timebin",
   station.col = "station",
   color.by = NULL,

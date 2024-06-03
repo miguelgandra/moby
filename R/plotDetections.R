@@ -6,8 +6,8 @@
 #'
 #' @description Plots color-coded detections over time and date, independently for each individual.
 #'
-#' @param binned.data A data frame containing animal detections with corresponding time-bins (must contain a 'timebin' column).
-#' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
+#' @inheritParams setDefaults
+#' @param data  A data frame containing animal detections.
 #' @param id.groups Optional. A list containing ID groups, used to
 #' visually aggregate animals belonging to the same class (e.g. different species).
 #' @param color.by Optional. Variable defining the color group of individual detections.
@@ -29,7 +29,9 @@
 #' and plotted according to their "density", with isolated detections being brought forward
 #' to prevent them from being hidden behind points' clouds. Defaults to True.
 #' @param pt.cex Expansion factor(s) for the points (detections). Defaults to 1.5.
-#' @param crepuscular.lines Boolean to indicate if "dawn" and "dusk" lines should be plotted. Defaults to False.
+#' @param diel.lines Number indicating the number of diel phase lines (boundaries)
+#' to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
+#' (depicting dawn, sunrise, sunset, dusk).
 #' @param grid If true, a grid is plotted (horizontal and vertical guides across the entire plot). Defaults to False.
 #' @param grid.color Color of the grid lines. Defaults to white.
 #' @param cols Number of columns in the final panel (passed to the mfrow argument). Defaults to 2.
@@ -37,80 +39,74 @@
 #' @export
 
 
-plotDetections <- function(binned.data, tagging.dates, id.groups=NULL, color.by=NULL,
-                           color.pal=NULL, date.format="%b/%y", date.interval=4, date.start=1,
-                           sunriset.coords, id.col="ID", discard.missing=T, background.color="gray96",
-                           highlight.isolated=T, pt.cex=1.5, crepuscular.lines=F, grid=F, grid.color="white",
-                           cols=2, legend.cols=3){
+plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
+                           tagging.dates=getDefaults("tagging.dates"), tag.durations=NULL,
+                           id.groups=NULL, discard.missing=T, color.by=NULL, color.pal=NULL,
+                           date.format="%b/%y", date.interval=4, date.start=1, sunriset.coords,
+                           diel.lines=2, background.color="gray96", highlight.isolated=T, pt.cex=1.5,
+                           grid=F, grid.color="white", cols=2, legend.cols=3){
 
   ##################################################################################
   # Initial checks #################################################################
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(binned.data)) {
-    stop("'id.col' variable not found in the supplied data")
-  }
-
-  # check ID column class
-  if(class(binned.data[,id.col])!="factor") {
-    binned.data[,id.col] <- as.factor(binned.data[,id.col])
-    cat("ID column converted to factor\n")
-  }
+  # perform argument checks
+  data <- moby:::validateArguments()
 
   # check if data contains color.by
-  if(!is.null(color.by)){
-    if(length(color.by)!=1){
-      stop("Only one variable can be used to color-code detections. Please set the 'color.by' argument accordingly")
-    }
-    if(!color.by %in% colnames(binned.data)) {
-      stop("'color.by' variable not found in the supplied data")
-    }
-    if(class(binned.data[,color.by])!="factor"){
-      binned.data[,color.by] <- as.factor(binned.data[,color.by])
-      cat("'color.by' variable converted to factor\n")
-    }
-  }else{
-    binned.data$temp_group <- as.factor(1)
+  if(is.null(color.by)){
+    data$temp_group <- as.factor(1)
     color.by <- "temp_group"
   }
 
   # reorder ID levels if ID groups are defined
   if(!is.null(id.groups)){
     if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% levels(binned.data[,id.col]))) {"Some of the ID(s) in id.groups don't match the IDs in the data"}
-    binned.data <- binned.data[binned.data[,id.col] %in% unlist(id.groups),]
-    tagging.dates <- tagging.dates[match(unlist(id.groups), levels(binned.data[,id.col]))]
-    binned.data[,id.col] <- factor(binned.data[,id.col], levels=unlist(id.groups))
+    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {warning("Some of the ID(s) in id.groups don't match the IDs in the data")}
+    data <- data[data[,id.col] %in% unlist(id.groups),]
+    tagging.dates <- tagging.dates[match(unlist(id.groups), levels(data[,id.col]))]
+    data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
   }
 
-  if(!is.null(color.pal) & length(color.pal)<nlevels(binned.data[,color.by])){
+  if(!is.null(color.pal) & length(color.pal)<nlevels(data[,color.by])){
     warning("The number of supplied colors doesn't match number of group levels")
   }
 
-  cat("Generating abacus plots\n")
+  # check tag durations
+  if(!is.null(tag.durations)){
+    if(length(tag.durations)>1 && length(tag.durations)!=nlevels(data[,id.col])){
+      stop("Incorrect number of tag.durations. Must be either a single value or
+           a vector containing the estimated tag duration for each individual")
+    }
+    if(length(tag.durations)==1){
+      tag.durations <- rep(tag.durations, nlevels(data[,id.col]))
+    }
+  }
+
+  # print to console
+  moby:::printConsole("Plotting detections")
 
 
   ################################################################################
   # Prepare data #################################################################
 
   if(discard.missing==T){
-    missing_IDs <- which(table(binned.data[,id.col])==0)
+    missing_IDs <- which(table(data[,id.col])==0)
     if(length(missing_IDs)>0){
       tagging.dates <- tagging.dates[-missing_IDs]
-      binned.data[,id.col] <- droplevels(binned.data[,id.col])
+      data[,id.col] <- droplevels(data[,id.col])
     }
   }
-  nindividuals <- nlevels(binned.data[,id.col])
+  nindividuals <- nlevels(data[,id.col])
 
-  data_table <- createWideTable(binned.data,  start.dates=tagging.dates, value.col=color.by)
-  data_flat <- reshape2::melt(data_table, id.vars="timebin")
-  colnames(data_flat)[2:3] <- c("id", color.by)
+  data_table <- createWideTable(data, timebin.col=timebin.col, start.dates=tagging.dates, value.col=color.by)
+  data_flat <- reshape2::melt(data_table, id.vars=timebin.col)
+  colnames(data_flat)[1:3] <- c("timebin", "id", color.by)
   data_flat$hour <- as.numeric(format(data_flat$timebin, "%H")) + as.numeric(format(data_flat$timebin, "%M"))/60
   data_flat$date <-strftime(data_flat$timebin, "%Y-%m-%d", tz="UTC")
   data_flat$date <- as.POSIXct(data_flat$date, "%Y-%m-%d" , tz="UTC")
-  data_flat[,color.by] <- factor(data_flat[,color.by], levels=levels(binned.data[,color.by]))
+  data_flat[,color.by] <- factor(data_flat[,color.by], levels=levels(data[,color.by]))
   data_individual <- split(data_flat, f=data_flat$id)
-  id_order <- match(levels(binned.data[,id.col]), names(data_individual))
+  id_order <- match(levels(data[,id.col]), names(data_individual))
   data_individual <- data_individual[id_order]
 
 
@@ -137,11 +133,11 @@ plotDetections <- function(binned.data, tagging.dates, id.groups=NULL, color.by=
   hour_labels <- paste0(formatC(0:24, 1, flag=0),"h")[c(TRUE, FALSE)]
 
   # set color palette if required
-  if(is.null(color.pal)){color.pal <- rainbow(nlevels(binned.data$station))}
+  if(is.null(color.pal)){color.pal <- rainbow(nlevels(data$station))}
 
   # set layout variables
   if(!is.null(id.groups)){
-    group_ids_selected <- lapply(id.groups, function(x) x[x %in% levels(binned.data[,id.col])])
+    group_ids_selected <- lapply(id.groups, function(x) x[x %in% levels(data[,id.col])])
     group_numbers <- lapply(group_ids_selected,  length)
     group_rows <- lapply(group_numbers, function(x) ceiling(x/cols))
     rows <- do.call("sum", group_rows)
@@ -181,7 +177,7 @@ plotDetections <- function(binned.data, tagging.dates, id.groups=NULL, color.by=
       next
     }
 
-    selected_id <- levels(binned.data[,id.col])[i]
+    selected_id <- levels(data[,id.col])[i]
     data_plot <- data_individual[[selected_id]]
     plot(x=data_plot$date, y=data_plot$hour, type="n", axes=F,
          ylim=c(0,24), xlab="", ylab="", main=unique(data_plot$id), cex.main=2.5)
@@ -214,7 +210,7 @@ plotDetections <- function(binned.data, tagging.dates, id.groups=NULL, color.by=
     abline(v=tagging.dates[i], lwd=1.4)
     lines(x=daytimes_table$interval, y=daytimes_table$sunrises, lty=2, col="black")
     lines(x=daytimes_table$interval, y=daytimes_table$sunsets, lty=2, col="black")
-    if(crepuscular.lines==T){
+    if(diel.lines==T){
       lines(x=daytimes_table$interval, y=daytimes_table$dawns, lty=2, col="black")
       lines(x=daytimes_table$interval, y=daytimes_table$dusks, lty=2, col="black")
     }
@@ -224,7 +220,7 @@ plotDetections <- function(binned.data, tagging.dates, id.groups=NULL, color.by=
   # create empty plot with 'color.by' legend
   par(mar=c(1,1,1,1))
   if(!is.na(i)){plot.new()}
-  legend("center", legend=levels(binned.data[,color.by]), pch=16, col=color.pal, ncol=legend.cols,
+  legend("center", legend=levels(data[,color.by]), pch=16, col=color.pal, ncol=legend.cols,
          cex=1.8, bg=background.color, pt.cex=2.4)
 
   # add id.group names if required

@@ -6,10 +6,10 @@
 \usage{
 plotAbacus(
   data,
-  id.col = "ID",
-  datetime.col = "datetime",
+  id.col = getDefaults("id"),
+  datetime.col = getDefaults("datetime"),
   color.by = NULL,
-  tagging.dates,
+  tagging.dates = getDefaults("tagging.dates"),
   tag.durations = NULL,
   id.groups = NULL,
   discard.missing = F,

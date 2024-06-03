@@ -1,92 +1,120 @@
+#######################################################################################################
+#######################################################################################################
+# HELPER FUNCTIONS ####################################################################################
+#######################################################################################################
+#######################################################################################################
 
-#######################################################################################################
-# Helper functions ####################################################################################
-#######################################################################################################
+# Set of functions for internal use within the 'moby' package
+
+
+##################################################################################################
+## Print to console   ############################################################################
+
+#' Print to console
+#'
+#' @description Prints a string to the console with a specific formatting.
+#' @param string A character string to be printed to the console.
+#' @note This function is intended for internal use within the `moby` package.
+#' @keywords internal
+
+printConsole <- function(string){
+  cat(paste0("\033[0;", 1, "m", string, "\033[0m", "\n"))
+}
+
 
 ##################################################################################################
 ## Updated filled.contour function  ##############################################################
-## adapted from https://gist.github.com/epijim/6514388 ###########################################
+## Adapted from https://gist.github.com/epijim/6514388 ###########################################
 
-filled.contour3 <-
-  function (x = seq(0, 1, length.out = nrow(z)),
-            y = seq(0, 1, length.out = ncol(z)), z, xlim = range(x, finite = TRUE),
-            ylim = range(y, finite = TRUE), zlim = range(z, finite = TRUE),
-            levels = pretty(zlim, nlevels), nlevels = 20, color.palette = cm.colors,
-            col = color.palette(length(levels) - 1), plot.title, plot.axes,
-            key.title, key.axes, asp = NA, xaxs = "i", yaxs = "i", las = 1,
-            axes = TRUE, frame.plot = axes, mar, invert.scale=FALSE, ...)
-  {
-    # modification by Ian Taylor of the filled.contour function
-    # to remove the key and facilitate overplotting with contour()
-    # further modified by Carey McGilliard and Bridget Ferris
-    # to allow multiple plots on one page
+#' Filled Contour Plot with Modified Options
+#'
+#' @description Produces a filled contour plot with additional modifications for flexibility.
+#' @note This function is adapted from the original `filled.contour` function, modified by Ian Taylor, Carey McGilliard, and Bridget Ferris.
+#' @keywords internal
 
-    if (missing(z)) {
-      if (!missing(x)) {
-        if (is.list(x)) {
-          z <- x$z
-          y <- x$y
-          x <- x$x
-        }
-        else {
-          z <- x
-          x <- seq.int(0, 1, length.out = nrow(z))
-        }
+filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
+                            y = seq(0, 1, length.out = ncol(z)), z, xlim = range(x, finite = TRUE),
+                            ylim = range(y, finite = TRUE), zlim = range(z, finite = TRUE),
+                            levels = pretty(zlim, nlevels), nlevels = 20, color.palette = cm.colors,
+                            col = color.palette(length(levels) - 1), plot.title, plot.axes,
+                            key.title, key.axes, asp = NA, xaxs = "i", yaxs = "i", las = 1,
+                            axes = TRUE, frame.plot = axes, mar, invert.scale=FALSE, ...){
+
+  # modification by Ian Taylor of the filled.contour function
+  # to remove the key and facilitate overplotting with contour()
+  # further modified by Carey McGilliard and Bridget Ferris
+  # to allow multiple plots on one page
+
+  if (missing(z)) {
+    if (!missing(x)) {
+      if (is.list(x)) {
+        z <- x$z
+        y <- x$y
+        x <- x$x
       }
-      else stop("no 'z' matrix specified")
-    }
-    else if (is.list(x)) {
-      y <- x$y
-      x <- x$x
-    }
-    if (any(diff(x) <= 0) || any(diff(y) <= 0))
-      stop("increasing 'x' and 'y' values expected")
-    # mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
-    # on.exit(par(par.orig))
-    # w <- (3 + mar.orig[2]) * par("csi") * 2.54
-    # par(las = las)
-    # mar <- mar.orig
-    plot.new()
-
-    if(invert.scale){
-      zscale <- rev(range(levels))
-    }else{
-      zscale <- range(levels)
-    }
-
-    # par(mar=mar)
-    plot.window(xlim, ylim, "", xaxs = xaxs, yaxs = yaxs, asp = asp)
-    if (!is.matrix(z) || nrow(z) <= 1 || ncol(z) <= 1)
-      stop("no proper 'z' matrix specified")
-    if (!is.double(z))
-      storage.mode(z) <- "double"
-    .filled.contour(as.double(x), as.double(y), z, as.double(levels),
-                    col = col)
-    if (missing(plot.axes)) {
-      if (axes) {
-        title(main = "", xlab = "", ylab = "")
-        Axis(x, side = 1)
-        Axis(y, side = 2)
+      else {
+        z <- x
+        x <- seq.int(0, 1, length.out = nrow(z))
       }
     }
-    else plot.axes
-    if (frame.plot)
-      box()
-    if (missing(plot.title))
-      title(...)
-    else plot.title
-    invisible()
+    else stop("no 'z' matrix specified")
+  }
+  else if (is.list(x)) {
+    y <- x$y
+    x <- x$x
+  }
+  if (any(diff(x) <= 0) || any(diff(y) <= 0))
+    stop("increasing 'x' and 'y' values expected")
+  # mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
+  # on.exit(par(par.orig))
+  # w <- (3 + mar.orig[2]) * par("csi") * 2.54
+  # par(las = las)
+  # mar <- mar.orig
+  plot.new()
+
+  if(invert.scale){
+    zscale <- rev(range(levels))
+  }else{
+    zscale <- range(levels)
   }
 
+  # par(mar=mar)
+  plot.window(xlim, ylim, "", xaxs = xaxs, yaxs = yaxs, asp = asp)
+  if (!is.matrix(z) || nrow(z) <= 1 || ncol(z) <= 1)
+    stop("no proper 'z' matrix specified")
+  if (!is.double(z))
+    storage.mode(z) <- "double"
+  .filled.contour(as.double(x), as.double(y), z, as.double(levels),
+                  col = col)
+  if (missing(plot.axes)) {
+    if (axes) {
+      title(main = "", xlab = "", ylab = "")
+      Axis(x, side = 1)
+      Axis(y, side = 2)
+    }
+  }
+  else plot.axes
+  if (frame.plot)
+    box()
+  if (missing(plot.title))
+    title(...)
+  else plot.title
+  invisible()
+}
 
 
 ##################################################################################################
-## Updated shape::colorlegend function  ##########################################################
-## adapted from https://rdrr.io/cran/shape/src/R/colorlegend.R  ##################################
-## added main.adj + main.inset + support for scientific notation
+## Updated colorlegend function  #################################################################
+## Adapted from 'shape' package (https://rdrr.io/cran/shape/src/R/colorlegend.R)
+## - added main.adj + main.inset + support for scientific notation
 
+#' Color Legend
+#'
+#' @description Creates a color legend for a plot, adapted from https://rdrr.io/cran/shape/src/R/colorlegend.R with additional features such as main.adj, main.inset, and support for scientific notation.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
 
-colorlegend2 <- function(col=femmecol(100), zlim, zlevels=5,
+colorlegend <- function(col=femmecol(100), zlim, zlevels=5,
                          dz=NULL, zval=NULL, log=FALSE, posx=c(0.9,0.93), posy=c(0.05,0.9),
                          main=NULL, main.cex=1.0, main.col="black", main.adj=0.5, lab.col="black",
                          main.inset=1, digit=0, left=FALSE, lab.scientific=FALSE, ...) {
@@ -181,14 +209,19 @@ colorlegend2 <- function(col=femmecol(100), zlim, zlevels=5,
 }
 
 
-
 ##################################################################################################
-# Auxiliary function I - get plot coordinates by keyword #########################################
-# adapted from legend function ###################################################################
+## Get position function  ########################################################################
+## - get plot coordinates by keyword (adapted from graphics::legend) #############################
+
+#' Get Position
+#'
+#' @description Calculates the position of a keyword on a plot with optional inset adjustments.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
 
 getPosition <- function(keyword, inset) {
   usr <- par("usr")
-  inset <- rep_len(inset, 2)
+  if(length(inset)==1)  inset <- rep_len(inset, 2)
   insetx <- inset[1] * (usr[2] - usr[1]) * 2
   left <- switch(keyword, bottomright=, topright=, right=usr[2]-insetx,
                  bottomleft=, left=, topleft=usr[1]+insetx, bottom=,
@@ -202,11 +235,18 @@ getPosition <- function(keyword, inset) {
 
 
 ##################################################################################################
-## Updated raster::scalebar function  ############################################################
-## added new 'bar.lwd' argument to set the border line width of the scalebars and
-## added new 'bar.height' argument to control the scalebar thickness
+## Scale Bar function ############################################################################
+## Adapted from raster::scalebar #################################################################
+##  - added new 'bar.lwd' argument to set the border line width of the scalebars and
+##  - added new 'bar.height' argument to control the scalebar thickness
 
-scalebar2 <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, bar.height=1.5,
+#' Scale Bar
+#'
+#' @description Adds a scale bar to a plot, supporting both line and bar types.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+
+scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, bar.height=1.5,
                       lonlat=NULL, label, adj=c(0.5, -0.5), lwd=2, ...)
 {
   stopifnot(type %in% c("line", "bar"))
@@ -333,21 +373,24 @@ scalebar2 <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, b
 
 
 ##################################################################################################
-## Updated legend function  ######################################################################
-## Adapted by Ben Nolker (http://ms.mcmaster.ca/~bolker/R/misc/legendx.R)
+## Legend function ###############################################################################
+## Adapted by Ben Bolker (http://ms.mcmaster.ca/~bolker/R/misc/legendx.R)
 
-legend2 <- function(x, y = NULL, legend, fill = NULL, col = par("col"), border="black",
-           lty, lwd, pch, angle = 45, density = NULL, bty = "o", bg = par("bg"),
-           box.lwd = par("lwd"), box.lty = par("lty"), box.col = par("fg"),
-           box.cex = c(0.8,0.5),
-           pt.bg = NA, cex = 1, pt.cex = cex, pt.lwd = lwd,
-           xjust = 0, yjust = 1, x.intersp = 1, y.intersp = 1, adj = c(0, 0.5),
-           text.width = NULL, text.col = par("col"), text.font = NULL,
-           merge = do.lines && has.pch, trace = FALSE,
-           plot = TRUE, ncol = 1, horiz = FALSE, title = NULL,
-           inset = 0, xpd, title.col = text.col, title.adj = 0.5,
-           seg.len = 2)
-  {
+#' Legend
+#'
+#' @description Creates a customized legend for a plot, with options for color scales, logarithmic scaling, and positioning.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+
+legend <- function(x, y = NULL, legend, fill = NULL, col = par("col"), border="black",
+                   lty, lwd, pch, angle = 45, density = NULL, bty = "o", bg = par("bg"),
+                   box.lwd = par("lwd"), box.lty = par("lty"), box.col = par("fg"),
+                   box.cex = c(0.8,0.5), pt.bg = NA, cex = 1, pt.cex = cex, pt.lwd = lwd,
+                   xjust = 0, yjust = 1, x.intersp = 1, y.intersp = 1, adj = c(0, 0.5),
+                   text.width = NULL, text.col = par("col"), text.font = NULL,
+                   merge = do.lines && has.pch, trace = FALSE, plot = TRUE, ncol = 1, horiz = FALSE, title = NULL,
+                   inset = 0, xpd, title.col = text.col, title.adj = 0.5, seg.len = 2){
+
     ## the 2nd arg may really be `legend'
     if(missing(legend) && !missing(y) &&
        (is.character(y) || is.expression(y))) {
@@ -598,8 +641,79 @@ if (!exists("rep_len")) {
 
 
 ##################################################################################################
-# Helper function I - return number of decimal places ############################################
-# Retrieved from https://stackoverflow.com/questions/5173692/how-to-return-number-of-decimal-places-in-r
+## Rescale vertex igraph   #######################################################################
+## Sourced from 'netdiffuseR' package (https://github.com/USCCANA/netdiffuseR)
+
+#' Rescale Vertex Igraph
+#'
+#' @description Rescale vertex size to be used in \code{\link[igraph:plot.igraph]{plot.igraph}}.
+#' This function rescales a vertex size before passing it to \code{\link[igraph:plot.igraph]{plot.igraph}}
+#' so that the resulting vertices have the desired size relative to the x-axis.
+#'
+#' @param vertex.size Numeric vector of unscaled vertices' sizes. This is unit-free.
+#' @param par.usr Integer vector of length 4 with the coordinates of plotting region.
+#'  by default uses \code{par("usr")}.
+#' @param minmax.relative.size A numeric vector of length 2. Represents the
+#'  desired min and max vertex sizes relative to the x-axis in terms of percentage
+#'  (see details).
+#' @param adjust Numeric scalar. Adjustment made to the resulting adjusted size
+#'  (see details).
+#' @author George G. Vega Yon
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+
+rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
+                                  minmax.relative.size=c(0.01, 0.04), adjust=200) {
+
+  if (!length(vertex.size)) return(
+    rescale_vertex_igraph(1, par.usr, minmax.relative.size, adjust))
+
+  # Adjusting x
+  xrange <- range(vertex.size)
+  xscale <- (par.usr[2] - par.usr[1])*minmax.relative.size
+  vertex.size     <- (vertex.size - xrange[1] + 1e-15)/(xrange[2] - xrange[1] + 1e-15)*
+    (xscale[2] - xscale[1]) + xscale[1]
+
+  return(vertex.size*adjust/2)
+}
+
+
+##################################################################################################
+## Rescale function  #############################################################################
+## Sourced from 'scales' package (https://CRAN.R-project.org/package=scales)
+
+#' Rescale
+#'
+#' @description Rescales a numeric vector to a specified range.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+
+rescale <- function (x, to=c(0, 1), from=range(x, na.rm=TRUE, finite=TRUE), ...) {
+  if (zero_range(from) || zero_range(to)) return(ifelse(is.na(x), NA, mean(to)))
+  (x - from[1])/diff(from) * diff(to) + to[1]
+}
+
+zero_range <- function(x, tol=1000*.Machine$double.eps) {
+  if (length(x) == 1) return(TRUE)
+  if (length(x) != 2) cli::cli_abort("{.arg x} must be length 1 or 2")
+  if (any(is.na(x))) return(NA)
+  if (x[1] == x[2]) return(TRUE)
+  if (all(is.infinite(x))) return(FALSE)
+  m <- min(abs(x))
+  if (m == 0) return(FALSE)
+  abs((x[1] - x[2]) / m) < tol
+}
+
+
+##################################################################################################
+## Decimal Places   ##############################################################################
+## Sourced from https://stackoverflow.com/questions/5173692/how-to-return-number-of-decimal-places-in-r
+
+#' Decimal Places
+#'
+#' @description Determines the number of decimal places in a numeric value.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
 
 decimalPlaces <- function(x) {
   if(is.na(x)){return(NA)}
@@ -613,8 +727,8 @@ decimalPlaces <- Vectorize(decimalPlaces)
 
 
 ##################################################################################################
-# Economist color palette ########################################################################
-# Based in ggthemes::economist_pal()
+## Economist color palette #######################################################################
+## Based in ggthemes::economist_pal()
 
 economist_pal <- function(n){
   economist_colors <- c("#6794a7", "#014d64", "#01a2d9", "#7ad2f6","#00887d",
@@ -634,8 +748,8 @@ economist_pal <- function(n){
 
 
 ##################################################################################################
-# Viridis color palette ########################################################################
-# From viridis::viridis(100)
+## Viridis color palette #########################################################################
+## Sourced from viridis::viridis(100)
 
 viridis_pal <- function(n) {
   viridis_colors <- c(
@@ -662,8 +776,6 @@ viridis_pal <- function(n) {
   )
   return(colorRampPalette(viridis_colors)(n))
 }
-
-
 
 
 ##################################################################################################

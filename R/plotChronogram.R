@@ -58,49 +58,35 @@
 #' @export
 
 
-plotChronogram <- function(data, tagging.dates=NULL, variables="detections", split.by=NULL, style="raster",
-                       id.col="ID", timebin.col="timebin", station.col="station", color.by=NULL, color.pal=NULL,
-                       date.format="%d/%b", date.interval=4, date.start=1, diel.lines=2, sunriset.coords, solar.depth=18,
-                       polygons=F, lunar.info=F, background.col="white", grid=T, grid.color="white", highlight.isolated=F,
-                       pt.cex=c(0.5, 3), uniformize.scale=F, uniformize.dates=T, cex.axis=1, cex.legend=0.8,
-                       legend.intersp=1.2, legend.cols=NULL, cols=NULL, ...) {
+plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), variables="detections", split.by=NULL, style="raster",
+                           id.col=getDefaults("id"), timebin.col="timebin", station.col="station", color.by=NULL, color.pal=NULL,
+                           date.format="%d/%b", date.interval=4, date.start=1, diel.lines=2, sunriset.coords, solar.depth=18,
+                           polygons=F, lunar.info=F, background.col="white", grid=T, grid.color="white", highlight.isolated=F,
+                           pt.cex=c(0.5, 3), uniformize.scale=F, uniformize.dates=T, cex.axis=1, cex.legend=0.8,
+                           legend.intersp=1.2, legend.cols=NULL, cols=NULL, ...) {
 
   #####################################################################################
   # Initial checks ####################################################################
   #####################################################################################
 
-  # print to console
-  cat("Generating chronogram(s)\n")
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- moby:::validateArguments()
+  data <- reviewed_params$data
+  tagging.dates <- reviewed_params$tagging.dates
+  tag.durations <- reviewed_params$tag.durations
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) stop("ID column not found in input. Please specify the correct column using 'id.col'")
-  # check if data contains timebin.col
-  if(!timebin.col %in% colnames(data)) stop("Time-bin column not found. Please specify the correct column using 'timebin.col'")
-  # check if data contains station.col
-  if(!station.col %in% colnames(data)) stop("Station column not found. Please specify the correct column using 'station.col'")
-  # check if data contains split.by col
-  if(!is.null(split.by) && !split.by %in% colnames(data)) stop("split.by column not found. Please specify the correct column using 'split.by'")
-  # validate style
-  if(!style %in% c("raster", "points")) stop("Invalid style specified. Accepted values are: 'raster' or 'points'.")
-  # validate variables
+  # validate additonal variables
   if(length(variables) == 0 || any(!variables %in% c("detections", "individuals", "co-occurrences"))) stop("Invalid variable(s) specified. Accepted values are: 'detections', 'individuals', or 'co-occurrences'.")
-  # check if timebins are in the right format
-  if(!inherits(data[, timebin.col], "POSIXct")) stop("Time-bins must be provided in POSIXct format")
-  # check if tagging.dates are in the right format
-  if(!is.null(tagging.dates) && !inherits(tagging.dates, "POSIXct")) stop("'tagging.dates' must be provided in POSIXct format")
-  # validate polygons
-  if(!polygons %in% c(FALSE, "diel","season")) stop("Invalid 'polygons' specified. Accepted values are: 'diel', 'season' or 'FALSE' (disabled)")
-  # validate diel.lines
-  if(!diel.lines %in% c(2, 4)) stop("Invalid 'diel.lines' specified. Accepted values are '2' (sunrise and sunset) or '4' (dawn, sunrise, sunset, dusk)")
-  # validate pt.cex
   if(length(pt.cex)!=2) stop("pt.cex should be a vector of length 2 (min and max)")
-  # validate color.pal
-  if(!is.null(color.pal) && !inherits(color.pal, c("character", "function"))) stop("Invalid color palette. Please supply either a character vector w/ the colors or a function that generates colors.")
 
   # check if the lunar package is installed
   if(lunar.info==T & !requireNamespace("lunar", quietly=TRUE)){
     stop("The 'lunar' package is required but is not installed. Please install 'lunar' using install.packages('lunar') and try again.")
   }
+
+  # print to console
+  moby:::printConsole("Generating chronogram(s)")
+
 
   #####################################################################################
   # Validate color-coding and color palette ###########################################
@@ -266,7 +252,7 @@ plotChronogram <- function(data, tagging.dates=NULL, variables="detections", spl
       colnames(color_data) <- c("timebin", "station", "level")
       color_data <- color_data[order(color_data$timebin),]
       if(inherits(color_data$level, "numeric")){
-        color_data$color <- round(scales::rescale(color_data$level, to=c(1,100)))
+        color_data$color <- round(moby:::rescale(color_data$level, to=c(1,100)))
       }else{
         color_data$level <- factor(color_data$level, levels=levels(data_group[,color.by]))
         color_data$color <- as.integer(color_data$level)
@@ -499,7 +485,7 @@ plotChronogram <- function(data, tagging.dates=NULL, variables="detections", spl
         rect(xleft=seasons_table$start, xright=seasons_table$end, ybottom=par("usr")[3], ytop=par("usr")[4], col=seasons_table$color, border=NA)
         seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
         seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
-        coords <- moby:::legend2(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
+        coords <- moby:::legend(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
                                  xpd=T, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=F)
         coords_list <- c(coords_list, list(coords))
 
@@ -514,7 +500,7 @@ plotChronogram <- function(data, tagging.dates=NULL, variables="detections", spl
       }
 
       # draw points
-      plot_data$cex <- scales::rescale(plot_data$var, from=var_range, to=pt.cex)
+      plot_data$cex <- moby:::rescale(plot_data$var, from=var_range, to=pt.cex)
       if(highlight.isolated==T){
         runs <- rle(plot_data$color)
         runs_length <-  rep(runs$lengths, runs$lengths)
@@ -531,7 +517,7 @@ plotChronogram <- function(data, tagging.dates=NULL, variables="detections", spl
       size_labs <- pretty(var_range)
       size_labs <- unique(round(size_labs))
       size_labs <- size_labs[size_labs>=min(var_range) & size_labs<=max(var_range) & size_labs>0]
-      size_scale <- scales::rescale(size_labs, from=var_range, to=pt.cex)
+      size_scale <- moby:::rescale(size_labs, from=var_range, to=pt.cex)
       if(length(coords_list)==0){legend.y<-par("usr")[4]
       }else{legend.y<-abs(coords_list[[1]]$rect$top-coords$rect$h)+1}
       legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01

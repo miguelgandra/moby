@@ -30,6 +30,8 @@ mobyEnv <- NULL
     id.col = "ID",
     datetime.col = "datetime",
     timebin.col = "timebin",
+    lon.col="lon",
+    lat.col="lat",
     tagging.dates = NULL,
     tag.durations = NULL
   )

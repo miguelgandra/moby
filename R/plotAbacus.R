@@ -9,15 +9,11 @@
 #' customization options to cater to specific visualization needs, including
 #' different color schemes, date formats, and handling of missing data.
 
+#' @inheritParams setDefaults
 #' @param data A data frame containing animal detections.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
-#' @param datetime.col Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.
 #' @param color.by Name of the column used to color-code individual detections.
 #' This parameter can be used for example to differentiate detections by station,
 #' animal trait, or temporal category. If NULL, all detections will be plotted in a single color.
-#' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
-#' The length of this vector should match the number of unique animal IDs.
-#' Alternatively, if a single value is provided, it will be applied to all IDs.
 #' @param tag.durations Optional. A numeric vector containing the estimated battery
 #' duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.
 #' @param id.groups Optional. A named list containing ID groups used to visually aggregate
@@ -59,10 +55,10 @@
 #' @export
 
 
-plotAbacus <- function(data, id.col="ID", datetime.col="datetime", color.by=NULL,
-                       tagging.dates, tag.durations=NULL, id.groups=NULL, discard.missing=F,
-                       color.pal=NULL, date.format="%b", date.interval=4, date.start=1, top.mural="%Y",
-                       season.shade=T, background.col="grey96", pch=16, pt.cex=1, transparency=0,
+plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
+                       color.by=NULL, tagging.dates=getDefaults("tagging.dates"), tag.durations=NULL,
+                       id.groups=NULL, discard.missing=F, color.pal=NULL, date.format="%b", date.interval=4, date.start=1,
+                       top.mural="%Y", season.shade=T, background.col="grey96", pch=16, pt.cex=1, transparency=0,
                        highlight.isolated=T, cex.lab=0.8, cex.axis=0.7, cex.legend=0.7, cex.mural=0.7,
                        legend.intersp=1.2, legend.cols=NULL) {
 
@@ -71,70 +67,20 @@ plotAbacus <- function(data, id.col="ID", datetime.col="datetime", color.by=NULL
   ## Initial checks ############################################################
   ##############################################################################
 
-  # print to console
-  cat("Generating detections chronogram\n")
-
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
-  # check if data contains datetime.col
-  if(!datetime.col %in% colnames(data)) stop("Datetime column not found. Please specify the correct column using 'datetime.col'")
-  # check if datetimes are in the right format
-  if(!inherits(data[, datetime.col], "POSIXct")) stop("Datetimes must be provided in POSIXct format")
-  # check if tagging.dates are in the right format
-  if(!inherits(tagging.dates, "POSIXct")) stop("Tagging dates must be provided in POSIXct format")
-
-  # convert IDs to factor
-  if(class(data[,id.col])!="factor") {
-    data[,id.col] <- as.factor(data[,id.col])
-    cat("Warning: 'id.col' converted to factor\n")
-  }
-
-  # check number of tagging dates
-  if(length(tagging.dates)>1 & length(tagging.dates)!=nlevels(data[,id.col])){
-    stop("Incorrect number of tagging.dates. Must be either a single value or
-           a vector containing a tagging date for each individual")
-  }else if(length(tagging.dates)==1){
-    tagging.dates <- rep(tagging.dates, nlevels(data[,id.col]))
-  }
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- moby:::validateArguments()
+  data <- reviewed_params$data
+  tagging.dates <- reviewed_params$tagging.dates
+  tag.durations <- reviewed_params$tag.durations
 
   # check color.by variable
-  if(!is.null(color.by)) {
-    if(!color.by %in% colnames(data)) stop("'color.by' variable not found in the supplied data")
-    if(any(is.na(data[, color.by]))) stop("Missing values in color.by variable")
-    if(class(data[, color.by]) != "factor") {
-      data[, color.by] <- as.factor(data[, color.by])
-      cat("Warning: 'color.by' variable converted to factor\n")
-    }
-    if(!is.null(color.pal)){
-      if (length(color.pal) < nlevels(data[, color.by])) stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels")
-      if (length(color.pal) > nlevels(data[, color.by]))  cat("Warning: The number of specified colors exceeds the number of levels in color.by.")
-    }
+  if(!is.null(color.by) && !is.null(color.pal)) {
+    if (length(color.pal) < nlevels(data[, color.by])) stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels")
+    if (length(color.pal) > nlevels(data[, color.by])) warning("The number of specified colors exceeds the number of levels in color.by")
   }
 
-  # reorder ID levels if ID groups are defined
-  if(!is.null(id.groups)){
-    if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {cat("Warning: Some of the ID(s) in id.groups don't match the IDs in the data")}
-    data <- data[data[,id.col] %in% unlist(id.groups),]
-    tagging.dates <- tagging.dates[match(unlist(id.groups), levels(data[,id.col]))]
-    if(!is.null(tag.durations)){
-      tag.durations <- tag.durations[match(unlist(id.groups), levels(data[,id.col]))]
-    }
-    data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
-  }else{
-    id.groups <- list(levels(data[,id.col]))
-  }
-
-  # check tag durations
-  if(!is.null(tag.durations)){
-    if(length(tag.durations)>1 && length(tag.durations)!=nlevels(data[,id.col])){
-      stop("Incorrect number of tag.durations. Must be either a single value or
-           a vector containing the estimated tag duration for each individual")
-    }
-    if(length(tag.durations)==1){
-      tag.durations <- rep(tag.durations, nlevels(data[,id.col]))
-    }
-  }
+  # print to console
+  moby:::printConsole("Generating abacus plot")
 
 
   ##############################################################################
@@ -240,7 +186,7 @@ plotAbacus <- function(data, id.col="ID", datetime.col="datetime", color.by=NULL
     rect(xleft=seasons_table$start, xright=seasons_table$end, ybottom=0, ytop=total_rows+1, col=seasons_table$color, border=NA)
     seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
     seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
-    coords <- moby:::legend2(x=par("usr")[2], y=0, legend=seasons_legend$season, fill=seasons_legend$color,
+    coords <- moby:::legend(x=par("usr")[2], y=0, legend=seasons_legend$season, fill=seasons_legend$color,
                              bty="n", border="black", xpd=T, y.intersp=1.6, box.cex=c(1.6, 1.2), cex=cex.legend)
   } else {
     rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=0, ytop=total_rows+1, col=background.col, border="black")

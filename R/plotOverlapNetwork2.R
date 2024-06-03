@@ -128,7 +128,7 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
   if(!is.null(scale.by)) {
     layout(mat=matrix(c(1,1,1,1,2,3), byrow=T, nrow=3, ncol=2))
     if(length(discard_ids)>0){animal.sizes <- animal.sizes[-discard_ids]}
-    node_sizes <- scales::rescale(id.metadata[,scale.by], c(min.size, max.size))
+    node_sizes <- moby:::rescale(id.metadata[,scale.by], c(min.size, max.size))
   } else {
     node_sizes <- 1
   }

@@ -16,16 +16,8 @@
 # ---> generate abacus plot (animal detections over time)
 # ---> generate level plots (detections/individuals per hour and date)
 
-
-#######################################################################################################
-# Automatically install required libraries  ###########################################################
-#######################################################################################################
-
-if(!require(moby)){install.packages("moby"); library(moby)}
-if(!require(lubridate)){install.packages("lubridate"); library(lubridate)}
-if(!require(raster)){install.packages("raster"); library(raster)}
-if(!require(sp)){install.packages("sp"); library(sp)}
-if(!require(pals)){install.packages("pals"); library(pals)}
+devtools::install("~/Desktop/moby")
+library(moby)
 
 
 #######################################################################################################
@@ -43,11 +35,14 @@ colnames(data_raw) <- c("datetime", "receiver", "network", "transmitter", "stati
 data_raw$datetime <- as.POSIXct(data_raw$datetime, "%Y-%m-%d %H:%M:%S", tz="UTC")
 data_raw <- data_raw[order(data_raw$transmitter, data_raw$datetime),]
 
-# import animals metadata
+# import animals' metadata
 data_tags <- read.csv2("./data/tagged_animals.csv", header=T)
-colnames(data_tags) <- c("ID", "length", "transmitter", "tagging_date", "dead_date", "tagging_location")
+colnames(data_tags) <- c("ID", "length", "transmitter", "tagging_date", "tag_battery", "dead_date", "tagging_location")
 data_tags$tagging_date <- as.POSIXct(data_tags$tagging_date, "%Y-%m-%d", tz="UTC")
 
+# set default parameter for moby functions
+setDefaults(id.col="ID", datetime.col="datetime", timebin.col="timebin",
+            tagging.dates=data_tags$tagging_date, tag.durations=data_tags$tag_battery)
 
 # import coastline shapefile
 coastline <- raster::shapefile("./layers/coastline/GSHHS_shp/GSHHS_h_L1.shp")
@@ -60,9 +55,12 @@ coastline <- sp::spTransform(coastline, epsg_code)
 # Remove spurious detections ##########################################################################
 #######################################################################################################
 
-filter_results <- filterDetections(data=data_raw, tagging.dates=data_tags$tagging_date, min.detections=0,
-                                   land.shape=coastline, hours.threshold=24, acoustic.range=800,
+filter_results <- filterDetections(data=data_raw,  cutoff.dates=data_tags$dead_date,
+                                   min.detections=0, land.shape=coastline,
+                                   hours.threshold=24, acoustic.range=800,
                                    max.speed=3, grid.resolution=1000, mov.directions=8)
+
+
 data_filtered <- filter_results$data
 
 
@@ -146,15 +144,15 @@ dev.off()
 
 
 #######################################################################################################
-# Plot level plots ####################################################################################
+# Plot chronogram of detections and co-occurrences ####################################################
 #######################################################################################################
 
 pdf("./level_plot.pdf", height=8, width=16,  useDingbats=F)
 par(mfrow=c(2,1))
-plotLevels(data_filtered, variables=c("individuals", "co-occurrences"), style="points", date.format="%b/%y",
-           color.pal=habitats_pal, date.interval=6, date.start=3, sunriset.coords=study_coords, lunar.info=F,
-           color.by="receiver", polygons="season", background.col="grey98", grid=F,
-           highlight.isolated=T, uniformize.scale=T, uniformize.dates=T, pt.cex=c(0.75,4))
+plotChronogram(data_filtered, variables=c("individuals", "co-occurrences"), style="points", date.format="%b/%y",
+               color.pal=habitats_pal, date.interval=6, date.start=3, sunriset.coords=study_coords, lunar.info=F,
+               color.by="station", polygons="season", background.col="grey98", grid=F,
+               highlight.isolated=T, uniformize.scale=T, uniformize.dates=T, pt.cex=c(0.75,4))
 dev.off()
 
 
