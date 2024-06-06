@@ -109,6 +109,9 @@ to represent the number of individual animals moving between sites. Defaults to 
 A numeric value specifies the curvature of the edge; zero curvature means straight edges, negative values mean the edge bends
 clockwise, positive values the opposite. TRUE means curvature 0.5, FALSE means curvature zero. Defaults to 0.5.}
 
+\item{edge.width}{A numeric vector of length 2. Represents the desired min and max
+width/thickness of the edges. Defaults to c(0.4, 3.5).}
+
 \item{edge.arrow.size}{The size of the arrows. Defaults to 0.5.}
 
 \item{edge.arrow.width}{The width of the arrows. Defaults to 1.5.}
@@ -142,17 +145,15 @@ Only considered if a background layer is not supplied. Defaults to 0.2.}
 
 \item{...}{Arguments passed to the \code{\link[igraph]{plot.igraph}} function.
 See \code{\link[igraph]{igraph.plotting}} for the complete parameters list.}
-
-\item{edge.width.}{A numeric vector of length 2. Represents the desired min and max
-width/thickness of the edges. Defaults to c(0.4, 3.5).}
 }
 \value{
 A plot displaying the migrations network. Nodes correspond to different sites,
 with coordinates reflecting their approximate location in geographic space.
 Arrows illustrate movements between sites. The size of each node indicates the number of
-individuals detected at that site, and labels on the arrows show the number of individuals
-transiting between sites. Optionally, the number of tagged individuals can be indicated
-in parentheses within the nodes of the corresponding sites.
+individuals detected at that site, and labels on the arrows show either the number of
+transition movements or the the number of individuals transiting between sites.
+Optionally, the number of tagged individuals can be indicated in parentheses
+within the nodes of the corresponding sites.
 }
 \description{
 Plots a spatial network representing animal transitions/movements between receivers/sites.

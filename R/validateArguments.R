@@ -61,7 +61,7 @@ validateArguments <- function() {
   checkColumn <- function(col_name, col_label){
     arg <- deparse(substitute(col_name))
     if(length(col_name)!=1) return(paste0("The ", col_label, " column name should be a single value. Please ensure you provide only one column name in the '", arg, "' parameter."))
-    if(!col_name %in% colnames(data)) return(paste0("Specified ",  col_label, " column ('", col_value, "')  not found. Please provide the correct column name using the '", arg, "' parameter."))
+    if(!col_name %in% colnames(data)) return(paste0("Specified ",  col_label, " column ('", col_name, "')  not found. Please provide the correct column name using the '", arg, "' parameter."))
   }
 
 
@@ -202,9 +202,9 @@ validateArguments <- function() {
   # validate start.dates  ######################################################
   if ("start.dates" %in% names(args)) {
     start.dates <- args$start.dates
-    if (!is.null(start.dates)) {
-      if (!inherits(start.dates, "POSIXct")) errors <- c(errors, "Start dates must be provided in POSIXct format.")
-      if (length(start.dates) > 1 && valid_ids  && length(start.dates)!= nlevels(data[, id.col]))
+    if(!is.null(start.dates)) {
+      if(!inherits(start.dates, "POSIXct")) errors <- c(errors, "Start dates must be provided in POSIXct format.")
+      if(length(start.dates)>1 && valid_ids  && length(start.dates)!=nlevels(data[, id.col]))
         errors <- c(errors, "Incorrect number of start.dates. Must be either a single value or a vector containing a tagging date for each individual.")
     }
   }
@@ -213,9 +213,9 @@ validateArguments <- function() {
   # validate end.dates  ################################3#######################
   if ("end.dates" %in% names(args)) {
     end.dates <- args$end.dates
-    if (!is.null(end.dates)) {
-      if (!inherits(end.dates, "POSIXct")) errors <- c(errors, "End dates must be provided in POSIXct format.")
-      if (length(end.dates) > 1 && valid_ids  && length(end.dates)!= nlevels(data[, id.col]))
+    if(!is.null(end.dates)) {
+      if(!inherits(end.dates, "POSIXct")) errors <- c(errors, "End dates must be provided in POSIXct format.")
+      if(length(end.dates)>1 && valid_ids  && length(end.dates)!=nlevels(data[, id.col]))
         errors <- c(errors, "Incorrect number of end.dates Must be either a single value or a vector containing a tagging date for each individual.")
     }
   }

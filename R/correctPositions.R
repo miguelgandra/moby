@@ -11,9 +11,9 @@
 #'
 #' @param positions A data frame containing longitude and latitude values
 #' (unprojected lat-long coordinates), corresponding to the inferred animals' positions.
-#' @param raster A raster containing land portions. Or alternatively a raster containing
+#' @param layer A raster containing land portions. Or alternatively a raster containing
 #' elevation values (negative below water).
-#' @param raster.type Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
+#' @param layer.type Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
 #' to contain NA values in water surfaces, if type 'ocean' (binary) the raster is assumed to
 #' contain NA values in land surfaces, else if type 'bathy' the raster is assumed to
 #' range between 0 (land) to max depth (positive or negative values).
@@ -27,7 +27,7 @@
 #' @param lat.col Name of the column containing latitude values. Defaults to 'lat'.
 #' @export
 
-correctPositions <- function(positions, layer, raster.type="land", depth.margin=0,
+correctPositions <- function(positions, layer, layer.type="land", depth.margin=0,
                              lon.col="lon", lat.col="lat", plot=F) {
 
   ############################################################################
@@ -50,11 +50,11 @@ correctPositions <- function(positions, layer, raster.type="land", depth.margin=
 
   # check raster type and convert values if required
   if(type=="raster"){
-    if(!raster.type %in% c("land","ocean","bathy")){
+    if(!layer.type %in% c("land","ocean","bathy")){
       stop("Raster type must be either 'land', 'ocean' or 'bathy'\n")
-    } else if (raster.type %in% c("land","ocean")){
-      cat(paste("Using raster of type", raster.type, "- depth margin ignored\n"))
-    } else if (raster.type=="bathy") {
+    } else if (layer.type %in% c("land","ocean")){
+      cat(paste("Using raster of type", layer.type, "- depth margin ignored\n"))
+    } else if (layer.type=="bathy") {
       bathy_vals <- ifelse(length(which(raster::values(layer)>0))/raster::ncell(layer) > 0.5, "positive", "negative")
       cat("Using raster of type bathy\n")
       if(bathy_vals=="positive"){cat("Negative values in raster will be converted to NA\n")}
@@ -74,15 +74,15 @@ correctPositions <- function(positions, layer, raster.type="land", depth.margin=
   ############################################################################
 
   # format layers
-  if(type=="raster" & raster.type=="land"){
+  if(type=="raster" & layer.type=="land"){
     raster::values(layer)[!is.na(raster::values(layer))] <- 1
     raster::values(layer)[is.na(raster::values(layer))] <- 0
   }
-  if(type=="raster" & raster.type=="ocean"){
+  if(type=="raster" & layer.type=="ocean"){
     raster::values(layer)[!is.na(raster::values(layer))] <- 0
     raster::values(layer)[is.na(raster::values(layer))] <- 1
   }
-  if(type=="raster" & raster.type=="bathy"){
+  if(type=="raster" & layer.type=="bathy"){
     raster::values(layer)[raster::values(layer)<depth.margin] <- 1
     raster::values(layer)[raster::values(layer)>depth.margin] <- 0
     raster::values(layer)[is.na(raster::values(layer))] <- 1
@@ -96,7 +96,7 @@ correctPositions <- function(positions, layer, raster.type="land", depth.margin=
     pointsOnLand_indexes <- which(point_values==1)
     ocean_mask <- raster::rasterToPoints(layer, fun=function(x){x==0}, spatial=T)
   }else if(type=="shape"){
-    pointsOnLand_indexes <- which(!is.na(sp::over(points, layer)$level))
+    pointsOnLand_indexes <- which(!is.na(sp::over(points, layer)))
     boundary <- sp::Polygon(raster::extent(layer))
     boundary <- sp::SpatialPolygons(list(sp::Polygons(list(boundary), ID=1)))
     boundary@proj4string <- proj
@@ -111,6 +111,7 @@ correctPositions <- function(positions, layer, raster.type="land", depth.margin=
   }
 
   # subset points
+  points <- as(points,"SpatialPoints")
   pointsOnLand <- points[pointsOnLand_indexes]
 
   # get nearest location on water
@@ -142,7 +143,7 @@ correctPositions <- function(positions, layer, raster.type="land", depth.margin=
   if(plot==T){
     par(mgp=c(2,0.7,0))
     info <- paste0("Points relocated (n=", nrow(pointsCorrected), ")")
-    raster::plot(layer, main=info, cex.main=0.8, cex.axis=0.8, las=1)
+    raster::plot(layer, main=info, col="grey90", cex.main=0.8, cex.axis=0.8, las=1)
     points(positions[pointsOnLand_indexes, c(lon.col, lat.col)], pch=16, col=adjustcolor("red",alpha.f=0.5), cex=0.7)
     points(pointsCorrected, pch=16, col=adjustcolor("blue", alpha.f=0.5), cex=0.7)
   }

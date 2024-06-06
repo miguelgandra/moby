@@ -54,7 +54,7 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
     if(geographic_coords==F){
       if(is.null(epsg.code)){
         stop("Please supply longitude and latitude in a geographic CRS /
-           unprojected format (WGS84) or provide an epsg.code")
+           unprojected format (WGS84) or provide an epsg.code", call.=FALSE)
       }
       coords <- sp::SpatialPoints(cbind(data[,lon.col], data[,lat.col]))
       raster::projection(coords) <- epsg.code
@@ -77,10 +77,10 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
     # retrieve epsg.code if not provided
     if(is.null(epsg.code)){
       if(!grepl("+units=m", land.shape@proj4string, fixed=T)){
-        stop("Please supply a projected land.shape (in metres)")
+        stop("Please supply a projected land.shape (in metres)", call.=FALSE)
       }else{
         epsg.code <- land.shape@proj4string
-        if(verbose) {warning(paste0("Assuming CRS projection '", epsg.code, "'\n"))}
+        if(verbose) {warning(paste0("Assuming CRS projection '", epsg.code), call.=FALSE)}
       }
     } else {
       land.shape <- sp::spTransform(land.shape, epsg.code)
@@ -108,7 +108,7 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
     pts <- sf::st_multipoint(cbind(data$lon_m_tmp, data$lat_m_tmp))
     pts <- sf::st_sfc(pts, crs=sf::st_crs(epsg.code))
     if(lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=T))>0){
-      warning("Some of the coordinates overlap the supplied land shape\n")
+      warning("Some of the coordinates overlap the supplied land shape", call.=FALSE)
     }
 
     # create transition layer

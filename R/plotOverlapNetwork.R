@@ -12,11 +12,11 @@
 #' animals' size/length and average overlap and the other representing the
 #' relationship between pairwise differences in size and overlap scores.
 #'
+#' @inheritParams setDefaults
 #' @param overlaps Similarity matrix containing pairwise overlaps, as returned by \code{\link{calculateOverlap}}.
 #' @param id.metadata A data frame containing animal IDs as well as an optional 'color.by' and 'size.by' variables.
-#' @param id.col Name of the column containing animal identifications. Defaults to "ID".
-#' @param color.by Optional. Factor variable in id.metadata defining the color of each node (e.g. species).
-#' @param scale.by Optional. Numeric variable in id.metadata defining the size of each node (e.g. animal length).
+#' @param color.by Optional. Factor variable in id.metadata defining the color of each node (e.g. "species", "sex", etc).
+#' @param scale.by Optional. Numeric variable in id.metadata defining the size of each node (e.g.  "length").
 #' @param model Type of regression in case animal.sizes have been supplied ("linear" or "quadratic").
 #' A vector with two elements should be supplied, the first to be used in the "average overlap ~ size" graph,
 #' and the second in the "pairwise overlap ~ size difference" graph.
@@ -31,32 +31,29 @@
 #' @export
 
 
-plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL, scale.by=NULL, min.size=0.7, max.size=1.4,
-                               model=c("linear", "linear"), min.val=NULL, cut.val=NULL, color.pal=NULL, ...) {
+plotOverlapNetwork <- function(overlaps, random.results=NULL, id.metadata, id.col=getDefaults("id"),
+                               color.by=NULL, scale.by=NULL, nodes.size=c(0.7, 1.4), label.cex=1.2, nodes.color=("#643BA6"),
+                               edge.label.cex=1.7, min.val=NULL, cut.val=NULL, color.pal=NULL, ...) {
 
-  #######################################################################################################
-  # Initial checks ###############################################################################
 
+  ##############################################################################
+  ## Initial checks ############################################################
+  ##############################################################################
+
+  # print to console
+  moby:::printConsole("Generating overlap network")
 
   # check if qgraph package is installed
   if (!requireNamespace("qgraph", quietly=TRUE)) {
-    stop("The 'qgraph' package is required for this function but is not installed. Please install 'qgraph' using install.packages('qgraph') and try again.")
+    stop("The 'qgraph' package is required for this function but is not installed. Please install 'qgraph' using install.packages('qgraph') and try again", call.=FALSE)
   }
 
+  # validate id.metadata id.col
+  if(!id.col %in% colnames(id.metadata)) stop("ID column not found in id.metadata. Please assign the correct column name with 'id.col'", call.=FALSE)
 
-  # check if id.metadata contains id.col
-  if(!id.col %in% colnames(id.metadata)){
-    stop("ID column not found in id.metadata. Please assign the correct column name with 'id.col'")
-  }
-
-  # check if id.metadata contains id.col
-  if(!is.null(color.by) & !color.by %in% colnames(id.metadata)){
-    stop("color.by column not found in id.metadata")
-  }
-
-  # check id.col format
-  if(class(id.metadata[,id.col])!="factor"){
-    cat("Converting metadata ids to factor\n")
+  # check format of id.metadata id.col
+  if(!inherits(id.metadata[,id.col], "factor")){
+    warning("Converting metadata ids to factor", call.=FALSE)
     id.metadata[,id.col] <- as.factor(id.metadata[,id.col])
   }else{
     id.metadata[,id.col] <- droplevels(id.metadata[,id.col])
@@ -65,10 +62,10 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
   # check if id.metadata contains color.by
   if(!is.null(color.by)){
     if(!color.by %in% colnames(id.metadata)){
-      stop("color.by column not found in id.metadata'")
+      stop("color.by column not found in id.metadata'", call.=FALSE)
     }
     if(class(id.metadata[,color.by])!="factor"){
-      cat("Converting color.by column to factor\n")
+      warning("Converting color.by column to factor", call.=FALSE)
       id.metadata[,color.by] <- as.factor(id.metadata[,color.by])
     }
   }
@@ -76,16 +73,17 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
   # check if id.metadata contains scale.by
   if(!is.null(scale.by)){
     if(!scale.by %in% colnames(id.metadata)){
-      stop("scale.by column not found in id.metadata'")
+      stop("scale.by column not found in id.metadata'", call.=FALSE)
     }
-    if(!class(id.metadata[,scale.by]) %in% c("numeric", "integer")){
-      stop("scale.by should be of class numeric'")
+    if(!inherits(id.metadata[,scale.by], "numeric")){
+      stop("scale.by should be of class numeric'", call.=FALSE)
     }
   }
 
+  # validate color palette
   if(!is.null(color.pal)){
     if(length(color.pal)!=nlevels(id.metadata[,color.by])){
-      cat("Warning: Number of colors in color.pal don't match the number of levels in color.by\n")
+      warning("Number of colors in color.pal don't match the number of levels in color.by", call.=FALSE)
     }
   }else{
     if(!is.null(color.by)){
@@ -95,17 +93,17 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
     }
   }
 
-  if(any(!model %in% c("linear", "quadratic"))){
-    stop("Wrong 'model' argument. Please choose between 'linear' or 'quadratic'.")
-  }
 
-  cat("Generating overlap network\n")
-
-
-  #######################################################################################################
-  # Create overlap matrix ###############################################################################
+  ##############################################################################
+  # Create overlap matrix ######################################################
+  ##############################################################################
 
   if(any(class(overlaps)=="list")){overlaps <- overlaps$overlap}
+
+
+  pairwise_overlaps <- reshape2::melt(pairwise_overlaps)
+
+
 
   overlaps <- as.matrix(overlaps)
   network_matrix <- round(overlaps, 1)
@@ -114,15 +112,16 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
   network_ids <- colnames(network_matrix)
 
   if(length(network_ids)>nlevels(id.metadata[,id.col])){
-    stop("IDs appear to be missing from id.metadata")
+    stop("IDs appear to be missing from id.metadata", call.=FALSE)
   }else if(length(network_ids)<nlevels(id.metadata[,id.col])){
     id.metadata <- id.metadata[id.metadata[,id.col] %in% network_ids,]
     id.metadata[,id.col] <- droplevels(id.metadata[,id.col])
   }
 
 
-  #######################################################################################################
-  # Plot networks ###############################################################################
+  ##############################################################################
+  # Plot networks ##############################################################
+  ##############################################################################
 
   # set nodes' sizes
   if(!is.null(scale.by)) {
@@ -144,6 +143,30 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
   vals <- vals[order(vals, decreasing=T)]
   if(is.null(min.val)){min.val <- quantile(vals, 0.5)}
   if(is.null(cut.val)){cut.val <-  quantile(vals, 0.9)}
+
+
+
+  # generate network
+  qgraph::qgraph(network_matrices[[i]], layout="spring", edge.labels=edge_labels, edge.color=edge_colors, edge.width=1,
+                 cut=cut.val, colFactor=0.6, minimum=min.val, label.color="white", node.width=node_sizes,
+                 edge.label.cex=edge.label.cex, edge.label.margin=0.005, label.cex=label.cex,
+                 details=F, color=node_colors, label.scale=F,
+                 curveAll=T, curveDefault=0.5, curveShape=-1, curveScale=T, curveScaleNodeCorrection=T,
+                 repulsion=0.1, trans=T, fade=T, usePCH=T)
+
+
+  title(main=names(network_matrices)[i], cex.main=2, line=4.6, font=2, xpd=T)
+  network_metrics1 <- paste0("Nº of individuals: ", length(group_ids))
+  network_metrics2 <- paste0("Nº of dyads: ", ndyads$ndyads[i])
+  network_metrics3 <- paste0("Mean binary degree: ", sprintf("%.1f", binary_degree[i]))
+  network_metrics4 <- paste0("Mean shared period: ", sprintf("%.0f", shared_period$days[i]), " days")
+  legend("bottom", inset=c(0,-0.08), legend=c(network_metrics1, network_metrics2, network_metrics3, network_metrics4), bty="n", cex=1, xpd=T)
+
+
+
+
+
+
 
   # overlap network
   par(mar=c(1,1,1,1))
@@ -218,6 +241,7 @@ plotOverlapNetwork <- function(overlaps, id.metadata, id.col="ID", color.by=NULL
     box()
   }
 }
+
 
 #######################################################################################################
 #######################################################################################################

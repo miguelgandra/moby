@@ -7,7 +7,7 @@
 correctPositions(
   positions,
   layer,
-  raster.type = "land",
+  layer.type = "land",
   depth.margin = 0,
   lon.col = "lon",
   lat.col = "lat",
@@ -18,7 +18,10 @@ correctPositions(
 \item{positions}{A data frame containing longitude and latitude values
 (unprojected lat-long coordinates), corresponding to the inferred animals' positions.}
 
-\item{raster.type}{Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
+\item{layer}{A raster containing land portions. Or alternatively a raster containing
+elevation values (negative below water).}
+
+\item{layer.type}{Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
 to contain NA values in water surfaces, if type 'ocean' (binary) the raster is assumed to
 contain NA values in land surfaces, else if type 'bathy' the raster is assumed to
 range between 0 (land) to max depth (positive or negative values).}
@@ -30,9 +33,6 @@ is of type bathy. Defaults to 0 (water vs land).}
 \item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
 \item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
-
-\item{raster}{A raster containing land portions. Or alternatively a raster containing
-elevation values (negative below water).}
 
 \item{dist.margin}{If set, shortest in-water paths will be calculated only
 for cells with depths <= than this threshold. Only takes effect when raster

@@ -45,7 +45,7 @@
 #' @param edge.curved Specifies whether to draw curved edges, or not. This can be a logical or a numeric vector or scalar.
 #' A numeric value specifies the curvature of the edge; zero curvature means straight edges, negative values mean the edge bends
 #' clockwise, positive values the opposite. TRUE means curvature 0.5, FALSE means curvature zero. Defaults to 0.5.
-#' @param edge.width. A numeric vector of length 2. Represents the desired min and max
+#' @param edge.width A numeric vector of length 2. Represents the desired min and max
 #' width/thickness of the edges. Defaults to c(0.4, 3.5).
 #' @param edge.arrow.size The size of the arrows. Defaults to 0.5.
 #' @param edge.arrow.width The width of the arrows. Defaults to 1.5.
@@ -73,9 +73,10 @@
 #' @return A plot displaying the migrations network. Nodes correspond to different sites,
 #' with coordinates reflecting their approximate location in geographic space.
 #' Arrows illustrate movements between sites. The size of each node indicates the number of
-#' individuals detected at that site, and labels on the arrows show the number of individuals
-#' transiting between sites. Optionally, the number of tagged individuals can be indicated
-#' in parentheses within the nodes of the corresponding sites.
+#' individuals detected at that site, and labels on the arrows show either the number of
+#' transition movements or the the number of individuals transiting between sites.
+#' Optionally, the number of tagged individuals can be indicated in parentheses
+#' within the nodes of the corresponding sites.
 #'
 #' @examples
 #'
@@ -147,25 +148,6 @@ plotMigrations <- function(data,
   # check if edge.type is valid
   if(!edge.type %in% c("movements", "individuals")) stop("'edge.type' must be either 'movements' or 'individuals'", call. = FALSE)
 
-  # check if dataset coordinates are projected (meters)
-  geographic_coords <- all(data[, lon.col]>=-180 & data[,lon.col]<=180 & data[,lat.col]>=-90 & data[,lat.col]<=90)
-  if(geographic_coords) {
-    if(!is.null(land.shape) || !is.null(background.layer)) {
-      warning("Projecting coordinates based on the CRS of the supplied land shape or background layer", call.=FALSE)
-      if(!is.null(land.shape)) epsg_code <- raster::proj4string(land.shape)
-      else if(!is.null(background.layer)) epsg_code <- raster::proj4string(background.layer)
-      coords <- sp::SpatialPoints(data[,c(lon.col, lat.col)])
-      projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
-      coords <- sp::spTransform(coords, epsg_code)
-      data[,lon.col] <- coords@coords[,1]
-      data[,lat.col] <- coords@coords[,2]
-      geographic_coords <- FALSE
-    }
-  }
-
-  # check if scale bar can be plotted with geographic coordinates
-  if(!is.null(scale.km) && geographic_coords) warning("To plot a scale bar please supply projected coordinates", call.=FALSE)
-
   # check color.nodes.by argument
   if(!color.nodes.by %in% c("detection", "group", colnames(data))) stop("Please set a valid 'color.nodes.by' argument", call.=FALSE)
   if(color.nodes.by=="group" & is.null(id.groups)) warning("'color.nodes.by' set to group but id.groups were not supplied. Only the first node color will be used", call.=FALSE)
@@ -175,6 +157,27 @@ plotMigrations <- function(data,
 
   # check if edge edge.width is of length 2
   if(length(edge.width)!=2) stop("Please supply a min and max value for the edge width", call.=FALSE)
+
+  # check if dataset coordinates are projected (meters)
+  geographic_coords <- all(data[, lon.col]>=-180 & data[,lon.col]<=180 & data[,lat.col]>=-90 & data[,lat.col]<=90)
+  if(geographic_coords) {
+    if(!is.null(land.shape) || !is.null(background.layer)) {
+      if(!is.null(land.shape)) epsg_code <- raster::proj4string(land.shape)
+      else if(!is.null(background.layer)) epsg_code <- raster::proj4string(background.layer)
+      if(!raster::isLonLat(epsg_code)){
+        warning("Projecting coordinates based on the CRS of the supplied land shape or background layer", call.=FALSE)
+        coords <- sp::SpatialPoints(data[,c(lon.col, lat.col)])
+        projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
+        coords <- sp::spTransform(coords, epsg_code)
+        data[,lon.col] <- coords@coords[,1]
+        data[,lat.col] <- coords@coords[,2]
+        geographic_coords <- FALSE
+      }
+    }
+  }
+
+  # check if scale bar can be plotted with geographic coordinates
+  if(!is.null(scale.km) && geographic_coords) warning("Projected coordinates are required to plot a scale bar. Please provide coordinates in a projected coordinate system.", call.=FALSE)
 
   # check layer projections
   if(!is.null(background.layer) & !is.null(land.shape)){
