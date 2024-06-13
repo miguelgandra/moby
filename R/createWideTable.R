@@ -4,9 +4,10 @@
 
 #' Create detections table in wide format
 
-#' @description Returns a data frame object containing binned detections in the wide format
-#' (time bin x individual matrix, with values corresponding either to the receiver detections
-#' or the number of detections).
+#' @description This function generates a data frame containing binned detections in a wide format
+#' (time bin x individual matrix). The values in the matrix are determined by the specified column
+#' in the input data frame, which can represent, for instance, the receiver where most detections were
+#' registered within that time frame or the number of detections.
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing animal detections with corresponding time-bins.
@@ -28,8 +29,26 @@
 #' the earliest start date is floored to the beginning of the day, and the latest end date is
 #' rounded up to the end of the day. This ensures that the time bins cover whole days. Defaults to FALSE.
 #' @param verbose Output ties info to console? Defaults to TRUE.
+#' @return A data frame in wide format with time bins as rows and individuals as columns. Each cell
+#' in the matrix represents the value from `value.col` for that time bin and individual, aggregated
+#' according to the specified aggregation function.
 #' @export
-
+#'
+#' @examples
+#' \dontrun{
+#' data <- data.frame(
+#'   timebin = as.POSIXct(c('2023-01-01 00:00:00', '2023-01-01 00:05:00', '2023-01-01 00:10:00',
+#'                          '2023-01-01 00:00:00', '2023-01-01 00:10:00', '2023-01-01 00:15:00',
+#'                          '2023-01-01 00:05:00', '2023-01-01 00:10:00', '2023-01-01 00:20:00')),
+#'   id = c('A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'C'),
+#'   detections = c(2, 3, 1, 5, 1, 4, 6, 2, 3)
+#' )
+#'
+#' start.dates <- as.POSIXct(c('2023-01-01 00:00:00', '2023-01-01 00:00:00', '2023-01-01 00:00:00'))
+#' end.dates <- as.POSIXct(c('2023-01-01 00:10:00', '2023-01-01 00:15:00', '2023-01-01 00:20:00'))
+#'
+#' createWideTable(data, value.col="detections", start.dates=start.dates, end.dates=end.dates)
+#' }
 
 createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"), value.col,
                             start.dates=NULL, end.dates=NULL, agg.fun=NULL, round.dates=FALSE, verbose=TRUE) {
@@ -46,10 +65,10 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
   # check if data contains value.col
   if(!value.col %in% colnames(data)) {
     if(value.col=="detections"){
-      cat("Warning: No 'detections' column found, assuming one detection per row\n")
+      warning("No 'detections' column found, assuming one detection per row", call.=FALSE)
       data$detections <- 1
     }else{
-      stop("Value column not found. Please specify the correct column using 'value.col'")
+      stop("Value column not found. Please specify the correct column using 'value.col'", call.=FALSE)
     }
   }
 
@@ -95,13 +114,17 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
                               fill=NA_character_, fun.aggregate=checkTies, drop=F)
       ties$count <- apply(ties[,-1], 1, function(x) length(which(!is.na(x))))
       ties <- ties[ties$count>0,]
-      if(verbose==T & nrow(ties)>0){
+
+      if(nrow(ties)>0){
         ties <- reshape2::melt(ties[,-ncol(ties)], id.vars=timebin.col)
         colnames(ties) <- c("timebin", "ID", "ties")
         ties <- ties[!is.na(ties$ties),]
-        cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
-        cat("First value assigned:\n")
-        if(nrow(ties)<=10){print(ties)}else{print(head(ties))}
+        warning(paste0(nrow(ties), " instances with value ties\n"), call.=FALSE)
+        if(verbose==T){
+          cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
+          cat("First value assigned:\n")
+          if(nrow(ties)<=10){print(ties)}else{print(head(ties))}
+        }
       }
     }
 
@@ -113,7 +136,6 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
 
   # else use supplied function to aggregate values
   }else{
-
     data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
                                   fill=0, fun.aggregate=agg.fun, drop=F)
 }
@@ -143,8 +165,6 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
   # create complete sequence of timebins for the study duration
   # round dates if needed
   if(round.dates==T){
-    start <- as.POSIXct(floor(as.numeric(min(start.dates, na.rm=T))/(24*60*60))*24*60*60, origin='1970-01-01')
-
     start <-  lubridate::floor_date(min(start.dates, na.rm=T), unit="day")
     end <- lubridate::ceiling_date(max(end.dates, na.rm=T), unit="day")-60*60*(interval/60)
   } else {
@@ -175,6 +195,14 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
 
   # discard row names
   rownames(data_table) <- NULL
+
+  # create new attribute to save animal IDs
+  attr(data_table, 'ids') <- levels(data[,id.col])
+  attr(data_table, 'timebin.col') <- as.character(timebin.col)
+  names(start.dates) <- levels(data[,id.col])
+  names(end.dates) <- levels(data[,id.col])
+  attr(data_table, 'start.dates') <- start.dates
+  attr(data_table, 'end.dates') <- end.dates
 
   # return formatted table
   return(data_table)

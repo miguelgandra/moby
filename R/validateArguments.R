@@ -39,6 +39,7 @@
 #' @note
 #' This function is intended for internal use within the `moby` package. It helps streamline
 #' argument validation across multiple functions, ensuring consistency and reducing redundancy.
+#' @keywords internal
 #'
 #' @examples
 #' \dontrun{
@@ -70,7 +71,7 @@ validateArguments <- function() {
   ##############################################################################
 
   args <- mget(names(formals(sys.function(sys.parent()))), sys.frame(sys.nframe()-1L))
-  data <- args[[1]]
+  data <- args[["data"]]
 
   valid_ids <- FALSE
   color.by <- NULL
@@ -286,6 +287,15 @@ validateArguments <- function() {
     style <- args$style
     if(!style %in% c("raster", "points")) errors <- c(errors, "Invalid style specified. Accepted values are: 'raster' or 'points'.")
   }
+
+
+  ##############################################################################
+  # Validate cores for parallel computing ######################################
+  if ("cores" %in% names(args)) {
+    cores <- args$cores
+    if(parallel::detectCores()<cores)  errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)"))
+  }
+
 
   ##############################################################################
   # Return errors and/or warnings ##############################################

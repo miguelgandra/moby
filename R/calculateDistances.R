@@ -235,7 +235,8 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
   if(verbose) {close(pb)}
   end.time <- Sys.time()
   time.taken <- end.time - start.time
-  if(verbose) {print(time.taken)}
+  if(verbose) cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), "secs\n"))
+
 
   # print warning
   if(verbose & lines_skipped>0) {

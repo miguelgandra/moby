@@ -3,255 +3,308 @@
 #######################################################################################################
 
 #' Calculate pairwise spatio-temporal overlaps (association index)
-
-#' @description Estimates the extent of association between each two individuals,
-#' assuming that joint space usage occurs whenever individuals overlap in
-#' space (receiver) and time (bin). Only the total shared periods of detection
-#' for a given pair are considered for this analysis, i.e. the time bins from the
-#' latest release date to the earliest last detection between each pair. This
-#' truncation step ensures that the absence of an individual in the receiver array
-#' is not due to transmitter failure or premature death. This pairwise overlap
-#' index is analogous to the simple ratio association index (Cairns & Schwager 1987,
-#' Ginsberg & Young 1992), ranging from 0% (no overlap) to 100% (complete overlap).
 #'
-#' @param table A data frame object containing binned detections in the wide format
+#' @description Estimates the extent of association between each pair of individuals,
+#' assuming that joint space usage occurs whenever individuals overlap in space (receiver) and time (bin).
+#' The analysis only considers the total shared periods of detection for a given pair, i.e., the time bins from the
+#' latest release date to the earliest last detection between each pair. This truncation step ensures that the absence
+#' of an individual in the receiver array is not due to transmitter failure or premature death. The pairwise overlap
+#' index can be calculated using one of two metrics: the simple ratio association index
+#' or the half-weight index. These indices range from 0% (no overlap) to 100% (complete overlap).
+#'
+#' @param table A data frame containing binned detections in the wide format
 #' (time bin x individual matrix, with values corresponding to the receiver with the
 #' highest number of detections), as returned by \code{\link{createWideTable}}.
-#' @param id.metadata A data frame containing individual's metadata. It should contain
-#' at least  animal IDs  and a tagging/release date column in POSIXct format.
 #' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
 #' within each group, as well as comparing relationships between ids of different groups.
-#' @param subset If defined, overlaps are calculated independently for each level
-#' of this variable (usually a temporal class, e.g., diel phase or annual season).
-#' If left NULL, single overlap indices are calculated for the whole monitoring period.
-#' @param id.col Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.
-#' @param tagdate.col Name of the column in id.metadata containing animal tagging/release dates in
-#' POSIXct format. Defaults to 'tagging_date'.
+#' @param subset If defined, overlaps are calculated independently for each level of
+#' this variable. This can either be a single column name (variable) or a vector
+#' of column names, corresponding to variables contained in the table. In the case of
+#' multiple columns, their interaction is used for grouping. If left NULL,
+#' single overlap indices are calculated for the whole monitoring period.
 #' @param group.comparisons Controls the type of comparisons to be run, when id.groups are defined.
 #' One of "within", "between" or "all". Useful to discard comparisons between individuals
 #' belonging to the same group or skip comparisons between different groups, when these are
 #' not required (less computing time). Defaults to "all".
+#' @param metric One of "simple-ratio" or "half-weight".
+#' @param cores Number of cores to use for parallel computation. Defaults to 1 (no parallelization).
+#' @importFrom foreach %dopar%
+#'
+#' @details The two metrics for calculating association indices are:
+#
+#' 1. Simple Ratio Association Index:
+#' This index provides a measure of the proportion of time two individuals spend together.
+#' It is calculated as the ratio of the number of time bins where both individuals are
+#' detected together to the total number of time bins where at least one of the individuals
+#' is detected. This straightforward metric gives a clear indication of the extent
+#' to which two individuals' space usage overlaps.
+#'
+#' 2. Half-Weight Index:
+#' This index modifies the simple ratio by giving half-weight to the occurrences
+#' where only one of the individuals is detected. It accounts for the fact that sometimes
+#' individuals might be in the same area but one might not be detected due to various reasons.
+#' This index is useful when detections are not perfectly reliable and helps mitigate
+#' the impact of missed detections.
+#'
+#' It is important to acknowledge that any fish pair detected simultaneously may
+#' be anywhere from a few centimetres to hundreds of meters apart, depending on
+#' the maximum detection ranges of the transmitters. Therefore, caution should
+#' be taken when interpreting the results, especially when making inferences about
+#' biotic or fish−habitat relationships.
+#'
+#' Useful references:
+#' Cairns, S. J., & Schwager, S. J. (1987). A comparison of association indices. Animal Behaviour, 35(5), 1454-1469.
+#' Ginsberg, J. R., & Young, T. P. (1992). Measuring association between individuals or groups in behavioural studies. Animal Behaviour, 44(2), 377-379.
+#' Farine, D. R., & Whitehead, H. (2015). Constructing, conducting and interpreting animal social network analysis. Journal of Animal Ecology, 84(5), 1144-1163.
+#' Hoppitt, W. J., & Farine, D. R. (2018). Association indices for quantifying social relationships: how to deal with missing observations of individuals or groups. Animal Behaviour, 136, 227-238.
 #'
 #' @return A list containing similarity matrices with pairwise overlaps in %,
 #' time windows in days (period used to compute overlap for each pair),
 #' the average number of time-bins spent by each pair consecutively in the same receiver,
 #' the maximum number of time-bins spent by each pair consecutively in the same receiver and
-#' the total number of co-occurrences, as well as the number co-occurrences by location level.
+#' the total number of co-occurrences, as well as the number of co-occurrences by location level.
 #' If id.groups or a subset variable is defined, these results are nested within each of the grouping levels.
 #' @export
 
+calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-ratio",
+                             group.comparisons="all", cores=1) {
 
-calculateOverlap <- function(table, id.metadata, id.groups=NULL, subset=NULL,
-                             id.col="ID", tagdate.col="tagging_date", group.comparisons="all") {
+  ##############################################################################
+  ## Initial checks ############################################################
+  ##############################################################################
 
-
-  ######################################################################
-  ## Initial checks ####################################################
-
-  if(!is.null(subset) & !all(subset %in% colnames(table))){
-    stop("subset variable(s) not found in the supplied table")
+  # validate parameters
+  errors <- c()
+  if(!c("ids") %in% names(attributes(table))) errors <- c(errors, "The supplied table does not seem to be in the wide format. Please use the output of the 'createWideTable' function")
+  if (!is.data.frame(table)) errors <- c(errors, "The 'table' argument must be a data frame.")
+  if (!is.null(subset) && !all(subset %in% colnames(table))) errors <- c(errors,  "Subset variable(s) not found in the supplied table")
+  if (!metric %in% c("simple-ratio", "half-weight")) errors <- c(errors, "Metric must be one of 'simple-ratio' or 'half-weight'.")
+  if (!group.comparisons %in% c("all", "within", "between")) errors <- c(errors, "Group comparisons must be one of 'all', 'within' or 'between'")
+  if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "Cores must be a positive integer.")
+  if(parallel::detectCores()<cores)  errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)"))
+  if(length(errors)>0){
+    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+    stop(stop_message, call.=FALSE)
   }
 
-  if(!id.col %in% colnames(id.metadata)){
-    stop("ID column not found in id.metadata. Please specify the correct column using 'id.col'")
-  }
-
-  if(!tagdate.col %in% colnames(id.metadata)){
-    stop("Tagging date column not found in id.metadata. Please specify the correct column using 'tagdate.col'")
-  }
-
-  if(class(id.metadata[,id.col])!="factor"){
-    cat("Converting ids to factor\n")
-    id.metadata[,id.col] <- as.factor(id.metadata[,id.col])
-  }
-
-  if(class(id.metadata[,tagdate.col])[1]!="POSIXct"){
-    stop("Please convert the tagging dates to POSIXct format")
-  }
+  # get table attributes
+  complete_ids <- as.character(attributes(table)$ids)
+  timebin.col <- attributes(table)$timebin.col
+  start_dates <- attributes(table)$start.dates
+  end_dates <- attributes(table)$end.dates
 
   # reorder ID levels if ID groups are defined
-  if(!is.null(id.groups)){
-    if(any(duplicated(unlist(id.groups)))) {
-      stop("Repeated ID(s) in id.groups")
-    }
-    if(any(!unlist(id.groups) %in% levels(id.metadata[,id.col]))){
-      stop("Some of the ID(s) in id.groups were not found in the supplied metadata")
-    }
+  if (!is.null(id.groups)) {
+    if (any(duplicated(unlist(id.groups)))) stop("Repeated ID(s) in id.groups", call.=FALSE)
+    if (any(!unlist(id.groups) %in% complete_ids)) stop("Some of the ID(s) in id.groups were not found in the supplied table", call.=FALSE)
 
     # remove individuals not present in ID groups
-    complete_ids <- unique(id.metadata[,id.col])
     selected_ids <- unique(unlist(id.groups))
+    discard_indexes <- which(!complete_ids %in% selected_ids)
     id_cols <- which(colnames(table) %in% complete_ids)
     discard_cols <- id_cols[!colnames(table)[id_cols] %in% selected_ids]
-    if(length(discard_cols)>0){
-      table <- table[,-discard_cols]
-      id.metadata <- id.metadata[id.metadata[,id.col] %in% selected_ids,]
-      id.metadata[,id.col] <- droplevels(id.metadata[,id.col])
+    if (length(discard_cols) > 0) {
+      table <- table[, -discard_cols]
+      complete_ids <- complete_ids[-discard_indexes]
+      start_dates <- start_dates[-discard_indexes]
+      end_dates <- end_dates[-discard_indexes]
     }
   }
 
-
-
-  ######################################################################
-  ## Prepare data ######################################################
+  ##############################################################################
+  ## Prepare data ##############################################################
+  ##############################################################################
 
   # measure running time
   start.time <- Sys.time()
 
-  #
-  unique_ids <- colnames(data_table)[colnames(data_table) %in% levels(id.metadata[,id.col])]
+  # number of animals
+  n_ids <- length(complete_ids)
 
-
-  # retrieve last detection of each individual
-  keep_cols <- which(colnames(table) %in% levels(id.metadata[,id.col]))
-  tagging_dates <- id.metadata[,tagdate.col]
-  last_detections <- suppressWarnings(apply(table[,keep_cols], 2, function(x) table$timebin[max(which(!is.na(x)))]))
-  last_detections <- as.POSIXct(last_detections, origin='1970-01-01', tz="UTC")
-  missing_individuals <- names(which(is.na(last_detections)))
+  # select core columns
+  keep_cols <- which(colnames(table) %in% complete_ids)
+  missing_individuals <- names(which(is.na(end_dates)))
   keep_cols <- c(1, keep_cols)
 
-
-  # retrieve animal IDs
-  unique_ids <- levels(id.metadata[,id.col])
-  n_ids <- length(unique_ids)
-
-  # check if overlaps need to be calculated for different groups
-  multiple <- !is.null(subset)
+  # initialize list
   data_list <- list()
 
-
-  ##########################################################################
-  # if not, calculate overlaps for the entire study duration ###############
-  if(multiple==F){
-    data_list[[1]] <- table[,keep_cols]
-    names(data_list) <- "entire duration"
-
-  # else, split data and calculate overlaps independently for each group ####
+  # if no subset variable is defined, calculate overlaps for the entire study duration
+  if (is.null(subset)) {
+    data_list[[1]] <- table[, keep_cols]
+    names(data_list) <- "complete monitoring duration"
+  # else, split data and calculate overlaps independently for each group
   } else {
-    keep_cols <- c(keep_cols, which(colnames(table)==subset))
+    keep_cols <- c(keep_cols, which(colnames(table) %in% subset))
     data_list <- split(table[,keep_cols], f=table[,subset])
-    data_list <- lapply(data_list, function(x) x[,-which(colnames(x)==subset)])
+    data_list <- lapply(data_list, function(x) x[,-which(colnames(x) %in% subset)])
   }
 
-
-  ###########################################################################
-  # calculate pairwise overlaps #############################################
+  ##############################################################################
+  # Calculate pairwise overlaps ################################################
+  ##############################################################################
 
   # generate all pairwise combinations
-  pairs <- combn(1:n_ids, 2)
-  # initiate template matrix and results list
-  template_matrix <- matrix(NA, n_ids, n_ids)
-  colnames(template_matrix) <- unique_ids
-  rownames(template_matrix) <- unique_ids
+  pairwise_combinations <- combn(1:n_ids, 2)
   results <- list()
 
-  for(i in 1:length(data_list)){
+  for (i in 1:length(data_list)) {
 
     # set variables
     data <- data_list[[i]]
-    cat(paste0("Calculating overlap - ", names(data_list)[i], "\n"))
+    moby:::printConsole(paste0("Calculating overlap - ", names(data_list)[i]))
 
-    # initiate data objects to hold the results
-    overlap_matrix <- proxy::as.simil(template_matrix)
-    window_size <- proxy::as.simil(template_matrix)
-    mean_run <- proxy::as.simil(template_matrix)
-    max_run <- proxy::as.simil(template_matrix)
-    matching_detections <- proxy::as.simil(template_matrix)
-    station_counts <- list()
-    no_data <- c()
+    # create list of variables to export to each worker
+    args <- list(pairwise_combinations=pairwise_combinations, complete_ids=complete_ids,
+                 start_dates=start_dates, end_dates=end_dates,
+                 id.groups=id.groups, group.comparisons=group.comparisons,
+                 timebin.col=timebin.col, data=data, metric=metric)
 
-    # set progress bar
-    pb <- txtProgressBar(min=0, max=ncol(pairs), initial=0, style=3)
+    ###################################################################
+    # calculate pairwise results using the default method (single core)
+    if (cores == 1) {
 
-    # calculate pairwise overlaps
-    for (p in 1:ncol(pairs)) {
+      # Set progress bar
+      pb <- txtProgressBar(max=ncol(pairwise_combinations), initial=0, style=3)
 
-      # show progress in console
-      setTxtProgressBar(pb,p)
+      # Calculate pairwise overlaps
+      results[[i]] <- lapply(1:ncol(pairwise_combinations), function(p) pairwiseOverlaps(p, progressbar=pb, args=args))
+      results[[i]] <- plyr::rbind.fill(results[[i]])
 
-      # select transmitters
-      a <- pairs[1,p]
-      b <- pairs[2,p]
-      id1 <- unique_ids[a]
-      id2 <- unique_ids[b]
+      # Close progress bar
+      close(pb)
 
-      # if any of the individuals doesn't have detections, jump to next pair
-      if(any(is.na(last_detections[c(a,b)]))){window_size[p]<-0; next}
+      #############################################################
+      # else use parallel computing to speed up calculations
+    } else {
 
-      # discard comparisons between individuals belonging to the same group or
-      # skip comparisons between different groups, if required
-      if(!is.null(id.groups)){
-        group1 <- which(unlist(lapply(id.groups, function(x) id1 %in% x)))
-        group2 <- which(unlist(lapply(id.groups, function(x) id2 %in% x)))
-        if(group.comparisons=="within" & group1!=group2){window_size[p]<-0; next}
-        if(group.comparisons=="between" & group1==group2){window_size[p]<-0; next}
+      # print to console
+      cat(paste0("Starting parallel computation: ", cores, " cores\n"))
+
+      # initialize cluster
+      cl <- parallel::makeCluster(cores)
+      doSNOW::registerDoSNOW(cl)
+
+      # set progress bar
+      pb <- txtProgressBar(max=ncol(pairwise_combinations), initial=0, style=3)
+
+      # calculate pairwise overlaps (multi core)
+      opts <- list(progress = function(n) setTxtProgressBar(pb, n))
+      results[[i]] <- foreach::foreach(p=1:ncol(pairwise_combinations), .combine=rbind,
+                                       .options.snow=opts,
+                                       .export="pairwiseOverlaps") %dopar% {
+        pairwiseOverlaps(p, progressbar = NULL, args = args)
       }
 
-      # calculate overlap period (time window)
-      id_indexes <- which(id.metadata[,id.col] %in% c(id1, id2))
-      start <- max(id.metadata[id_indexes,tagdate.col])
-      end <- min(last_detections[names(last_detections) %in% c(id1, id2)])
-      window_size[p] <- as.numeric(difftime(end, start, units = "days"))
-      # if transmitters don't overlap jump to next pair
-      if(window_size[p]<=0) next
-
-      # extract data from the overlapping time window
-      Ta <- data[,id1][data$timebin>=start & data$timebin<=end]
-      Tb <- data[,id2][data$timebin>=start & data$timebin<=end]
-      if(length(Ta)==0 || length(Tb)==0) {no_data <-c(no_data, p); next}
-
-      # number of matching values
-      matching_rows <- length(which(Ta==Tb))
-      # number of different values
-      mismatch_rows <- length(which(Ta!=Tb))
-      # number of incomplete rows
-      incomplete_a_rows <- length(which(is.na(Ta) & !is.na(Tb)))
-      incomplete_b_rows <- length(which(!is.na(Ta) & is.na(Tb)))
-
-      # calculate overlap (%)
-      total <- mismatch_rows + incomplete_a_rows + incomplete_b_rows + matching_rows
-      overlap_matrix[p] <- (matching_rows / total)*100
-
-      # calculate lengths and values of runs of equal stations
-      runs <- rle(as.character(Ta)==as.character(Tb))
-      mean_run[p] <- mean(runs$lengths[runs$values==T], na.rm=T)
-      max_run[p] <- suppressWarnings(max(runs$lengths[runs$values==T], na.rm=T))
-
-      # save number of matching values
-      matching_detections[p] <- matching_rows
-
-      # matching detection counts per station
-      station_counts[[p]] <- table(Ta[which(Ta==Tb)])
-      names(station_counts)[p] <- paste0(id1,"<->",id2)
+      # close progress bar and stop cluster
+      close(pb)
+      on.exit(parallel::stopCluster(cl))
     }
-
-    # close progress bar
-    close(pb)
-
-    # replace meaningless values
-    window_size[window_size<0] <- 0
-    overlap_matrix[c(which(window_size==0), no_data)] <- NA
-    mean_run[c(which(window_size==0), no_data)] <- NA
-    mean_run[is.nan(mean_run)] <- 0
-    max_run[c(which(window_size==0), no_data)] <- NA
-    max_run[is.nan(max_run)] <- 0
-    max_run[matching_detections==0] <- 0
-
-
-    # add all results to a list
-    results[[i]] <- list("overlap"=overlap_matrix, "window_size"=window_size, "mean_run"=mean_run,
-                         "max_run"=max_run, "matching_detections"=matching_detections,
-                         "station_counts"=station_counts)
   }
 
-  # return final results
-  if(multiple==T) {names(results) <- names(data_list)}
-  if(multiple==F) {results <- unlist(results, recursive=F)}
-  if(length(missing_individuals)>0) {cat(paste0(length(missing_individuals), " individual(s) with no detections\n"))}
+  # format final results
+  if (!is.null(subset)){
+    # create subset column
+    for(i in 1:length(data_list)) results[[i]]$subset <- names(data_list)[1]
+    # merge
+    results <- do.call("rbind", results)
+  }else{
+    results <- results[[1]]
+  }
+
+  # print missing individuals
+  if (length(missing_individuals) > 0) cat(paste0(length(missing_individuals), " individual(s) with no detections\n"))
+
+  # print run time
   end.time <- Sys.time()
   time.taken <- end.time - start.time
-  print(time.taken)
+  cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), "secs\n"))
+
+  # return results
   return(results)
+}
+
+
+################################################################################
+# Define core pairwise overlap function ########################################
+################################################################################
+
+pairwiseOverlaps <- function(p, progressbar=NULL, args=NULL) {
+
+  # update progress bar
+  if (!is.null(progressbar)) setTxtProgressBar(progressbar, p)
+
+  # assign variables (needed for parallelization)
+  if (!is.null(args)) {
+    list2env(args, envir = environment())
+  }
+
+  # initialize output data frame
+  result <- data.frame(matrix(ncol=9, nrow=1))
+  colnames(result) <- c("id1", "id2", "overlap", "co_occurrences", "shared_monit_days", "start", "end",
+                        "mean_consec_overlap", "max_consec_overlap")
+
+  # get animal IDs
+  a <- pairwise_combinations[1, p]
+  b <- pairwise_combinations[2, p]
+  id1 <- complete_ids[a]
+  id2 <- complete_ids[b]
+  result$id1 <- id1
+  result$id2 <- id2
+
+  # discard comparisons between individuals belonging to the same group or
+  # skip comparisons between different groups, if required
+  if (!is.null(id.groups)) {
+    group1 <- which(unlist(lapply(id.groups, function(x) id1 %in% x)))
+    group2 <- which(unlist(lapply(id.groups, function(x) id2 %in% x)))
+    result$group1 <- names(id.groups)[group1]
+    result$group2 <- names(id.groups)[group2]
+    if (group.comparisons == "within" & group1 != group2) return(result)
+    if (group.comparisons == "between" & group1 == group2) return(result)
+  }
+
+  # set default window size
+  result$shared_monit_days <- 0
+
+  # if any of the individuals doesn't have detections, jump to next pair
+  if (any(is.na(end_dates[c(id1, id2)]))) return(result)
+
+  # if monitoring periods don't overlap, jump to next pair
+  start <- max(start_dates[names(start_dates) %in% c(id1, id2)])
+  end  <- min(end_dates[names(end_dates) %in% c(id1, id2)])
+  window_size <- as.numeric(difftime(end , start, units = "days"))
+  if (window_size <= 0) return(result)
+  else result$shared_monit_days <- window_size
+  result$start <- start
+  result$end <- end
+
+  # get pair detections
+  Ta <- data[, id1][data[, timebin.col] >= start & data[, timebin.col] <= end]
+  Tb <- data[, id2][data[, timebin.col] >= start & data[, timebin.col] <= end]
+  if (length(Ta) == 0 || length(Tb) == 0) return(result)
+
+  # Number of matching detections
+  matching_rows <- length(which(Ta == Tb))
+  result$co_occurrences <- matching_rows
+  # number of different detections
+  mismatch_rows <- length(which(Ta != Tb))
+  # number of incomplete rows
+  incomplete_rows <- length(which(is.na(Ta) & !is.na(Tb) | !is.na(Ta) & is.na(Tb)))
+
+  # calculate overlap %
+  if (metric == "simple-ratio") total <- matching_rows + mismatch_rows + incomplete_rows
+  else if (metric == "half-weight") total <- matching_rows + mismatch_rows + incomplete_rows * 0.5
+  result$overlap <- (matching_rows / total) * 100
+
+  # calculate lengths and values of consecutive co-occurrences
+  if (result$co_occurrences > 0) {
+    runs <- rle(as.character(Ta) == as.character(Tb))
+    result$mean_consec_overlap <- mean(runs$lengths[runs$values==TRUE], na.rm=TRUE)
+    result$max_consec_overlap <- suppressWarnings(max(runs$lengths[runs$values==TRUE], na.rm=TRUE))
+  }
+
+  # return results
+  return(result)
 }
 
 ##################################################################################################

@@ -6,55 +6,79 @@
 \usage{
 calculateOverlap(
   table,
-  id.metadata,
   id.groups = NULL,
   subset = NULL,
-  id.col = "ID",
-  tagdate.col = "tagging_date",
-  group.comparisons = "all"
+  metric = "simple-ratio",
+  group.comparisons = "all",
+  cores = 1
 )
 }
 \arguments{
-\item{table}{A data frame object containing binned detections in the wide format
+\item{table}{A data frame containing binned detections in the wide format
 (time bin x individual matrix, with values corresponding to the receiver with the
 highest number of detections), as returned by \code{\link{createWideTable}}.}
-
-\item{id.metadata}{A data frame containing individual's metadata. It should contain
-at least  animal IDs  and a tagging/release date column in POSIXct format.}
 
 \item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
 within each group, as well as comparing relationships between ids of different groups.}
 
-\item{subset}{If defined, overlaps are calculated independently for each level
-of this variable (usually a temporal class, e.g., diel phase or annual season).
-If left NULL, single overlap indices are calculated for the whole monitoring period.}
+\item{subset}{If defined, overlaps are calculated independently for each level of
+this variable. This can either be a single column name (variable) or a vector
+of column names, corresponding to variables contained in the table. In the case of
+multiple columns, their interaction is used for grouping. If left NULL,
+single overlap indices are calculated for the whole monitoring period.}
 
-\item{id.col}{Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.}
-
-\item{tagdate.col}{Name of the column in id.metadata containing animal tagging/release dates in
-POSIXct format. Defaults to 'tagging_date'.}
+\item{metric}{One of "simple-ratio" or "half-weight".}
 
 \item{group.comparisons}{Controls the type of comparisons to be run, when id.groups are defined.
 One of "within", "between" or "all". Useful to discard comparisons between individuals
 belonging to the same group or skip comparisons between different groups, when these are
 not required (less computing time). Defaults to "all".}
+
+\item{cores}{Number of cores to use for parallel computation. Defaults to 1 (no parallelization).}
 }
 \value{
 A list containing similarity matrices with pairwise overlaps in \%,
 time windows in days (period used to compute overlap for each pair),
 the average number of time-bins spent by each pair consecutively in the same receiver,
 the maximum number of time-bins spent by each pair consecutively in the same receiver and
-the total number of co-occurrences, as well as the number co-occurrences by location level.
+the total number of co-occurrences, as well as the number of co-occurrences by location level.
 If id.groups or a subset variable is defined, these results are nested within each of the grouping levels.
 }
 \description{
-Estimates the extent of association between each two individuals,
-assuming that joint space usage occurs whenever individuals overlap in
-space (receiver) and time (bin). Only the total shared periods of detection
-for a given pair are considered for this analysis, i.e. the time bins from the
-latest release date to the earliest last detection between each pair. This
-truncation step ensures that the absence of an individual in the receiver array
-is not due to transmitter failure or premature death. This pairwise overlap
-index is analogous to the simple ratio association index (Cairns & Schwager 1987,
-Ginsberg & Young 1992), ranging from 0\% (no overlap) to 100\% (complete overlap).
+Estimates the extent of association between each pair of individuals,
+assuming that joint space usage occurs whenever individuals overlap in space (receiver) and time (bin).
+The analysis only considers the total shared periods of detection for a given pair, i.e., the time bins from the
+latest release date to the earliest last detection between each pair. This truncation step ensures that the absence
+of an individual in the receiver array is not due to transmitter failure or premature death. The pairwise overlap
+index can be calculated using one of two metrics: the simple ratio association index
+or the half-weight index. These indices range from 0\% (no overlap) to 100\% (complete overlap).
+}
+\details{
+The two metrics for calculating association indices are:
+\enumerate{
+\item Simple Ratio Association Index:
+This index provides a measure of the proportion of time two individuals spend together.
+It is calculated as the ratio of the number of time bins where both individuals are
+detected together to the total number of time bins where at least one of the individuals
+is detected. This straightforward metric gives a clear indication of the extent
+to which two individuals' space usage overlaps.
+\item Half-Weight Index:
+This index modifies the simple ratio by giving half-weight to the occurrences
+where only one of the individuals is detected. It accounts for the fact that sometimes
+individuals might be in the same area but one might not be detected due to various reasons.
+This index is useful when detections are not perfectly reliable and helps mitigate
+the impact of missed detections.
+}
+
+It is important to acknowledge that any fish pair detected simultaneously may
+be anywhere from a few centimetres to hundreds of meters apart, depending on
+the maximum detection ranges of the transmitters. Therefore, caution should
+be taken when interpreting the results, especially when making inferences about
+biotic or fish−habitat relationships.
+
+Useful references:
+Cairns, S. J., & Schwager, S. J. (1987). A comparison of association indices. Animal Behaviour, 35(5), 1454-1469.
+Ginsberg, J. R., & Young, T. P. (1992). Measuring association between individuals or groups in behavioural studies. Animal Behaviour, 44(2), 377-379.
+Farine, D. R., & Whitehead, H. (2015). Constructing, conducting and interpreting animal social network analysis. Journal of Animal Ecology, 84(5), 1144-1163.
+Hoppitt, W. J., & Farine, D. R. (2018). Association indices for quantifying social relationships: how to deal with missing observations of individuals or groups. Animal Behaviour, 136, 227-238.
 }

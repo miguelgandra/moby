@@ -9,6 +9,7 @@
 #' The algorithm permutes entries within each column, so that the total number of detections
 #' of each individual and the relative occurrence frequencies across receivers are kept unchanged.
 #'
+#' @inheritParams setDefaults
 #' @param table A data frame object containing binned detections in the wide format
 #' (time bin x individual matrix, with values corresponding to the receiver with the
 #' highest number of detections), as returned by \code{\link{createWideTable}}.
@@ -21,7 +22,6 @@
 #' levels of these variables.
 #' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
 #' within each group, as well as comparing relationships between ids of different groups.
-#' @param id.col Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.
 #' @param tagdate.col Name of the column in id.metadata containing animal tagging/release dates in
 #' POSIXct format. Defaults to 'tagging_date'.
 #' @param group.comparisons Controls the type of comparisons to be run, when id.groups are defined.
@@ -37,7 +37,7 @@
 
 
 randomizeOverlaps <- function(table, overlaps, id.metadata, contraint.by=NULL, id.groups=NULL,
-                              id.col="ID", tagdate.col="tagging_date", group.comparisons="all",
+                              id.col=getDefaults("id"), tagdate.col="tagging_date", group.comparisons="all",
                               iterations=100, conf.level=0.95, cores=1, random.seed=NULL) {
 
   ######################################################################
@@ -64,23 +64,9 @@ randomizeOverlaps <- function(table, overlaps, id.metadata, contraint.by=NULL, i
     stop("Wrong group.comparisons argument, please select one of: 'within', 'between' or 'all'")
   }
 
-  # reorder ID levels if ID groups are defined
-  if(!is.null(id.groups)){
-    if(any(duplicated(unlist(id.groups)))) {
-      stop("Repeated ID(s) in id.groups")
-    }
-    if(any(!unlist(id.groups) %in% levels(id.metadata[,id.col]))){
-      stop("Some of the ID(s) in id.groups were not found in the supplied metadata")
-    }
-  }
 
 
-  # check parallel computing
-  if(cores>1){
-    if(parallel::detectCores()<cores){
-      stop(paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)"))
-    }
-  }
+
 
 
 
@@ -123,7 +109,7 @@ randomizeOverlaps <- function(table, overlaps, id.metadata, contraint.by=NULL, i
   random_results <- list()
 
   #############################################################
-  # calculate results using the default method (single core
+  # calculate results using the default method (single core)
   if(cores==1){
 
     # print message to console
@@ -231,11 +217,13 @@ randomizeOverlaps <- function(table, overlaps, id.metadata, contraint.by=NULL, i
   #######################################################################################################
   # Return results ######################################################################################
 
+  # print run time
   end.time <- Sys.time()
   time.taken <- end.time - start.time
-  print(time.taken)
-  return(list("summary"=summary_table, "randomized_overlaps"=random_results, "pairwise_significance"=pairwise_stats))
+  cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), "secs\n"))
 
+  # return results
+  return(list("summary"=summary_table, "randomized_overlaps"=random_results, "pairwise_significance"=pairwise_stats))
 }
 
 

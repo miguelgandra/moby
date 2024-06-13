@@ -10,7 +10,7 @@ randomizeOverlaps(
   id.metadata,
   contraint.by = NULL,
   id.groups = NULL,
-  id.col = "ID",
+  id.col = getDefaults("id"),
   tagdate.col = "tagging_date",
   group.comparisons = "all",
   iterations = 100,
@@ -37,7 +37,7 @@ levels of these variables.}
 \item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
 within each group, as well as comparing relationships between ids of different groups.}
 
-\item{id.col}{Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{tagdate.col}{Name of the column in id.metadata containing animal tagging/release dates in
 POSIXct format. Defaults to 'tagging_date'.}

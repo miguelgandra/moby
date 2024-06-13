@@ -47,8 +47,30 @@ rounded up to the end of the day. This ensures that the time bins cover whole da
 
 \item{verbose}{Output ties info to console? Defaults to TRUE.}
 }
+\value{
+A data frame in wide format with time bins as rows and individuals as columns. Each cell
+in the matrix represents the value from \code{value.col} for that time bin and individual, aggregated
+according to the specified aggregation function.
+}
 \description{
-Returns a data frame object containing binned detections in the wide format
-(time bin x individual matrix, with values corresponding either to the receiver detections
-or the number of detections).
+This function generates a data frame containing binned detections in a wide format
+(time bin x individual matrix). The values in the matrix are determined by the specified column
+in the input data frame, which can represent, for instance, the receiver where most detections were
+registered within that time frame or the number of detections.
+}
+\examples{
+\dontrun{
+data <- data.frame(
+  timebin = as.POSIXct(c('2023-01-01 00:00:00', '2023-01-01 00:05:00', '2023-01-01 00:10:00',
+                         '2023-01-01 00:00:00', '2023-01-01 00:10:00', '2023-01-01 00:15:00',
+                         '2023-01-01 00:05:00', '2023-01-01 00:10:00', '2023-01-01 00:20:00')),
+  id = c('A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'C'),
+  detections = c(2, 3, 1, 5, 1, 4, 6, 2, 3)
+)
+
+start.dates <- as.POSIXct(c('2023-01-01 00:00:00', '2023-01-01 00:00:00', '2023-01-01 00:00:00'))
+end.dates <- as.POSIXct(c('2023-01-01 00:10:00', '2023-01-01 00:15:00', '2023-01-01 00:20:00'))
+
+createWideTable(data, value.col="detections", start.dates=start.dates, end.dates=end.dates)
+}
 }

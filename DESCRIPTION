@@ -26,7 +26,7 @@ Imports:
 	fields,
 	packcircles,
 	parallel,
-	doParallel,
+	doSNOW,
 	foreach
 Suggests:
 	data.table,
