@@ -16,6 +16,7 @@
 #' @param string A character string to be printed to the console.
 #' @note This function is intended for internal use within the `moby` package.
 #' @keywords internal
+#' @noRd
 
 printConsole <- function(string){
   cat(paste0("\033[0;", 1, "m", string, "\033[0m", "\n"))
@@ -31,6 +32,7 @@ printConsole <- function(string){
 #' @description Produces a filled contour plot with additional modifications for flexibility.
 #' @note This function is adapted from the original `filled.contour` function, modified by Ian Taylor, Carey McGilliard, and Bridget Ferris.
 #' @keywords internal
+#' @noRd
 
 filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
                             y = seq(0, 1, length.out = ncol(z)), z, xlim = range(x, finite = TRUE),
@@ -113,8 +115,9 @@ filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
 #' @description Creates a color legend for a plot, adapted from https://rdrr.io/cran/shape/src/R/colorlegend.R with additional features such as main.adj, main.inset, and support for scientific notation.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
-colorlegend <- function(col=femmecol(100), zlim, zlevels=5,
+colorlegend <- function(col=viridis_pal(100), zlim, zlevels=5,
                          dz=NULL, zval=NULL, log=FALSE, posx=c(0.9,0.93), posy=c(0.05,0.9),
                          main=NULL, main.cex=1.0, main.col="black", main.adj=0.5, lab.col="black",
                          main.inset=1, digit=0, left=FALSE, lab.scientific=FALSE, ...) {
@@ -218,6 +221,7 @@ colorlegend <- function(col=femmecol(100), zlim, zlevels=5,
 #' @description Calculates the position of a keyword on a plot with optional inset adjustments.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
 getPosition <- function(keyword, inset) {
   usr <- par("usr")
@@ -245,6 +249,7 @@ getPosition <- function(keyword, inset) {
 #' @description Adds a scale bar to a plot, supporting both line and bar types.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
 scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, bar.height=1.5,
                       lonlat=NULL, label, adj=c(0.5, -0.5), lwd=2, ...)
@@ -264,7 +269,7 @@ scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, ba
     lat <- mean(pr$yaxp[1:2])
     if (missing(d)) {
       dx <- (pr$usr[2] - pr$usr[1])/10
-      d <- pointDistance(cbind(0, lat), cbind(dx, lat),
+      d <- raster::pointDistance(cbind(0, lat), cbind(dx, lat),
                          TRUE)
       d <- signif(d/1000, 2)
       label <- NULL
@@ -381,6 +386,7 @@ scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, ba
 #' @description Creates a customized legend for a plot, with options for color scales, logarithmic scaling, and positioning.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
 legend <- function(x, y = NULL, legend, fill = NULL, col = par("col"), border="black",
                    lty, lwd, pch, angle = 45, density = NULL, bty = "o", bg = par("bg"),
@@ -661,6 +667,7 @@ if (!exists("rep_len")) {
 #' @author George G. Vega Yon
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
 rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
                                   minmax.relative.size=c(0.01, 0.04), adjust=200) {
@@ -687,6 +694,7 @@ rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
 #' @description Rescales a numeric vector to a specified range.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
 rescale <- function (x, to=c(0, 1), from=range(x, na.rm=TRUE, finite=TRUE), ...) {
   if (zero_range(from) || zero_range(to)) return(ifelse(is.na(x), NA, mean(to)))
@@ -714,6 +722,7 @@ zero_range <- function(x, tol=1000*.Machine$double.eps) {
 #' @description Determines the number of decimal places in a numeric value.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
+#' @noRd
 
 decimalPlaces <- function(x) {
   if(is.na(x)){return(NA)}
@@ -729,6 +738,13 @@ decimalPlaces <- Vectorize(decimalPlaces)
 ##################################################################################################
 ## Economist color palette #######################################################################
 ## Based in ggthemes::economist_pal()
+
+#' Economist color palette
+#'
+#' @description Determines the number of decimal places in a numeric value.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
 
 economist_pal <- function(n){
   economist_colors <- c("#6794a7", "#014d64", "#01a2d9", "#7ad2f6","#00887d",
@@ -750,6 +766,13 @@ economist_pal <- function(n){
 ##################################################################################################
 ## Viridis color palette #########################################################################
 ## Sourced from viridis::viridis(100)
+
+#' Viridis color palette
+#'
+#' @description Determines the number of decimal places in a numeric value.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
 
 viridis_pal <- function(n) {
   viridis_colors <- c(

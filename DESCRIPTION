@@ -1,5 +1,5 @@
 Package: moby
-Title: A R package for streamlined biotelemetry analyses and data visualization.
+Title: A R package for streamlined biotelemetry analyses and data visualization
 Version: 1.0.0
 Authors@R: person("Miguel", "Gandra", , "m3gandra@gmail.com", role = c("aut", "cre"), 
 		  comment = c(ORCID = "0000-0003-1506-5141"))
@@ -10,6 +10,9 @@ Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3
 Imports:
+	graphics,
+	stats,
+	grDevices,
 	dplyr,
 	plyr,
 	raster,
@@ -24,7 +27,6 @@ Imports:
 	knitr,
 	lubridate,
 	fields,
-	packcircles,
 	parallel,
 	doSNOW,
 	foreach
@@ -34,6 +36,7 @@ Suggests:
 	qgraph,
 	wavScalogram,
 	TSA,
+	packcircles,
 	TropFishR,
 	igraph,
 	lunar

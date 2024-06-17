@@ -170,7 +170,7 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
     # calculate number of individuals per station
     if(any(type=="individuals")) {
       nindividuals <- nlevels(group_data[,id.col])
-      station_individuals <- aggregate(group_data[,id.col], by=list(group_data[,site.col]), function(x) length(unique(x)), drop=F)
+      station_individuals <- graphics::aggregate(group_data[,id.col], by=list(group_data[,site.col]), function(x) length(unique(x)), drop=F)
       colnames(station_individuals) <- c("station", "individuals")
       station_individuals <- data.frame(t(station_individuals), check.names=F)
       colnames(station_individuals) <- station_individuals[1,]

@@ -185,7 +185,7 @@ plotOverlapNetwork <- function(overlaps, random.results=NULL, id.metadata, id.co
     size_diffs <- as.numeric(dist(animal.sizes))
     overlap_table <- reshape2::melt(overlaps)
     colnames(overlap_table) <- c("ID_1", "ID_2", "overlap")
-    mean_overlaps <- aggregate(overlap_table$overlap, by=list(overlap_table$ID_1), mean, na.rm=T)
+    mean_overlaps <- graphics::aggregate(overlap_table$overlap, by=list(overlap_table$ID_1), mean, na.rm=T)
     colnames(mean_overlaps) <- c("ID", "mean_overlap")
     mean_overlaps$size <- animal.sizes
     par(mar=c(5,7,0,2), mgp=c(3,0.8,0))

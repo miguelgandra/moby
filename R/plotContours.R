@@ -135,7 +135,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
     var <- variables[v]
     var_data <- aggregated_data[,c("id","group",var)]
     var_data <- var_data[!is.na(var_data[,var]),]
-    nids[[v]] <- aggregate(var_data$id, by=list(var_data$group), function(x) length(unique(x)))
+    nids[[v]] <- graphics::aggregate(var_data$id, by=list(var_data$group), function(x) length(unique(x)))
     colnames(nids[[v]]) <- c("group", "nids")
     nids[[v]]$var <- var
   }

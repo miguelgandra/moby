@@ -81,10 +81,18 @@
 #' @examples
 #'
 #' pdf("./spatial-network.pdf", width=6, height=8)
-#' plotMigrations(data=data_filtered, id.groups=species_ids, spatial.col="site",
-#'                land.shape=coastline, edge.type="individuals", edge.color=c("darkblue", "darkred"), edge.width=c(0.2, 4),
-#'                color.nodes.by="group", nodes.color=c("darkblue", "darkred"), nodes.size=c(0.05,0.1),
-#'                nodes.label.wrap=T, repel.nodes=T)
+#' plotMigrations(data=data_filtered,
+#'                id.groups=species_ids,
+#'                spatial.col="site",
+#'                land.shape=coastline,
+#'                edge.type="individuals",
+#'                edge.color=c("darkblue", "darkred"),
+#'                edge.width=c(0.2, 4),
+#'                color.nodes.by="group",
+#'                nodes.color=c("darkblue", "darkred"),
+#'                nodes.size=c(0.05,0.1),
+#'                nodes.label.wrap=T,
+#'                repel.nodes=T)
 #' dev.off()
 
 #' @export
@@ -258,7 +266,7 @@ plotMigrations <- function(data,
     node_detections[[g]] <- table(data_groupped[[g]][,spatial.col])
 
     # calculate nº individuals on each site
-    nindividuals <- aggregate(data_groupped[[g]][,id.col], by=list(data_groupped[[g]][,spatial.col]),
+    nindividuals <- graphics::aggregate(data_groupped[[g]][,id.col], by=list(data_groupped[[g]][,spatial.col]),
                              function(x) length(unique(x)), drop=F)
     colnames(nindividuals) <- c(spatial.col, "nids")
     nindividuals$nids[is.na(nindividuals$nids)] <- 0
@@ -289,7 +297,7 @@ plotMigrations <- function(data,
   #####################################################################################
 
   # convert node coords to spatial points
-  site_coords <- aggregate(data[,c(lon.col, lat.col)], by=list(data[,spatial.col]), mean)
+  site_coords <- graphics::aggregate(data[,c(lon.col, lat.col)], by=list(data[,spatial.col]), mean)
   colnames(site_coords)[1] <- "site"
   site_coords <- sp::SpatialPointsDataFrame(site_coords[,2:3], data=site_coords)
 
@@ -410,7 +418,7 @@ plotMigrations <- function(data,
     } else if(color.nodes.by=="group"){
       vertex_color <- rep(nodes.color[g], length.out=length(nanimals))
     } else {
-      node_classes <- aggregate(data[,color.nodes.by], by=list(data[,spatial.col]), function(x) names(table(x))[which.max(table(x))])
+      node_classes <- graphics::aggregate(data[,color.nodes.by], by=list(data[,spatial.col]), function(x) names(table(x))[which.max(table(x))])
       colnames(node_classes) <- c("node", "class")
       node_classes$class <- factor(node_classes, levels=levels(data[,color.nodes.by]))
       vertex_color <- nodes.color[node_classes$class]

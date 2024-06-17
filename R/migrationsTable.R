@@ -213,7 +213,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
       for(n in numeric_cols){
         mean_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) mean(x[,n], na.rm=T))))$value
         se_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) plotrix::std.error(x[,n], na.rm=T))))$value
-        digits <- max(moby:::decimalPlaces(animals.info[,n]), na.rm=T)+1
+        digits <- max(decimalPlaces(animals.info[,n]), na.rm=T)+1
         mean_values <- data.frame("mean"=paste(sprintf(paste0("%.", digits, "f"), mean_values), "±", sprintf(paste0("%.", digits, "f"), se_values)))
         mean_values <- sapply(mean_values, function(x) gsub(" ± NA", "", x, fixed=T))
         colnames(mean_values) <- paste0("Mean ", tools::toTitleCase(n))
@@ -264,9 +264,9 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
 
     # add mean transition duration
-    durations <- aggregate(transition_times$duration_h, by=list(transition_times$transition), mean)
+    durations <- graphics::aggregate(transition_times$duration_h, by=list(transition_times$transition), mean)
     colnames(durations) <- c("Type", "Mean")
-    durations$Error <- aggregate(transition_times$duration_h, by=list(transition_times$transition), function(x) plotrix::std.error(x))$x
+    durations$Error <- graphics::aggregate(transition_times$duration_h, by=list(transition_times$transition), function(x) plotrix::std.error(x))$x
     if(mean(durations$Mean)>72){
       durations[,-1] <- apply(durations[,-1], 2, function(x) sprintf("%.1f", x/24))
       units <- "(d)"

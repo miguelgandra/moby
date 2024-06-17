@@ -64,7 +64,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   if(is.null(split.by)){
     for(f in 1:length(data_individual)) {
       detections <- data_individual[[f]]
-      data_stations <- aggregate(detections$timebin, by=list(detections$ID, detections$station), length)
+      data_stations <- graphics::aggregate(detections$timebin, by=list(detections$ID, detections$station), length)
       colnames(data_stations) <- c("ID", "station", "detections")
       data_stations$detections[is.na(data_stations$detections)] <- 0
       data_stations$freq <- data_stations$detections / sum(data_stations$detections)
@@ -80,7 +80,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
       groups <- levels(data[,split.by])
       detections <- data_individual[[f]]
       if(nrow(detections)==0 | length(unique(detections[,split.by]))==1){data_plot[[f]]<-NULL; next}
-      data_stations <- aggregate(detections$timebin, by=list(detections$ID, detections$station, detections[,split.by]), length)
+      data_stations <- graphics::aggregate(detections$timebin, by=list(detections$ID, detections$station, detections[,split.by]), length)
       colnames(data_stations) <- c("ID", "station", split.by, "detections")
       data_stations <- reshape2::dcast(data_stations, as.formula(paste0("ID+station~", split.by)), value.var="detections", fill=0)
       data_stations$total <- rowSums(data_stations[,-c(1:2)])
@@ -96,7 +96,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   data_plot <- data_plot[!sapply(data_plot,is.null)]
   data_plot <- do.call("rbind", data_plot)
   freq_cols <- which(grepl("freq", colnames(data_plot), fixed=T))
-  data_plot <- aggregate(data_plot[,freq_cols], by=list(data_plot$station), mean)
+  data_plot <- graphics::aggregate(data_plot[,freq_cols], by=list(data_plot$station), mean)
   colnames(data_plot)[1] <- "station"
   sector_cols <- which(grepl("freq", colnames(data_plot), fixed=T) & colnames(data_plot)!=c("total_freq"))
   data_sector <- data_plot[,sector_cols]
@@ -110,7 +110,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
 
   ############################################################################
   ## Grab station coordinates ################################################
-  stations_list <- aggregate(cbind(data[,lon.name], data[,lat.name]), by=list(data$station), mean)
+  stations_list <- graphics::aggregate(cbind(data[,lon.name], data[,lat.name]), by=list(data$station), mean)
   colnames(stations_list) <- c("station", "longitude", "latitude")
   coordinates <- sp::SpatialPoints(cbind(stations_list$longitude, stations_list$latitude))
   raster::projection(coordinates) <- CRS("+proj=longlat +datum=WGS84")

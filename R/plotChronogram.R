@@ -226,15 +226,15 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     }else{
       data_group$row <- 1:nrow(data_group)
     }
-    detections_table <- aggregate(data_group$row, by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), length)
+    detections_table <- graphics::aggregate(data_group$row, by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), length)
     colnames(detections_table) <- c("timebin", "id", "station", "detections")
 
     # calculate metrics
     if(var=="detections"){
-      plot_data <- aggregate(detections_table$detections, by=list(detections_table$timebin, detections_table$station), sum)
+      plot_data <- graphics::aggregate(detections_table$detections, by=list(detections_table$timebin, detections_table$station), sum)
       colnames(plot_data) <- c("timebin", "station", "var")
     }else{
-      plot_data <- aggregate(detections_table$id, by=list(detections_table$timebin, detections_table$station), function(x) length(unique(x)))
+      plot_data <- graphics::aggregate(detections_table$id, by=list(detections_table$timebin, detections_table$station), function(x) length(unique(x)))
       colnames(plot_data) <- c("timebin", "station", "var")
       if(var=="co-occurrences"){
         plot_data <- plot_data[plot_data$var>1,]
@@ -246,9 +246,9 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
 
     # calculate stats for color-by variable if required
     if(!is.null(color.by)){
-      color_data <- aggregate(data_group[,color.by], by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), aggFun)
+      color_data <- graphics::aggregate(data_group[,color.by], by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), aggFun)
       colnames(color_data) <- c("timebin", "id", "station", "level")
-      color_data <-  aggregate(color_data$level, by=list(color_data$timebin, color_data$station), aggFun)
+      color_data <-  graphics::aggregate(color_data$level, by=list(color_data$timebin, color_data$station), aggFun)
       colnames(color_data) <- c("timebin", "station", "level")
       color_data <- color_data[order(color_data$timebin),]
       if(inherits(color_data$level, "numeric")){

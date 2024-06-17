@@ -15,7 +15,6 @@
 #' @param type Type of statistic used to plot the histogram and calculate overlap significance.
 #' One of "mean" or "median". Defaults to "mean".
 #' @param conf.level Confidence level. Defaults to 95%.
-#' @importFrom data.table %between%
 #' @export
 
 

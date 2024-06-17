@@ -59,7 +59,7 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
   ##############################################################################
 
   # perform argument checks and return reviewed parameters
-  reviewed_params <- moby:::validateArguments()
+  reviewed_params <- validateArguments()
   data <- reviewed_params$data
 
   # check if data contains value.col
@@ -196,7 +196,7 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
   # discard row names
   rownames(data_table) <- NULL
 
-  # create new attribute to save animal IDs
+  # create new attributes to save relevant variables
   attr(data_table, 'ids') <- levels(data[,id.col])
   attr(data_table, 'timebin.col') <- as.character(timebin.col)
   names(start.dates) <- levels(data[,id.col])

@@ -197,7 +197,8 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
   # print run time
   end.time <- Sys.time()
   time.taken <- end.time - start.time
-  cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), "secs\n"))
+  cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), base::units(time.taken), "\n"))
+
 
   # return results
   return(kud_results)

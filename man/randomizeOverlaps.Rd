@@ -7,57 +7,84 @@
 randomizeOverlaps(
   table,
   overlaps,
-  id.metadata,
-  contraint.by = NULL,
+  constraint.by = NULL,
   id.groups = NULL,
-  id.col = getDefaults("id"),
-  tagdate.col = "tagging_date",
-  group.comparisons = "all",
-  iterations = 100,
+  iterations = 1000,
+  alternative = c("two.sided"),
   conf.level = 0.95,
   cores = 1,
   random.seed = NULL
 )
 }
 \arguments{
-\item{table}{A data frame object containing binned detections in the wide format
-(time bin x individual matrix, with values corresponding to the receiver with the
+\item{table}{A data frame containing binned detections in the wide format
+(time bin x individual matrix, with values corresponding to the receiver/station with the
 highest number of detections), as returned by \code{\link{createWideTable}}.}
 
-\item{overlaps}{Similarity matrix containing pairwise overlaps, as returned by \code{\link{calculateOverlap}}.}
+\item{overlaps}{Data frame containing paiwise overlaps, as returned by \code{\link{calculateOverlap}}.}
 
-\item{id.metadata}{A data frame containing individual's metadata. It should contain
-at least  animal IDs  and a tagging/release date column in POSIXct format.}
+\item{constraint.by}{Optional. Variable(s) to constrain permutations, e.g. to account
+for potential diel or seasonal trends in animal occurrences. If supplied, permutations
+across time bins will be restricted to the same combination of levels of these variables.}
 
-\item{contraint.by}{Variable or variables used to constraint permutations, e.g.
-to account for potential diel or seasonal trends in animal occurrences. If supplied,
-permutations across time bins will be restricted to the same combination of
-levels of these variables.}
+\item{id.groups}{Optional. A list containing ID groups for calculating stats independently
+within each group and comparing relationships between IDs of different groups.}
 
-\item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
-within each group, as well as comparing relationships between ids of different groups.}
+\item{iterations}{Number of Monte Carlo iterations (simulated datasets). Defaults to 1000.}
 
-\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+\item{alternative}{Character string specifying the alternative hypothesis. Must be one of "two.sided",
+"less", or "greater". "two.sided" tests for deviation in either direction, "less" tests if the observed
+value is significantly less than the null distribution, and "greater" tests if the observed value is
+significantly greater than the null distribution. Defaults to "two.sided".}
 
-\item{tagdate.col}{Name of the column in id.metadata containing animal tagging/release dates in
-POSIXct format. Defaults to 'tagging_date'.}
+\item{conf.level}{Confidence level for the test. Defaults to 0.95 (95\%).}
 
-\item{group.comparisons}{Controls the type of comparisons to be run, when id.groups are defined.
-One of "within", "between" or "all". Useful to discard comparisons between individuals
-belonging to the same group or skip comparisons between different groups, when these are
-not required (less computing time). Defaults to "all".}
+\item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
+means no parallel computing (single core).  If set to a value greater than 1,
+the function will use parallel computing to speed up calculations.
+Run \code{parallel::detectCores()} to check the number of available cores.}
 
-\item{iterations}{Number of Monte Carlo iterations (simulated datasets).}
+\item{random.seed}{Optional. Set the seed for a reproducible randomization.
+See \code{\link[base]{set.seed}}.}
+}
+\value{
+A list containing:
+\describe{
+\item{\strong{summary}}{A summary table with overall results.}
+\item{\strong{pairwise_results}}{A data frame similar to that returned by the \code{\link{calculateOverlap}}
+function, but with additional columns indicating the mean of the null distribution,
+empirical p-values, and association type for each animal dyad.}
+\item{\strong{randomized_overlaps}}{A list of all randomized pairwise overlaps, containing an element for each iteration}
+}\cr
 
-\item{conf.level}{Confidence level. Defaults to 95\%.}
-
-\item{cores}{Number of CPU cores for parallel computing (increase processing power). Defaults to 1.}
-
-\item{random.seed}{Set the seed for a reproducible randomization.}
+The summary table includes the following columns:
+\itemize{
+\item {Type}: The type of comparison. This column is included only when \code{id.groups} are supplied (more than one comparison).
+\item {Nº dyads}: The number of dyads (pairs of individuals).
+\item {Mean interval (d)}: The mean monitoring period (in days).
+\item {Mean overlap (\%)}: The mean observed overlap percentage with standard deviation.
+\item {Mean null distr (\%)}: The mean overlap percentage from the null distribution with standard deviation.
+\item {P-value}: The estimated p-value(s), indicating the significance of the observed overlaps.
+\item {Association}: The association type (e.g., positive, negative, non-significant) based on the p-value.
+\item {Pairs Non Sig}: The number of pairs with non-significant.
+\item {Pairs > Random}: The number of pairs with observed overlap greater than the null distribution.
+\item {Pairs < Random}: The number of pairs with observed overlap less than the null distribution.
+}
 }
 \description{
-Tests the null hypothesis of temporally independent space use
-(i.e. each animal occurs independently of the other) using Monte Carlo permutation tests.
-The algorithm permutes entries within each column, so that the total number of detections
-of each individual and the relative occurrence frequencies across receivers are kept unchanged.
+This function tests the null hypothesis of temporally independent space use
+(i.e., each animal occurs independently of the other) using Monte Carlo permutation tests.
+The algorithm permutes entries within each column, keeping the total number of detections
+of each individual and the relative occurrence frequencies across receivers unchanged.
+Permutations can be constrained by given factors (e.g., diel phase) and are performed
+only within the monitoring period of each animal (interval between its release
+and the date of its last detection). Empirical p-values are calculated by comparing
+the observed spatiotemporal overlaps against their null distribution. The p-values can
+be one-tailed or two-tailed based on the specified alternative hypothesis (a
+continuity correction is applied to avoid p-values of exactly 0 or 1).
+}
+\references{
+Gotelli, N. J. (2000). Null model analysis of species co-occurrence patterns. Ecology, 81(9), 2606-2621.\cr\cr
+Farine, D. R. (2017). A guide to null models for animal social network analysis. Methods Ecol Evol 8: 1309–1320.
+}
 }

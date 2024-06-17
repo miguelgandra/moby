@@ -94,7 +94,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
 
   # number of detections
   if("detections" %in% colnames(data)){
-    detections <- as.integer(aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
+    detections <- as.integer(graphics::aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
   }else{
     warnin
     print("Warning: No 'detections' column found, assuming one detection per row\n")
@@ -103,7 +103,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   detections[detections==0] <- NA
 
   #number of receivers
-  receivers <- aggregate(data$station, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
+  receivers <- graphics::aggregate(data$station, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
 
   # days between 1st and last detection (Di)
   getTimeSeqs <- function(start, end) {if(is.na(end)) {return(NA)}else{seq.POSIXt(start, end, by="day")}}
@@ -113,7 +113,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
 
   # days with detections (Dd)
   data$date <- strftime(data[,datetime.col], format="%d-%m-%Y", tz="UTC")
-  Dd <- aggregate(data$date, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
+  Dd <- graphics::aggregate(data$date, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
 
   # complete IR
   Ir <- round(Dd/Di, 2)
@@ -124,7 +124,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
     Ir_partial <- list()
     for(i in 1:length(data_groupped)){
       data_subset <- data_groupped[[i]]
-      Dd_partial <-  aggregate(data_subset$date, by=list(data_subset[,id.col]), function(x) length(unique(x)), drop=F)$x
+      Dd_partial <-  graphics::aggregate(data_subset$date, by=list(data_subset[,id.col]), function(x) length(unique(x)), drop=F)$x
       Ir_partial[[i]] <- round(Dd_partial/Di, 2)
     }
   }
@@ -144,7 +144,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   if(!is.null(id.metadata)) {
     column_types <- sapply(1:ncol(id.metadata),function(c) class(id.metadata[,c]))
     numeric_cols <- which(column_types %in% c("numeric", "integer"))
-    animal_info <- aggregate(id.metadata[,-1], by=list(id.metadata[,id.col]), function(x) paste(unique(x), collapse="/"), drop=F)
+    animal_info <- graphics::aggregate(id.metadata[,-1], by=list(id.metadata[,id.col]), function(x) paste(unique(x), collapse="/"), drop=F)
     animal_info[animal_info=="NA"] <- NA
     animal_info[,numeric_cols] <- as.numeric(animal_info[,numeric_cols] )
     colnames(animal_info)[1] <- "ID"

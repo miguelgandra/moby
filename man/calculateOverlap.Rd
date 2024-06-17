@@ -15,7 +15,7 @@ calculateOverlap(
 }
 \arguments{
 \item{table}{A data frame containing binned detections in the wide format
-(time bin x individual matrix, with values corresponding to the receiver with the
+(time bin x individual matrix, with values corresponding to the receiver/station with the
 highest number of detections), as returned by \code{\link{createWideTable}}.}
 
 \item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
@@ -34,9 +34,27 @@ One of "within", "between" or "all". Useful to discard comparisons between indiv
 belonging to the same group or skip comparisons between different groups, when these are
 not required (less computing time). Defaults to "all".}
 
-\item{cores}{Number of cores to use for parallel computation. Defaults to 1 (no parallelization).}
+\item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
+means no parallel computing (single core).  If set to a value greater than 1,
+the function will use parallel computing to speed up calculations.
+Run \code{parallel::detectCores()} to check the number of available cores.}
 }
 \value{
+A data frame containing the following columns:
+\describe{
+\item{id1}{ID of the first individual in the pair.}
+\item{id2}{ID of the second individual in the pair.}
+\item{overlap}{Pairwise overlap percentage between the two individuals.}
+\item{co_occurrences}{Total number of time bins where both individuals were detected together.}
+\item{shared_monit_days}{Number of days the two individuals were monitored simultaneously.}
+\item{start}{Start date of the dyad shared monitoring period.}
+\item{end}{End date of the dyad shared monitoring period.}
+\item{mean_consec_overlap}{Average number of consecutive time bins where both individuals were detected together.}
+\item{max_consec_overlap}{Maximum number of consecutive time bins where both individuals were detected together.}
+}
+If \code{subset} variable is defined, these results are nested within each of the grouping levels.
+If \code{id.groups} is defined, the function will add the respective groups containing each one of the IDs.
+
 A list containing similarity matrices with pairwise overlaps in \%,
 time windows in days (period used to compute overlap for each pair),
 the average number of time-bins spent by each pair consecutively in the same receiver,
@@ -77,8 +95,10 @@ be taken when interpreting the results, especially when making inferences about
 biotic or fish−habitat relationships.
 
 Useful references:
-Cairns, S. J., & Schwager, S. J. (1987). A comparison of association indices. Animal Behaviour, 35(5), 1454-1469.
-Ginsberg, J. R., & Young, T. P. (1992). Measuring association between individuals or groups in behavioural studies. Animal Behaviour, 44(2), 377-379.
-Farine, D. R., & Whitehead, H. (2015). Constructing, conducting and interpreting animal social network analysis. Journal of Animal Ecology, 84(5), 1144-1163.
-Hoppitt, W. J., & Farine, D. R. (2018). Association indices for quantifying social relationships: how to deal with missing observations of individuals or groups. Animal Behaviour, 136, 227-238.
+\itemize{
+\item Cairns, S. J., & Schwager, S. J. (1987). A comparison of association indices. Animal Behaviour, 35(5), 1454-1469.
+\item Ginsberg, J. R., & Young, T. P. (1992). Measuring association between individuals or groups in behavioural studies. Animal Behaviour, 44(2), 377-379.
+\item Farine, D. R., & Whitehead, H. (2015). Constructing, conducting and interpreting animal social network analysis. Journal of Animal Ecology, 84(5), 1144-1163.
+\item Hoppitt, W. J., & Farine, D. R. (2018). Association indices for quantifying social relationships: how to deal with missing observations of individuals or groups. Animal Behaviour, 136, 227-238.
+}
 }

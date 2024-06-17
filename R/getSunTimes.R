@@ -48,8 +48,8 @@ getSunTimes <- function(sunriset.coords, start.time, end.time, by="%m", solar.de
 
   daytimes_table <- data.frame(intervals, dawns, sunrises, sunsets, dusks)
   daytimes_table$order <- 1:nrow(daytimes_table)
-  row_order <- aggregate(daytimes_table$order, by=list(daytimes_table$intervals), FUN=min)$x
-  daytimes_table <- aggregate(daytimes_table[,-1], by=list(daytimes_table$intervals), FUN=mean)
+  row_order <- graphics::aggregate(daytimes_table$order, by=list(daytimes_table$intervals), FUN=min)$x
+  daytimes_table <- graphics::aggregate(daytimes_table[,-1], by=list(daytimes_table$intervals), FUN=mean)
   daytimes_table <- daytimes_table[order(row_order),]
   daytimes_table <- daytimes_table[,-ncol(daytimes_table)]
   colnames(daytimes_table)[1] <- "interval"
