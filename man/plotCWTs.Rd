@@ -2,13 +2,13 @@
 % Please edit documentation in R/plotCWTs.R
 \name{plotCWTs}
 \alias{plotCWTs}
-\title{Continuous wavelet transform (CWT)
-Decompose a signal into its constituent frequency components over time.}
+\title{Continuous wavelet transform (CWT)}
 \usage{
 plotCWTs(
   data,
   variable,
-  id.col = "ID",
+  id.col = getDefaults("id"),
+  timebin.col = getDefaults("timebin"),
   period.range = c(3, 48),
   axis.periods = c(6, 12, 16, 24, 48),
   color.pal = NULL,
@@ -29,11 +29,13 @@ plotCWTs(
 )
 }
 \arguments{
-\item{data}{A data frame containing binned animal detections (must contain a "timebin" column).}
+\item{data}{A data frame containing binned animal detections.}
 
 \item{variable}{Name of the column containing the numeric variable to be analyzed.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
 \item{period.range}{The range of period scales (y-axis limits) to be considered, specified in hours.}
 

@@ -41,7 +41,7 @@ plotOverlapNetwork <- function(overlaps, random.results=NULL, id.metadata, id.co
   ##############################################################################
 
   # print to console
-  moby:::printConsole("Generating overlap network")
+  .printConsole("Generating overlap network")
 
   # check if qgraph package is installed
   if (!requireNamespace("qgraph", quietly=TRUE)) {
@@ -127,7 +127,7 @@ plotOverlapNetwork <- function(overlaps, random.results=NULL, id.metadata, id.co
   if(!is.null(scale.by)) {
     layout(mat=matrix(c(1,1,1,1,2,3), byrow=T, nrow=3, ncol=2))
     if(length(discard_ids)>0){animal.sizes <- animal.sizes[-discard_ids]}
-    node_sizes <- moby:::rescale(id.metadata[,scale.by], c(min.size, max.size))
+    node_sizes <- .rescale(id.metadata[,scale.by], c(min.size, max.size))
   } else {
     node_sizes <- 1
   }
@@ -185,7 +185,7 @@ plotOverlapNetwork <- function(overlaps, random.results=NULL, id.metadata, id.co
     size_diffs <- as.numeric(dist(animal.sizes))
     overlap_table <- reshape2::melt(overlaps)
     colnames(overlap_table) <- c("ID_1", "ID_2", "overlap")
-    mean_overlaps <- graphics::aggregate(overlap_table$overlap, by=list(overlap_table$ID_1), mean, na.rm=T)
+    mean_overlaps <- stats::aggregate(overlap_table$overlap, by=list(overlap_table$ID_1), mean, na.rm=T)
     colnames(mean_overlaps) <- c("ID", "mean_overlap")
     mean_overlaps$size <- animal.sizes
     par(mar=c(5,7,0,2), mgp=c(3,0.8,0))

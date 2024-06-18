@@ -3,7 +3,6 @@
 #######################################################################################################
 
 #' Continuous wavelet transform (CWT)
-#' Decompose a signal into its constituent frequency components over time.
 #'
 #' @description Function that analyzes and plots periodic patterns in a time series using a
 #' Continuous Wavelet Transform (CWT) framework. CWT analysis provides an alternative method
@@ -12,9 +11,9 @@
 #' wrapper for the \code{\link[wavScalogram]{cwt_wst}} function.
 #'
 #'
-#' @param data A data frame containing binned animal detections (must contain a "timebin" column).
+#' @inheritParams setDefaults
+#' @param data A data frame containing binned animal detections.
 #' @param variable Name of the column containing the numeric variable to be analyzed.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
 #' @param period.range The range of period scales (y-axis limits) to be considered, specified in hours.
 #' @param axis.periods Periods (in hours) to include/highlight in the y-axis.
 #' @param color.pal Color palette. Defaults to \code{\link[pals]{jet}}
@@ -44,55 +43,28 @@
 #' @export
 
 
-plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.periods=c(6,12,16,24,48),
-                     color.pal=NULL, date.format="%d/%b", date.interval=4, date.start=1,
-                     min.days=NULL, detrend=F, cex.main=1.2, cex.lab=1.1, cex.axis=1,
-                     legend.xpos=c(0.90, 0.915), legend.ypos=c(0.15, 0.85), cols=2,
-                     same.scale=F, id.groups=NULL, ...) {
+plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"),
+                     period.range=c(3, 48), axis.periods=c(6,12,16,24,48), color.pal=NULL,
+                     date.format="%d/%b", date.interval=4, date.start=1, min.days=NULL, detrend=F,
+                     cex.main=1.2, cex.lab=1.1, cex.axis=1, legend.xpos=c(0.90, 0.915),
+                     legend.ypos=c(0.15, 0.85), cols=2, same.scale=F, id.groups=NULL, ...) {
 
 
   ##############################################################################
   ## Initial checks ############################################################
   ##############################################################################
 
-
-  # check if data contains id.col
-  if(!variable %in% colnames(data)) {
-    stop("'variable' variable not found in the supplied data")
-  }
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
 
   if(!class(data[,variable]) %in% c("numeric", "integer")){
-    stop("Please convert signal to class numeric")
-  }
-
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) {
-    stop("'id.col' variable not found in the supplied data")
-  }
-
-  # convert ids to factor
-  if(class(data[,id.col])!="factor"){
-    cat(paste("Warning: converting", id.col, "column to factor\n"))
-    data[,id.col] <- as.factor(data[,id.col])
-  }
-
-  # check if data contains timebin column
-  if(!c("timebin") %in% colnames(data)) {
-    stop("'timebin' column not found in the supplied data")
+    stop("Please convert signal to class numeric", call.=FALSE)
   }
 
   if(length(period.range)!=2){
-    stop("Please supply two values (min and max) in the period.range argument")
+    stop("Please supply two values (min and max) in the period.range argument", call.=FALSE)
   }
-
-  # reorder ID levels if ID groups are defined
-  if(!is.null(id.groups)){
-    if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {"Some of the ID(s) in id.groups don't match the IDs in the data"}
-    data <- data[data[,id.col] %in% unlist(id.groups),]
-    data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
-  }
-
 
 
   ##############################################################################
@@ -100,7 +72,8 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
   ##############################################################################
 
   # create data frame with signal value
-  cwt_table <- createWideTable(data, value.col=variable, id.col=id.col, agg.fun=mean)
+  cwt_table <- createWideTable(data, id.col=id.col, timebin.col=timebin.col,
+                               value.col=variable,  agg.fun=mean)
 
   # convert hour periods to minutes
   period.range <- period.range*60
@@ -111,7 +84,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
 
   # subset individuals based on minimum number of days with data
   if(!is.null(min.days)){
-    data$day <- strftime(data$timebin, "%Y-%m-%d", tz="UTC")
+    data$day <- strftime(data[,timebin.col], "%Y-%m-%d", tz="UTC")
     days_detected <- by(data$day, data[,id.col], function(x) length(unique(x)))
     selected_individuals <- which(as.numeric(days_detected) >= min.days)
     nindividuals <- length(selected_individuals)
@@ -129,7 +102,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
 
 
   # get time bins interval (in minutes)
-  interval <- difftime(data$timebin, dplyr::lag(data$timebin), units="min")
+  interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=T))
 
 
@@ -216,7 +189,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
     title(main=levels(data[,id.col])[id], cex.main=cex.main, line=1)
 
     # plot date axis
-    all_dates <- cwt_table$timebin[!is.na(cwt_table[,id+1])]
+    all_dates <- cwt_table[,timebin.col][!is.na(cwt_table[,id+1])]
     all_dates <- strftime(all_dates, date.format)
     consec_dates <- rle(all_dates)
     consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
@@ -229,7 +202,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
     axis(1, labels=F, at=indexes, tck=-0.02, lwd.ticks=0.5)
 
     # plot scale axis
-    period_indexes <- moby:::rescale(log2(axis.periods*60), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    period_indexes <- .rescale(log2(axis.periods*60), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
     axis(2, at=period_indexes, labels=axis.periods, cex.axis=cex.axis, las=1)
 
     # add guide lines
@@ -237,7 +210,7 @@ plotCWTs <- function(data, variable, id.col="ID", period.range=c(3, 48), axis.pe
 
     # plot cone of influence
     x <- 1:nrow(cwt$coefs)
-    coi_indexes <- moby:::rescale(cwt$coi_maxscale, from=range(cwt$scales), to=c(1, length(cwt$scales)))
+    coi_indexes <- .rescale(cwt$coi_maxscale, from=range(cwt$scales), to=c(1, length(cwt$scales)))
     segments(x0=x[-nrow(cwt$coefs)], y0=coi_indexes[-nrow(cwt$coefs)], x1=x[-1], y1=coi_indexes[-1])
     polygon(c(x, rev(x)), c(coi_indexes, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=F)
 

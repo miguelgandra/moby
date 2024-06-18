@@ -18,7 +18,7 @@
 #' @keywords internal
 #' @noRd
 
-printConsole <- function(string){
+.printConsole <- function(string){
   cat(paste0("\033[0;", 1, "m", string, "\033[0m", "\n"))
 }
 
@@ -34,7 +34,7 @@ printConsole <- function(string){
 #' @keywords internal
 #' @noRd
 
-filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
+.filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
                             y = seq(0, 1, length.out = ncol(z)), z, xlim = range(x, finite = TRUE),
                             ylim = range(y, finite = TRUE), zlim = range(z, finite = TRUE),
                             levels = pretty(zlim, nlevels), nlevels = 20, color.palette = cm.colors,
@@ -117,7 +117,7 @@ filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
 #' @keywords internal
 #' @noRd
 
-colorlegend <- function(col=viridis_pal(100), zlim, zlevels=5,
+.colorlegend <- function(col=viridis_pal(100), zlim, zlevels=5,
                          dz=NULL, zval=NULL, log=FALSE, posx=c(0.9,0.93), posy=c(0.05,0.9),
                          main=NULL, main.cex=1.0, main.col="black", main.adj=0.5, lab.col="black",
                          main.inset=1, digit=0, left=FALSE, lab.scientific=FALSE, ...) {
@@ -223,7 +223,7 @@ colorlegend <- function(col=viridis_pal(100), zlim, zlevels=5,
 #' @keywords internal
 #' @noRd
 
-getPosition <- function(keyword, inset) {
+.getPosition <- function(keyword, inset) {
   usr <- par("usr")
   if(length(inset)==1)  inset <- rep_len(inset, 2)
   insetx <- inset[1] * (usr[2] - usr[1]) * 2
@@ -251,7 +251,7 @@ getPosition <- function(keyword, inset) {
 #' @keywords internal
 #' @noRd
 
-scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, bar.height=1.5,
+.scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, bar.height=1.5,
                       lonlat=NULL, label, adj=c(0.5, -0.5), lwd=2, ...)
 {
   stopifnot(type %in% c("line", "bar"))
@@ -388,7 +388,7 @@ scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, ba
 #' @keywords internal
 #' @noRd
 
-legend <- function(x, y = NULL, legend, fill = NULL, col = par("col"), border="black",
+.legend <- function(x, y = NULL, legend, fill = NULL, col = par("col"), border="black",
                    lty, lwd, pch, angle = 45, density = NULL, bty = "o", bg = par("bg"),
                    box.lwd = par("lwd"), box.lty = par("lty"), box.col = par("fg"),
                    box.cex = c(0.8,0.5), pt.bg = NA, cex = 1, pt.cex = cex, pt.lwd = lwd,
@@ -669,7 +669,7 @@ if (!exists("rep_len")) {
 #' @keywords internal
 #' @noRd
 
-rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
+.rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
                                   minmax.relative.size=c(0.01, 0.04), adjust=200) {
 
   if (!length(vertex.size)) return(
@@ -696,12 +696,12 @@ rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
 #' @keywords internal
 #' @noRd
 
-rescale <- function (x, to=c(0, 1), from=range(x, na.rm=TRUE, finite=TRUE), ...) {
-  if (zero_range(from) || zero_range(to)) return(ifelse(is.na(x), NA, mean(to)))
+.rescale <- function (x, to=c(0, 1), from=range(x, na.rm=TRUE, finite=TRUE), ...) {
+  if (.zero_range(from) || .zero_range(to)) return(ifelse(is.na(x), NA, mean(to)))
   (x - from[1])/diff(from) * diff(to) + to[1]
 }
 
-zero_range <- function(x, tol=1000*.Machine$double.eps) {
+.zero_range <- function(x, tol=1000*.Machine$double.eps) {
   if (length(x) == 1) return(TRUE)
   if (length(x) != 2) cli::cli_abort("{.arg x} must be length 1 or 2")
   if (any(is.na(x))) return(NA)
@@ -724,7 +724,7 @@ zero_range <- function(x, tol=1000*.Machine$double.eps) {
 #' @keywords internal
 #' @noRd
 
-decimalPlaces <- function(x) {
+.decimalPlaces <- function(x) {
   if(is.na(x)){return(NA)}
   if (abs(x - round(x)) > .Machine$double.eps^0.5) {
     nchar(strsplit(sub('0+$', '', as.character(x)), ".", fixed = TRUE)[[1]][[2]])
@@ -732,7 +732,7 @@ decimalPlaces <- function(x) {
     return(0)
   }
 }
-decimalPlaces <- Vectorize(decimalPlaces)
+.decimalPlaces <- Vectorize(.decimalPlaces)
 
 
 ##################################################################################################
@@ -746,7 +746,7 @@ decimalPlaces <- Vectorize(decimalPlaces)
 #' @keywords internal
 #' @noRd
 
-economist_pal <- function(n){
+.economist_pal <- function(n){
   economist_colors <- c("#6794a7", "#014d64", "#01a2d9", "#7ad2f6","#00887d",
                         "#76c0c1", "#7c260b", "#ee8f71", "#a18376", "#adadad")
   if(n==1) economist_colors[2]
@@ -774,7 +774,7 @@ economist_pal <- function(n){
 #' @keywords internal
 #' @noRd
 
-viridis_pal <- function(n) {
+.viridis_pal <- function(n) {
   viridis_colors <- c(
     "#440154FF", "#450558FF", "#46085CFF", "#470D60FF", "#471063FF",
     "#481467FF", "#481769FF", "#481B6DFF", "#481E70FF", "#482173FF",

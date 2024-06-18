@@ -92,7 +92,7 @@ plotTemporalKUDs <- function(subsetted.kuds, label, id.groups=NULL, plot.by="gro
       }
       ydiff <- yrange[2] - yrange[1]
       yvals <- pretty(yrange)
-      digits <- max(moby:::decimalPlaces(yvals))
+      digits <- max(.decimalPlaces(yvals))
       ylabs <- sprintf(paste0("%.", digits, "f"), yvals)
       plot(0, axes=F, ylab="", xlab=label, xlim=c(1, ngroups), ylim=c(yrange[1]-ydiff*0.05, yrange[2]+ydiff*0.05), cex.lab=1.2)
       title(main=names(id.groups)[i], cex.main=1.2)

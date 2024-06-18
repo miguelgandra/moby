@@ -9,14 +9,12 @@
 #' either through color-coded cells or size-variable points, and illustrating the
 #' variation in diel phases' hours across the study duration (annual variation of daylight time).
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing binned animal detections.
-#' @param tagging.dates Optional. A POSIXct vector containing the tag/release date of each animal.
-#' If supplied, the plot start is set the earliest release date, instead of the first detection.
 #' @param split.by Optional. If defined, plots are generated individually for each level
 #' of this variable (e.g. species, ontogeny or habitat).
 #' @param variables The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".
 #' @param style Style of the plot. Either "raster" (nº represented by color) or "points" (nº represented by size).
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
 #' @param station.col Name of the column containing station/receiver IDs. Defaults to 'station'.
 #' @param color.by Variable defining the color group of the plotted metric, when style = "points".
 #' Can be used for example to display detections by receiver, animal trait or temporal category.
@@ -70,7 +68,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
   #####################################################################################
 
   # perform argument checks and return reviewed parameters
-  reviewed_params <- moby:::validateArguments()
+  reviewed_params <- .validateArguments()
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
   tag.durations <- reviewed_params$tag.durations
@@ -85,7 +83,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
   }
 
   # print to console
-  moby:::printConsole("Generating chronogram(s)")
+  .printConsole("Generating chronogram(s)")
 
 
   #####################################################################################
@@ -113,7 +111,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
         if(length(color.pal)!=ngroups)  warning("The nº of colors doesn't match the number of levels in 'color.by' variable")
       }else{
         if(ngroups==3) color.pal <- c("#326FA5","#D73134","#1C8E43")
-        else if (ngroups>3 & ngroups<10) color.pal <- moby:::economist_pal(ngroups)
+        else if (ngroups>3 & ngroups<10) color.pal <- .economist_pal(ngroups)
         else color.pal <- rainbow(ngroups)
       }
     # set color palette for numeric scale (style=="points")
@@ -126,7 +124,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
           warning("The color palette was generated using the provided colors")
         }
       }else{
-        color.pal <- moby:::viridis_pal(100)
+        color.pal <- .viridis_pal(100)
       }
     }
   #######################################################
@@ -226,15 +224,15 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     }else{
       data_group$row <- 1:nrow(data_group)
     }
-    detections_table <- graphics::aggregate(data_group$row, by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), length)
+    detections_table <- stats::aggregate(data_group$row, by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), length)
     colnames(detections_table) <- c("timebin", "id", "station", "detections")
 
     # calculate metrics
     if(var=="detections"){
-      plot_data <- graphics::aggregate(detections_table$detections, by=list(detections_table$timebin, detections_table$station), sum)
+      plot_data <- stats::aggregate(detections_table$detections, by=list(detections_table$timebin, detections_table$station), sum)
       colnames(plot_data) <- c("timebin", "station", "var")
     }else{
-      plot_data <- graphics::aggregate(detections_table$id, by=list(detections_table$timebin, detections_table$station), function(x) length(unique(x)))
+      plot_data <- stats::aggregate(detections_table$id, by=list(detections_table$timebin, detections_table$station), function(x) length(unique(x)))
       colnames(plot_data) <- c("timebin", "station", "var")
       if(var=="co-occurrences"){
         plot_data <- plot_data[plot_data$var>1,]
@@ -246,13 +244,13 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
 
     # calculate stats for color-by variable if required
     if(!is.null(color.by)){
-      color_data <- graphics::aggregate(data_group[,color.by], by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), aggFun)
+      color_data <- stats::aggregate(data_group[,color.by], by=list(data_group[,timebin.col], data_group[,id.col], data_group[,station.col]), aggFun)
       colnames(color_data) <- c("timebin", "id", "station", "level")
-      color_data <-  graphics::aggregate(color_data$level, by=list(color_data$timebin, color_data$station), aggFun)
+      color_data <-  stats::aggregate(color_data$level, by=list(color_data$timebin, color_data$station), aggFun)
       colnames(color_data) <- c("timebin", "station", "level")
       color_data <- color_data[order(color_data$timebin),]
       if(inherits(color_data$level, "numeric")){
-        color_data$color <- round(moby:::rescale(color_data$level, to=c(1,100)))
+        color_data$color <- round(.rescale(color_data$level, to=c(1,100)))
       }else{
         color_data$level <- factor(color_data$level, levels=levels(data_group[,color.by]))
         color_data$color <- as.integer(color_data$level)
@@ -445,7 +443,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     ##########################################################
     # if style is set to raster use "image"   ################
     if(style=="raster"){
-      if(is.null(color.pal)){raster_pal <- viridis::viridis(max(var_range))}
+      if(is.null(color.pal)){raster_pal <- .viridis_pal(max(var_range))}
       if(!is.null(color.pal)){raster_pal <- color.pal(max(var_range))}
       plot_matrix <- reshape2::dcast(plot_data, formula="day~hour", value.var="var", fill=0, fun.aggregate=max, drop=F)
       missing_hours <- base::setdiff(colnames(plot_template[[i]]), colnames(plot_matrix))
@@ -485,7 +483,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
         rect(xleft=seasons_table$start, xright=seasons_table$end, ybottom=par("usr")[3], ytop=par("usr")[4], col=seasons_table$color, border=NA)
         seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
         seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
-        coords <- moby:::legend(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
+        coords <- .legend(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
                                  xpd=T, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=F)
         coords_list <- c(coords_list, list(coords))
 
@@ -500,7 +498,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       }
 
       # draw points
-      plot_data$cex <- moby:::rescale(plot_data$var, from=var_range, to=pt.cex)
+      plot_data$cex <- .rescale(plot_data$var, from=var_range, to=pt.cex)
       if(highlight.isolated==T){
         runs <- rle(plot_data$color)
         runs_length <-  rep(runs$lengths, runs$lengths)
@@ -517,7 +515,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       size_labs <- pretty(var_range)
       size_labs <- unique(round(size_labs))
       size_labs <- size_labs[size_labs>=min(var_range) & size_labs<=max(var_range) & size_labs>0]
-      size_scale <- moby:::rescale(size_labs, from=var_range, to=pt.cex)
+      size_scale <- .rescale(size_labs, from=var_range, to=pt.cex)
       if(length(coords_list)==0){legend.y<-par("usr")[4]
       }else{legend.y<-abs(coords_list[[1]]$rect$top-coords$rect$h)+1}
       legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
@@ -592,7 +590,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       legend.x <- graphics::grconvertX(legend.x, from="user", to="ndc")
       scale_labs <- pretty(data[,color.by], min.n=4)
       scale_labs <- scale_labs[scale_labs>=min(data[,color.by]) & scale_labs<=max(data[,color.by])]
-      digits <- max(moby:::decimalPlaces(scale_labs))
+      digits <- max(.decimalPlaces(scale_labs))
       shape::colorlegend(col=color.pal, zlim=range(data[,color.by], na.rm=T), zval=scale_labs, digit=digits, xpd=T,
                          posx=c(legend.x[1], legend.x[2]), posy=c(0.4,0.9), main=color.by, main.cex=cex.legend, cex=cex.legend-0.1)
     }

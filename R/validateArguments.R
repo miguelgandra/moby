@@ -160,6 +160,13 @@ validateArguments <- function() {
   }
 
   ##############################################################################
+  # validate variable ##########################################################
+  if ("variable" %in% names(args)) {
+    variable <- args$variable
+    if(!s.null(variable)) errors <- c(errors, checkColumn(variable, "Variable"))
+  }
+
+  ##############################################################################
   # validate color.by ##########################################################
   if ("color.by" %in% names(args)) {
     color.by <- args$color.by

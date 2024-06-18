@@ -64,7 +64,6 @@
 #' @references
 #' Gotelli, N. J. (2000). Null model analysis of species co-occurrence patterns. Ecology, 81(9), 2606-2621.\cr\cr
 #' Farine, D. R. (2017). A guide to null models for animal social network analysis. Methods Ecol Evol 8: 1309–1320.
-#'}
 #'
 #' @importFrom foreach %dopar%
 #' @export
@@ -79,8 +78,9 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
 
   # validate parameters
   errors <- c()
-  if(!c("ids") %in% names(attributes(table))) errors <- c(errors, "The supplied table does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
   if (!is.data.frame(table)) errors <- c(errors, "The 'table' argument must be a data frame")
+  if(!c("ids") %in% names(attributes(table))) errors <- c(errors, "The supplied table does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
+  if (!is.data.frame(overlaps) || !c("ids") %in% names(attributes(overlaps))) errors <- c(errors, "'overlaps' format not recognized. Please make sure to use the output from the 'calculateOverlap' function.")
   if (!is.null(constraint.by) && !all(constraint.by %in% colnames(table))) errors <- c(errors,  "Constraint variable(s) not found in the supplied table.")
   if (is.null(id.groups) && any(colnames(overlaps) %in% c("group1", "group2"))) errors <- c(errors,  "ID groups not specified, but used in the supplied overlaps.")
   if (!is.null(random.seed) && !inherits(random.seed, "numeric")) errors <- c(errors, "The random seed must be an integer.")
@@ -173,7 +173,7 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
   random_results <- list()
 
   # print to console
-  moby:::printConsole("Running null model permutation tests")
+  .printConsole("Running null model permutation tests")
 
 
   ###################################################################
@@ -295,16 +295,16 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
   names(null_dist) <- types
   null_dist <- reshape2::melt(null_dist)
   colnames(null_dist) <- c("mean_overlap", "type")
-  mean_null <- graphics::aggregate(null_dist$mean_overlap, by=list(null_dist$type), mean, na.rm=T)
+  mean_null <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), mean, na.rm=T)
   colnames(mean_null) <- c("type", "mean_null")
   population_stats <- mean_null
-  population_stats$sd <- graphics::aggregate(null_dist$mean_overlap, by=list(null_dist$type), sd, na.rm=T)$x
+  population_stats$sd <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), sd, na.rm=T)$x
   population_stats$mean_null <-  paste(sprintf("%.2f", population_stats$mean_null), "±", sprintf("%.2f", population_stats$sd))
   population_stats <- population_stats[,-3]
   colnames(population_stats) <- c("Type", "Mean null distr (%)")
 
   # calculate p-values
-  obs_overlap <- graphics::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=T)$x
+  obs_overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=T)$x
   null_dist <- lapply(types, function(x) null_dist$mean_overlap[null_dist$type==x])
   all_pvals <- numeric(length(types))
   all_signifs <- character(length(types))
@@ -335,15 +335,15 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
 
   # add nº dyads
   pairwise_stats <- pairwise_stats[!is.na(pairwise_stats$overlap),]
-  summary_table <- graphics::aggregate(pairwise_stats$pair, by=list(pairwise_stats$type), function(x) length(unique(x)))
+  summary_table <- stats::aggregate(pairwise_stats$pair, by=list(pairwise_stats$type), function(x) length(unique(x)))
   colnames(summary_table) <- c("Type", "Nº dyads")
   # add mean shared period
-  summary_table$period <- round(graphics::aggregate(pairwise_stats$shared_monit_days, by=list(pairwise_stats$type), mean, na.rm=T)$x)
+  summary_table$period <- round(stats::aggregate(pairwise_stats$shared_monit_days, by=list(pairwise_stats$type), mean, na.rm=T)$x)
   colnames(summary_table)[3] <- "Mean interval (d)"
   # add mean overlap ± standard deviation
-  summary_table$overlap <- graphics::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=T)$x
+  summary_table$overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=T)$x
   summary_table$overlap <- sprintf("%.2f", summary_table$overlap)
-  summary_table$sd <- graphics::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), function(x) sd(x, na.rm=T))$x
+  summary_table$sd <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), function(x) sd(x, na.rm=T))$x
   summary_table$sd <- sprintf("%.2f", summary_table$sd)
   summary_table$overlap <- paste(summary_table$overlap, "±", summary_table$sd)
   colnames(summary_table)[4] <- "Mean overlap (%)"

@@ -264,9 +264,9 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
 
     # add mean transition duration
-    durations <- graphics::aggregate(transition_times$duration_h, by=list(transition_times$transition), mean)
+    durations <- stats::aggregate(transition_times$duration_h, by=list(transition_times$transition), mean)
     colnames(durations) <- c("Type", "Mean")
-    durations$Error <- graphics::aggregate(transition_times$duration_h, by=list(transition_times$transition), function(x) plotrix::std.error(x))$x
+    durations$Error <- stats::aggregate(transition_times$duration_h, by=list(transition_times$transition), function(x) plotrix::std.error(x))$x
     if(mean(durations$Mean)>72){
       durations[,-1] <- apply(durations[,-1], 2, function(x) sprintf("%.1f", x/24))
       units <- "(d)"

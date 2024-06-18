@@ -128,7 +128,7 @@ as the font graphical parameter: 1 is plain text, 2 is bold face, 3 is italic,
 automatically defined as 20\% of the plot region.}
 
 \item{scale.pos}{Position of the map scale, specified by keyword.
-See \code{\link[base]{xy.coords}}. Defaults to "bottom".}
+See \code{\link[grDevices]{xy.coords}}. Defaults to "bottom".}
 
 \item{scale.inset}{Inset distance(s) of the map scale from the margins as a fraction
 of the plot region. If a single value is given, it is used for both margins; if two values
@@ -161,11 +161,20 @@ If tagging information is supplied, the number of tagged individuals is indicate
 the release site is included in the calculated transitions.
 }
 \examples{
-
+\dontrun{
 pdf("./spatial-network.pdf", width=6, height=8)
-plotMigrations(data=data_filtered, id.groups=species_ids, spatial.col="site",
-               land.shape=coastline, edge.type="individuals", edge.color=c("darkblue", "darkred"), edge.width=c(0.2, 4),
-               color.nodes.by="group", nodes.color=c("darkblue", "darkred"), nodes.size=c(0.05,0.1),
-               nodes.label.wrap=T, repel.nodes=T)
+plotMigrations(data=data_filtered,
+               id.groups=species_ids,
+               spatial.col="site",
+               land.shape=coastline,
+               edge.type="individuals",
+               edge.color=c("darkblue", "darkred"),
+               edge.width=c(0.2, 4),
+               color.nodes.by="group",
+               nodes.color=c("darkblue", "darkred"),
+               nodes.size=c(0.05,0.1),
+               nodes.label.wrap=T,
+               repel.nodes=T)
 dev.off()
+}
 }

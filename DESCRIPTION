@@ -5,7 +5,7 @@ Authors@R: person("Miguel", "Gandra", , "m3gandra@gmail.com", role = c("aut", "c
 		  comment = c(ORCID = "0000-0003-1506-5141"))
 Description: moby provides a comprehensive suite of functions and methods specifically tailored 
 	     for processing, visualizing, and interpreting passive acoustic telemetry data.
-License: `use_mit_license()`, `use_gpl3_license()` or friends to pick a license
+License: GPL (>= 3)
 Encoding: UTF-8
 Roxygen: list(markdown = TRUE)
 RoxygenNote: 7.2.3

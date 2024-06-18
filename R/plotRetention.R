@@ -121,7 +121,7 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
   sample_by_site <- unlist(lapply(ids_by_site, length))
   data_attrition <- lapply(ids_by_site, function(x) data[data[,id.col] %in% x,])
   data_attrition <- mapply(function(data,site){data[data[,site.col]==site,]}, data=data_attrition, site=names(data_attrition), SIMPLIFY=F)
-  data_attrition <- lapply(data_attrition, function(x) graphics::aggregate(x$days_post_tag, by=list(x[,id.col]), max))
+  data_attrition <- lapply(data_attrition, function(x) stats::aggregate(x$days_post_tag, by=list(x[,id.col]), max))
   data_attrition <- lapply(data_attrition, function(x) {colnames(x)<-c("ID", "days_post_tag"); return(x)})
   if(!is.null(color.by)){
     data_attrition <- lapply(data_attrition, function(x) plyr::join(x, id.metadata[,c("ID", color.by)], by="ID", type="left"))

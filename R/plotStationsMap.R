@@ -64,7 +64,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   if(is.null(split.by)){
     for(f in 1:length(data_individual)) {
       detections <- data_individual[[f]]
-      data_stations <- graphics::aggregate(detections$timebin, by=list(detections$ID, detections$station), length)
+      data_stations <- stats::aggregate(detections$timebin, by=list(detections$ID, detections$station), length)
       colnames(data_stations) <- c("ID", "station", "detections")
       data_stations$detections[is.na(data_stations$detections)] <- 0
       data_stations$freq <- data_stations$detections / sum(data_stations$detections)
@@ -80,7 +80,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
       groups <- levels(data[,split.by])
       detections <- data_individual[[f]]
       if(nrow(detections)==0 | length(unique(detections[,split.by]))==1){data_plot[[f]]<-NULL; next}
-      data_stations <- graphics::aggregate(detections$timebin, by=list(detections$ID, detections$station, detections[,split.by]), length)
+      data_stations <- stats::aggregate(detections$timebin, by=list(detections$ID, detections$station, detections[,split.by]), length)
       colnames(data_stations) <- c("ID", "station", split.by, "detections")
       data_stations <- reshape2::dcast(data_stations, as.formula(paste0("ID+station~", split.by)), value.var="detections", fill=0)
       data_stations$total <- rowSums(data_stations[,-c(1:2)])
@@ -96,7 +96,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   data_plot <- data_plot[!sapply(data_plot,is.null)]
   data_plot <- do.call("rbind", data_plot)
   freq_cols <- which(grepl("freq", colnames(data_plot), fixed=T))
-  data_plot <- graphics::aggregate(data_plot[,freq_cols], by=list(data_plot$station), mean)
+  data_plot <- stats::aggregate(data_plot[,freq_cols], by=list(data_plot$station), mean)
   colnames(data_plot)[1] <- "station"
   sector_cols <- which(grepl("freq", colnames(data_plot), fixed=T) & colnames(data_plot)!=c("total_freq"))
   data_sector <- data_plot[,sector_cols]
@@ -110,7 +110,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
 
   ############################################################################
   ## Grab station coordinates ################################################
-  stations_list <- graphics::aggregate(cbind(data[,lon.name], data[,lat.name]), by=list(data$station), mean)
+  stations_list <- stats::aggregate(cbind(data[,lon.name], data[,lat.name]), by=list(data$station), mean)
   colnames(stations_list) <- c("station", "longitude", "latitude")
   coordinates <- sp::SpatialPoints(cbind(stations_list$longitude, stations_list$latitude))
   raster::projection(coordinates) <- CRS("+proj=longlat +datum=WGS84")
@@ -125,7 +125,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   # (between 1% and 5% of the longitudinal axis)
   pie_min <- (extent(coordinates)[2] - extent(coordinates)[1]) * 0.01
   pie_max <- (extent(coordinates)[2] - extent(coordinates)[1])* 0.05
-  data_plot$total_freq <- moby:::rescale(data_plot$total_freq, c(pie_min,pie_max))
+  data_plot$total_freq <- .rescale(data_plot$total_freq, c(pie_min,pie_max))
 
   # set color palette
   if(is.null(pie.color)){
@@ -151,9 +151,9 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
   if(is.null(background.layer)){rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col=background.col, border=NA)}
   plot(land.shape, col=land.color, border=NA, add=T)
   if(is.null(scale.meters)){scale.meters <- min(pretty((par("usr")[2]-par("usr")[1])*0.15))}
-  scale_xy <- moby:::getPosition(scale.pos, inset=scale.inset)
+  scale_xy <- .getPosition(scale.pos, inset=scale.inset)
   scale_km <- scale.meters/1000
-  moby:::scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.5, bar.lwd=0.2)
+  .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.5, bar.lwd=0.2)
   points(coordinates, pch=16, bg="black", cex=0.2)
   for(i in 1:nrow(data_plot)){segments(x0=coordinates@coords[i,1], y0=coordinates@coords[i,2], x1=pie_coords$x[i], y1=pie_coords$y[i], lwd=0.2, lty=2)}
   for(i in sector_pies){

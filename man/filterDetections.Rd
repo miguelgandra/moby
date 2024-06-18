@@ -51,8 +51,13 @@ individuals with fewer days of detections will be discarded.}
 Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers,
 when estimating minimum consecutive distances.}
 
+\item{land.shape}{Optional. A  shape file containing coastlines.}
+
+\item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
+If not supplied, CRS is assumed to be the same as in land.shape.}
+
 \item{...}{Further arguments passed to the \code{\link{calculateDistances}} function
-(e.g. land.shape, epsg.code, grid.resolution and mov.directions).}
+(e.g., grid.resolution and mov.directions).}
 }
 \value{
 A list containing both the filtered data and the rejected detections,

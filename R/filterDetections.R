@@ -21,7 +21,6 @@
 #' `land.shape` (shape file containing coastlines) is provided,
 #' leading to more accurate distance estimates.
 #'
-#'
 #' @param data A data frame containing raw animal detections.
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
 #' The length of this vector should match the number of unique animal IDs.
@@ -40,8 +39,11 @@
 #' @param acoustic.range Maximum assumed detection range of the acoustic receivers (in metres).
 #' Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers,
 #' when estimating minimum consecutive distances.
+#' @param land.shape Optional. A  shape file containing coastlines.
+#' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
+#' If not supplied, CRS is assumed to be the same as in land.shape.
 #' @param ... Further arguments passed to the \code{\link{calculateDistances}} function
-#' (e.g. land.shape, epsg.code, grid.resolution and mov.directions).
+#' (e.g., grid.resolution and mov.directions).
 #' @return A list containing both the filtered data and the rejected detections,
 #' as well as a detailed summary of the filtered out data by individual.
 #' @importFrom dplyr %>%

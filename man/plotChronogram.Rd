@@ -41,8 +41,9 @@ plotChronogram(
 \arguments{
 \item{data}{A data frame containing binned animal detections.}
 
-\item{tagging.dates}{Optional. A POSIXct vector containing the tag/release date of each animal.
-If supplied, the plot start is set the earliest release date, instead of the first detection.}
+\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
+The length of this vector should match the number of unique animal IDs.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{variables}{The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".}
 
@@ -52,6 +53,8 @@ of this variable (e.g. species, ontogeny or habitat).}
 \item{style}{Style of the plot. Either "raster" (nº represented by color) or "points" (nº represented by size).}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
 

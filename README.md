@@ -29,4 +29,4 @@ For detailed information on how to use moby, please refer to the package documen
 Any contributions from the community are greatly appreciated! If you have suggestions, bug reports, or would like to contribute code, please feel free to open an issue or submit a pull request. 
 
 ## License
-This project is licensed under the MIT License - see the LICENSE file for details.
+This project is licensed under the GPL v3 license.

@@ -200,7 +200,7 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
       if(same.scale==T & kud.legend==T){
         kud_labs <- pretty(kud_range, min.n=4)
         kud_labs <- kud_labs[kud_labs>=min(kud_range) & kud_labs<=max(kud_range)]
-        moby:::colorlegend(col=color_pal, zlim=kud_range, zval=kud_labs,
+        .colorlegend(col=color_pal, zlim=kud_range, zval=kud_labs,
                      posx=c(0.130, 0.155), posy=c(0.1, 0.8), main="KUD\ndensity\n\n",
                      main.cex=0.8, main.adj=0, lab.scientific=T, cex=0.8)
       }
@@ -209,8 +209,8 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
       if(!is.null(background.layer)) {
         layer_labs <- pretty(values(background.layer), min.n=4)
         layer_labs <- layer_labs[layer_labs>=min(kud_range) & layer_labs<=max(kud_range)]
-        display_digits <- max(moby:::decimalPlaces(layer_labs))
-        moby:::colorlegend(col=color_pal, zlim=kud_range, zval=layer_labs,
+        display_digits <- max(.decimalPlaces(layer_labs))
+        .colorlegend(col=color_pal, zlim=kud_range, zval=layer_labs,
                      posx=c(0.200, 0.225), posy=c(0.1, 0.8), main="Layer values",
                      main.cex=0.8, digit=display_digits, main.adj=0, cex=0.8)
       }
@@ -249,15 +249,15 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
       points(coords[1,], pch=21, cex=0.8, bg=adjustcolor("blue", alpha.f=0.7) , lwd=0.25)
       points(coords[nrow(coords@coords),], pch=21, cex=0.8, bg=adjustcolor("red", alpha.f=0.7), lwd=0.25)
     }
-    scale_xy <- moby:::getPosition(scale.pos, inset=scale.inset)
-    moby:::scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.7)
+    scale_xy <- .getPosition(scale.pos, inset=scale.inset)
+    .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.7)
     box(lty="solid", lwd=0.75, cex=0.5)
 
     if(same.scale==F & kud.legend==T){
       kud_labs <- pretty(kud_scale, min.n=4)
       kud_labs <- kud_labs[kud_labs>=min(kud_scale) & kud_labs<=max(kud_scale)]
-      display_digits <- max(moby:::decimalPlaces(kud_labs))
-      moby:::colorlegend(col=color_pal, zlim=kud_scale, zval=kud_labs,
+      display_digits <- max(.decimalPlaces(kud_labs))
+      .colorlegend(col=color_pal, zlim=kud_scale, zval=kud_labs,
                          posx=c(0.830, 0.855), posy = c(0.2, 0.7), main="KUD\ndensity\n\n",
                          main.cex=0.8, digit=display_digits, main.adj=0, lab.scientific=T, cex=0.6)
     }

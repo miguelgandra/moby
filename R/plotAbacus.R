@@ -44,7 +44,8 @@
 #' detections are sorted and plotted based on their "density" distribution, with isolated detections
 #' brought forward to prevent them from being hidden behind denser point clouds
 #' (i.e., more densely clustered points of the same 'color.by' class). Defaults to TRUE.
-#' @param cex.axis Determines the size of the text labels on the axes. Defaults to 0.7.
+#' @param cex.lab Determines the size of the axes titles. Defaults to 0.8.
+#' @param cex.axis Determines the size of the tick mark labels on the axes. Defaults to 0.7.
 #' @param cex.legend Determines the size of the color legend. Defaults to 0.7.
 #' @param cex.mural Determines the size of the labels in the optional top mural. Defaults to 0.7.
 #' @param legend.intersp Vertical distances between legend elements
@@ -68,7 +69,7 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
   ##############################################################################
 
   # perform argument checks and return reviewed parameters
-  reviewed_params <- moby:::validateArguments()
+  reviewed_params <- .validateArguments()
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
   tag.durations <- reviewed_params$tag.durations
@@ -80,7 +81,7 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
   }
 
   # print to console
-  moby:::printConsole("Generating abacus plot")
+  .printConsole("Generating abacus plot")
 
 
   ##############################################################################
@@ -130,7 +131,7 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
     ngroups <- nlevels(data[,color.by])
     if(is.null(color.pal)) {
       if(ngroups==3) {color.pal <- c("#326FA5","#D73134","#1C8E43")
-      }else if (ngroups>3 & ngroups<=10){color.pal <- moby:::economist_pal(ngroups)
+      }else if (ngroups>3 & ngroups<=10){color.pal <- .economist_pal(ngroups)
       }else {color.pal <- topo.colors(ngroups)}
     }
     data$plot_color <- color.pal[data[,color.by]]
@@ -186,8 +187,8 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
     rect(xleft=seasons_table$start, xright=seasons_table$end, ybottom=0, ytop=total_rows+1, col=seasons_table$color, border=NA)
     seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
     seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
-    coords <- moby:::legend(x=par("usr")[2], y=0, legend=seasons_legend$season, fill=seasons_legend$color,
-                             bty="n", border="black", xpd=T, y.intersp=1.6, box.cex=c(1.6, 1.2), cex=cex.legend)
+    coords <- .legend(x=par("usr")[2], y=0, legend=seasons_legend$season, fill=seasons_legend$color,
+                      bty="n", border="black", xpd=T, y.intersp=1.6, box.cex=c(1.6, 1.2), cex=cex.legend)
   } else {
     rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=0, ytop=total_rows+1, col=background.col, border="black")
   }

@@ -165,7 +165,7 @@ plotOverlapTable <- function(randomized.overlaps, id.metadata=NULL, id.groups=NU
     pairwise_results[2,2] <- sort.by
     rownames(pairwise_results) <- NULL
     colnames(pairwise_results) <- NULL
-    digits <- max(moby:::decimalPlaces(c(vars1, vars2)), na.rm=T)
+    digits <- max(.decimalPlaces(c(vars1, vars2)), na.rm=T)
     pairwise_results[-c(1:2), 2] <- sprintf(paste0("%.", digits, "f"), as.numeric(unlist(pairwise_results[-c(1:2), 2])))
     pairwise_results[2, -c(1:2)] <- sprintf(paste0("%.", digits, "f"), as.numeric(unlist(pairwise_results[2, -c(1:2)])))
   }
@@ -195,9 +195,9 @@ plotOverlapTable <- function(randomized.overlaps, id.metadata=NULL, id.groups=NU
     }else{overlap_cells <- which(values$row>1 & values$col>1)}
     overlaps <- as.numeric(values$value[overlap_cells])
     if(full.scale==T){
-      overlaps <- round(moby:::rescale(overlaps, from=c(0,100), to=c(1, length(color.pal)-1)))
+      overlaps <- round(.rescale(overlaps, from=c(0,100), to=c(1, length(color.pal)-1)))
     }else{
-      overlaps <- round(moby:::rescale(overlaps, from=range(overlaps, na.rm=T), to=c(1, length(color.pal)-1)))
+      overlaps <- round(.rescale(overlaps, from=range(overlaps, na.rm=T), to=c(1, length(color.pal)-1)))
     }
     overlaps[is.na(overlaps)] <- 0
     values$color[overlap_cells] <- color.pal[overlaps+1]
@@ -226,7 +226,7 @@ plotOverlapTable <- function(randomized.overlaps, id.metadata=NULL, id.groups=NU
     plus <- "overlap > random\n(joint resource utilization)"
     minus <- "overlap < random\n(spatiotemporal segregation)"
     ns <- "non-significant overlap"
-    moby:::legend("right", inset=c(-0.3, 0), legend=c(plus, minus, ns), box.lwd=0.1,
+    .legend("right", inset=c(-0.3, 0), legend=c(plus, minus, ns), box.lwd=0.1,
                        fill=color.pal, box.cex=c(1.4, 0.9), bty="n", cex=0.6, y.intersp=1.4, xpd=T)
   }else if(type=="mean overlap"){
     if(full.scale==T) {
@@ -236,8 +236,8 @@ plotOverlapTable <- function(randomized.overlaps, id.metadata=NULL, id.groups=NU
       overlap_labs <- pretty(overlap_range, min.n=4)
       overlap_labs <- overlap_labs[overlap_labs>=min(overlap_range) & overlap_labs<=max(overlap_range)]
     }
-    overlap_digits <- max(moby:::decimalPlaces(overlap_labs), na.rm=T)
-    moby:::colorlegend(col=color.pal, zlim=overlap_range, zval=overlap_labs,
+    overlap_digits <- max(.decimalPlaces(overlap_labs), na.rm=T)
+    .colorlegend(col=color.pal, zlim=overlap_range, zval=overlap_labs,
                             posx=c(0.88, 0.895), posy=c(0.2, 0.65), main="Overlap (%)",
                             main.cex=0.8, digit=overlap_digits, main.adj=0, cex=0.8)
   }

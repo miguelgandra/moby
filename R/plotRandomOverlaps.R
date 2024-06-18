@@ -64,7 +64,7 @@ plotRandomOverlaps <- function(overlaps, random.results, include.table=F, type="
   xmin <- min(c(random_overlap, observed_overlap))
   xmax <- max(c(random_overlap, observed_overlap))
   xlabs <- pretty(c(xmin, xmax))
-  digits <- max(moby:::decimalPlaces(xlabs))
+  digits <- max(.decimalPlaces(xlabs))
   max_freq <- max(as.numeric(hist(random_overlap, breaks=25, plot=F)$counts))
   if(include.table==T){layout(matrix(c(1,1,1,1,2), ncol=1))}
 

@@ -175,7 +175,7 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
 
     # set variables
     data <- data_list[[i]]
-    printConsole(paste0("Calculating overlap - ", names(data_list)[i]))
+    .printConsole(paste0("Calculating overlap - ", names(data_list)[i]))
 
     # create list of variables to export to each worker
     args <- list(pairwise_combinations=pairwise_combinations, complete_ids=complete_ids,
@@ -291,6 +291,7 @@ pairwiseOverlap <- function(p, progressbar=NULL, args=NULL) {
     group2 <- which(unlist(lapply(id.groups, function(x) id2 %in% x)))
     result$group1 <- names(id.groups)[group1]
     result$group2 <- names(id.groups)[group2]
+    result$type <- paste(result$group1, "<->", result$group2)
     if (group.comparisons == "within" & group1 != group2) return()
     if (group.comparisons == "between" & group1 == group2) return()
   }

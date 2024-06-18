@@ -119,13 +119,13 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
     data[,id.col] <- droplevels(data[,id.col])
 
     #total distance traveled (km)
-    total_dist <- as.numeric(graphics::aggregate(data[,dist.col], by=list(data[,id.col]), sum, na.rm=T, drop=F)$x)
+    total_dist <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), sum, na.rm=T, drop=F)$x)
     total_distance <- sprintf("%.1f", total_dist/1000)
 
     # rate of movement (hourly distance - m/h)
-    mean_rom <- as.numeric(graphics::aggregate(data[,dist.col], by=list(data[,id.col]), mean, na.rm=T, drop=F)$x)
+    mean_rom <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), mean, na.rm=T, drop=F)$x)
     mean_rom <- mean_rom*60/interval
-    max_rom <- as.numeric(graphics::aggregate(data[,dist.col], by=list(data[,id.col]), max, na.rm=T, drop=F)$x)
+    max_rom <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), max, na.rm=T, drop=F)$x)
     max_rom <- max_rom*60/interval
     if(mean(mean_rom, na.rm=T)>1000 & mean(max_rom, na.rm=T)>1000){
       mean_rom <- mean_rom/1000

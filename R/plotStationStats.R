@@ -170,7 +170,7 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
     # calculate number of individuals per station
     if(any(type=="individuals")) {
       nindividuals <- nlevels(group_data[,id.col])
-      station_individuals <- graphics::aggregate(group_data[,id.col], by=list(group_data[,site.col]), function(x) length(unique(x)), drop=F)
+      station_individuals <- stats::aggregate(group_data[,id.col], by=list(group_data[,site.col]), function(x) length(unique(x)), drop=F)
       colnames(station_individuals) <- c("station", "individuals")
       station_individuals <- data.frame(t(station_individuals), check.names=F)
       colnames(station_individuals) <- station_individuals[1,]
@@ -304,7 +304,7 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
 
     # add legend if more than two types
      if(length(type)>=2){
-      moby:::legend(legend.pos, legend=rownames(station_freqs), horiz=legend.style, fill=color.pal, bty="n",
+      .legend(legend.pos, legend=rownames(station_freqs), horiz=legend.style, fill=color.pal, bty="n",
                          y.intersp=1.4, cex=0.7, box.cex=c(1.2, 1))
      }
 

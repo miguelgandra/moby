@@ -87,13 +87,13 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
     subset_vars <- c(by, id.col)
     subset_vars <- lapply(subset_vars, function(x) {return(data[,x])})
     if(responses[i]=="detections"){
-      plot_data <- graphics::aggregate(data$detections, by=subset_vars, function(x) {sum(x, na.rm=T)/(length(x)*interval/60)})
+      plot_data <- stats::aggregate(data$detections, by=subset_vars, function(x) {sum(x, na.rm=T)/(length(x)*interval/60)})
       plot_title <- expression(bold(paste("Detections (h"^"-1",")")))
     }
     else if(responses[i]=="presences"){
       data$presences <- data$detections
       data$presences[data$presences>=1] <- 1
-      plot_data <- graphics::aggregate(data$presences, by=subset_vars, function(x) {sum(x, na.rm=T)/(length(x)*interval/60)})
+      plot_data <- stats::aggregate(data$presences, by=subset_vars, function(x) {sum(x, na.rm=T)/(length(x)*interval/60)})
       plot_title <- expression(bold(paste("Presences (h"^"-1",")")))
     }
     else if(responses[i]=="overlap"){
@@ -104,7 +104,7 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
       plot_title <- "Overlap (%)"
     }
     else if(responses[i]=="total_dist"){
-      plot_data <- graphics::aggregate(data$dist_m, by=subset_vars, sum, na.rm=T)
+      plot_data <- stats::aggregate(data$dist_m, by=subset_vars, sum, na.rm=T)
       plot_data$x <-  plot_data$x/1000
       plot_title <- expression(bold("Total Distance (km)"))
     }
@@ -119,7 +119,7 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
       plot_title <- expression(bold(paste("KUD 95% (km"^"2",")")))
     } else {
       form <- as.formula(paste(responses[i], "~", paste(c(by, id.col), collapse="+")))
-      plot_data <- graphics::aggregate(form, data=data, mean, na.rm=T)
+      plot_data <- stats::aggregate(form, data=data, mean, na.rm=T)
       colnames(plot_data) <- c("Group.1", "Group.2", "x")
       plot_title <- tools::toTitleCase(responses[i])
     }
@@ -135,7 +135,7 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
     } else {
       plot_data <- plot_data[!is.na(plot_data$x),]
     }
-    ids <- graphics::aggregate(as.character(plot_data$Group.2), by=list(plot_data$Group.1),
+    ids <- stats::aggregate(as.character(plot_data$Group.2), by=list(plot_data$Group.1),
                      function(x) paste(unique(x), collapse=", "), simplify=T)
     same_ids <- ids[1,"x"] == ids[2,"x"]
 
@@ -174,7 +174,7 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
     if(display.n==T) {group_labs <- paste0(levels(plot_data$Group.1), " (", p$n, ")")}
     text(x=1:nlevels(plot_data$Group.1), y=p$stats[nrow(p$stats),]+yrange*0.05, labels=group_labs, cex=1.2)
     yvals <- pretty(c(ymin, ymax))
-    digits <- max(moby:::decimalPlaces(yvals))
+    digits <- max(.decimalPlaces(yvals))
     ylabs <- sprintf(paste0("%.", digits, "f"), yvals)
     axis(2, at=yvals, labels=ylabs, cex.axis=1.5, las=1)
     legend("topleft", legend=LETTERS[i], bty="n", cex=2.4, inset=c(-0.14,-0.04))

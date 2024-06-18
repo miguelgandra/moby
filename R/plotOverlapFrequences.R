@@ -286,7 +286,7 @@ plotOverlapFrequences <- function(table, n.individuals, split.by=NULL, id.groups
     axis(2, at=seq(0,100,by=20), paste0(seq(0,100,by=20),"%"), cex.axis=0.85, las=2)
     text(x=p, y=bar_heights+5, labels=paste0("n=", total_counts), cex=0.75)
     if(!is.null(split.by)) {
-      moby:::legend(legend.pos, legend=group_labels, fill=bar.colors,
+      .legend(legend.pos, legend=group_labels, fill=bar.colors,
                          horiz=legend.style, box.cex=c(1.2, 1),  y.intersp=1.2, bty="n", cex=0.8)
     }
     box()

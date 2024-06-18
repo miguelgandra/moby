@@ -60,7 +60,7 @@ plotFFTs <- function(data, tagging.dates, type="detections", axis.periods=c(48,2
   time_fraction <- 60/interval
 
   # create data frame with number of detections
-  fft_table <- createWideTable(data, start.dates=tagging.dates, id.col=id.col, value.type="detections")
+  fft_table <- createWideTable(data, start.dates=tagging.dates, id.col=id.col, value.col="detections")
 
   # if type = presences, convert detections to binary (0-1)
   if(type=="presences"){
@@ -148,7 +148,7 @@ plotFFTs <- function(data, tagging.dates, type="detections", axis.periods=c(48,2
         vals <- pretty(c(0, max_density))
         disp_vals <- vals
         if(any(vals%%1!=0)) {
-          digits <- max(moby:::decimalPlaces(vals))
+          digits <- max(.decimalPlaces(vals))
           disp_vals <- sprintf(paste0("%.", digits, "f"), disp_vals)
         }
         axis(2, at=vals, lab=disp_vals, las=1, cex.axis=1.8, col=NA, col.ticks=1)
@@ -163,7 +163,7 @@ plotFFTs <- function(data, tagging.dates, type="detections", axis.periods=c(48,2
       vals <- pretty(densities)
       disp_vals <- vals
       if(any(vals%%1!=0)) {
-        digits <- max(moby:::decimalPlaces(vals))
+        digits <- max(.decimalPlaces(vals))
         disp_vals <- sprintf(paste0("%.", digits, "f"), disp_vals)
       }
       axis(2, at=vals, lab=disp_vals, las=1, cex.axis=1.8, col=NA, col.ticks=1)

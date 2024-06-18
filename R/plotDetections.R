@@ -50,7 +50,7 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
   # Initial checks #################################################################
 
   # perform argument checks
-  data <- moby:::validateArguments()
+  data <- .validateArguments()
 
   # check if data contains color.by
   if(is.null(color.by)){
@@ -83,7 +83,7 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
   }
 
   # print to console
-  moby:::printConsole("Plotting detections")
+  .printConsole("Plotting detections")
 
 
   ################################################################################

@@ -57,7 +57,7 @@
 #' @param scale.km Distance covered by the scale bar, in kilometers. If NULL, it is
 #' automatically defined as 20% of the plot region.
 #' @param scale.pos Position of the map scale, specified by keyword.
-#' See \code{\link[base]{xy.coords}}. Defaults to "bottom".
+#' See \code{\link[grDevices]{xy.coords}}. Defaults to "bottom".
 #' @param scale.inset Inset distance(s) of the map scale from the margins as a fraction
 #' of the plot region. If a single value is given, it is used for both margins; if two values
 #' are given, the first is used for x- distance, the second for y-distance. Defaults to c(0, 0.05).
@@ -79,8 +79,8 @@
 #' within the nodes of the corresponding sites.
 #'
 #' @examples
-#'
-#' pdf("./spatial-network.pdf", width=6, height=8)
+#' \dontrun{
+#'pdf("./spatial-network.pdf", width=6, height=8)
 #' plotMigrations(data=data_filtered,
 #'                id.groups=species_ids,
 #'                spatial.col="site",
@@ -94,6 +94,7 @@
 #'                nodes.label.wrap=T,
 #'                repel.nodes=T)
 #' dev.off()
+#' }
 
 #' @export
 
@@ -141,10 +142,10 @@ plotMigrations <- function(data,
   #####################################################################################
 
   # print to console
-  moby:::printConsole("Generating migrations network")
+  .printConsole("Generating migrations network")
 
   # perform argument checks and return reviewed parameters
-  reviewed_params <- moby:::validateArguments()
+  reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
   # check if id.metadata contains the required columns
@@ -266,7 +267,7 @@ plotMigrations <- function(data,
     node_detections[[g]] <- table(data_groupped[[g]][,spatial.col])
 
     # calculate nº individuals on each site
-    nindividuals <- graphics::aggregate(data_groupped[[g]][,id.col], by=list(data_groupped[[g]][,spatial.col]),
+    nindividuals <- stats::aggregate(data_groupped[[g]][,id.col], by=list(data_groupped[[g]][,spatial.col]),
                              function(x) length(unique(x)), drop=F)
     colnames(nindividuals) <- c(spatial.col, "nids")
     nindividuals$nids[is.na(nindividuals$nids)] <- 0
@@ -297,7 +298,7 @@ plotMigrations <- function(data,
   #####################################################################################
 
   # convert node coords to spatial points
-  site_coords <- graphics::aggregate(data[,c(lon.col, lat.col)], by=list(data[,spatial.col]), mean)
+  site_coords <- stats::aggregate(data[,c(lon.col, lat.col)], by=list(data[,spatial.col]), mean)
   colnames(site_coords)[1] <- "site"
   site_coords <- sp::SpatialPointsDataFrame(site_coords[,2:3], data=site_coords)
 
@@ -387,9 +388,9 @@ plotMigrations <- function(data,
     # add scale bar
     if(geographic_coords==FALSE){
       if(is.null(scale.km)) scale.km <- min(pretty((bbox[2]-bbox[1])*0.15))/1000
-      scale_xy <- moby:::getPosition(scale.pos, inset=scale.inset)
+      scale_xy <- .getPosition(scale.pos, inset=scale.inset)
       scale.meters <- scale.km*1000
-      moby:::scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", bar.height=scale.height,
+      .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", bar.height=scale.height,
                        label=c(0, scale.km/2, scale.km), lwd=0.2, cex=scale.cex, bar.lwd=0.2)
     }
 
@@ -398,7 +399,7 @@ plotMigrations <- function(data,
     colnames(nanimals)[1] <- "site"
     nanimals <- nanimals[match(site_coords@data$site, nanimals$site), "nids"]
     map_bbox <- raster::extent(map_extent)
-    node_size <- moby:::rescale_vertex_igraph(nanimals, minmax.relative.size=c(nodes.size[1], nodes.size[2]))
+    node_size <- .rescale_vertex_igraph(nanimals, minmax.relative.size=c(nodes.size[1], nodes.size[2]))
 
     # set node names
     if(!is.null(id.metadata)){
@@ -418,7 +419,7 @@ plotMigrations <- function(data,
     } else if(color.nodes.by=="group"){
       vertex_color <- rep(nodes.color[g], length.out=length(nanimals))
     } else {
-      node_classes <- graphics::aggregate(data[,color.nodes.by], by=list(data[,spatial.col]), function(x) names(table(x))[which.max(table(x))])
+      node_classes <- stats::aggregate(data[,color.nodes.by], by=list(data[,spatial.col]), function(x) names(table(x))[which.max(table(x))])
       colnames(node_classes) <- c("node", "class")
       node_classes$class <- factor(node_classes, levels=levels(data[,color.nodes.by]))
       vertex_color <- nodes.color[node_classes$class]
@@ -440,7 +441,7 @@ plotMigrations <- function(data,
     # plot network
     network <- igraph::graph_from_data_frame(edges, directed=T, vertices=site_coords@data)
     igraph::V(network)$name <- node_titles
-    igraph::E(network)$width <- moby:::rescale(edges$value, from=range(all_movements), to=edge.width)
+    igraph::E(network)$width <- .rescale(edges$value, from=range(all_movements), to=edge.width)
     igraph::plot.igraph(network, layout=as.matrix(site_coords@data[,2:3]), add=T, rescale=F,
                         edge.color=edge.color[g], edge.curved=edge.curved,
                         vertex.size=node_size, vertex.color=vertex_color,

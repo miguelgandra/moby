@@ -87,4 +87,3 @@ continuity correction is applied to avoid p-values of exactly 0 or 1).
 Gotelli, N. J. (2000). Null model analysis of species co-occurrence patterns. Ecology, 81(9), 2606-2621.\cr\cr
 Farine, D. R. (2017). A guide to null models for animal social network analysis. Methods Ecol Evol 8: 1309–1320.
 }
-}

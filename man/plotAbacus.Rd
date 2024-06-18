@@ -91,7 +91,9 @@ detections are sorted and plotted based on their "density" distribution, with is
 brought forward to prevent them from being hidden behind denser point clouds
 (i.e., more densely clustered points of the same 'color.by' class). Defaults to TRUE.}
 
-\item{cex.axis}{Determines the size of the text labels on the axes. Defaults to 0.7.}
+\item{cex.lab}{Determines the size of the axes titles. Defaults to 0.8.}
+
+\item{cex.axis}{Determines the size of the tick mark labels on the axes. Defaults to 0.7.}
 
 \item{cex.legend}{Determines the size of the color legend. Defaults to 0.7.}
 

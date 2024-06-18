@@ -103,7 +103,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
   }
 
   if(is.null(color.pal)){
-    color.pal <- viridis::inferno
+    color.pal <- .viridis_pal
   }
 
   if(class(color.pal)!="function"){
@@ -135,7 +135,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
     var <- variables[v]
     var_data <- aggregated_data[,c("id","group",var)]
     var_data <- var_data[!is.na(var_data[,var]),]
-    nids[[v]] <- graphics::aggregate(var_data$id, by=list(var_data$group), function(x) length(unique(x)))
+    nids[[v]] <- stats::aggregate(var_data$id, by=list(var_data$group), function(x) length(unique(x)))
     colnames(nids[[v]]) <- c("group", "nids")
     nids[[v]]$var <- var
   }
@@ -228,7 +228,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
       plot_sub <- paste0("(n=", plot_sub, ")")
 
       # generate plot
-      moby:::filled.contour(x=1:12, y=0:24, z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
+      .filled.contour(x=1:12, y=0:24, z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
                       xlab="Months", ylab="Hours", nlevels=100, color.palette=color.pal, cex.lab=cex.lab, zlim=scale,
                       plot.axes = {
                         axis(1, labels=month.abb, at=1:12, cex.axis=cex.axis, pos=0)
@@ -247,7 +247,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
       scale_labs <- scale_labs[scale_labs>=min(scale) & scale_labs<=max(scale)]
       color_scale <- color.pal(100)
       if(invert.scale==T){scale<-rev(scale); color_scale<-rev(color_scale)}
-      digits <- max(moby:::decimalPlaces(scale_labs))
+      digits <- max(.decimalPlaces(scale_labs))
       shape::colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=T,
                          posx=legend.xpos, posy=legend.ypos, main="", main.cex=0.8, cex=cex.axis)
 

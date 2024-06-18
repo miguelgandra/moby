@@ -10,7 +10,7 @@
 #'
 #' @param table A data frame object containing binned detections in the wide format
 #' (time bin x individual matrix, with values corresponding to the number of detections),
-#' as returned by \code{\link{createWideTable}} with value.type="detections".
+#' as returned by \code{\link{createWideTable}} with value.col="detections".
 #' @param n.individuals Number of tagged individuals.
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
 #' @param type Either "detections" or "presences".
