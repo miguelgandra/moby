@@ -1,13 +1,9 @@
 
 # moby <img src="vignettes/moby_logo.png" align="right" width="100" />
 
-<!-- badges: start -->
-usethis::use_lifecycle_badge("stable")
-usethis::use_cran_badge()
+badger::badge_lifecycle(stage = "experimental")
+[![Github All Releases](https://img.shields.io/github/downloads/miguelgandra/moby/total.svg)]()
 [![R-CMD-check](https://github.com/miguelgandra/moby/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/miguelgandra/moby/actions/workflows/R-CMD-check.yaml)
-`r badge_bioc_download("clusterProfiler", "total", "blue",   "total")`
-`r badge_lifecycle("stable")`
-<!-- badges: end -->
 
 An R package for streamlined biotelemetry analyses and data visualization.
 
