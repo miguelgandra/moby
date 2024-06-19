@@ -50,7 +50,7 @@
 #' The summary table includes the following columns:
 #' \itemize{
 #'   \item {Type}: The type of comparison. This column is included only when \code{id.groups} are supplied (more than one comparison).
-#'   \item {Nº dyads}: The number of dyads (pairs of individuals).
+#'   \item {N dyads}: The number of dyads (pairs of individuals).
 #'   \item {Mean interval (d)}: The mean monitoring period (in days).
 #'   \item {Mean overlap (%)}: The mean observed overlap percentage with standard deviation.
 #'   \item {Mean null distr (%)}: The mean overlap percentage from the null distribution with standard deviation.
@@ -299,7 +299,7 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
   colnames(mean_null) <- c("type", "mean_null")
   population_stats <- mean_null
   population_stats$sd <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), sd, na.rm=T)$x
-  population_stats$mean_null <-  paste(sprintf("%.2f", population_stats$mean_null), "±", sprintf("%.2f", population_stats$sd))
+  population_stats$mean_null <-  paste(sprintf("%.2f", population_stats$mean_null), "\u00b1", sprintf("%.2f", population_stats$sd))
   population_stats <- population_stats[,-3]
   colnames(population_stats) <- c("Type", "Mean null distr (%)")
 
@@ -336,7 +336,7 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
   # add nº dyads
   pairwise_stats <- pairwise_stats[!is.na(pairwise_stats$overlap),]
   summary_table <- stats::aggregate(pairwise_stats$pair, by=list(pairwise_stats$type), function(x) length(unique(x)))
-  colnames(summary_table) <- c("Type", "Nº dyads")
+  colnames(summary_table) <- c("Type", "N dyads")
   # add mean shared period
   summary_table$period <- round(stats::aggregate(pairwise_stats$shared_monit_days, by=list(pairwise_stats$type), mean, na.rm=T)$x)
   colnames(summary_table)[3] <- "Mean interval (d)"
@@ -345,11 +345,11 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, id.groups=NUL
   summary_table$overlap <- sprintf("%.2f", summary_table$overlap)
   summary_table$sd <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), function(x) sd(x, na.rm=T))$x
   summary_table$sd <- sprintf("%.2f", summary_table$sd)
-  summary_table$overlap <- paste(summary_table$overlap, "±", summary_table$sd)
+  summary_table$overlap <- paste(summary_table$overlap, "\u00b1", summary_table$sd)
   colnames(summary_table)[4] <- "Mean overlap (%)"
   summary_table <- summary_table[,-which(colnames(summary_table)=="sd")]
   # add mean null distribution (%) + p-values
-  summary_table <- join(summary_table, population_stats, by="Type", type="left")
+  summary_table <- plyr::join(summary_table, population_stats, by="Type", type="left")
   pairwise_signif <- as.data.frame.matrix(table(pairwise_stats$type, pairwise_stats$association))
   labels <- c("Pairs Non Sig","Pairs > Random","Pairs < Random")
   colnames(pairwise_signif) <- gsub("non-significant", labels[1], colnames(pairwise_signif), fixed=T)

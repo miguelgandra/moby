@@ -108,7 +108,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       ngroups <- nlevels(data[,color.by])
       if(!is.null(color.pal)){
         if(style=="points" && inherits(color.pal, "function")) color.pal <- color.pal(ngroups)
-        if(length(color.pal)!=ngroups)  warning("The nº of colors doesn't match the number of levels in 'color.by' variable")
+        if(length(color.pal)!=ngroups)  warning("The number of colors doesn't match the number of levels in 'color.by' variable")
       }else{
         if(ngroups==3) color.pal <- c("#326FA5","#D73134","#1C8E43")
         else if (ngroups>3 & ngroups<10) color.pal <- .economist_pal(ngroups)
@@ -158,7 +158,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
 
   # aggregate data in a list
   if(!is.null(split.by)){
-    if(class(data[,split.by])!="factor"){
+    if(!inherits(data[,split.by], "factor")){
       data[,split.by] <- as.factor(data[,split.by] )
     }
     data_list <- split(data, f=data[,split.by])
@@ -358,7 +358,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     lunar_illumination$phase <- as.character(lunar::lunar.phase(timebins, name=T))
 
     for(l in 1:cols){
-      par(mar=c(bottom_mar, left_mar, top_mar, right_mar), xpd=T)
+      par(mar=mars, xpd=T)
       xcoords <- c(1, seq(1, nrow(lunar_illumination)), nrow(lunar_illumination))
       ycoords <- c(0, lunar_illumination$fraction, 0)
       plot(lunar_illumination$fraction, type="l", lwd=0.5, axes=F, ylim=c(0,1), xlim=c(1, nrow(lunar_illumination)),
@@ -376,7 +376,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       moon_indexes <- unlist(lapply(moon_indexes, function(x) x$index[which.min(abs(x$fraction - moon_lookup$fraction1[moon_lookup$phase==unique(x$phase)]))]))
       moon_indexes <- moon_indexes[order(as.numeric(sub('.*_', '', names(moon_indexes))))]
       moon_indexes <- data.frame("phase"=sub("\\_.*", "", names(moon_indexes)), "index"=moon_indexes, row.names=NULL)
-      moon_indexes <- join(moon_indexes, moon_lookup, by="phase", type="left")
+      moon_indexes <- plyr::join(moon_indexes, moon_lookup, by="phase", type="left")
       moon_indexes$fraction2 <- abs(1- moon_indexes$fraction1)
       for(i in 1:nrow(moon_indexes)){
         if(moon_indexes$phase[i]!="Waning"){moon_color <- c("#FFFBEB", "#3C3C3C")}
@@ -402,8 +402,8 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     group <- plot_combs$group[i]
     var <-  plot_combs$variable[i]
     plot_data <- plot_data_list[[i]]
-    plot_title <- switch(var, detections="Nº of detections", individuals="Nº of individuals",
-                         "co-occurrences"="Nº of co-occurring animals")
+    plot_title <- switch(var, detections="N\u00ba of detections", individuals="N\u00ba of individuals",
+                         "co-occurrences"="N\u00ba of co-occurring animals")
     if(!is.null(split.by)){plot_title <- paste(group, "-", plot_title)}
 
     # get diel phase timelines
@@ -577,9 +577,6 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       scale_labs <- unique(round(scale_labs))
       fields::image.plot(y=1:length(bins), x=1:length(days), zlim=var_range, z=plot_matrix, legend.only=T, legend.shrink=0.7, legend.width=1,
                         col=raster_pal, add=T, graphics.reset=T, axis.args=list(scale_labs, cex.axis=cex.axis), legend.mar=3, legend.cex=cex.legend)
-      #shape::colorlegend(col=raster_pal, zlim=var_range, zval=scale_labs, digit=1, xpd=T,
-      #                   posx=c(0.89, 0.91), posy=c(0.25,0.75), main="", main.cex=cex.legend, cex=cex.legend-0.1)
-
 
     }else if(!is.null(color.by) && inherits(data[,color.by], "numeric")){
       # plot color scale
@@ -591,7 +588,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       scale_labs <- pretty(data[,color.by], min.n=4)
       scale_labs <- scale_labs[scale_labs>=min(data[,color.by]) & scale_labs<=max(data[,color.by])]
       digits <- max(.decimalPlaces(scale_labs))
-      shape::colorlegend(col=color.pal, zlim=range(data[,color.by], na.rm=T), zval=scale_labs, digit=digits, xpd=T,
+      .colorlegend(col=color.pal, zlim=range(data[,color.by], na.rm=T), zval=scale_labs, digit=digits, xpd=T,
                          posx=c(legend.x[1], legend.x[2]), posy=c(0.4,0.9), main=color.by, main.cex=cex.legend, cex=cex.legend-0.1)
     }
 

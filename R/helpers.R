@@ -8,6 +8,16 @@
 
 
 ##################################################################################################
+## Import namespaces   ###########################################################################
+
+#' @import utils
+#' @import stats
+#' @import graphics
+#' @import grDevices
+NULL
+
+
+##################################################################################################
 ## Print to console   ############################################################################
 
 #' Print to console
@@ -117,7 +127,7 @@
 #' @keywords internal
 #' @noRd
 
-.colorlegend <- function(col=viridis_pal(100), zlim, zlevels=5,
+.colorlegend <- function(col=.viridis_pal(100), zlim, zlevels=5,
                          dz=NULL, zval=NULL, log=FALSE, posx=c(0.9,0.93), posy=c(0.05,0.9),
                          main=NULL, main.cex=1.0, main.col="black", main.adj=0.5, lab.col="black",
                          main.inset=1, digit=0, left=FALSE, lab.scientific=FALSE, ...) {
@@ -128,7 +138,8 @@
   nmar[c(2,4)]<-0
   par (mar = nmar)
 
-  shape::emptyplot()
+  plot(0, type="n", xlab="", ylab="", asp=1, axes=FALSE, frame.plot=FALSE,
+       xlim=c(0, 1), ylim=c(0, 1), xaxs="i", yaxs="i")
   pars   <- par("usr")
 
   ## Rectangle positions on x and y-axis
@@ -669,18 +680,14 @@ if (!exists("rep_len")) {
 #' @keywords internal
 #' @noRd
 
-.rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"),
-                                  minmax.relative.size=c(0.01, 0.04), adjust=200) {
+.rescale_vertex_igraph <- function(vertex.size, par.usr=par("usr"), minmax.relative.size=c(0.01, 0.04), adjust=200) {
 
-  if (!length(vertex.size)) return(
-    rescale_vertex_igraph(1, par.usr, minmax.relative.size, adjust))
+  if (!length(vertex.size)) return(.rescale_vertex_igraph(1, par.usr, minmax.relative.size, adjust))
 
-  # Adjusting x
+  # adjusting x
   xrange <- range(vertex.size)
   xscale <- (par.usr[2] - par.usr[1])*minmax.relative.size
-  vertex.size     <- (vertex.size - xrange[1] + 1e-15)/(xrange[2] - xrange[1] + 1e-15)*
-    (xscale[2] - xscale[1]) + xscale[1]
-
+  vertex.size <- (vertex.size-xrange[1]+1e-15)/(xrange[2]-xrange[1]+1e-15)*(xscale[2]-xscale[1])+xscale[1]
   return(vertex.size*adjust/2)
 }
 
@@ -703,7 +710,7 @@ if (!exists("rep_len")) {
 
 .zero_range <- function(x, tol=1000*.Machine$double.eps) {
   if (length(x) == 1) return(TRUE)
-  if (length(x) != 2) cli::cli_abort("{.arg x} must be length 1 or 2")
+  if (length(x) != 2) stop("'x' must be length 1 or 2", call.=FALSE)
   if (any(is.na(x))) return(NA)
   if (x[1] == x[2]) return(TRUE)
   if (all(is.infinite(x))) return(FALSE)
@@ -741,7 +748,8 @@ if (!exists("rep_len")) {
 
 #' Economist color palette
 #'
-#' @description Determines the number of decimal places in a numeric value.
+#' @description This function generates a color palette using the Economist color scheme,
+#' inspired by the color palette provided in the ggthemes::economist_pal() function.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
 #' @noRd
@@ -769,7 +777,8 @@ if (!exists("rep_len")) {
 
 #' Viridis color palette
 #'
-#' @description Determines the number of decimal places in a numeric value.
+#' @description This function generates a color palette using the Viridis color scheme,
+#' known for its perceptually uniform properties. The palette is adapted from the viridis package.
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
 #' @noRd
@@ -799,6 +808,56 @@ if (!exists("rep_len")) {
   )
   return(colorRampPalette(viridis_colors)(n))
 }
+
+
+##################################################################################################
+## Palr bathy deep color palette #########################################################################
+## Sourced from palr::bathy_deep_pal
+
+#' Bathy deep color palette
+#'
+#' @description This function generates a color palette using the Bathy Deep color scheme,
+#' sourced from palr::bathy_deep_pal function.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.bathy_deep_pal <- function (x, palette = FALSE, alpha = 1) {
+  breaks <- c(-5500, seq(-5000, -1000, by = 1000), -500, 0)
+  breaks <- seq(-5500, 0, length = 255)
+  cols <- colorRampPalette(rgb(c(0,18,60,103,141,194,255), c(0,18,60,111,163,216,255),
+                               c(0,26,85,135,173,216,255), maxColorValue=255))(256)
+  hexalpha <- as.hexmode(round(255 * alpha))
+  if (nchar(hexalpha) == 1L) hexalpha <- paste(rep(hexalpha, 2L), collapse = "")
+  cols <- paste0(cols, hexalpha)
+  if (palette)  return(list(breaks = breaks, cols = cols))
+  if (missing(x)) return(colorRampPalette(cols))
+  if (length(x) == 1L) {return(paste0(colorRampPalette(cols)(x), hexalpha))}
+  else {return(cols[findInterval(x, breaks)])}
+}
+
+
+
+##################################################################################################
+## Jet color palette #############################################################################
+## Sourced from pals::jet
+
+#' Jet color palette
+#'
+#' @description This function generates a color palette using the Jet color scheme,
+#' sourced from palr::jet function.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.jet_pal <- function(n=25){
+  colors <- c("#00007F", "#0000FF", "#007FFF", "#00FFFF", "#7FFF7F", "#ffff00",
+              "#FF7F00", "#ff0000", "#7F0000")
+  colorRampPalette(colors)(n)
+}
+
+
+
 
 
 ##################################################################################################

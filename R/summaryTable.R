@@ -32,51 +32,21 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   # Initial checks #############################################################
   ##############################################################################
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
-  # check if data contains id.col
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
+  tagging.dates <- reviewed_params$tagging.dates
+
+  # check if id.metadata contains id.col
   if(!id.col %in% colnames(id.metadata)) stop("ID column not found in id.metadata. Please specify the correct column using 'id.col'")
-  # check if data contains datetime.col
-  if(!datetime.col %in% colnames(data)) stop("Datetime column not found. Please specify the correct column using 'datetime.col'")
-  # check if datetimes are in the right format
-  if(!grepl("POSIXct", paste(class(data[, datetime.col]), collapse = " "))) stop("Datetimes must be provided in POSIXct format")
-  # check if tagging.dates were supplied
-  if(is.null(tagging.dates)) stop("Tagging dates not specified. Please provide the required dates via the 'tagging.dates' argument")
-  # check if tagging.dates are in the right format
-  if(!grepl("POSIXct", paste(class(tagging.dates), collapse = " "))) stop("'tagging.dates' must be provided in POSIXct format")
-  # check if data contains datetime.col
+  # check if data contains residency.by
   if(!residency.by %in% colnames(data)) stop("Variable for partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'")
    # check error function
   if(!error.stat %in% c("sd", "se")) stop("Wrong error.stat argument, please choose between 'sd' and 'se'.")
 
-  # convert IDs to factor
-  if(class(data[,id.col])!="factor") {
-    data[,id.col] <- as.factor(data[,id.col])
-    cat("Warning: 'id.col' converted to factor\n")
-  }
-
-  # check number of tagging dates
-  if(length(tagging.dates)>1 & length(tagging.dates)!=nlevels(data[,id.col])){
-    stop("Incorrect number of tagging.dates. Must be either a single value or
-           a vector containing a tagging date for each individual")
-  }else if(length(tagging.dates)==1){
-    tagging.dates <- rep(tagging.dates, nlevels(data[,id.col]))
-  }
-
   getErrorFun <- function(x) {
     if(error.stat=="sd"){return(sd(x, na.rm=T))}
     if(error.stat=="se"){return(plotrix::std.error(x))}
-  }
-
-  # reorder ID levels if ID groups are defined
-  if(!is.null(id.groups)){
-    if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {cat("Warning: Some of the ID(s) in id.groups don't match the IDs in the data")}
-    data <- data[data[,id.col] %in% unlist(id.groups),]
-    tagging.dates <- tagging.dates[match(unlist(id.groups), levels(data[,id.col]))]
-    data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
-  }else{
-    id.groups <- list(levels(data[,id.col]))
   }
 
 
@@ -96,7 +66,6 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   if("detections" %in% colnames(data)){
     detections <- as.integer(stats::aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
   }else{
-    warnin
     print("Warning: No 'detections' column found, assuming one detection per row\n")
     detections <- as.integer(table(data[,id.col]))
   }
@@ -166,7 +135,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
     group$ID[nrow(group)] <- "mean"
     group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols], na.rm=T))
     errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols], 2, getErrorFun)))
-    group[nrow(group), numeric_cols] <- paste(group[nrow(group), numeric_cols], "±", errors)
+    group[nrow(group), numeric_cols] <- paste(group[nrow(group), numeric_cols], "\u00b1", errors)
     for(c in 1:length(numeric_cols)){
       col_number <- numeric_cols[c]
       group[-nrow(group), col_number] <- sprintf(paste0("%.", decimal_digits[c], "f"), as.numeric(group[-nrow(group), col_number]))
@@ -175,7 +144,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
     #if(!is.null(residency.by)){Ir_cols <- c(Ir_cols, which(colnames(group) %in% names(data_groupped)))}
     #for(c in Ir_cols){group[-nrow(group), c] <- sprintf("%.2f", as.numeric(group[-nrow(group), c]))}
     group[group=="NA"] <- "-"
-    group[group=="NaN ± NA"] <- "-"
+    group[group=="NaN \u00b1 NA"] <- "-"
     group[is.na(group)] <- "-"
     group_stats[[i]]<-group
   }

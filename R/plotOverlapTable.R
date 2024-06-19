@@ -84,7 +84,7 @@ plotOverlapTable <- function(randomized.overlaps, id.metadata=NULL, id.groups=NU
       color.pal <- c("lightseagreen", "darkred", "grey85")
       color.pal <- adjustcolor(color.pal, alpha.f=0.3)
     }else if (type=="mean overlap"){
-      color.pal <- pals::ocean.thermal(100)
+      color.pal <- .viridis_pal(100)
       color.pal <- c(adjustcolor(color.pal[1], alpha.f=0.65), adjustcolor(color.pal[2:100], alpha.f=0.7))
     }
   }

@@ -140,7 +140,7 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
     ## linearity index
     first_coas <- by(data, data[,id.col], function(x) x[which.min(x$timebin),c(lon.col, lat.col)], simplify=F)
     last_coas <- by(data, data[,id.col], function(x) x[which.max(x$timebin),c(lon.col, lat.col)], simplify=F)
-    dist_diff <- mapply(calculatePairDistance, coord1=first_coas, coord2=last_coas,
+    dist_diff <- mapply(calculatePairDistances, coord1=first_coas, coord2=last_coas,
                         MoreArgs=list(trCost=transition.layer, land.shape=land.shape, epsg.code=epsg.code, geographic_coords=geographic_coords))
     li_index <- sprintf("%.2f", dist_diff/total_dist)
     li_index[li_index=="NaN"] <- "NA"
@@ -164,7 +164,7 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
     movement_stats$ID[nrow(movement_stats)] <- "mean"
     movement_stats[nrow(movement_stats), -1] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(values, na.rm=T))
     errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(values, 2, plotrix::std.error)))
-    movement_stats[nrow(movement_stats), -1] <- paste(movement_stats[nrow(movement_stats), -1], "±", errors)
+    movement_stats[nrow(movement_stats), -1] <- paste(movement_stats[nrow(movement_stats), -1], "\u00b1", errors)
     movement_stats[is.na(movement_stats)] <- "-"
     movement_stats[movement_stats=="NA"] <- "-"
 

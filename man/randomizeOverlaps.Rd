@@ -60,7 +60,7 @@ empirical p-values, and association type for each animal dyad.}
 The summary table includes the following columns:
 \itemize{
 \item {Type}: The type of comparison. This column is included only when \code{id.groups} are supplied (more than one comparison).
-\item {Nº dyads}: The number of dyads (pairs of individuals).
+\item {N dyads}: The number of dyads (pairs of individuals).
 \item {Mean interval (d)}: The mean monitoring period (in days).
 \item {Mean overlap (\%)}: The mean observed overlap percentage with standard deviation.
 \item {Mean null distr (\%)}: The mean overlap percentage from the null distribution with standard deviation.

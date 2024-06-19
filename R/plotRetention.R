@@ -98,7 +98,7 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
     if(is.null(VBGF.params)){
       stop("Please supply VBGF.params when von.bertalanffy is set to true")
     }
-    cat(paste0("Applying Von Bertalanffy Growth curve to predict lengths at each time frame, based on the nº days passed since tagging. Assuming that the 'color.by' variable represents fish lengths\n"))
+    cat(paste0("Applying Von Bertalanffy Growth curve to predict lengths at each time frame, based on the n\u00ba days passed since tagging. Assuming that the 'color.by' variable represents fish lengths\n"))
     if(VBGF.params$Linf<max(id.metadata$length, na.rm=T)){
       cat("Warning: Some individuals are larger than the supplied Linf (infinite length for investigated species in cm)\n")
     }
@@ -106,7 +106,7 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
 
   # set a color palette if not defined
   if(is.null(color.pal)){
-    color.pal <- adjustcolor(rev(pals::ocean.deep(100)), alpha.f=0.9)
+    color.pal <- adjustcolor(rev(.viridis_pal(100)), alpha.f=0.9)
   }
 
 
@@ -194,7 +194,7 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
     points(attrition$days_post_tag, y=attrition$percentage, pch=16, cex=0.8, col=attrition$color)
     title(main=paste0(names(data_attrition)[i], " (n=", sample_by_site[i], ")"), cex.main=1)
     title(xlab="Days after tagging", cex.lab=1, line=2)
-    title(ylab="Nº individuals (%)", cex.lab=1, line=2.5)
+    title(ylab="N\u00ba individuals (%)", cex.lab=1, line=2.5)
     axis(1, at=pretty(c(0, max_days)), labels=pretty(c(0, max_days)), cex.axis=0.9)
     axis(2, at=pretty(c(0, max_percent)), labels=pretty(c(0, max_percent)), cex.axis=0.9, las=1)
     box()
@@ -202,15 +202,15 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
     if(same.scale==T){
       length_labs <- pretty(var_range, min.n=4)
       length_labs <- length_labs[length_labs>=min(var_range) & length_labs<=max(var_range)]
-      shape::colorlegend(col=color.pal, zlim=var_range, zval=length_labs,
-                         posx=c(0.85, 0.88), posy = c(0.1, 0.9), main=legend.title,
-                         main.cex=0.8, digit=1, cex=0.8)
+      .colorlegend(col=color.pal, zlim=var_range, zval=length_labs,
+                   posx=c(0.85, 0.88), posy = c(0.1, 0.9), main=legend.title,
+                   main.cex=0.8, digit=1, cex=0.8)
     }else {
       length_labs <- pretty(c(min(attrition$aggr_stat), max(attrition$aggr_stat)), min.n=4)
       length_labs <- length_labs[length_labs>=min(var_range) & length_labs<=max(var_range)]
-      shape::colorlegend(col=color.pal, zlim=range(attrition$aggr_stat), zval=length_labs,
-                         posx=c(0.85, 0.88), posy = c(0.1, 0.9), main=legend.title,
-                         main.cex=0.8, digit=1, cex=0.8)
+      .colorlegend(col=color.pal, zlim=range(attrition$aggr_stat), zval=length_labs,
+                  posx=c(0.85, 0.88), posy = c(0.1, 0.9), main=legend.title,
+                  main.cex=0.8, digit=1, cex=0.8)
     }
 
   }

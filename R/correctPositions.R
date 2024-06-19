@@ -4,49 +4,91 @@
 
 #' Relocate points on land to the nearest marine cell.
 #'
-#' Either a coastline shapefile or a raster containing land surfaces or bathymetry values
-#' can be provided.
+#' @description This function relocates positions on land to the nearest marine cell
+#' using either a coastline shapefile or a raster containing land surfaces or bathymetry values.
 #'
-#' @description Function to relocate positions on land to nearest marine cell
-#'
-#' @param positions A data frame containing longitude and latitude values
-#' (unprojected lat-long coordinates), corresponding to the inferred animals' positions.
-#' @param layer A raster containing land portions. Or alternatively a raster containing
-#' elevation values (negative below water).
+#' @param positions A data frame containing longitude and latitude values (unprojected lat-long coordinates),
+#' corresponding to the inferred animals' positions.
+#' @param layer A spatial object representing the geographic layer used to determine land and marine areas.
+#' This can be either:\cr
+#' - A 'RasterLayer' containing binary land values (land = 1, water = NA) or bathymetric values (negative for underwater).
+#' - A 'SpatialPolygons' object representing the coastline.
 #' @param layer.type Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
 #' to contain NA values in water surfaces, if type 'ocean' (binary) the raster is assumed to
 #' contain NA values in land surfaces, else if type 'bathy' the raster is assumed to
 #' range between 0 (land) to max depth (positive or negative values).
-#' @param depth.margin If set, shortest in-water paths will be calculated only
-#' for cells with depths >= than this threshold. Only takes effect when raster
-#' is of type bathy. Defaults to 0 (water vs land).
-#' @param dist.margin If set, shortest in-water paths will be calculated only
-#' for cells with depths <= than this threshold. Only takes effect when raster
-#' is of type bathy. Disabled by default.
+#' @param depth.margin A numeric value. If set, shortest in-water paths will be calculated only
+#' for cells with depths >= this threshold. Only takes effect when raster
+#' is of type 'bathy'. Defaults to 0 (water vs land).
 #' @param lon.col Name of the column containing longitude values. Defaults to 'lon'.
 #' @param lat.col Name of the column containing latitude values. Defaults to 'lat'.
+#' @param plot Logical, if TRUE, the function will plot the results. Defaults to FALSE.
+#'
+#' @return A data frame with corrected positions where points on land are relocated
+#' to the nearest marine cell.
+#'
 #' @export
 
 correctPositions <- function(positions, layer, layer.type="land", depth.margin=0,
                              lon.col="lon", lat.col="lat", plot=F) {
 
-  ############################################################################
-  ## Initial checks ##########################################################
-  ############################################################################
+
+  ##############################################################################
+  ## Initial checks ############################################################
+  ##############################################################################
 
   # measure running time
   start.time <- Sys.time()
 
-  # check layer type
-  if(class(layer)=="RasterLayer"){
-    type <- "raster"
-    proj <- layer@crs
-  }else if(grepl("SpatialPolygon", class(layer))){
-    type <- "shape"
-    proj <- layer@proj4string
-  }else{
-    stop("Layer: Please supply either a Raster or a SpatialPolygon object")
+  # initial checks
+  errors <- c()
+  if (!inherits(positions, "data.frame")) errors <- c(errors, "positions must be a data frame")
+  if(!lon.col %in% colnames(positions)) errors <- c(errors, "Longitude column not found.")
+  if(!lat.col %in% colnames(positions)) errors <- c(errors, "Latitude column not found.")
+  if (!layer.type %in% c("land", "ocean", "bathy")) errors <- c(errors, "layer.type must be either 'land', 'ocean' or 'bathy'")
+  if (!inherits(layer, "RasterLayer") && !inherits(layer, "SpatialPolygons")) errors <- c(errors, "layer must be either a RasterLayer or a SpatialPolygons object")
+  if (!inherits(depth.margin, "numeric")) errors <- c(errors, "depth.margin must be numeric")
+  if (!inherits(plot, "logical"))  errors <- c(errors, "plot must be a logical value")
+  if(length(errors)>0){
+      stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+      stop(stop_message, call.=FALSE)
   }
+
+
+  ##############################################################################
+  ## Prepare data ##############################################################
+  ##############################################################################
+
+  if (inherits(layer, "RasterLayer")) {
+    type <- "raster"
+    proj <- raster::crs(layer)
+  } else if (inherits(layer, "SpatialPolygons")) {
+    type <- "shape"
+    proj <- sf::st_crs(layer)
+  }
+
+
+  # convert values based on layer.type
+  if (type == "raster") {
+    if (layer.type == "land") {
+      values(layer)[!is.na(values(layer))] <- 1
+      values(layer)[is.na(values(layer))] <- 0
+    } else if (layer.type == "ocean") {
+      values(layer)[!is.na(values(layer))] <- 0
+      values(layer)[is.na(values(layer))] <- 1
+    } else if (layer.type == "bathy") {
+      bathy_vals <- ifelse(mean(values(layer) > 0, na.rm = TRUE) > 0.5, "positive", "negative")
+      if(bathy_vals=="positive") cat("Negative values in raster will be converted to NA\n")
+      if(bathy_vals=="negative") cat("Positive values in raster will be converted to NA\n")
+      if (bathy_vals == "negative") layer <- layer * -1
+      values(layer)[values(layer) < depth.margin] <- 1
+      values(layer)[values(layer) >= depth.margin] <- 0
+      values(layer)[is.na(values(layer))] <- 1
+      if(depth.margin!=0){
+        cat(paste0("Positions will be relocated to depths > ", depth.margin, "\n"))}
+    }
+  }
+
 
   # check raster type and convert values if required
   if(type=="raster"){
@@ -89,19 +131,19 @@ correctPositions <- function(positions, layer, layer.type="land", depth.margin=0
   }
 
   # create spatialPoints object and get land overlap indexes
-  points <- sp::SpatialPoints(positions[,c(lon.col, lat.col)], proj4string=CRS("+proj=longlat +datum=WGS84 +ellps=WGS84"))
-  points <- sp::spTransform(points, proj)
+  points <- sf::st_as_sf(positions, coords=c(lon.col, lat.col), crs=4326)
+  points <- sf::st_transform(points, crs=sf::st_crs(proj))
+
   if(type=="raster"){
     point_values <- raster::extract(layer, points)
     pointsOnLand_indexes <- which(point_values==1)
     ocean_mask <- raster::rasterToPoints(layer, fun=function(x){x==0}, spatial=T)
   }else if(type=="shape"){
-    pointsOnLand_indexes <- which(!is.na(sp::over(points, layer)))
-    boundary <- sp::Polygon(raster::extent(layer))
-    boundary <- sp::SpatialPolygons(list(sp::Polygons(list(boundary), ID=1)))
-    boundary@proj4string <- proj
-    ocean_mask <- rgeos::gDifference(boundary, layer)
-    ocean_mask <- as(ocean_mask, "SpatialLines")
+    pointsOnLand_indexes <- which(!is.na(sf::st_intersects(points, layer, sparse=FALSE)))
+    boundary <- sf::st_as_sfc(sf::st_bbox(layer))
+    boundary <- sf::st_set_crs(boundary, sf::st_crs(proj))
+    ocean_mask <- sf::st_difference(boundary, layer)
+    ocean_mask <- sf::st_cast(ocean_mask, "LINESTRING")
   }
 
   # if no overlaps found, close
@@ -111,7 +153,7 @@ correctPositions <- function(positions, layer, layer.type="land", depth.margin=0
   }
 
   # subset points
-  points <- as(points,"SpatialPoints")
+  points <- sf::as(points,"SpatialPoints")
   pointsOnLand <- points[pointsOnLand_indexes]
 
   # get nearest location on water

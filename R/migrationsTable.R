@@ -136,7 +136,11 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
       stationary <- which(site1==site2)
       names(result)[stationary] <- site1[stationary]
       if(!is.null(aggregate.by)){
-        names(result) <- stringi::stri_replace_all_regex(names(result), sites_table$site, sites_table$group, vectorize=F)
+        replacement_vector <- setNames(as.character(sites_table$group), sites_table$site)
+        for (site in names(replacement_vector)) {
+          new_names <- gsub(site, replacement_vector[[site]], names(result))
+        }
+        names(result) <- new_names
         result <- table(rep(names(result), result))
       }
       transitions[[i]] <- result
@@ -155,7 +159,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
     }
 
     # merge individual results
-    migrations <- rbind.fill(lapply(transitions, function(x) as.data.frame.matrix(t(x))))
+    migrations <- plyr::rbind.fill(lapply(transitions, function(x) as.data.frame.matrix(t(x))))
     rownames(migrations) <- names(data_individual)
     transition_times <- transition_times[!unlist(lapply(transition_times, is.null))]
     transition_times <- do.call("rbind", transition_times)
@@ -163,7 +167,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
     # calculate time since tagging
     if(!is.null(tag.dates)){
-      transition_times <- join(transition_times, tag.dates, by=id.col, type="left")
+      transition_times <- plyr::join(transition_times, tag.dates, by=id.col, type="left")
       transition_times$days_between_depart_tag <- difftime(transition_times$departure, transition_times[,ncol(transition_times)], units="days")
       transition_times$days_between_depart_tag <- round(as.numeric(transition_times$days_between_depart_tag))
       transition_times <- transition_times[,-(ncol(transition_times)-1)]
@@ -176,9 +180,16 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
     transition_times$arrival_month <- strftime(transition_times$arrival, "%m", tz="UTC")
     transition_times$duration_h <- as.numeric(difftime(transition_times$arrival, transition_times$departure, units="h"))
 
+
     # aggregate sites if required
     if(!is.null(aggregate.by)){
-      transition_times$transition <- stringi::stri_replace_all_regex(transition_times$transition, sites_table$site, sites_table$group, vectorize=F)
+      replacement_vector <- setNames(as.character(sites_table$group), sites_table$site)
+      transition_times$transition <- sapply(transition_times$transition, function(transition) {
+        for (site in names(replacement_vector)) {
+          transition <- gsub(site, replacement_vector[[site]], transition)
+        }
+        transition
+      })
     }
     graphs_data[[g]] <- transition_times
 
@@ -189,7 +200,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
     # create table with nº movements per migration type
     movements <- colSums(migrations, na.rm=T)
-    migrations_table <- melt(movements)
+    migrations_table <- reshape2::melt(movements)
     colnames(migrations_table) <- "Movements"
     migrations_table$Type <- rownames(migrations_table)
     rownames(migrations_table) <- NULL
@@ -197,14 +208,14 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
     # add nº individuals per migration type
     migrating_ids <- apply(migrations, 2, function(x) rownames(migrations)[which(!is.na(x))])
-    migrations_table$Individuals <- melt(unlist(lapply(migrating_ids, length)))$value
+    migrations_table$Individuals <- reshape2::melt(unlist(lapply(migrating_ids, length)))$value
     nids_percent <- round(migrations_table$Individuals/nindividuals[[g]]*100)
     migrations_table$Individuals <- paste0(migrations_table$Individuals, " (",  nids_percent, "%)")
 
     # calculate additional tag metrics per migration type
     if(!is.null(animals.info)){
       migrating_ids_data <- lapply(migrating_ids, function(x) data.frame("ID"=x))
-      migrating_ids_data <- lapply(migrating_ids_data, function(x) join(x, animals.info, by="ID", type="left"))
+      migrating_ids_data <- lapply(migrating_ids_data, function(x) plyr::join(x, animals.info, by="ID", type="left"))
       col_classes <- reshape2::melt(lapply(animals.info, class))
       colnames(col_classes) <- c("class", "column")
       col_classes <- col_classes[col_classes$column!="ID",]
@@ -213,9 +224,9 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
       for(n in numeric_cols){
         mean_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) mean(x[,n], na.rm=T))))$value
         se_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) plotrix::std.error(x[,n], na.rm=T))))$value
-        digits <- max(decimalPlaces(animals.info[,n]), na.rm=T)+1
-        mean_values <- data.frame("mean"=paste(sprintf(paste0("%.", digits, "f"), mean_values), "±", sprintf(paste0("%.", digits, "f"), se_values)))
-        mean_values <- sapply(mean_values, function(x) gsub(" ± NA", "", x, fixed=T))
+        digits <- max(.decimalPlaces(animals.info[,n]), na.rm=T)+1
+        mean_values <- data.frame("mean"=paste(sprintf(paste0("%.", digits, "f"), mean_values), "\u00b1", sprintf(paste0("%.", digits, "f"), se_values)))
+        mean_values <- sapply(mean_values, function(x) gsub(" \u00b1 NA", "", x, fixed=T))
         colnames(mean_values) <- paste0("Mean ", tools::toTitleCase(n))
         migrations_table <- cbind(migrations_table, mean_values)
       }
@@ -234,7 +245,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
     # predict growth if required
     if(von.bertalanffy==T){
-      transition_times <- join(transition_times, animals.info[,c(id.col, "length")], by=id.col, type="left")
+      transition_times <- plyr::join(transition_times, animals.info[,c(id.col, "length")], by=id.col, type="left")
       ages_at_tagging <- TropFishR::VBGF(param=VBGF.params, L=transition_times$length, na.rm=F)
       ages_at_departure <- ages_at_tagging + (transition_times$days_between_depart_tag/365)
       transition_times$lengths_at_departure <- TropFishR::VBGF(param=VBGF.params, t=ages_at_departure, na.rm=F)
@@ -242,10 +253,10 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
       growth_table$x <- sprintf("%.1f",  growth_table$x)
       se_lengths_at_departure <- stats::aggregate(transition_times$lengths_at_departure, by=list(transition_times$transition), function(x) plotrix::std.error(x))
       se_lengths_at_departure$x <- sprintf("%.1f",  se_lengths_at_departure$x)
-      growth_table$x <- paste( growth_table$x, "±", se_lengths_at_departure$x)
-      growth_table$x <- gsub(" ± NA", "", growth_table$x, fixed=T)
+      growth_table$x <- paste( growth_table$x, "\u00b1", se_lengths_at_departure$x)
+      growth_table$x <- gsub(" \u00b1 NA", "", growth_table$x, fixed=T)
       colnames(growth_table) <- c("Type", "Depart Length")
-      migrations_table <- join(migrations_table, growth_table, by="Type", type="left")
+      migrations_table <- plyr::join(migrations_table, growth_table, by="Type", type="left")
     }
 
     # order rows by site
@@ -274,11 +285,11 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
       durations[,-1] <- apply(durations[,-1], 2, function(x) sprintf("%.1f", x))
       units <- "(h)"
     }
-    durations$Duration <- paste(durations$Mean, "±", durations$Error)
-    durations$Duration <- gsub(" ± NA", "", durations$Duration)
+    durations$Duration <- paste(durations$Mean, "\u00b1", durations$Error)
+    durations$Duration <- gsub(" \u00b1 NA", "", durations$Duration)
     colnames(durations)[4] <- paste(colnames(durations)[4], units)
     durations <- durations[,c(1,4)]
-    migrations_table <- join(migrations_table, durations, by="Type", type="left")
+    migrations_table <- plyr::join(migrations_table, durations, by="Type", type="left")
 
 
     # add title
@@ -416,7 +427,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
     if(any(plot.stats=="depart.hour")){
       graphics::barplot(depart_hour, axes=F, col=F, border=F, names.arg=F, ylim=c(0, graphs_max))
       rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="gray96", border=NA)
-      b <- graphics::barplot(depart_hour, axes=F, col=adjustcolor("skyblue", alpha=0.4),
+      b <- graphics::barplot(depart_hour, axes=F, col=adjustcolor("skyblue", alpha.f=0.4),
                              names.arg=F, ylim=c(0, graphs_max), add=T)
       if(plot_axes) axis(1, at=b, labels=paste0(0:23,"h"), cex.axis=axes_size, tck=tick_length, pos=-0.5)
       axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=axes_size, tck=tick_length, las=1)
@@ -427,7 +438,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
     if(any(plot.stats=="arrival.hour")){
       graphics::barplot(arrival_hour, axes=F, col=F, border=F, names.arg=F, ylim=c(0, graphs_max))
       rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="gray96", border=NA)
-      b <- graphics::barplot(arrival_hour, axes=F, col=adjustcolor("orange", alpha=0.4),
+      b <- graphics::barplot(arrival_hour, axes=F, col=adjustcolor("orange", alpha.f=0.4),
                              names.arg=F, ylim=c(0, graphs_max), add=T)
       if(plot_axes) axis(1, at=b, labels=paste0(0:23,"h"),, cex.axis=axes_size, tck=tick_length, pos=-0.5)
       axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=axes_size, tck=tick_length, las=1)
@@ -438,7 +449,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
     if(any(plot.stats=="depart.month")){
       graphics::barplot(depart_month, axes=F, col=F, border=F, names.arg=F, ylim=c(0, graphs_max))
       rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="gray96", border=NA)
-      b <- graphics::barplot(depart_month, axes=F, col=adjustcolor("skyblue", alpha=0.4),
+      b <- graphics::barplot(depart_month, axes=F, col=adjustcolor("skyblue", alpha.f=0.4),
                              names.arg=F, ylim=c(0, graphs_max), add=T)
       if(plot_axes) axis(1, at=b, labels=month.abb, cex.axis=axes_size, tck=tick_length, pos=-0.5)
       axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=axes_size, tck=tick_length, las=1)
@@ -449,7 +460,7 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
     if(any(plot.stats=="arrival.month")){
       graphics::barplot(arrival_month, axes=F, col=F, border=F, names.arg=F, ylim=c(0, graphs_max))
       rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="gray96", border=NA)
-      b <- graphics::barplot(arrival_month, axes=F, col=adjustcolor("orange", alpha=0.4),
+      b <- graphics::barplot(arrival_month, axes=F, col=adjustcolor("orange", alpha.f=0.4),
                              names.arg=F, ylim=c(0, graphs_max), add=T)
       if(plot_axes) axis(1, at=b, labels=month.abb, cex.axis=axes_size, tck=tick_length, pos=-0.5)
       axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=axes_size,tck=tick_length, las=1)

@@ -35,9 +35,9 @@
 #' @param invert.scale Invert color scale legend? Defaults to False.
 #' @param uniformize.scale Use the same color scale for all plots when 'split.by' is defined.
 #' @param legend.xpos Relative position of left and right edge of color bar on first axis (0-1).
-#' Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.89, 0.92).
+#' Defaults to c(0.89, 0.92).
 #' @param legend.ypos Relative position of left and right edge of color bar on second axis (0-1).
-#' Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.15, 0.85).
+#' Defaults to c(0.15, 0.85).
 #' @param tz A character string specifying the time zone to be used for the conversion. Defaults to "UTC".
 #' @param cols Number of columns in the final panel (passed to the mfrow argument). Only used when
 #' by.id is set to true or the split.by argument is defined.
@@ -248,7 +248,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
       color_scale <- color.pal(100)
       if(invert.scale==T){scale<-rev(scale); color_scale<-rev(color_scale)}
       digits <- max(.decimalPlaces(scale_labs))
-      shape::colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=T,
+      .colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=T,
                          posx=legend.xpos, posy=legend.ypos, main="", main.cex=0.8, cex=cex.axis)
 
     }

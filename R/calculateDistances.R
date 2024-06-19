@@ -115,7 +115,7 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
     if(verbose) {cat(paste0("Creating transition layer (", grid.resolution, "m grid | ", mov.directions, " directions)\n"))}
     projected_coords <- sf::st_multipoint(cbind(data$lon_m_tmp, data$lat_m_tmp))
     projected_coords <- sf::st_sfc(projected_coords, crs=sf::st_crs(epsg.code))
-    template_raster <- raster::raster(extent(sf::st_bbox(projected_coords))*1.2, res=grid.resolution, crs=epsg.code)
+    template_raster <- raster::raster(raster::extent(sf::st_bbox(projected_coords))*1.2, res=grid.resolution, crs=epsg.code)
     template_raster[] <- 0
     land_raster <- raster::rasterize(land.shape, template_raster, update=T)
     raster::values(land_raster)[raster::values(land_raster)==1] <- 10^8
@@ -199,7 +199,7 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
 
       # then, split the track into consecutive segments
       for(r in 1:(nrow(coords)-1)){
-        segment <- sp::SpatialLines(list(Lines(Line(rbind(coords_m[r,], coords_m[r+1,])), ID="a")), proj4string=epsg.code)
+        segment <- sp::SpatialLines(list(sp::Lines(sp::Line(rbind(coords_m[r,], coords_m[r+1,])), ID="a")), proj4string=epsg.code)
         segment <- sf::st_as_sf(segment)
         is_pt <- all(coords_m[r,] == coords_m[r+1,])
         in_land <- lengths(sf::st_intersects(segment, sf::st_as_sf(land.shape), sparse=T))>0

@@ -21,7 +21,6 @@
 #' @param lat.col Name of the column containing projected latitudes. Defaults to "lat".
 #' @return A list containing the estimated UDs, areas corresponding to
 #' 50% and 95% of occurrence probability, and a formatted data frame.
-#' @seealso \code{\link{plotTemporalKUDs}}
 #' @seealso \code{\link[adehabitatHR]{kernelUD}}
 #' @export
 
@@ -104,7 +103,7 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
     ncoas <- table(data@data[,id.col])
     ncoas <- as.data.frame(ncoas)
     ncoas[is.na(ncoas)] <- 0
-    colnames(ncoas) <- c("ID", "Nº COAs")
+    colnames(ncoas) <- c("ID", "N COAs")
     kud_table <- plyr::join(ncoas, kud_table, by="ID", type="left")
 
     # create results list
@@ -165,7 +164,7 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
     # calculate number of COAs used in KUD estimation for each individual in each group
     ncoas <- lapply(data_group, function(x) table(x@data[,id.col]))
     ncoas <- lapply(ncoas, as.data.frame)
-    ncoas <- lapply(ncoas, function(x) {colnames(x)<-c("ID", "Nº COAs"); return(x)})
+    ncoas <- lapply(ncoas, function(x) {colnames(x)<-c("ID", "N COAs"); return(x)})
 
     # merge and format
     if(repeated_ids==T){

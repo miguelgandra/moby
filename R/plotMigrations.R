@@ -176,7 +176,7 @@ plotMigrations <- function(data,
       if(!raster::isLonLat(epsg_code)){
         warning("Projecting coordinates based on the CRS of the supplied land shape or background layer", call.=FALSE)
         coords <- sp::SpatialPoints(data[,c(lon.col, lat.col)])
-        projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
+        raster::projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
         coords <- sp::spTransform(coords, epsg_code)
         data[,lon.col] <- coords@coords[,1]
         data[,lat.col] <- coords@coords[,2]
@@ -377,7 +377,7 @@ plotMigrations <- function(data,
     # add network title
     if(n_groups>1) title(main=names(id.groups)[g], cex.main=title.cex, line=1.2, xpd=T)
     else title(main="Spatial Network", cex.main=title.cex, line=1.2, xpd=T)
-    metric <- ifelse(edge.type=="movements", "nº of movements", "nº of transiting individuals")
+    metric <- ifelse(edge.type=="movements", "n\u00ba of movements", "n\u00ba of transiting individuals")
     title(main=tools::toTitleCase(metric), cex.main=title.cex-0.3, line=0.4, font.main=1, xpd=T)
 
     # # add network title

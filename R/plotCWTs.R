@@ -16,7 +16,7 @@
 #' @param variable Name of the column containing the numeric variable to be analyzed.
 #' @param period.range The range of period scales (y-axis limits) to be considered, specified in hours.
 #' @param axis.periods Periods (in hours) to include/highlight in the y-axis.
-#' @param color.pal Color palette. Defaults to \code{\link[pals]{jet}}
+#' @param color.pal Color palette. Defaults to the Jet colormap.
 #' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
 #' defining the x-axis labels. Defaults to month ("%d/%b").
 #' @param date.interval Number defining the interval between each
@@ -30,9 +30,9 @@
 #' @param cex.lab Determines the size of the y-axis and y-axis labels. Defaults to 1.1.
 #' @param cex.axis Determines the size of the text labels on the axes. Defaults to 1.
 #' @param legend.xpos Relative position of left and right edge of color bar on first axis (0-1).
-#' Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.90, 0.915).
+#' Defaults to c(0.90, 0.915).
 #' @param legend.ypos Relative position of left and right edge of color bar on second axis (0-1).
-#' Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.15, 0.85).
+#' Defaults to c(0.15, 0.85).
 #' @param cols Number of columns in the final panel (passed to the mfrow argument).
 #' @param same.scale Forces same spectral scale (zlims) across all plots,
 #' allowing for density comparison between individuals.
@@ -142,7 +142,7 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
 
   # set color pallete
   if(is.null(color.pal)){
-    color.pal <- pals::jet(100)
+    color.pal <- .jet_pal(100)
     color.pal <- colorRampPalette(color.pal[5:100])(100)
   }
 
@@ -218,13 +218,13 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
     if(same.scale==F){
       density_labs <- pretty(c(min(Z), max(Z)), min.n=4)
       density_labs <- density_labs[density_labs>=min(Z) & density_labs<=max(Z)]
-      shape::colorlegend(col=color.pal, zlim=range(Z), zval=density_labs,
-                         posx=legend.xpos, posy=legend.ypos, main="", main.cex=1, digit=1, cex=0.9)
+      .colorlegend(col=color.pal, zlim=range(Z), zval=density_labs, posx=legend.xpos,
+                   posy=legend.ypos, main="", main.cex=1, digit=1, cex=0.9)
     }else{
       density_labs <- pretty(density_range)
       density_labs <- density_labs[density_labs>=min(density_range) & density_labs<=max(density_range)]
-      shape::colorlegend(col=color.pal, zlim=density_range, zval=density_labs,
-                         posx=legend.xpos, posy=legend.ypos, main="", main.cex=1, digit=0, cex=0.9)
+      .colorlegend(col=color.pal, zlim=density_range, zval=density_labs, posx=legend.xpos,
+                   posy=legend.ypos, main="", main.cex=1, digit=0, cex=0.9)
     }
 
   }

@@ -15,33 +15,36 @@ correctPositions(
 )
 }
 \arguments{
-\item{positions}{A data frame containing longitude and latitude values
-(unprojected lat-long coordinates), corresponding to the inferred animals' positions.}
+\item{positions}{A data frame containing longitude and latitude values (unprojected lat-long coordinates),
+corresponding to the inferred animals' positions.}
 
-\item{layer}{A raster containing land portions. Or alternatively a raster containing
-elevation values (negative below water).}
+\item{layer}{A spatial object representing the geographic layer used to determine land and marine areas.
+This can be either:\cr
+\itemize{
+\item A 'RasterLayer' containing binary land values (land = 1, water = NA) or bathymetric values (negative for underwater).
+\item A 'SpatialPolygons' object representing the coastline.
+}}
 
 \item{layer.type}{Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
 to contain NA values in water surfaces, if type 'ocean' (binary) the raster is assumed to
 contain NA values in land surfaces, else if type 'bathy' the raster is assumed to
 range between 0 (land) to max depth (positive or negative values).}
 
-\item{depth.margin}{If set, shortest in-water paths will be calculated only
-for cells with depths >= than this threshold. Only takes effect when raster
-is of type bathy. Defaults to 0 (water vs land).}
+\item{depth.margin}{A numeric value. If set, shortest in-water paths will be calculated only
+for cells with depths >= this threshold. Only takes effect when raster
+is of type 'bathy'. Defaults to 0 (water vs land).}
 
 \item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
 \item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
-\item{dist.margin}{If set, shortest in-water paths will be calculated only
-for cells with depths <= than this threshold. Only takes effect when raster
-is of type bathy. Disabled by default.}
+\item{plot}{Logical, if TRUE, the function will plot the results. Defaults to FALSE.}
+}
+\value{
+A data frame with corrected positions where points on land are relocated
+to the nearest marine cell.
 }
 \description{
-Function to relocate positions on land to nearest marine cell
-}
-\details{
-Either a coastline shapefile or a raster containing land surfaces or bathymetry values
-can be provided.
+This function relocates positions on land to the nearest marine cell
+using either a coastline shapefile or a raster containing land surfaces or bathymetry values.
 }

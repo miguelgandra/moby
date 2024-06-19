@@ -45,7 +45,5 @@ areas corresponding to 50\% and 95\% of occurrence probability (automatically su
 portions over land masses) and allows estimation of KUDs independently by group.
 }
 \seealso{
-\code{\link{plotTemporalKUDs}}
-
 \code{\link[adehabitatHR]{kernelUD}}
 }

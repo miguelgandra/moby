@@ -151,7 +151,7 @@ plotFFTs <- function(data, tagging.dates, type="detections", axis.periods=c(48,2
           digits <- max(.decimalPlaces(vals))
           disp_vals <- sprintf(paste0("%.", digits, "f"), disp_vals)
         }
-        axis(2, at=vals, lab=disp_vals, las=1, cex.axis=1.8, col=NA, col.ticks=1)
+        axis(2, at=vals, labels=disp_vals, las=1, cex.axis=1.8, col=NA, col.ticks=1)
       }}
 
     if(same.scale==F) {
@@ -166,7 +166,7 @@ plotFFTs <- function(data, tagging.dates, type="detections", axis.periods=c(48,2
         digits <- max(.decimalPlaces(vals))
         disp_vals <- sprintf(paste0("%.", digits, "f"), disp_vals)
       }
-      axis(2, at=vals, lab=disp_vals, las=1, cex.axis=1.8, col=NA, col.ticks=1)
+      axis(2, at=vals, labels=disp_vals, las=1, cex.axis=1.8, col=NA, col.ticks=1)
      }
 
     # add x axis to the bottom plots

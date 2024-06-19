@@ -173,7 +173,7 @@ plotOverlapNetwork <- function(overlaps,
     group_ids <- colnames(network_matrices[[i]])
     group_metadata <- data_tags_kitefins[data_tags_kitefins$ID %in% group_ids,]
     node_sizes <- as.numeric(plyr::mapvalues(group_ids, group_metadata$ID, group_metadata$length, warn_missing=F))
-    node_sizes <- scales::rescale(node_sizes, from=range(data_tags_kitefins$length), c(1, 2.8))
+    node_sizes <- .rescale(node_sizes, from=range(data_tags_kitefins$length), c(1, 2.8))
     node_types <- as.numeric(plyr::mapvalues(group_ids, group_metadata$ID, as.numeric(group_metadata$sex), warn_missing=F))
     node_colors <- color_pal[node_types]
     edge_labels <- round(network_matrices[[i]],1)
@@ -233,8 +233,8 @@ plotOverlapNetwork <- function(overlaps,
 
     # add title plus stats
     title(main=names(network_matrices)[i], cex.main=title.cex, line=4.6, font=2, xpd=T)
-    network_metrics1 <- paste0("Nº of individuals: ", length(group_ids))
-    network_metrics2 <- paste0("Nº of dyads: ", ndyads$ndyads[i])
+    network_metrics1 <- paste0("N\u00ba of individuals: ", length(group_ids))
+    network_metrics2 <- paste0("N\u00ba of dyads: ", ndyads$ndyads[i])
     network_metrics3 <- paste0("Mean binary degree: ", sprintf("%.1f", binary_degree[i]))
     network_metrics4 <- paste0("Mean shared period: ", sprintf("%.0f", shared_period$days[i]), " days")
     legend("bottom", inset=c(0,-0.08), legend=c(network_metrics1, network_metrics2, network_metrics3, network_metrics4), bty="n", cex=1, xpd=T)

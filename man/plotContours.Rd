@@ -80,10 +80,10 @@ solarDep argument in \code{\link[maptools]{crepuscule}} function. Defaults to 18
 \item{uniformize.scale}{Use the same color scale for all plots when 'split.by' is defined.}
 
 \item{legend.xpos}{Relative position of left and right edge of color bar on first axis (0-1).
-Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.89, 0.92).}
+Defaults to c(0.89, 0.92).}
 
 \item{legend.ypos}{Relative position of left and right edge of color bar on second axis (0-1).
-Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.15, 0.85).}
+Defaults to c(0.15, 0.85).}
 
 \item{tz}{A character string specifying the time zone to be used for the conversion. Defaults to "UTC".}
 

@@ -13,7 +13,7 @@ The **moby** package offers a comprehensive suite of functions and methods tailo
 
 ## Installation
 
-You can install the development version of moby from [GitHub](https://github.com/) with:
+You can install the development version of moby from GitHub with:
 
 ``` r
 # install.packages("devtools")
@@ -26,7 +26,8 @@ For detailed information on how to use moby, please refer to the package documen
 
 
 ## Contributing
-Any contributions from the community are greatly appreciated! If you have suggestions, bug reports, or would like to contribute code, please feel free to open an issue or submit a pull request. 
+Any contributions from the community are warmly welcome! If you have suggestions, bug reports, or would like to contribute code, please feel free to open an issue or submit a pull request.
+
 
 ## License
 This project is licensed under the GPL v3 license.

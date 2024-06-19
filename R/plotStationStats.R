@@ -234,7 +234,7 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
 
   # assign variable display names
   var_names <- data.frame(type=c("detections", "average detections", "individuals", "co-occurrences"),
-                          display=c("Detections", "Average Detection Frequency", "Nº individuals", "Co-occurrences"))
+                          display=c("Detections", "Average Detection Frequency", "N\u00ba individuals", "Co-occurrences"))
 
   group_results <- lapply(group_results, function(x) lapply(x, function(y){
     rownames(y) <- plyr::mapvalues(rownames(y), var_names$type, var_names$display, warn_missing=F); return(y)}))

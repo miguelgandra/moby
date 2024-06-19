@@ -69,11 +69,11 @@ calculateLandDists <- function(data, land.shape, mov.threshold=0.5, id.col="ID",
   cat("Calculating distances to nearest land...\n")
 
   coords <- SpatialPoints(cbind(data[,lon.col], data[,lat.col]))
-  projection(coords) <- CRS("+proj=longlat +datum=WGS84")
+  projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
   coords <- sp::spTransform(coords, land.shape@proj4string)
 
   data$land_dist <- NA
-  data$land_dist <- apply(rgeos::gDistance(coords, land.shape, byid=T), 2, min)
+  data$land_dist <- terra::distance(coords, land.shape, byid=T)
 
   data_individual <- split(data, f=data[,id.col], drop=T)
   pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)

@@ -62,52 +62,22 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
 
   cat("Filtering out spurious data\n")
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)) stop("ID column not found. Please specify the correct column using 'id.col'")
-  # check if data contains datetime.col
-  if(!datetime.col %in% colnames(data)) stop("Datetime column not found. Please specify the correct column using 'datetime.col'")
-  # check if tagging.dates were supplied
-  if(is.null(tagging.dates)) stop("Tagging dates not specified. Please provide the required dates via the 'tagging.dates' argument")
-  # check if datetimes are in the right format
-  if(!grepl("POSIXct", paste(class(data[, datetime.col]), collapse = " "))) stop("Datetimes must be provided in POSIXct format")
-  # check if tagging.dates were supplied
-  if(is.null(tagging.dates)) stop("Tagging dates not specified. Please provide the required dates via the 'tagging.dates' argument")
-  # check if tagging.dates are in the right format
-  if(!grepl("POSIXct", paste(class(tagging.dates), collapse = " "))) stop("'tagging.dates' must be provided in POSIXct format")
-  # check if tagging.dates are in the right format
-  if(!is.null(cutoff.dates) & !grepl("POSIXct", paste(class(cutoff.dates), collapse = " "))) stop("'cutoff.dates' must be provided in POSIXct format")
-
-  # convert IDs to factor
-  if(class(data[,id.col])!="factor") {
-    data[,id.col] <- as.factor(data[,id.col])
-    cat("Warning: 'id.col' converted to factor\n")
-  }
-  # save nº of individuals and rows
-  nfish <- nlevels(data[,id.col])
-  n_total <- nrow(data)
-
-
-  # check number of tagging dates
-  if(length(tagging.dates)>1 & length(tagging.dates)!=nfish){
-    stop("Incorrect number of tagging.dates. Must be either a single value or
-           a vector containing a tagging date for each individual")
-  }else if(length(tagging.dates)==1){
-    tagging.dates <- rep(tagging.dates, nfish)
-  }
-
-  # check number of cutoff dates
-  if(!is.null(cutoff.dates)){
-    if(length(cutoff.dates)>1 & length(cutoff.dates)!=nfish){
-      stop("Incorrect number of cut-off dates. Must be either a single value or
-           a vector containing a cut-off date for each individual")
-    }else if(length(cutoff.dates)==1){
-      cutoff.dates <- rep(cutoff.dates, nfish)
-    }
-  }
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
+  tagging.dates <- reviewed_params$tagging.dates
 
   # check if speed.unit is valid
   if(!speed.unit %in% c("m/s", "km/h")) stop("Wrong speed unit. Please select either 'm/s' or 'km/h'")
 
+  # check and replicate cutoff.dates if it is a single value
+  if(!is.null(cutoff.dates) && length(cutoff.dates)==1){
+    cutoff.dates <- rep(cutoff.dates, nlevels(data[,id.col]))
+  }
+
+  # save nº of individuals and rows
+  nfish <- nlevels(data[,id.col])
+  n_total <- nrow(data)
 
   # initialize variables
   rejected_start <- vector(mode="list", length=nfish)
@@ -311,17 +281,17 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   # print stats to console
   cat("\n")
   cat(paste0("Detections removed = ", n_removed_total, " (", percent_total, "%) from a total of ", n_total, "\n"))
-  cat(paste0("  • before tagging: ", sum(n_removed_start), percent_start, " from ", ids_start, " individuals\n"))
+  cat(paste0("  \u2022 before tagging: ", sum(n_removed_start), percent_start, " from ", ids_start, " individuals\n"))
   if(!is.null(cutoff.dates)){
-    cat(paste0("  • after cut-off date: ", sum(n_removed_cutoff), percent_cutoff, " from ", ids_cutoff, " individuals\n"))}
+    cat(paste0("  \u2022 after cut-off date: ", sum(n_removed_cutoff), percent_cutoff, " from ", ids_cutoff, " individuals\n"))}
   if(hours.threshold!=F){
-    cat(paste0("  • isolated ", hours.threshold, "h radius: ", sum(n_removed_isolated),  percent_isolated, " from ", ids_isolated, " individuals\n"))}
+    cat(paste0("  \u2022 isolated ", hours.threshold, "h radius: ", sum(n_removed_isolated),  percent_isolated, " from ", ids_isolated, " individuals\n"))}
   if(!is.null(max.speed)){
-    cat(paste0("  • above max speed (", max.speed, " ", speed.unit, "): ", sum(n_removed_speed), percent_speed, " from ", ids_speed, " individuals\n"))}
+    cat(paste0("  \u2022 above max speed (", max.speed, " ", speed.unit, "): ", sum(n_removed_speed), percent_speed, " from ", ids_speed, " individuals\n"))}
   if(min.detections>0){
-    cat(paste0("  • < ", min.detections, " detections: ", sum(n_removed_min), percent_min, " from ", ids_min, " individuals\n"))}
+    cat(paste0("  \u2022 < ", min.detections, " detections: ", sum(n_removed_min), percent_min, " from ", ids_min, " individuals\n"))}
   if(min.days>0){
-    cat(paste0("  • < ", min.days, " days with detection(s): ", sum(n_removed_days), percent_days, " from ", ids_days, " individuals\n"))}
+    cat(paste0("  \u2022 < ", min.days, " days with detection(s): ", sum(n_removed_days), percent_days, " from ", ids_days, " individuals\n"))}
   cat(paste0("Individuals discarded = ", ids_discarded, percent_discarded, " from a total of ", nfish, "\n"))
 
   # create detailed summary table

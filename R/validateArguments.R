@@ -52,7 +52,7 @@
 #'
 #' @keywords internal
 
-validateArguments <- function() {
+.validateArguments <- function() {
 
 
   ##############################################################################
@@ -100,7 +100,7 @@ validateArguments <- function() {
     errors <- c(errors, checkColumn(id.col, "ID"))
     if (is.null(errors)) valid_ids <- TRUE
     # convert to factor
-    if (valid_ids && class(data[, id.col]) != "factor") {
+    if (valid_ids && !inherits(data[, id.col], "factor")){
       data[, id.col] <- as.factor(data[, id.col])
       warnings <- c(warnings, "'id.col' converted to factor")
     }
@@ -156,14 +156,14 @@ validateArguments <- function() {
   # validate split.by ##########################################################
   if ("split.by" %in% names(args)) {
     split.by <- args$split.by
-    if(!s.null(split.by)) errors <- c(errors, checkColumn(split.by, "grouping variable"))
+    if(!is.null(split.by)) errors <- c(errors, checkColumn(split.by, "grouping variable"))
   }
 
   ##############################################################################
   # validate variable ##########################################################
   if ("variable" %in% names(args)) {
     variable <- args$variable
-    if(!s.null(variable)) errors <- c(errors, checkColumn(variable, "Variable"))
+    if(!is.null(variable)) errors <- c(errors, checkColumn(variable, "Variable"))
   }
 
   ##############################################################################
@@ -213,20 +213,33 @@ validateArguments <- function() {
     if(!is.null(start.dates)) {
       if(!inherits(start.dates, "POSIXct")) errors <- c(errors, "Start dates must be provided in POSIXct format.")
       if(length(start.dates)>1 && valid_ids  && length(start.dates)!=nlevels(data[, id.col]))
-        errors <- c(errors, "Incorrect number of start.dates. Must be either a single value or a vector containing a tagging date for each individual.")
+        errors <- c(errors, "Incorrect number of start.dates. Must be either a single value or a vector containing a start date for each individual.")
     }
   }
 
   ##############################################################################
-  # validate end.dates  ################################3#######################
+  # validate end.dates  ########################################################
   if ("end.dates" %in% names(args)) {
     end.dates <- args$end.dates
     if(!is.null(end.dates)) {
       if(!inherits(end.dates, "POSIXct")) errors <- c(errors, "End dates must be provided in POSIXct format.")
       if(length(end.dates)>1 && valid_ids  && length(end.dates)!=nlevels(data[, id.col]))
-        errors <- c(errors, "Incorrect number of end.dates Must be either a single value or a vector containing a tagging date for each individual.")
+        errors <- c(errors, "Incorrect number of end.dates. Must be either a single value or a vector containing an end date for each individual.")
     }
   }
+
+
+  ##############################################################################
+  # validate cutoff.dates  #####################################################
+  if ("cutoff.dates" %in% names(args)) {
+    cutoff.dates <- args$cutoff.dates
+    if(!is.null(cutoff.dates)) {
+      if(!inherits(cutoff.dates, "POSIXct")) errors <- c(errors, "Cutoff dates must be provided in POSIXct format.")
+      if(length(cutoff.dates)>1 && valid_ids  && length(cutoff.dates)!=nlevels(data[, id.col]))
+        errors <- c(errors, "Incorrect number of cutoff.dates. Must be either a single value or a vector containing a cutoff date for each individual.")
+    }
+  }
+
 
   ##############################################################################
   # validate id.groups #########################################################

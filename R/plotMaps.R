@@ -90,8 +90,8 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
   }
 
   # check kernel densities format (second attempt)
-  if(class(kud.densities)!="estUDm"){
-     if(class(kud.densities[[1]])=="estUDm"){
+  if(!inherits(kud.densities, "estUDm")){
+    if(inherits(kud.densities[[1]], "estUDm")){
       ids <- unlist(lapply(kud.densities, names))
       kud.densities <- unlist(kud.densities)
       names(kud.densities) <- ids
@@ -120,7 +120,7 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
   }
 
   # set background and scale variables
-  if(is.null(background.pal)) {background.pal <- rev(palr::bathy_deep_pal(100)[c(30:100)])}
+  if(is.null(background.pal)) {background.pal <- rev(.bathy_deep_pal(100)[c(30:100)])}
   bbox <- sf::st_bbox(sf::st_multipoint(cbind(data[,lon.col], data[,lat.col])))
   if(is.null(scale.meters)) {scale.meters <- pretty((bbox[3]-bbox[1])*0.2)[2]}
   scale_km <- scale.meters/1000
@@ -207,7 +207,7 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
 
       # add color legend of background layer (if available)
       if(!is.null(background.layer)) {
-        layer_labs <- pretty(values(background.layer), min.n=4)
+        layer_labs <- pretty(raster::values(background.layer), min.n=4)
         layer_labs <- layer_labs[layer_labs>=min(kud_range) & layer_labs<=max(kud_range)]
         display_digits <- max(.decimalPlaces(layer_labs))
         .colorlegend(col=color_pal, zlim=kud_range, zval=layer_labs,
@@ -225,16 +225,16 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
     # convert KUD to raster
     id <- as.character(levels(data[,id.col])[i])
     if(nrow(data_individual[[i]])==0 | !id %in% names(kud.densities)){
-      r <- raster::raster(as(kud.densities[[1]],"SpatialPixelsDataFrame"))
+      r <- raster::raster(methods::as(kud.densities[[1]],"SpatialPixelsDataFrame"))
       r[] <- NA
     } else {
-      coords <- SpatialPoints(cbind(data_individual[[i]][,lon.col], data_individual[[i]][,lat.col]))
-      r <- raster::raster(as(kud.densities[[id]],"SpatialPixelsDataFrame"))
+      coords <- sp::SpatialPoints(cbind(data_individual[[i]][,lon.col], data_individual[[i]][,lat.col]))
+      r <- raster::raster(methods::as(kud.densities[[id]],"SpatialPixelsDataFrame"))
     }
 
     # set color palette and zlims
     color_pal <- c(adjustcolor("gray96", alpha.f=0), rev(adjustcolor(terrain.colors(254), alpha.f=(1-kud.transparency))))
-    if(same.scale==T){kud_scale <- kud_range}else{kud_scale <- range(values(r))}
+    if(same.scale==T){kud_scale <- kud_range}else{kud_scale <- range(raster::values(r))}
 
     # plot maps
     suppressWarnings(image(r,  zlim=kud_scale, axes=F, col=adjustcolor("gray96", alpha.f=0), asp=1))

@@ -41,7 +41,7 @@ plotCWTs(
 
 \item{axis.periods}{Periods (in hours) to include/highlight in the y-axis.}
 
-\item{color.pal}{Color palette. Defaults to \code{\link[pals]{jet}}}
+\item{color.pal}{Color palette. Defaults to the Jet colormap.}
 
 \item{date.format}{Date-time format (as used in \code{\link[base]{strptime}}),
 defining the x-axis labels. Defaults to month ("\%d/\%b").}
@@ -64,10 +64,10 @@ rather than the actual values. Defaults to False.}
 \item{cex.axis}{Determines the size of the text labels on the axes. Defaults to 1.}
 
 \item{legend.xpos}{Relative position of left and right edge of color bar on first axis (0-1).
-Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.90, 0.915).}
+Defaults to c(0.90, 0.915).}
 
 \item{legend.ypos}{Relative position of left and right edge of color bar on second axis (0-1).
-Passed to \code{\link[shape]{colorlegend}} function. Defaults to c(0.15, 0.85).}
+Defaults to c(0.15, 0.85).}
 
 \item{cols}{Number of columns in the final panel (passed to the mfrow argument).}
 
