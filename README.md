@@ -1,5 +1,5 @@
 
-# moby <img src="vignettes/moby_logo2.png" align="right" width="100" />
+# moby <img src="vignettes/moby-logo2.png" align="right" width="100" />
 
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
