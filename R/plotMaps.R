@@ -33,6 +33,7 @@
 #' @param same.scale Forces same KUD scale across all plots, allowing for
 #' density comparison between individuals. If set to false, all y-axis are displayed.
 #' Otherwise they are only displayed in the left-most plots to save space.
+#' @param kud.legend Logical. If TRUE, includes a legend for the KUD densities. Defaults to TRUE.
 #' @param cols Number of columns in the panel (passed to the mfrow argument). Defaults to 3.
 #' @export
 
@@ -42,9 +43,9 @@
 
 plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id.col="ID",
                      lon.col="lon", lat.col="lat", land.shape, background.layer=NULL,
-                     background.pal=NULL, background.color="#F3F7F7", land.color="gray50",
-                     discard.missing=T, kud.transparency=0, scale.meters=NULL,  scale.pos="bottomright",
-                     scale.inset=0.1, same.scale=F, kud.legend=T, cols=3) {
+                     background.pal=NULL, land.color="gray50", discard.missing=T,
+                     kud.transparency=0, scale.meters=NULL, scale.pos="bottomright",
+                     scale.inset=0.1, same.scale=FALSE, kud.legend=TRUE, cols=3) {
 
 
   ############################################################################
@@ -120,7 +121,8 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
   }
 
   # set background and scale variables
-  if(is.null(background.pal)) {background.pal <- rev(.bathy_deep_pal(100)[c(30:100)])}
+  if(is.null(background.pal) && !is.null(background.layer)) background.pal <- rev(.bathy_deep_pal(100)[c(30:100)])
+  if(is.null(background.pal) && is.null(background.layer)) background.pal <- "#F3F7F7"
   bbox <- sf::st_bbox(sf::st_multipoint(cbind(data[,lon.col], data[,lat.col])))
   if(is.null(scale.meters)) {scale.meters <- pretty((bbox[3]-bbox[1])*0.2)[2]}
   scale_km <- scale.meters/1000
@@ -239,7 +241,7 @@ plotMaps <- function(data, kud.densities, animal.tracks=NULL, id.groups=NULL, id
     # plot maps
     suppressWarnings(image(r,  zlim=kud_scale, axes=F, col=adjustcolor("gray96", alpha.f=0), asp=1))
     if(!is.null(background.layer)){plot(background.layer, col=background.pal, legend=F, axes=F, add=T)}
-    if(is.null(background.layer)){rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col=background.color, border=NA)}
+    if(is.null(background.layer)){rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col=background.pal[1], border=NA)}
     suppressWarnings(image(r,  axes=F, col=color_pal, asp=1, add=T))
     legend("topleft", legend=id, inset=c(-0.08, 0) , cex=1.5, bty="n", text.font=2)
     plot(land.shape, col=land.color, border=NA, add=T)

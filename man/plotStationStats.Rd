@@ -6,7 +6,7 @@
 \usage{
 plotStationStats(
   data,
-  overlap = NULL,
+  overlaps = NULL,
   type = c("detections", "co-occurrences"),
   id.col = "ID",
   site.col = "station",
@@ -24,6 +24,9 @@ plotStationStats(
 }
 \arguments{
 \item{data}{A data frame containing animal detections with corresponding time-bins.}
+
+\item{overlaps}{List containing counts of stations where animals co-occurred, as returned by
+\code{\link{calculateOverlap}}. Only required if type contains "co-occurrences".}
 
 \item{type}{Type of statistic to calculate/plot. If more than one type is supplied a grouped barplot
 is generated. Possible values are "detections", "average detections", "individuals" and "co-occurrences".}
@@ -57,9 +60,6 @@ generate different plots to each class (e.g. different species).}
 One of "within", "between" or "all". Defaults to "all".}
 
 \item{cols}{Number of columns in the final panel (passed to the mfrow argument).}
-
-\item{overlaps}{List containing counts of stations where animals co-occurred, as returned by
-\code{\link{calculateOverlap}}. Only required if type contains "co-occurrences".}
 }
 \description{
 Calculates several receivers' statistics and generates corresponding barplots.

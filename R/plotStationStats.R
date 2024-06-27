@@ -39,7 +39,7 @@
 ## Main function ######################################################################
 #######################################################################################
 
-plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurrences"), id.col="ID",
+plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occurrences"), id.col="ID",
                              site.col="station", number.stations=F, rotate.labels=F, show.percentage=T,
                              lab.threshold=NULL, legend.pos="top", legend.style="horizontal",
                              id.groups=NULL, color.pal=NULL, group.comparisons="all", cols=1) {
@@ -76,12 +76,12 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
     cat("Converting site.col to factor\n")
     data[,site.col] <- as.factor(data[,site.col])}
 
-  # check if site.col levels agree with the supplied overlap results
-  if(!is.null(overlap)){
-    unique(unlist(overlap$station_counts))
-    overlap_values <- unique(unlist(lapply(overlap$station_counts, function(x) names(x))))
+  # check if site.col levels agree with the supplied overlaps results
+  if(!is.null(overlaps)){
+    unique(unlist(overlaps$station_counts))
+    overlap_values <- unique(unlist(lapply(overlaps$station_counts, function(x) names(x))))
     if(!all(overlap_values %in% levels(data[,site.col]))){
-      stop("Overlap values do not match with the levels in the supplied 'site.col' variable")
+      stop("overlaps values do not match with the levels in the supplied 'site.col' variable")
     }
   }
 
@@ -183,8 +183,8 @@ plotStationStats <- function(data, overlap=NULL, type=c("detections", "co-occurr
 
     # calculate nº co-occurrences per location
     if(any(type=="co-occurrences")) {
-      if(is.null(overlap)) {stop("Overlap results are required to calculate co-occurrences")}
-      station_co_occurrences <- overlap$station_counts
+      if(is.null(overlaps)) {stop("overlaps results are required to calculate co-occurrences")}
+      station_co_occurrences <- overlaps$station_counts
       station_co_occurrences <- station_co_occurrences[!sapply(station_co_occurrences, is.null)]
       pair_ids <- sapply(names(station_co_occurrences), function(x) strsplit(x, split="<->", fixed=T))
       pair_ids <- lapply(pair_ids, function(x) plyr::mapvalues(x, ids_table$ID, ids_table$group, warn_missing=F))

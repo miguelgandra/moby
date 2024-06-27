@@ -4,3 +4,4 @@
 ^LICENSE\.md$
 ^Commands$
 ^Compile Documentation\.R$
+^moby-tutorial\.R$

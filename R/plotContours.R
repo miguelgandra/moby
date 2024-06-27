@@ -47,41 +47,30 @@
 #' @export
 
 
-plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, split.by=NULL, aggregate.fun=function(x) mean(x, na.rm=T),
-                         id.col="ID", date.col="datetime", color.pal=NULL, diel.lines=4, diel.lines.col="black",
-                         sunriset.coords, sunriset.start=NULL, sunriset.end=NULL, solar.depth=18, cex.main=1.1, cex.lab=1, cex.axis=0.8,
-                         grid=T, invert.scale=F, uniformize.scale=F, legend.xpos=c(0.89, 0.92), legend.ypos=c(0.15, 0.85),
-                         tz="UTC", cols=1, disable.par=F, ...) {
+plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, split.by=NULL,
+                         aggregate.fun=function(x) mean(x, na.rm=T), id.col=getDefaults("id"),
+                         date.col=getDefaults("datetime"), color.pal=NULL, diel.lines=4,
+                         diel.lines.col="black", sunriset.coords,  solar.depth=18,
+                         cex.main=1.1, cex.lab=1, cex.axis=0.8, grid=T, invert.scale=FALSE,
+                         uniformize.scale=FALSE, legend.xpos=c(0.89, 0.92), legend.ypos=c(0.15, 0.85),
+                         tz="UTC", cols=1, disable.par=FALSE, ...) {
 
   #####################################################################################
   # Initial checks ####################################################################
   #####################################################################################
 
-  if(any(!variables %in% colnames(data))){
-    stop("Some of the variables not found in the supplied data")}
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
 
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please specify the correct column using 'id.col'")}
-
-  if(class(data[,id.col])!="factor"){
-    cat("Converting ids to factor\n")
-    data[,id.col] <- as.factor(data[,id.col])}
-
-  if(!date.col %in% colnames(data)){
-    stop("Datetime column not found. Please specify the correct column using 'date.col'")}
-
-  if(any(class(data[,date.col])=="POSIXc")){
-    stop("Please supply datetimes in POSIXct format")}
 
   # check grouping variable(s)
   if(!is.null(split.by)){
-    if(!all(split.by %in% colnames(data))){
-      stop("Groupping column not found. Please specify the correct column using 'split.by'")
-    }
+
     # convert all grouping columns to factor
     for(s in split.by){
-      if(class(data[,s])!="factor"){
-        cat("Converting split.by column to factor\n")
+      if(!inherits(data[,s], "factor")){
+        warning("Converting split.by column to factor", call.=FALSE)
         data[,s] <- as.factor(data[,s])
       }
     }
@@ -98,21 +87,16 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
     split.by <- "dummy_group"
   }
 
-  if(!is.null(var.titles) & length(variables)!=length(var.titles)){
-    stop("Number of variables and variables' titles do not match")
-  }
+  # validate var titles
+  if(!is.null(var.titles) & length(variables)!=length(var.titles)) stop("Number of variables and variables' titles do not match", call.=FALSE)
 
-  if(is.null(color.pal)){
-    color.pal <- .viridis_pal
-  }
-
-  if(class(color.pal)!="function"){
-    color.pal <- colorRampPalette(color.pal)
-  }
+  # set color palette
+  if(is.null(color.pal)) color.pal <- .viridis_pal
+  if(!inherits(color.pal, "function")) color.pal <- colorRampPalette(color.pal)
 
 
   # print to console
-  cat(paste0("Generating contour plot(s)\n"))
+  .printConsole("Generating contour plot(s)")
 
 
   #####################################################################################

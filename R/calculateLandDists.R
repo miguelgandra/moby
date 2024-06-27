@@ -68,8 +68,8 @@ calculateLandDists <- function(data, land.shape, mov.threshold=0.5, id.col="ID",
 
   cat("Calculating distances to nearest land...\n")
 
-  coords <- SpatialPoints(cbind(data[,lon.col], data[,lat.col]))
-  projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
+  coords <- sp::SpatialPoints(cbind(data[,lon.col], data[,lat.col]))
+  raster::projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
   coords <- sp::spTransform(coords, land.shape@proj4string)
 
   data$land_dist <- NA

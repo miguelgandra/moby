@@ -42,8 +42,12 @@ Defaults to 'tagging_location'.}
 \item{color.by}{Optional. Variable contained in the id.metadata table, used to generate
 a color gradient (e.g. length).}
 
+\item{color.pal}{Optional. Color palette used for the color gradient.}
+
 \item{aggregate.fun}{Function used to aggregate numeric values if a color.by argument is supplied.
 Defaults to "mean".}
+
+\item{same.scale}{Logical. If TRUE, uses the same color scale for all panels. Defaults to FALSE.}
 
 \item{background.col}{Background color of the plot. Defaults to "gray96".}
 

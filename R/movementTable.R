@@ -7,55 +7,37 @@
 #' @description Creates a table containing  movement metrics for each animal
 #' (total distances traveled, rate of movements, KUDs, etc.).
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing binned animal detections and distances traveled,
 #' as returned by \code{\link{calculateDistances}}.
 #' @param kud.results Output of \code{\link{calculateKUDs}}.
 #' @param land.shape A projected shape file containing coastlines.
 #' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
 #' If not supplied, CRS is assumed to be the same as in land.shape.
-#' @param transition.layer Transition layer used to calculate shortest in-water paths, as
-#' retrieved by the \code{\link{calculateDistances}} function.
 #' @param id.groups Optional. A list containing ID groups, used to
 #' visually aggregate animals belonging to the same class (e.g. different species).
-#' @param id.col Name of the column containing animal IDs Defaults to 'ID'.
-#' @param lon.col Name of the column containing longitude values (unprojected). Defaults to 'lon'.
-#' @param lat.col Name of the column containing latitude values (unprojected). Defaults to 'lat'.
 #' @param dist.col Name of the column containing distance values (in meters). Defaults to 'dist_m'.
 #' @param discard.missing If true, only individuals with detections are included.
-
+#' @param ... Further arguments passed to \code{\link{calculateDistances}} function,
+#' in order to calculate distances between the first and last recorded detection, for each individual.
 #' @export
 
 
-movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transition.layer, id.groups=NULL, id.col="ID",
-                          lon.col="lon", lat.col="lat", dist.col="dist_m", discard.missing=T) {
+movementTable <- function(data, kud.results, land.shape, epsg.code=getDefaults("epsg"),
+                          id.groups=NULL, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"),
+                          lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
+                          dist.col="dist_m", discard.missing=T, ...) {
 
   ##############################################################################
   ## Initial checks ############################################################
   ##############################################################################
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please assign the correct column name with 'id.col'")
-  }
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
 
-  # check if data contains id.col
-  if(!c("timebin") %in% colnames(data)){
-    stop("'timebin' column not found in the supplied data")
-  }
-
-  # convert ids to factor
-  if(class(data[,id.col])!="factor"){
-    cat(paste("Warning: converting", id.col, "column to factor\n"))
-    data[,id.col] <- as.factor(data[,id.col])
-  }
-
-  # check if data contains lon.col and lat.col
-  if(!lon.col %in% colnames(data)){
-    stop("Longitude column not found. Please assign the correct column name with 'lon.col'")
-  }
-  if(!lat.col %in% colnames(data)){
-    stop("Latitude column not found. Please assign the correct column name with 'lat.col'")
-  }
+  # check kud.results
+  if(!c("bandwidth") %in% names(attributes(kud.results))) stop("The supplied kud.results do not seem to be in the right format. Please use the output of the 'calculateKUDs' function.")
 
   # check if dataset coordinates are in geographic format (unprojected)
    geographic_coords <-  all(data[,lon.col]>=(-180) & data[,lon.col]<=180 & data[,lat.col]>=(-90) & data[,lat.col]<=90)
@@ -75,28 +57,15 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
     land.shape <- sp::spTransform(land.shape, epsg.code)
   }
 
-  # check if data contains dist.col
-  if(!dist.col %in% colnames(data)){
-    stop("Distance column not found. Please assign the correct column name with 'dist.col'")
-  }
-
-  # set id groups
-  if(is.null(id.groups)) {
-    id.groups <- list(levels(data[,id.col]))
-  } else {
-    if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {"Some of the ID(s) in id.groups are not present in the data"}
-  }
-
    # get time bins interval (in minutes) and interpolate distances if required
    individual_data <- split(data, f=data[,id.col])
-   interval <- lapply(individual_data, function(x) difftime(x$timebin, dplyr::lag(x$timebin), units="min"))
+   interval <- lapply(individual_data, function(x) difftime(x[,timebin.col], dplyr::lag(x[,timebin.col]), units="min"))
    interval <- unlist(lapply(interval, unique))
    interval <- unique(interval[!is.na(interval)])
    if(length(unique(interval))>2) {
      data <- interpolateDistances(data, keep.intermediate=T)
      individual_data <- split(data, f=data[,id.col])
-     interval <- lapply(individual_data, function(x) difftime(x$timebin, dplyr::lag(x$timebin), units="min"))
+     interval <- lapply(individual_data, function(x) difftime(x[,timebin.col], dplyr::lag(x[,timebin.col]), units="min"))
      interval <- unlist(lapply(interval, unique))
      interval <- unique(interval[!is.na(interval)])
    }
@@ -138,11 +107,23 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
     max_rom <- sprintf("%.1f", max_rom)
 
     ## linearity index
-    first_coas <- by(data, data[,id.col], function(x) x[which.min(x$timebin),c(lon.col, lat.col)], simplify=F)
-    last_coas <- by(data, data[,id.col], function(x) x[which.max(x$timebin),c(lon.col, lat.col)], simplify=F)
-    dist_diff <- mapply(calculatePairDistances, coord1=first_coas, coord2=last_coas,
-                        MoreArgs=list(trCost=transition.layer, land.shape=land.shape, epsg.code=epsg.code, geographic_coords=geographic_coords))
-    li_index <- sprintf("%.2f", dist_diff/total_dist)
+    first_coas <- by(data, data[,id.col], function(x) x[which.min(x[,timebin.col]),c(lon.col, lat.col)], simplify=F)
+    first_coas <- do.call("rbind", first_coas)
+    first_coas$id <- rownames(first_coas)
+    first_coas$type <- "start"
+    last_coas <- by(data, data[,id.col], function(x) x[which.max(x[,timebin.col]),c(lon.col, lat.col)], simplify=F)
+    last_coas <- do.call("rbind", last_coas)
+    last_coas$id <- rownames(last_coas)
+    last_coas$type <- "end"
+    start_end_coas <- rbind(first_coas, last_coas)
+    rownames(start_end_coas) <- NULL
+    start_end_coas$type <- factor(start_end_coas$type, levels=c("start","end"))
+    start_end_coas <- start_end_coas[order(start_end_coas$id, start_end_coas$type),]
+    start_end_dists <- calculateDistances(start_end_coas, land.shape=land.shape,
+                                          epsg.code=epsg.code, id.col="id", verbose=FALSE,
+                                          lon.col=lon.col, lat.col=lat.col, ...)$data
+    start_end_dists <- start_end_dists$dist_m[!is.na(start_end_dists$dist_m)]
+    li_index <- sprintf("%.2f", start_end_dists/total_dist)
     li_index[li_index=="NaN"] <- "NA"
 
 
@@ -194,47 +175,6 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=NULL, transit
   return(movement_table)
 }
 
-
-
-################################################################################
-# Helper function I - calculate shortest path between two points ###############
-
-calculatePairDistance <- function(coord1, coord2, trCost, land.shape, epsg.code, geographic_coords){
-  if(is.null(coord1) | is.null(coord2)) {return(NA)}
-  if(class(coord1)[1]!="matrix" | class(coord2)[1]!="matrix"){
-    coord1 <- as.matrix(coord1)
-    coord2 <- as.matrix(coord2)
-  }
-
-  # project coords if required
-  coords <- data.frame(rbind(coord1, coord2))
-  colnames(coords) <- c("lon", "lat")
-  if(geographic_coords==T){
-    coords <- st_as_sf(coords, coords=c("lon", "lat"), crs=sf::st_crs("+proj=longlat +datum=WGS84"), agr="constant")
-    coords <- sf::st_transform(coords, crs=sf::st_crs(epsg.code))
-  }else{
-    coords <- st_as_sf(coords, coords=c("lon", "lat"), crs=sf::st_crs(epsg.code), agr="constant")
-  }
-
-  # create segment
-  coords <- sf::st_coordinates(coords)
-  segment <- sf::st_linestring(coords)
-  segment <- sf::st_sfc(segment, crs=sf::st_crs(epsg.code))
-  is_pt <- all(coord1 == coord2)
-  if(is_pt==T){return(0)}
-  in_land <- lengths(sf::st_intersects(segment, sf::st_as_sf(land.shape), sparse=T))>0
-  if(in_land==T){
-    pts <- sf::st_coordinates(segment)[,1:2]
-    segment <- gdistance::shortestPath(trCost, pts[1,], pts[2,], output="SpatialLines")
-    segment <- sf::st_as_sf(segment)
-    sf::st_crs(segment) <- sf::st_crs(epsg.code)
-  }
-
-  # convert back to WGS84 and estimate distance
-  segment <- sf::st_transform(segment, crs=sf::st_crs("+proj=longlat +datum=WGS84"))
-  dist <- sum(geosphere::distVincentyEllipsoid(sf::st_coordinates(segment)[,1:2]))
-  return(dist)
-}
 
 #######################################################################################################
 #######################################################################################################

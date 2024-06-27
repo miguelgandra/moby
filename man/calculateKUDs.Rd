@@ -6,29 +6,33 @@
 \usage{
 calculateKUDs(
   data,
-  subset = NULL,
   bandwidth,
   grid,
-  land.shape,
-  id.col = "ID",
-  lon.col = "lon",
-  lat.col = "lat"
+  id.groups = NULL,
+  subset = NULL,
+  land.shape = NULL,
+  id.col = getDefaults("id"),
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat")
 )
 }
 \arguments{
 \item{data}{A data frame with animal positions (COAs), containing 'longitude' and 'latitude' columns.}
-
-\item{subset}{If defined, KUDs are calculated independently for each level of this variable.
-If left NULL, single KUDs are calculated for the whole monitoring period.}
 
 \item{bandwidth}{Kernel bandwidth (h) - smoothing parameter used to calculate KUDs.}
 
 \item{grid}{SpatialPixels object containing the grid over which animal KUDs are going to be estimated
 (see grid argument in the \code{\link[adehabitatHR]{kernelUD}} function).}
 
+\item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
+within each group.}
+
+\item{subset}{If defined, KUDs are calculated independently for each level of this variable.
+If left NULL, single KUDs are calculated for the whole monitoring period.}
+
 \item{land.shape}{A shape file containing coastlines.}
 
-\item{id.col}{Name of the column containing animal IDs. Defaults to "ID".}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{lon.col}{Name of the column containing projected longitudes. Defaults to "lon".}
 

@@ -34,14 +34,14 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
   start.time <- Sys.time()
 
   # perform argument checks and return reviewed parameters
-  reviewed_params <- validateArguments()
+  reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
   # check if dataset coordinates are in geographic format (unprojected)
   geographic_coords <-  all(data[,lon.col]>=(-180) & data[,lon.col]<=180 & data[,lat.col]>=(-90) & data[,lat.col]<=90)
   if(is.na(geographic_coords)){
     stop("Longitudes/latitudes values are missing and/or in the wrong format\n")
-    }
+  }
 
 
   #############################################################################

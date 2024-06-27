@@ -45,7 +45,7 @@
 #' \dontrun{
 #' # Example usage within a function that calls validateArguments
 #' plotAbacus <- function(data, id.col, datetime.col, ...) {
-#'   validateArguments()
+#'   .validateArguments()
 #'   # Proceed with analysis...
 #' }
 #' }
@@ -61,8 +61,9 @@
 
   checkColumn <- function(col_name, col_label){
     arg <- deparse(substitute(col_name))
-    if(length(col_name)!=1) return(paste0("The ", col_label, " column name should be a single value. Please ensure you provide only one column name in the '", arg, "' parameter."))
-    if(!col_name %in% colnames(data)) return(paste0("Specified ",  col_label, " column ('", col_name, "')  not found. Please provide the correct column name using the '", arg, "' parameter."))
+    if(is.null(col_name)) return(paste0("No ", col_label, " specified. Please provide the corresponding column name using the '", arg, "' parameter."))
+    if(length(col_name)!=1) return(paste0("The ", col_label, " name should be a single value. Please ensure you provide only one column name in the '", arg, "' parameter."))
+    if(!col_name %in% colnames(data)) return(paste0("Specified ",  col_label, " ('", col_name, "') not found. Please provide the correct column name using the '", arg, "' parameter."))
   }
 
 
@@ -97,7 +98,7 @@
   # validate id.col ############################################################
   if ("id.col" %in% names(args)) {
     id.col <- args$id.col
-    errors <- c(errors, checkColumn(id.col, "ID"))
+    errors <- c(errors, checkColumn(id.col, "ID column"))
     if (is.null(errors)) valid_ids <- TRUE
     # convert to factor
     if (valid_ids && !inherits(data[, id.col], "factor")){
@@ -110,7 +111,7 @@
   # validate datetime.col ######################################################
   if ("datetime.col" %in% names(args)) {
     datetime.col <- args$datetime.col
-    datetime_msg <- checkColumn(datetime.col, "datetime")
+    datetime_msg <- checkColumn(datetime.col, "datetime column")
     if(!is.null(datetime_msg))  errors <- c(errors, datetime_msg)
     else if (!inherits(data[, datetime.col], "POSIXct")) errors <- c(errors, "Datetimes must be provided in POSIXct format.")
   }
@@ -119,7 +120,7 @@
   # validate timebin.col   #####################################################
   if ("timebin.col" %in% names(args)) {
     timebin.col <- args$timebin.col
-    timebin_msg <- checkColumn(timebin.col, "time-bin")
+    timebin_msg <- checkColumn(timebin.col, "time-bin column")
     if(!is.null(timebin_msg))  errors <- c(errors, timebin_msg)
     else if (!inherits(data[, timebin.col], "POSIXct")) errors <- c(errors, "Time-bins must be provided in POSIXct format.")
   }
@@ -128,42 +129,72 @@
   # validate lon.col   #####################################################
   if ("lon.col" %in% names(args)) {
     lon.col <- args$lon.col
-    errors <- c(errors, checkColumn(lon.col, "longitude"))
+    errors <- c(errors, checkColumn(lon.col, "longitude column"))
   }
 
   ##############################################################################
   # validate lat.col   #####################################################
   if ("lat.col" %in% names(args)) {
     lat.col <- args$lat.col
-    errors <- c(errors, checkColumn(lat.col, "latitude"))
+    errors <- c(errors, checkColumn(lat.col, "latitude column"))
   }
 
   ##############################################################################
   # validate station.col #######################################################
   if ("station.col" %in% names(args)) {
     station.col <- args$station.col
-    errors <- c(errors, checkColumn(station.col, "station"))
+    errors <- c(errors, checkColumn(station.col, "station column"))
   }
 
   ##############################################################################
   # validate spatial.col #######################################################
   if ("spatial.col" %in% names(args)) {
     spatial.col <- args$spatial.col
-    errors <- c(errors, checkColumn(spatial.col, "spatial"))
+    errors <- c(errors, checkColumn(spatial.col, "spatial column"))
   }
+
+  ##############################################################################
+  # validate dist.col ##########################################################
+  if ("dist.col" %in% names(args)) {
+    dist.col <- args$dist.col
+    errors <- c(errors, checkColumn(dist.col, "distance column"))
+  }
+
 
   ##############################################################################
   # validate split.by ##########################################################
   if ("split.by" %in% names(args)) {
     split.by <- args$split.by
-    if(!is.null(split.by)) errors <- c(errors, checkColumn(split.by, "grouping variable"))
+    if(!is.null(split.by)) {
+      for(s in 1:length(split.by)){
+        errors <- c(errors, checkColumn(split.by[s], "grouping variable"))
+      }
+    }
+  }
+
+  ##############################################################################
+  # validate subset ############################################################
+  if ("subset" %in% names(args)) {
+    subset <- args$subset
+    if(!is.null(subset)) errors <- c(errors, checkColumn(subset, "subset column"))
   }
 
   ##############################################################################
   # validate variable ##########################################################
   if ("variable" %in% names(args)) {
     variable <- args$variable
-    if(!is.null(variable)) errors <- c(errors, checkColumn(variable, "Variable"))
+    if(!is.null(variable)) errors <- c(errors, checkColumn(variable, "variable"))
+  }
+
+  ##############################################################################
+  # validate variable ##########################################################
+  if ("variables" %in% names(args)) {
+    variables <- args$variables
+    if(!is.null(variable)){
+      for(v in 1:length(variables)){
+        errors <- c(errors, checkColumn(variables[v], "variable"))
+      }
+    }
   }
 
   ##############################################################################
@@ -306,14 +337,6 @@
   if ("style" %in% names(args)) {
     style <- args$style
     if(!style %in% c("raster", "points")) errors <- c(errors, "Invalid style specified. Accepted values are: 'raster' or 'points'.")
-  }
-
-
-  ##############################################################################
-  # Validate cores for parallel computing ######################################
-  if ("cores" %in% names(args)) {
-    cores <- args$cores
-    if(parallel::detectCores()<cores)  errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)"))
   }
 
 

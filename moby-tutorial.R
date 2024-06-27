@@ -27,6 +27,11 @@ library(moby)
 # set epsg code for the study region
 epsg_code <- CRS("+init=epsg:3063")
 
+# load sample dataset
+
+# load land shapefile (sourced from ...)
+
+
 # import raw detections files
 data_raw <- read.csv2("./data/acoustic_detections.csv", header=T)
 selected_cols <- c("date_time", "receiver_id", "tag_id", "station_name", "deploy_latitude", "deploy_longitude", "network_project_code")

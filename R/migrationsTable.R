@@ -65,8 +65,8 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
   }
 
   # convert sites var to factor
-  if(class(data[,sites.col])!="factor"){
-    cat(paste("Warning: converting", sites.col, "column to factor\n"))
+  if(!inherits(data[,sites.col], "factor")){
+    warning(paste("Converting", sites.col, "column to factor"), call.=FALSE)
     data[,sites.col] <- as.factor(data[,sites.col])
   }
 
@@ -81,8 +81,8 @@ migrationsTable <- function(data, sites.col, aggregate.by=NULL, tag.dates=NULL, 
 
   # check aggregate.by groups
   if(!is.null(aggregate.by)){
-    if(class(data[,aggregate.by])!="factor") {
-      cat(paste("Warning: converting", aggregate.by, "column to factor\n"))
+    if(!inherits(data[,aggregate.by], "factor")){
+      warning(paste("Converting", aggregate.by, "column to factor"), call.=FALSE)
       data[,aggregate.by] <- as.factor(data[,aggregate.by])
     }
     sites_table <- unique(data[,c(sites.col, aggregate.by)])

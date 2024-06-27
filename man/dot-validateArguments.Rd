@@ -49,7 +49,7 @@ argument validation across multiple functions, ensuring consistency and reducing
 \dontrun{
 # Example usage within a function that calls validateArguments
 plotAbacus <- function(data, id.col, datetime.col, ...) {
-  validateArguments()
+  .validateArguments()
   # Proceed with analysis...
 }
 }

@@ -8,7 +8,6 @@ randomizeOverlaps(
   table,
   overlaps,
   constraint.by = NULL,
-  id.groups = NULL,
   iterations = 1000,
   alternative = c("two.sided"),
   conf.level = 0.95,
@@ -26,9 +25,6 @@ highest number of detections), as returned by \code{\link{createWideTable}}.}
 \item{constraint.by}{Optional. Variable(s) to constrain permutations, e.g. to account
 for potential diel or seasonal trends in animal occurrences. If supplied, permutations
 across time bins will be restricted to the same combination of levels of these variables.}
-
-\item{id.groups}{Optional. A list containing ID groups for calculating stats independently
-within each group and comparing relationships between IDs of different groups.}
 
 \item{iterations}{Number of Monte Carlo iterations (simulated datasets). Defaults to 1000.}
 
@@ -54,12 +50,17 @@ A list containing:
 \item{\strong{pairwise_results}}{A data frame similar to that returned by the \code{\link{calculateOverlap}}
 function, but with additional columns indicating the mean of the null distribution,
 empirical p-values, and association type for each animal dyad.}
-\item{\strong{randomized_overlaps}}{A list of all randomized pairwise overlaps, containing an element for each iteration}
+\item{\strong{randomized_overlaps}}{A list containing all simulated pairwise overlaps
+for each iteration. If a subset variable was specified in the
+supplied overlaps, this will contain a nested list, where the first level will
+contain an element for each level of the subset variable and the second level an
+element containing all simulated pairwise overlaps for each iteration.}
 }\cr
 
 The summary table includes the following columns:
 \itemize{
-\item {Type}: The type of comparison. This column is included only when \code{id.groups} are supplied (more than one comparison).
+\item {Type}: The type of comparison. This column is included only when \code{id.groups} are identified in the supplied overlaps.
+\item {Subset}: This column (e.g., a temporal subset) is included only when a subset variable was used to calculate the supplied overlaps.
 \item {N dyads}: The number of dyads (pairs of individuals).
 \item {Mean interval (d)}: The mean monitoring period (in days).
 \item {Mean overlap (\%)}: The mean observed overlap percentage with standard deviation.

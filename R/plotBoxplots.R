@@ -7,6 +7,7 @@
 #' @description Produces a panel with several boxplots (one per response), for
 #' comparing multiple behavioural metrics across different grouping levels (usually time frames).
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing animal detections and distances traveled,
 #' as returned by \code{\link{calculateDistances}}.
 #' @param subsetted.overlap List containing pairwise overlaps estimated by a given
@@ -18,13 +19,13 @@
 #' @param responses Metrics to include in the boxplots panel. Any of "detections",
 #' "overlap", "total_dist, "kud50", "kud95" or any other included in the supplied data.
 #' @param by Time-frame corresponding to the grouping category used to subset the data.
-#' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
 #' @param discard.incomplete Boolean to indicate if individuals with missing values (for any of the
 #' grouping categories) should be discarded. If "by" contains only two grouping levels
 #' (e.g. "day" and "night"), paired tests are computed whenever the individuals with data match between groups.
 #' @param display.n If true, the number of individuals used to calculate each boxplot is
 #' displayed together with the grouping labels.
 #' @param box.colors Color of the box plot bodies.
+#' @param outliers Logical. Specifies whether outliers should be included. Defaults to FALSE.
 #' @param background.color Color for the plot background. Defaults to "gray96".
 #' @param box.pattern Boolean to indicate if boxplot bodies should be filled with
 #' different patterns.
@@ -36,8 +37,8 @@
 # Main function - generate boxplots ####################################################
 
 plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, responses, by,
-                         id.col="ID", discard.incomplete=T, display.n=F, box.colors=NULL, outliers=F,
-                         background.color="gray96", box.pattern=F, cols=2){
+                         id.col=getDefaults("id"), discard.incomplete=T, display.n=F, box.colors=NULL,
+                         outliers=FALSE, background.color="gray96", box.pattern=F, cols=2){
 
   ################################################################################
   # Initial checks ###############################################################

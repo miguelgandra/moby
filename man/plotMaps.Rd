@@ -15,15 +15,14 @@ plotMaps(
   land.shape,
   background.layer = NULL,
   background.pal = NULL,
-  background.color = "#F3F7F7",
   land.color = "gray50",
   discard.missing = T,
   kud.transparency = 0,
   scale.meters = NULL,
   scale.pos = "bottomright",
   scale.inset = 0.1,
-  same.scale = F,
-  kud.legend = T,
+  same.scale = FALSE,
+  kud.legend = TRUE,
   cols = 3
 )
 }
@@ -68,6 +67,8 @@ plot region, relatively to the scale bar position.}
 \item{same.scale}{Forces same KUD scale across all plots, allowing for
 density comparison between individuals. If set to false, all y-axis are displayed.
 Otherwise they are only displayed in the left-most plots to save space.}
+
+\item{kud.legend}{Logical. If TRUE, includes a legend for the KUD densities. Defaults to TRUE.}
 
 \item{cols}{Number of columns in the panel (passed to the mfrow argument). Defaults to 3.}
 }

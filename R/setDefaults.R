@@ -14,6 +14,7 @@
 #' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
 #' @param lon.col Name of the column containing longitude values (unprojected). Defaults to 'lon'.
 #' @param lat.col Name of the column containing latitude values (unprojected). Defaults to 'lat'.
+#' @param epsg.code Coordinate reference system used to project positions/layers (class 'CRS').
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
 #' The length of this vector should match the number of unique animal IDs.
 #' Alternatively, if a single value is provided, it will be applied to all IDs.
@@ -36,10 +37,7 @@
 
 
 setDefaults <- function(id.col=NULL, datetime.col=NULL, timebin.col=NULL,
-                        lon.col=NULL, lat.col=NULL, tagging.dates=NULL) {
-
-  # access the environment
-  #mobyEnv <- get(".mobyEnv", envir=.GlobalEnv)
+                        lon.col=NULL, lat.col=NULL, epsg.code=NULL, tagging.dates=NULL) {
 
   # store new default settings
   if(!is.null(id.col)) mobyEnv$defaults$id.col <- id.col
@@ -47,6 +45,7 @@ setDefaults <- function(id.col=NULL, datetime.col=NULL, timebin.col=NULL,
   if(!is.null(timebin.col)) mobyEnv$defaults$timebin.col <- timebin.col
   if(!is.null(lon.col)) mobyEnv$defaults$lon.col <- lon.col
   if(!is.null(lat.col)) mobyEnv$defaults$lat.col <- lat.col
+  if(!is.null(epsg.code)) mobyEnv$defaults$epsg.code <- epsg.code
   if(!is.null(tagging.dates)) mobyEnv$defaults$tagging.dates <- tagging.dates
 }
 

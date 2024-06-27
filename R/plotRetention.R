@@ -23,8 +23,10 @@
 #' Defaults to 'tagging_location'.
 #' @param color.by Optional. Variable contained in the id.metadata table, used to generate
 #' a color gradient (e.g. length).
+#' @param color.pal Optional. Color palette used for the color gradient.
 #' @param aggregate.fun Function used to aggregate numeric values if a color.by argument is supplied.
 #' Defaults to "mean".
+#' @param same.scale Logical. If TRUE, uses the same color scale for all panels. Defaults to FALSE.
 #' @param background.col Background color of the plot. Defaults to "gray96".
 #' @param cols Number of columns in the final panel (passed to the mfrow argument).
 #' @param von.bertalanffy Optional. In case 'color.by' represents individual lengths measured at tagging,

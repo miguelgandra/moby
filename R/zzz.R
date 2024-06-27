@@ -4,6 +4,25 @@ mobyEnv <- NULL
 # this will run automatically when package is loaded
 .onLoad <- function(libname, pkgname){
 
+  # create new environment to store needed variables
+  mobyEnv <<- new.env()
+
+  # store default arguments
+  mobyEnv$defaults <- list(
+    id.col = "ID",
+    datetime.col = "datetime",
+    timebin.col = "timebin",
+    lon.col = "lon",
+    lat.col = "lat",
+    epsg.code = NULL,
+    tagging.dates = NULL
+  )
+}
+
+
+# this will run automatically when package is attached
+.onAttach <- function(libname, pkgname){
+
   version <- utils::packageVersion("moby")
   version_line <- sprintf("** Version: %-47s **", version)
 
@@ -14,26 +33,10 @@ mobyEnv <- NULL
   ** Biotelemetry analyses and data visualization             **
   ", version_line, "
   ** To get started, check out the documentation:             **
-  ** - vignette('moby') for a comprehensive guide             **
   ** - help(package='moby') for a list of available functions **
   ** Please cite this package if you use it in publications:  **
   ** - citation('moby') for details                           **
   **************************************************************
   **************************************************************
   ")
-
-  # create new environment to store needed variables
-  mobyEnv <<- new.env()
-
-  # store default arguments
-  mobyEnv$defaults <- list(
-    id.col = "ID",
-    datetime.col = "datetime",
-    timebin.col = "timebin",
-    lon.col="lon",
-    lat.col="lat",
-    tagging.dates = NULL,
-    tag.durations = NULL
-  )
-
 }

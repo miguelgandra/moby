@@ -10,11 +10,11 @@ plotBoxplots(
   subsetted.kuds = NULL,
   responses,
   by,
-  id.col = "ID",
+  id.col = getDefaults("id"),
   discard.incomplete = T,
   display.n = F,
   box.colors = NULL,
-  outliers = F,
+  outliers = FALSE,
   background.color = "gray96",
   box.pattern = F,
   cols = 2
@@ -47,6 +47,8 @@ grouping categories) should be discarded. If "by" contains only two grouping lev
 displayed together with the grouping labels.}
 
 \item{box.colors}{Color of the box plot bodies.}
+
+\item{outliers}{Logical. Specifies whether outliers should be included. Defaults to FALSE.}
 
 \item{background.color}{Color for the plot background. Defaults to "gray96".}
 

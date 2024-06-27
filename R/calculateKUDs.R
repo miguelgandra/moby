@@ -9,14 +9,16 @@
 #' areas corresponding to 50% and 95% of occurrence probability (automatically subtracting
 #' portions over land masses) and allows estimation of KUDs independently by group.
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame with animal positions (COAs), containing 'longitude' and 'latitude' columns.
 #' @param subset If defined, KUDs are calculated independently for each level of this variable.
 #' If left NULL, single KUDs are calculated for the whole monitoring period.
 #' @param bandwidth Kernel bandwidth (h) - smoothing parameter used to calculate KUDs.
 #' @param grid SpatialPixels object containing the grid over which animal KUDs are going to be estimated
 #' (see grid argument in the \code{\link[adehabitatHR]{kernelUD}} function).
+#' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
+#' within each group.
 #' @param land.shape A shape file containing coastlines.
-#' @param id.col Name of the column containing animal IDs. Defaults to "ID".
 #' @param lon.col Name of the column containing projected longitudes. Defaults to "lon".
 #' @param lat.col Name of the column containing projected latitudes. Defaults to "lat".
 #' @return A list containing the estimated UDs, areas corresponding to
@@ -28,8 +30,9 @@
 ################################################################################
 ## Main function - Estimate Kernel Density #####################################
 
-calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
-                          id.col="ID", lon.col="lon", lat.col="lat") {
+calculateKUDs <- function(data, bandwidth, grid, id.groups=NULL, subset=NULL, land.shape=NULL,
+                          id.col=getDefaults("id"), lon.col=getDefaults("lon"),
+                          lat.col=getDefaults("lat")) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -38,19 +41,13 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
   # measure running time
   start.time <- Sys.time()
 
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
+
   # check if adehabitatHR package is installed
   if (!requireNamespace("adehabitatHR", quietly=TRUE)) {
     stop("The 'adehabitatHR' package is required for this function but is not installed. Please install 'adehabitatHR' using install.packages('adehabitatHR') and try again.")
-  }
-
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please assign the correct column name with 'id.col'")
-  }
-
-  # check if data contains lon.col and lat.col
-  if(any(!c(lon.col, lat.col) %in% colnames(data))){
-    stop("Longitude/latitude columns not found. Please assign the correct column names with 'lon.col' and 'lat.col'")
   }
 
   # check if dataset coordinates are projected
@@ -61,12 +58,7 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
     stop("Longitudes/latitudes and supplied UD grid appear to have different projections")
   }
 
-  # check if data contains subset col
-  if(!is.null(subset)){
-    if(!subset %in% colnames(data)){
-      stop(paste(subset, "column not found in the supplied data"))
-    }
-  }
+
 
   ##############################################################################
   ## Calculate KUDs ############################################################
@@ -198,6 +190,12 @@ calculateKUDs <- function(data, subset=NULL, bandwidth, grid, land.shape,
   time.taken <- end.time - start.time
   cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), base::units(time.taken), "\n"))
 
+  # create new attributes to save relevant variables
+  attr(kud_results, 'id.groups') <- id.groups
+  attr(kud_results, 'subset') <- subset
+  attr(kud_results, 'bandwidth') <- bandwidth
+  attr(kud_results, 'grid.extent') <- raster::extent(grid)
+  attr(kud_results, 'grid.res') <- grid@grid@cellsize
 
   # return results
   return(kud_results)

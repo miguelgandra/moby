@@ -9,8 +9,8 @@
 #' names for animal IDs, date-times, and time-bins.
 #'
 #' @param var A character string specifying the variable name for which to retrieve the default setting.
-#' Accepted values are "id.col", "datetime.col", "timebin.col", "tagging.dates", and "tag.durations".
-#' Alternatively, these values can also be accessed using their abbreviated forms: "id", "datetime", "timebin", and "tagdates".
+#' Accepted values are "id.col", "datetime.col", "timebin.col", "epsg.code" and "tagging.dates".
+#' Alternatively, these values can also be accessed using their abbreviated forms: "id", "datetime", "timebin", "epsg" and "tagdates".
 #'
 #' @return The current default setting for the specified variable.
 #'
@@ -30,10 +30,11 @@ getDefaults <- function(var) {
   if(tolower(var)=="timebin") var <- "timebin.col"
   if(tolower(var)=="lon") var <- "lon.col"
   if(tolower(var)=="lat") var <- "lat.col"
+  if(tolower(var)=="epsg") var <- "epsg.code"
   if(tolower(var)=="tagdates") var <- "tagging.dates"
 
-  if(!var %in% c("id.col", "datetime.col", "timebin.col", "lon.col", "lat.col", "tagging.dates")){
-    stop("Invalid variable specified.")
+  if(!var %in% c("id.col", "datetime.col", "timebin.col", "lon.col", "lat.col", "epsg.code", "tagging.dates")){
+    stop("Invalid variable specified.", call. = FALSE)
   }
 
   # retrieve default setting

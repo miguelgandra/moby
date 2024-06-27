@@ -31,7 +31,6 @@
 #' means no parallel computing (single core).  If set to a value greater than 1,
 #' the function will use parallel computing to speed up calculations.
 #' Run \code{parallel::detectCores()} to check the number of available cores.
-#' @importFrom foreach %dopar%
 #'
 #' @details The two metrics for calculating association indices are:
 #
@@ -101,6 +100,9 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
   if (!metric %in% c("simple-ratio", "half-weight")) errors <- c(errors, "Metric must be one of 'simple-ratio' or 'half-weight'.")
   if (!group.comparisons %in% c("all", "within", "between")) errors <- c(errors, "Group comparisons must be one of 'all', 'within' or 'between'.")
   if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "Cores must be a positive integer.")
+  if (cores>1 && requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
+  if (cores>1 && requireNamespace("parallel", quietly=TRUE)) errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
+  if (cores>1 && requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
   if(parallel::detectCores()<cores)  errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
   if(length(errors)>0){
     stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
@@ -130,6 +132,9 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
       end_dates <- end_dates[-discard_indexes]
     }
   }
+
+  # define local %dopar%
+  if(cores>1) `%dopar%` <- foreach::`%dopar%`
 
   ##############################################################################
   ## Prepare data ##############################################################
@@ -213,11 +218,15 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
       opts <- list(progress = function(n) setTxtProgressBar(pb, n))
 
       # calculate pairwise overlaps (multi core)
-      results[[i]] <- foreach::foreach(p=1:ncol(pairwise_combinations), .combine=rbind,
-                                       .options.snow=opts,
-                                       .export="pairwiseOverlap") %dopar% {
-                                         pairwiseOverlap(p, progressbar = NULL, args = args)
-      }
+      results[[i]] <- foreach::foreach(
+        p = 1:ncol(pairwise_combinations),
+        .combine = rbind,
+        .options.snow = opts,
+        .export = "pairwiseOverlap"
+        ) %dopar% {
+        pairwiseOverlap(p, progressbar = NULL, args =args)
+        }
+
 
       # close progress bar and stop cluster
       close(pb)
@@ -227,7 +236,7 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
 
   # format final results
   if (!is.null(subset)){
-    for(i in 1:length(data_list)) results[[i]]$subset <- names(data_list)[1]
+    for(i in 1:length(data_list)) results[[i]]$subset <- names(data_list)[i]
     results <- do.call("rbind", results)
   }else{
     results <- results[[1]]
@@ -245,6 +254,7 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
 
   # create new attributes to save relevant variables
   attr(results, 'ids') <- complete_ids
+  attr(results, 'id.groups') <- id.groups
   attr(results, 'metric') <- metric
   attr(results, 'subset') <- subset
   attr(results, 'group.comparisons') <- group.comparisons
@@ -262,6 +272,15 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
 ################################################################################
 # Define core pairwise overlap function ########################################
 ################################################################################
+
+#' Calculate pairwise spatio-temporal overlaps
+#' @description This internal function calculates the spatio-temporal overlap
+#' (association index) between two individuals. The function assumes
+#' that joint space usage occurs whenever individuals overlap in space
+#' (receiver) and time (time bin).
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
 
 pairwiseOverlap <- function(p, progressbar=NULL, args=NULL) {
 

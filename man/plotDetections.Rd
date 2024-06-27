@@ -39,6 +39,9 @@ plotDetections(
 The length of this vector should match the number of unique animal IDs.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
+\item{tag.durations}{Optional. A numeric vector containing the estimated battery
+duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
+
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}
 

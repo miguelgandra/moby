@@ -37,13 +37,15 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
 
-  # check if id.metadata contains id.col
-  if(!id.col %in% colnames(id.metadata)) stop("ID column not found in id.metadata. Please specify the correct column using 'id.col'")
   # check if data contains residency.by
-  if(!residency.by %in% colnames(data)) stop("Variable for partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'")
-   # check error function
+  if(!is.null(residency.by) && !residency.by %in% colnames(data)) stop("Variable used for partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'")
+  # check error function
   if(!error.stat %in% c("sd", "se")) stop("Wrong error.stat argument, please choose between 'sd' and 'se'.")
 
+  # check if id.metadata contains id.col
+  if(!is.null(id.metadata) && !id.col %in% colnames(id.metadata)) stop("ID column not found in id.metadata. Please specify the correct column using 'id.col'")
+
+  # define error function
   getErrorFun <- function(x) {
     if(error.stat=="sd"){return(sd(x, na.rm=T))}
     if(error.stat=="se"){return(plotrix::std.error(x))}

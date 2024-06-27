@@ -153,7 +153,7 @@ correctPositions <- function(positions, layer, layer.type="land", depth.margin=0
   }
 
   # subset points
-  points <- sf::as(points,"SpatialPoints")
+  points <- methods::as(points,"SpatialPoints")
   pointsOnLand <- points[pointsOnLand_indexes]
 
   # get nearest location on water

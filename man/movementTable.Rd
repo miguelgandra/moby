@@ -8,14 +8,15 @@ movementTable(
   data,
   kud.results,
   land.shape,
-  epsg.code = NULL,
-  transition.layer,
+  epsg.code = getDefaults("epsg"),
   id.groups = NULL,
-  id.col = "ID",
-  lon.col = "lon",
-  lat.col = "lat",
+  id.col = getDefaults("id"),
+  timebin.col = getDefaults("timebin"),
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat"),
   dist.col = "dist_m",
-  discard.missing = T
+  discard.missing = T,
+  ...
 )
 }
 \arguments{
@@ -29,13 +30,12 @@ as returned by \code{\link{calculateDistances}}.}
 \item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
 If not supplied, CRS is assumed to be the same as in land.shape.}
 
-\item{transition.layer}{Transition layer used to calculate shortest in-water paths, as
-retrieved by the \code{\link{calculateDistances}} function.}
-
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}
 
-\item{id.col}{Name of the column containing animal IDs Defaults to 'ID'.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
 \item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
 
@@ -44,6 +44,9 @@ visually aggregate animals belonging to the same class (e.g. different species).
 \item{dist.col}{Name of the column containing distance values (in meters). Defaults to 'dist_m'.}
 
 \item{discard.missing}{If true, only individuals with detections are included.}
+
+\item{...}{Further arguments passed to \code{\link{calculateDistances}} function,
+in order to calculate distances between the first and last recorded detection, for each individual.}
 }
 \description{
 Creates a table containing  movement metrics for each animal

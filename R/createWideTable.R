@@ -59,7 +59,7 @@ createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefau
   ##############################################################################
 
   # perform argument checks and return reviewed parameters
-  reviewed_params <- validateArguments()
+  reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
   # check if data contains value.col
