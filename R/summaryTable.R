@@ -24,8 +24,10 @@
 #' @export
 
 
-summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadata=NULL, id.col=getDefaults("id"),
-                         datetime.col=getDefaults("datetime"), residency.by=NULL, id.groups=NULL, error.stat="sd") {
+summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadata=NULL,
+                         id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
+                         station.col=getDefaults("station"), residency.by=NULL,
+                         id.groups=NULL, error.stat="sd") {
 
 
   ##############################################################################
@@ -37,13 +39,18 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
 
+  # validate additional parameters
+  errors <- c()
   # check if data contains residency.by
-  if(!is.null(residency.by) && !residency.by %in% colnames(data)) stop("Variable used for partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'")
+  if(!is.null(residency.by) && !residency.by %in% colnames(data)) errors <- c(errors, "Variable used to calculate partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'")
   # check error function
-  if(!error.stat %in% c("sd", "se")) stop("Wrong error.stat argument, please choose between 'sd' and 'se'.")
-
+  if(!error.stat %in% c("sd", "se")) errors <- c(errors, "Wrong error.stat argument, please choose between 'sd' and 'se'.")
   # check if id.metadata contains id.col
-  if(!is.null(id.metadata) && !id.col %in% colnames(id.metadata)) stop("ID column not found in id.metadata. Please specify the correct column using 'id.col'")
+  if(!is.null(id.metadata) && !id.col %in% colnames(id.metadata))   errors <- c(errors, "The specified ID column ('id.col') does not exist in 'id.metadata'. Please ensure that the column name in 'id.metadata' matches the 'id.col' specified.")
+  if(length(errors)>0){
+    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+    stop(stop_message, call.=FALSE)
+  }
 
   # define error function
   getErrorFun <- function(x) {
@@ -68,13 +75,13 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   if("detections" %in% colnames(data)){
     detections <- as.integer(stats::aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
   }else{
-    print("Warning: No 'detections' column found, assuming one detection per row\n")
+    warning("No 'detections' column found, assuming one detection per row.", call.=FALSE)
     detections <- as.integer(table(data[,id.col]))
   }
   detections[detections==0] <- NA
 
   #number of receivers
-  receivers <- stats::aggregate(data$station, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
+  receivers <- stats::aggregate(data[,station.col], by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
 
   # days between 1st and last detection (Di)
   getTimeSeqs <- function(start, end) {if(is.na(end)) {return(NA)}else{seq.POSIXt(start, end, by="day")}}

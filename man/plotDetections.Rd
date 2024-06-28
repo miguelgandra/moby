@@ -21,9 +21,13 @@ plotDetections(
   diel.lines = 2,
   background.color = "gray96",
   highlight.isolated = T,
-  pt.cex = 1.5,
+  pt.cex = 1.6,
   grid = F,
   grid.color = "white",
+  cex.title = 2.2,
+  cex.lab = 1.8,
+  cex.axis = 1.4,
+  cex.legend = 1.6,
   cols = 2,
   legend.cols = 3
 )
@@ -67,7 +71,7 @@ latitude coordinates (in that order) at which to estimate sunrise and sunset tim
 
 \item{diel.lines}{Number indicating the number of diel phase lines (boundaries)
 to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
-(depicting dawn, sunrise, sunset, dusk).}
+(depicting dawn, sunrise, sunset, dusk). Defaults to 4.}
 
 \item{background.color}{Color for the plot background. Defaults to "gray96".}
 
@@ -75,11 +79,19 @@ to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
 and plotted according to their "density", with isolated detections being brought forward
 to prevent them from being hidden behind points' clouds. Defaults to True.}
 
-\item{pt.cex}{Expansion factor(s) for the points (detections). Defaults to 1.5.}
+\item{pt.cex}{Expansion factor(s) for the points (detections). Defaults to 1.6.}
 
 \item{grid}{If true, a grid is plotted (horizontal and vertical guides across the entire plot). Defaults to False.}
 
 \item{grid.color}{Color of the grid lines. Defaults to white.}
+
+\item{cex.title}{Determines the size of the plot title (animal ID). Defaults to 2.2.}
+
+\item{cex.lab}{Determines the size of the axes titles. Defaults to 1.8.}
+
+\item{cex.axis}{Determines the size of the tick mark labels on the axes. Defaults to 1.4.}
+
+\item{cex.legend}{Determines the size of the color legend. Defaults to 1.6.}
 
 \item{cols}{Number of columns in the final panel (passed to the mfrow argument). Defaults to 2.}
 

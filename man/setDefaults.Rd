@@ -8,6 +8,7 @@ setDefaults(
   id.col = NULL,
   datetime.col = NULL,
   timebin.col = NULL,
+  station.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   epsg.code = NULL,
@@ -20,6 +21,8 @@ setDefaults(
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
+
+\item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
 
 \item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
 

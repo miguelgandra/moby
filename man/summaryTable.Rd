@@ -10,6 +10,7 @@ summaryTable(
   id.metadata = NULL,
   id.col = getDefaults("id"),
   datetime.col = getDefaults("datetime"),
+  station.col = getDefaults("station"),
   residency.by = NULL,
   id.groups = NULL,
   error.stat = "sd"
@@ -29,6 +30,8 @@ sex, or transmitter type. If there are multiple rows per animal, variables will 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
+
+\item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
 
 \item{residency.by}{Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 Defaults to NULL.}

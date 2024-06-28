@@ -47,7 +47,7 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
                      period.range=c(3, 48), axis.periods=c(6,12,16,24,48), color.pal=NULL,
                      date.format="%d/%b", date.interval=4, date.start=1, min.days=NULL, detrend=F,
                      cex.main=1.2, cex.lab=1.1, cex.axis=1, legend.xpos=c(0.90, 0.915),
-                     legend.ypos=c(0.15, 0.85), cols=2, same.scale=F, id.groups=NULL, ...) {
+                     legend.ypos=c(0.15, 0.85), cols=1, same.scale=F, id.groups=NULL, ...) {
 
 
   ##############################################################################
@@ -92,6 +92,7 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
     cat(paste(nlevels(data[,id.col])-nindividuals, "individual(s) excluded\n"))
   }else{
     selected_individuals <- 1:nlevels(data[,id.col])
+    nindividuals <- length(selected_individuals)
   }
 
   # split data by individual

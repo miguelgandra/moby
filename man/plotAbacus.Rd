@@ -12,13 +12,13 @@ plotAbacus(
   tagging.dates = getDefaults("tagging.dates"),
   tag.durations = NULL,
   id.groups = NULL,
-  discard.missing = F,
+  discard.missing = FALSE,
   color.pal = NULL,
   date.format = "\%b",
   date.interval = 4,
   date.start = 1,
   top.mural = "\%Y",
-  season.shade = T,
+  season.shade = TRUE,
   background.col = "grey96",
   pch = 16,
   pt.cex = 1,
@@ -29,7 +29,9 @@ plotAbacus(
   cex.legend = 0.7,
   cex.mural = 0.7,
   legend.intersp = 1.2,
-  legend.cols = NULL
+  legend.cols = NULL,
+  release.pch = 8,
+  end.pch = 4
 )
 }
 \arguments{
@@ -104,6 +106,10 @@ brought forward to prevent them from being hidden behind denser point clouds
 
 \item{legend.cols}{Integer. The number of columns in which to set the legend items.
 If NULL, it is set automatically based on the number of levels. Defaults to NULL.}
+
+\item{release.pch}{The symbol to use for the release/tagging date. Defaults to 8 (star).}
+
+\item{end.pch}{The symbol to use for the estimated end date of the tag's lifetime. Defaults to 4 (cross).}
 }
 \value{
 Generates an abacus plot

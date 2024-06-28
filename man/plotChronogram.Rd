@@ -12,13 +12,13 @@ plotChronogram(
   style = "raster",
   id.col = getDefaults("id"),
   timebin.col = "timebin",
-  station.col = "station",
+  station.col = getDefaults("station"),
   color.by = NULL,
   color.pal = NULL,
   date.format = "\%d/\%b",
   date.interval = 4,
   date.start = 1,
-  diel.lines = 2,
+  diel.lines = 4,
   sunriset.coords,
   solar.depth = 18,
   polygons = F,
@@ -73,8 +73,8 @@ displayed date (x-axis label). Defaults to 4.}
 with 'date.interval" to better control the x-axis labels). Defaults to 1.}
 
 \item{diel.lines}{Number indicating the number of diel phase lines (boundaries)
-to display. Either 2 (corresponding to sunrise and sunset) or 4 (depicting
-dawn, sunrise, sunset, dusk).}
+to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
+(depicting dawn, sunrise, sunset, dusk). Defaults to 4.}
 
 \item{sunriset.coords}{A SpatialPoints or matrix object containing longitude and
 latitude coordinates (in that order) at which to estimate sunrise and sunset times.}

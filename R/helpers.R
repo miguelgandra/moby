@@ -720,6 +720,123 @@ if (!exists("rep_len")) {
 }
 
 
+
+##################################################################################################
+## Set layout matrix   ###########################################################################
+
+#' Set Layout for Grouped Plots
+#'
+#' @description This function creates a layout matrix for plotting several groups of individuals,
+#'  with dividers (empty space) between each group.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.setLayout <- function(n_cols, id.groups, plots.height=6, dividers.height=1, legend) {
+
+  #####################################################################
+  # set main plots grid ###############################################
+
+  # number of groups
+  n_groups <- length(id.groups)
+  # length of each group
+  group_length <- sapply(id.groups, length)
+  # total number of plots
+  total_plots <- sum(group_length)
+  # calculate the number of rows needed, including space for dividers
+  n_rows <- ceiling(total_plots/n_cols) + (n_groups - 1)
+
+  # initialize the layout matrix and variables to track the current plot number, row height and row index
+  layout_mat <- matrix(NA, nrow=n_rows, ncol=n_cols)
+  group_positions <- numeric(n_groups)
+  row_heights <- numeric(n_rows)
+  current_plot <- 1
+  row_index <- 1
+
+  # loop through each group
+  for (group in seq_along(id.groups)) {
+    # reset column index to start from the first column in the next group
+    col_index <- 1
+    # loop through each individual in the current group
+    for (i in seq_along(id.groups[[group]])) {
+      # ensure we have enough rows
+      if (row_index > nrow(layout_mat)) {
+        layout_mat <- rbind(layout_mat, rep(NA, n_cols))
+        row_heights <- c(row_heights, 0)
+      }
+      # place the current plot number in the layout matrix
+      layout_mat[row_index, col_index] <- current_plot
+      # set the row height for the current row
+      row_heights[row_index] <- plots.height
+      # move to the next column
+      col_index <- col_index + 1
+      # if the end of a row is reached, move to the next row
+      if (col_index > n_cols) {
+        col_index <- 1
+        row_index <- row_index + 1
+      }
+      # increment the current plot number
+      current_plot <- current_plot + 1
+    }
+    # if the current row is not completely filled, move to the next row
+    if (col_index != 1) row_index <- row_index + 1
+    # add an empty row between groups, except after the last group
+    if (group < n_groups) {
+      if (row_index > nrow(layout_mat)) {
+        layout_mat <- rbind(layout_mat, rep(NA, n_cols))
+        row_heights <- c(row_heights, dividers.height)
+      } else {
+        row_heights[row_index] <- dividers.height
+      }
+      row_index <- row_index + 1
+    }
+  }
+
+  # Calculate cumulative heights
+  cumulative_heights <- cumsum(row_heights)
+  current_plot_index <- 1
+
+  for (group in seq_along(id.groups)) {
+    group_length <- length(id.groups[[group]])
+    start_row <- which(layout_mat == current_plot_index, arr.ind = TRUE)[1, 1]
+    end_row <- which(layout_mat == (current_plot_index + group_length - 1), arr.ind = TRUE)[1, 1]
+
+    # Calculate the midpoint for the current group
+    if (start_row == end_row) {
+      group_positions[group] <- cumulative_heights[start_row] - row_heights[end_row] / 2
+    } else {
+      group_positions[group] <- (cumulative_heights[start_row] + cumulative_heights[end_row] - row_heights[end_row]) / 2
+    }
+
+    # Update the current_plot_index for the next group
+    current_plot_index <- current_plot_index + group_length
+  }
+
+
+  #####################################################################
+  # should additional space be added to accommodate for a legend? ####
+  if (legend == TRUE) {
+    # find the last row that has plots in it
+    filled_positions <- which(!is.na(layout_mat), arr.ind = TRUE)
+    last_filled_row <- max(filled_positions[, 1])
+    last_filled_col <- max(filled_positions[filled_positions[, 1] == last_filled_row, 2])
+
+    # check if there are at least two consecutive NA values in the last row
+    if ((last_filled_col <= n_cols - 2) || (nrow(layout_mat) - last_filled_row > 1)) {
+      # enough space is available, add the legend plot number
+      layout_mat[last_filled_row, (last_filled_col + 1):n_cols] <- current_plot
+    } else {
+      # not enough space, add a new row
+      layout_mat <- rbind(layout_mat, rep(current_plot, n_cols))
+      row_heights <- c(row_heights, plots.height)
+    }
+  }
+
+  # return the layout matrix and row heights
+  list(matrix=layout_mat, heights=row_heights, group_positions=group_positions)
+}
+
+
 ##################################################################################################
 ## Decimal Places   ##############################################################################
 ## Sourced from https://stackoverflow.com/questions/5173692/how-to-return-number-of-decimal-places-in-r

@@ -28,12 +28,14 @@ getDefaults <- function(var) {
   if(tolower(var)=="id") var <- "id.col"
   if(tolower(var)=="datetime") var <- "datetime.col"
   if(tolower(var)=="timebin") var <- "timebin.col"
+  if(tolower(var)=="station") var <- "station.col"
   if(tolower(var)=="lon") var <- "lon.col"
   if(tolower(var)=="lat") var <- "lat.col"
   if(tolower(var)=="epsg") var <- "epsg.code"
   if(tolower(var)=="tagdates") var <- "tagging.dates"
 
-  if(!var %in% c("id.col", "datetime.col", "timebin.col", "lon.col", "lat.col", "epsg.code", "tagging.dates")){
+  if(!var %in% c("id.col", "datetime.col", "timebin.col", "station.col",
+                 "lon.col", "lat.col", "epsg.code", "tagging.dates")){
     stop("Invalid variable specified.", call. = FALSE)
   }
 

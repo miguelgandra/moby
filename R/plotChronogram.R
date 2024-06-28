@@ -15,7 +15,6 @@
 #' of this variable (e.g. species, ontogeny or habitat).
 #' @param variables The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".
 #' @param style Style of the plot. Either "raster" (nº represented by color) or "points" (nº represented by size).
-#' @param station.col Name of the column containing station/receiver IDs. Defaults to 'station'.
 #' @param color.by Variable defining the color group of the plotted metric, when style = "points".
 #' Can be used for example to display detections by receiver, animal trait or temporal category.
 #' @param color.pal Color palette for the level plot.
@@ -26,8 +25,8 @@
 #' @param date.start Integer defining the first displayed date (can be used in combination
 #'  with 'date.interval" to better control the x-axis labels). Defaults to 1.
 #' @param diel.lines Number indicating the number of diel phase lines (boundaries)
-#' to display. Either 2 (corresponding to sunrise and sunset) or 4 (depicting
-#' dawn, sunrise, sunset, dusk).
+#' to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
+#' (depicting dawn, sunrise, sunset, dusk). Defaults to 4.
 #' @param polygons Either "diel", "season". If style is set to points, can be used to highlight
 #' diel or seasonal phases using color-coded polygons. Defaults to F (no polygons).
 #' @param sunriset.coords A SpatialPoints or matrix object containing longitude and
@@ -57,8 +56,8 @@
 
 
 plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), variables="detections", split.by=NULL, style="raster",
-                           id.col=getDefaults("id"), timebin.col="timebin", station.col="station", color.by=NULL, color.pal=NULL,
-                           date.format="%d/%b", date.interval=4, date.start=1, diel.lines=2, sunriset.coords, solar.depth=18,
+                           id.col=getDefaults("id"), timebin.col="timebin", station.col=getDefaults("station"), color.by=NULL, color.pal=NULL,
+                           date.format="%d/%b", date.interval=4, date.start=1, diel.lines=4, sunriset.coords, solar.depth=18,
                            polygons=F, lunar.info=F, background.col="white", grid=T, grid.color="white", highlight.isolated=F,
                            pt.cex=c(0.5, 3), uniformize.scale=F, uniformize.dates=T, cex.axis=1, cex.legend=0.8,
                            legend.intersp=1.2, legend.cols=NULL, cols=NULL, ...) {
@@ -565,10 +564,16 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     }
 
     # draw diel lines
-    lines(1:length(daytimes_table$sunrises), daytimes_table$sunrises, lty=2)
-    if(diel.lines==4){lines(1:length(daytimes_table$dawn), daytimes_table$dawn, lty=2)}
-    lines(1:length(daytimes_table$sunsets), daytimes_table$sunsets, lty=2)
-    if(diel.lines==4){lines(1:length(daytimes_table$dusks), daytimes_table$dusks, lty=2)}
+    if(diel.lines>0){
+      lines(1:length(daytimes_table$sunrises), daytimes_table$sunrises, lty=2)
+      lines(1:length(daytimes_table$sunsets), daytimes_table$sunsets, lty=2)
+    }
+    if(diel.lines==4){
+      lines(1:length(daytimes_table$dawn), daytimes_table$dawn, lty=2)
+      lines(1:length(daytimes_table$dusks), daytimes_table$dusks, lty=2)
+    }
+
+    # draw box
     box()
 
     # draw color legend

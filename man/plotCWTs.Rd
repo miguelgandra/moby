@@ -22,7 +22,7 @@ plotCWTs(
   cex.axis = 1,
   legend.xpos = c(0.9, 0.915),
   legend.ypos = c(0.15, 0.85),
-  cols = 2,
+  cols = 1,
   same.scale = F,
   id.groups = NULL,
   ...

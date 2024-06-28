@@ -52,16 +52,19 @@
 #' (in lines of text shared above/below each legend entry). Defaults to 1.2.
 #' @param legend.cols Integer. The number of columns in which to set the legend items.
 #' If NULL, it is set automatically based on the number of levels. Defaults to NULL.
+#' @param release.pch The symbol to use for the release/tagging date. Defaults to 8 (star).
+#' @param end.pch The symbol to use for the estimated end date of the tag's lifetime. Defaults to 4 (cross).
+
 #' @return Generates an abacus plot
 #' @export
 
 
 plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
                        color.by=NULL, tagging.dates=getDefaults("tagging.dates"), tag.durations=NULL,
-                       id.groups=NULL, discard.missing=F, color.pal=NULL, date.format="%b", date.interval=4, date.start=1,
-                       top.mural="%Y", season.shade=T, background.col="grey96", pch=16, pt.cex=1, transparency=0,
+                       id.groups=NULL, discard.missing=FALSE, color.pal=NULL, date.format="%b", date.interval=4, date.start=1,
+                       top.mural="%Y", season.shade=TRUE, background.col="grey96", pch=16, pt.cex=1, transparency=0,
                        highlight.isolated=T, cex.lab=0.8, cex.axis=0.7, cex.legend=0.7, cex.mural=0.7,
-                       legend.intersp=1.2, legend.cols=NULL) {
+                       legend.intersp=1.2, legend.cols=NULL, release.pch=8, end.pch=4) {
 
 
   ##############################################################################
@@ -87,6 +90,11 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
   ##############################################################################
   ## Prepare data ##############################################################
   ##############################################################################
+
+  # define single id.group if needed
+  if(is.null(id.groups)){
+    id.groups <- list(levels(data[,id.col]))
+  }
 
   # discard missing animals if required
   missing_IDs <- which(table(data[,id.col])==0)
@@ -216,11 +224,11 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
       points(x=pts[,datetime.col], y=pts$row_index, pch=pch, col=adjustcolor(pts$plot_color, alpha.f=(1-transparency)), cex=pt.cex)
     }
     # add tagging symbols
-    points(x=tagging.dates[id_index], y=i, pch=8, cex=1.2)
+    points(x=tagging.dates[id_index], y=i, pch=release.pch, cex=1.2)
     # add estimated tag end dates, if provided
     if(!is.null(tag.durations)){
       if(end.dates[id_index]<=date_lim2){
-        points(x=end.dates[id_index], y=i, pch=4, cex=1.2)
+        points(x=end.dates[id_index], y=i, pch=end.pch, cex=1.2)
       }
     }
   }
@@ -230,9 +238,9 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
   legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
   if(!is.null(tag.durations)){
     coords <- legend(x=legend.x, y=legend.y, legend=c("release date", "tag lifetime"),
-                     pch=c(8,4), pt.cex=1.2, bty="n", y.intersp=1.4, cex=cex.legend)
+                     pch=c(release.pch, end.pch), pt.cex=1.2, bty="n", y.intersp=1.4, cex=cex.legend)
   }else{
-    coords <- legend(x=legend.x, y=legend.y, legend=c("release date"), pch=4, pt.cex=1.2, bty="n", cex=cex.legend)
+    coords <- legend(x=legend.x, y=legend.y, legend=c("release date"), pch=release.pch, pt.cex=1.2, bty="n", cex=cex.legend)
   }
   # prepare date variables
   all_dates <- strftime(complete_dates, date.format)

@@ -12,6 +12,7 @@
 #' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
 #' @param datetime.col Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.
 #' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
+#' @param station.col Name of the column containing station/receiver IDs. Defaults to 'station'.
 #' @param lon.col Name of the column containing longitude values (unprojected). Defaults to 'lon'.
 #' @param lat.col Name of the column containing latitude values (unprojected). Defaults to 'lat'.
 #' @param epsg.code Coordinate reference system used to project positions/layers (class 'CRS').
@@ -37,12 +38,14 @@
 
 
 setDefaults <- function(id.col=NULL, datetime.col=NULL, timebin.col=NULL,
-                        lon.col=NULL, lat.col=NULL, epsg.code=NULL, tagging.dates=NULL) {
+                        station.col=NULL, lon.col=NULL, lat.col=NULL,
+                        epsg.code=NULL, tagging.dates=NULL) {
 
   # store new default settings
   if(!is.null(id.col)) mobyEnv$defaults$id.col <- id.col
   if(!is.null(datetime.col)) mobyEnv$defaults$datetime.col <- datetime.col
   if(!is.null(timebin.col)) mobyEnv$defaults$timebin.col <- timebin.col
+  if(!is.null(station.col)) mobyEnv$defaults$station.col <- station.col
   if(!is.null(lon.col)) mobyEnv$defaults$lon.col <- lon.col
   if(!is.null(lat.col)) mobyEnv$defaults$lat.col <- lat.col
   if(!is.null(epsg.code)) mobyEnv$defaults$epsg.code <- epsg.code

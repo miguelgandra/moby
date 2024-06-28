@@ -12,6 +12,7 @@ mobyEnv <- NULL
     id.col = "ID",
     datetime.col = "datetime",
     timebin.col = "timebin",
+    station.col = "station",
     lon.col = "lon",
     lat.col = "lat",
     epsg.code = NULL,

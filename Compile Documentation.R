@@ -4,7 +4,7 @@ library(roxygen2)
 devtools::document()
 rcheck <- devtools::check()
 
-cat(rcheck$warnings[3])
+cat(rcheck$warnings[1])
 cat(rcheck$notes)
 
 usethis::use_gpl3_license()
