@@ -4,10 +4,16 @@
 \alias{getReprodPeriod}
 \title{Assign reproductive status}
 \usage{
-getReprodPeriod(date, spawning.start, spawning.end, format = "\%m", tz = "UTC")
+getReprodPeriod(
+  datetimes,
+  spawning.start,
+  spawning.end,
+  format = "\%m",
+  tz = "UTC"
+)
 }
 \arguments{
-\item{date}{A POSIXct object containing the respective datetimes or time-bins.}
+\item{datetimes}{A POSIXct object containing the respective datetimes or time-bins.}
 
 \item{spawning.start}{Start of the spawning season. Can be supplied as a
 POSIXct object or as month (e.g., "08" for August).}
@@ -15,7 +21,7 @@ POSIXct object or as month (e.g., "08" for August).}
 \item{spawning.end}{End of the spawning season. Can be supplied as a
 POSIXct object or as month (e.g., "09" for September).}
 
-\item{format}{Character string giving the date-time format of the supplied
+\item{format}{Character string giving the datetimes-time format of the supplied
 spawning.start and spawning.end. See \code{\link[base]{strptime}} details for
 further info on available formats. Defaults to "\%m" (month).}
 
@@ -30,21 +36,21 @@ Assign spawning vs resting periods based on given start and end interval.
 }
 \examples{
 # Using integer month format (spawning period between June and September)
-date <- as.POSIXct("2024-05-30")
-getReprodPeriod(date, spawning.start="05", spawning.end="09", format="\%m")
+datetimes <- as.POSIXct("2024-05-30")
+getReprodPeriod(datetimes, spawning.start="05", spawning.end="09", format="\%m")
 
 # Using abbreviated month format (spawning period between June and September)
-date <- as.POSIXct("2024-05-30")
-getReprodPeriod(date, spawning.start="Jun", spawning.end="Sep", format="\%b")
+datetimes <- as.POSIXct("2024-05-30")
+getReprodPeriod(datetimes, spawning.start="Jun", spawning.end="Sep", format="\%b")
 
 # Using day/month format (spawning period between 15th August and 31th August)
-date <- as.POSIXct("2024-09-01")
-getReprodPeriod(date, "15/08", "31/08", format="\%d/\%m")
+datetimes <- as.POSIXct("2024-09-01")
+getReprodPeriod(datetimes, "15/08", "31/08", format="\%d/\%m")
 
 # Using POSIXct objects
-date <- as.POSIXct("2024-05-30")
+datetimes <- as.POSIXct("2024-05-30")
 spawning.start <- as.POSIXct("2024-04-01")
 spawning.end <- as.POSIXct("2024-09-30")
-getReprodPeriod(date, spawning.start, spawning.end, format="\%Y-\%m-\%d")
+getReprodPeriod(datetimes, spawning.start, spawning.end, format="\%Y-\%m-\%d")
 
 }

@@ -14,7 +14,11 @@
 # ---> assign temporal classes (e.g., diel phase, season, reproductive status, etc.)
 # ---> create summary table, including residency index
 # ---> generate abacus plot (animal detections over time)
-# ---> generate level plots (detections/individuals per hour and date)
+# ---> plot color-coded detections over time and date, independently for each individual
+# ---> generate 2-dimensional plots (hour x date) illustrating total nº detections and individual
+# ---> generate spatial network highlighting animal transitions/movements between stations/sites.
+# ---> generate social network highlighting spatiotemporal overlap in habitat-use
+
 
 devtools::install("~/Desktop/moby")
 library(moby)
@@ -23,9 +27,6 @@ library(moby)
 #######################################################################################################
 # Load Data  ##########################################################################################
 #######################################################################################################
-
-# set epsg code for the study region
-epsg_code <- CRS("+init=epsg:3063")
 
 # load sample dataset
 
@@ -45,9 +46,9 @@ data_tags <- read.csv2("./data/tagged_animals.csv", header=T)
 colnames(data_tags) <- c("ID", "length", "transmitter", "tagging_date", "tag_battery", "dead_date", "tagging_location")
 data_tags$tagging_date <- as.POSIXct(data_tags$tagging_date, "%Y-%m-%d", tz="UTC")
 
-# set default parameter for moby functions
-setDefaults(id.col="ID", datetime.col="datetime", timebin.col="timebin",
-            tagging.dates=data_tags$tagging_date, tag.durations=data_tags$tag_battery)
+# set default parameters for 'moby' functions
+setDefaults(id.col="ID", datetime.col="datetime", timebin.col="timebin", station.col="station",
+            epsg.code=CRS("+init=epsg:3063"), tagging.dates=data_tags$tagging_date)
 
 # import coastline shapefile
 coastline <- raster::shapefile("./layers/coastline/GSHHS_shp/GSHHS_h_L1.shp")
@@ -55,17 +56,26 @@ study_region <- matrix(c(-15, 8, 32, 55), ncol=2, byrow=T)
 coastline <- crop(coastline, extent(study_region))
 coastline <- sp::spTransform(coastline, epsg_code)
 
+# create ID groups
+species_ids <- split(data_tags$ID, f=data_tags$species)
+species_ids <- lapply(species_ids, as.character)
+names(species_ids) <- c("Kitefin", "Sixgill")
+
 
 #######################################################################################################
 # Remove spurious detections ##########################################################################
 #######################################################################################################
 
-filter_results <- filterDetections(data=data_raw,  cutoff.dates=data_tags$dead_date,
+# run filter detections function
+filter_results <- filterDetections(data=data_raw, cutoff.dates=data_tags$dead_date,
                                    min.detections=0, land.shape=coastline,
                                    hours.threshold=24, acoustic.range=800,
                                    max.speed=3, grid.resolution=1000, mov.directions=8)
 
+# inspect discarded detections
+data_discarded <-  filter_results$data_discarded
 
+# save filtered dataset
 data_filtered <- filter_results$data
 
 
@@ -78,9 +88,6 @@ interval <- "30 mins"
 
 data_filtered$timebin <- as.POSIXct(NA, tz="UTC")
 data_filtered$timebin <- lubridate::floor_date(data_filtered$datetime, interval)
-
-# convert timebins to POSIXct
-data_filtered$timebin <-as.POSIXct(data_filtered$timebin, format= "%Y-%m-%d %H:%M:%S", tz="UTC")
 
 # reorder columns
 n_cols <- ncol(data_filtered)
@@ -95,7 +102,7 @@ write.csv2(data_filtered, file="./data/curated_detections.csv", row.names=F)
 #######################################################################################################
 
 # create data matrix from binned data
-data_table <- createWideTable(data=data_filtered, id.col="ID", start.dates=data_tags$tagging_date, value.col="station")
+data_table <- createWideTable(data=data_filtered, value.col="station", start.dates=data_tags$tagging_date)
 
 # define study region coordinates (used to retrieve sunrise and sunset times)
 study_coords <- matrix(colMeans(coordinates_wsg84@coords), ncol=2)
@@ -128,7 +135,7 @@ data_filtered$hour <- strftime(data_filtered$timebin, "%H", tz="UTC")
 
 animal_info <- data_tags[,c("ID", "transmitter", "length", "sex", "size")]
 colnames(animal_info) <- c("ID", "Transmitter", "Fork Length (cm)", "Sex", "Tag")
-summary_table <- summaryTable(data=data_filtered, tagging.dates=data_tags$tagging_date, id.metadata=animal_info, error.stat="se")
+summary_table <- summaryTable(data=data_filtered, id.metadata=animal_info, error.stat="se")
 
 #save detection periods table
 write.csv2(summary_table, "./summary_table.csv", row.names=F, fileEncoding="Windows-1252")
@@ -142,9 +149,24 @@ nstations <- length(unique(data_filtered$station))
 color_pal <- pals::ocean.haline(nstations)
 
 pdf("./abacus-plot.pdf", height=7.5, width=10,  useDingbats=F)
-plotAbacus(data=data_filtered, tagging.dates=data_tags$tagging_date, color.by="station",
-           color.pal=color_pal, discard.missing=T, season.shade=T, date.start=3,
-           top.mural="%Y", date.format="%b", date.interval=6, pt.cex=1.25, highlight.isolated=T)
+plotAbacus(data=data_filtered,color.by="station", color.pal=color_pal, discard.missing=T,
+           season.shade=T, date.start=3, top.mural="%Y", date.format="%b", date.interval=6,
+           pt.cex=1.25, highlight.isolated=T)
+dev.off()
+
+
+
+#######################################################################################################
+# Plot detections for each animal #####################################################################
+#######################################################################################################
+
+nstations <- length(unique(data_filtered$station))
+color_pal <- pals::ocean.haline(nstations)
+
+pdf("./detection-plots.pdf", height=7.5, width=10,  useDingbats=F)
+plotDetection(data=data_filtered,color.by="station", color.pal=color_pal, discard.missing=T,
+           season.shade=T, date.start=3, top.mural="%Y", date.format="%b", date.interval=6,
+           pt.cex=1.25, highlight.isolated=T)
 dev.off()
 
 
@@ -152,7 +174,7 @@ dev.off()
 # Plot chronogram of detections and co-occurrences ####################################################
 #######################################################################################################
 
-pdf("./level_plot.pdf", height=8, width=16,  useDingbats=F)
+pdf("./chronogram.pdf", height=8, width=16,  useDingbats=F)
 par(mfrow=c(2,1))
 plotChronogram(data_filtered, variables=c("individuals", "co-occurrences"), style="points", date.format="%b/%y",
                color.pal=habitats_pal, date.interval=6, date.start=3, sunriset.coords=study_coords, lunar.info=F,
@@ -160,6 +182,36 @@ plotChronogram(data_filtered, variables=c("individuals", "co-occurrences"), styl
                highlight.isolated=T, uniformize.scale=T, uniformize.dates=T, pt.cex=c(0.75,4))
 dev.off()
 
+
+
+#######################################################################################################
+# Generate map with animal transition movements/migrations ('spatial-network') ########################
+#######################################################################################################
+
+
+
+
+#######################################################################################################
+# Calculate spatiotemporal overlap ('social-network') #################################################
+#######################################################################################################
+
+# estimate pairwise overlaps
+overlaps <- calculateOverlap(data_table, id.groups=species_ids)
+
+# run randomization tests (constraint by day and diel phase)
+randomized_overlaps <- randomizeOverlaps(table_overlap, overlaps, id.groups=species_ids,
+                                         constraint.by=c("day", "timeofday"), cores=4, iterations=1000)
+
+# plot overlap networks + null model distributions
+plotOverlaps(overlaps, randomized_overlaps)
+
+
+
+#######################################################################################################
+# Estimate home-range and core activity areas (kernel density estimation ) ############################
+#######################################################################################################
+
+calculateKUDs(data, )
 
 
 ###################################################################################################################

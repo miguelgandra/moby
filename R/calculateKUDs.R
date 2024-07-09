@@ -11,11 +11,11 @@
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame with animal positions (COAs), containing 'longitude' and 'latitude' columns.
-#' @param subset If defined, KUDs are calculated independently for each level of this variable.
-#' If left NULL, single KUDs are calculated for the whole monitoring period.
 #' @param bandwidth Kernel bandwidth (h) - smoothing parameter used to calculate KUDs.
 #' @param grid SpatialPixels object containing the grid over which animal KUDs are going to be estimated
 #' (see grid argument in the \code{\link[adehabitatHR]{kernelUD}} function).
+#' @param subset If defined, KUDs are calculated independently for each level of this variable.
+#' If left NULL, single KUDs are calculated for the whole monitoring period.
 #' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
 #' within each group.
 #' @param land.shape A shape file containing coastlines.
@@ -30,9 +30,9 @@
 ################################################################################
 ## Main function - Estimate Kernel Density #####################################
 
-calculateKUDs <- function(data, bandwidth, grid, id.groups=NULL, subset=NULL, land.shape=NULL,
-                          id.col=getDefaults("id"), lon.col=getDefaults("lon"),
-                          lat.col=getDefaults("lat")) {
+calculateKUDs <- function(data, bandwidth, grid, subset=NULL, id.groups=NULL,
+                          land.shape=NULL, id.col=getDefaults("id"),
+                          lon.col=getDefaults("lon"), lat.col=getDefaults("lat")) {
 
   ##############################################################################
   ## Initial checks ############################################################

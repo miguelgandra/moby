@@ -10,13 +10,13 @@
 #' of each animal in that particular site (independently of the presences/absence periods or
 #' migrations in-between).
 #'
-#' @param data A data frame containing binned animal detections.
-#' @param site.col Should match the name of a variable in the supplied data containing
+#' @inheritParams setDefaults
+#' @param data A data frame containing animal detections.
+#' @param spatial.col Should match the name of a variable in the supplied data containing
 #' similar categories as those used in the tagging sites (e.g. pointing to specific receivers or broader areas/locations).
 #' Defaults to "habitat".
 #' @param id.metadata A data frame containing the tagging location of each animal ('tagging_location' column),
 #'  as well as an optional (continuous) variable to generate a color scale.
-#' @param id.col Name of the column containing animal identifications. Defaults to "ID".
 #' @param tagdate.col Name of the column in id.metadata containing animal tagging/release dates in
 #' POSIXct format. Defaults to 'tagging_date'.
 #' @param tagsite.col Name of the column in id.metadata containing animal tagging/release locations.
@@ -36,35 +36,26 @@
 #' @export
 
 
-plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", tagdate.col="tagging_date",
-                          tagsite.col="tagging_location", color.by=NULL, color.pal=NULL, aggregate.fun="mean", same.scale=F,
-                          background.col="grey96", cols=1, von.bertalanffy=F, VBGF.params=NULL) {
+plotRetention <- function(data, id.metadata, spatial.col="habitat", id.col=getDefaults("id"),
+                          tagging.dates=getDefaults("tagging.dates"), tagsite.col="tagging_location", color.by=NULL,
+                          color.pal=NULL, aggregate.fun="mean", same.scale=FALSE,
+                          background.col="grey96", cols=1, von.bertalanffy=FALSE, VBGF.params=NULL) {
 
 
   ############################################################################
   ## Initial checks ##########################################################
   ############################################################################
 
-  cat("Generating retention curve(s)\n")
+  .printConsole("Generating retention curve(s)")
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please assign the correct column name with 'id.col'")
-  }
-
-  # check if data contains site.col
-  if(!site.col %in% colnames(data)){
-      stop("site.col column not found")
-  }
-
-  # check if id.metadata contains id.col
-  if(!id.col %in% colnames(id.metadata)){
-    stop("ID column not found in id.metadata. Please assign the correct column name with 'id.col'")
-  }
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
+  tagging.dates <- reviewed_params$tagging.dates
 
   # check id.col format
-  if(class(id.metadata[,id.col])!="factor"){
-    cat("Converting metadata ids to factor\n")
+  if(!inherits(id.metadata[,id.col], "factor")){
+    warning("Converting metadata IDs to factor", call.=FALSE)
     id.metadata[,id.col] <- as.factor(id.metadata[,id.col])
   }else{
     id.metadata[,id.col] <- droplevels(id.metadata[,id.col])
@@ -80,10 +71,6 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
     stop("tagdate.col column not found in id.metadata")
   }
 
-  # check if tagdate.col is in the right format
-  if(class(id.metadata[,tagdate.col])[1]!="POSIXct"){
-    stop("Please convert the tagging dates to POSIXct format")
-  }
 
   # check if metadata contains tagsite.col
   if(!tagsite.col %in% colnames(id.metadata)){
@@ -93,6 +80,21 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
   # check tagsite.col format
   if(class(id.metadata[,tagsite.col])!="factor"){
     id.metadata[,tagsite.col] <- as.factor(id.metadata[,tagsite.col])
+  }
+
+  # perform argument checks for von bertalanffy growth models
+  if(von.bertalanffy==TRUE){
+    if (!requireNamespace("TropFishR", quietly=TRUE)) stop("The 'TropFishR' package is required for this function but is not installed. Please install 'TropFishR' using install.packages('TropFishR') and try again.", call.=FALSE)
+    if(is.null(id.metadata) | !c("length") %in% colnames(id.metadata)) stop("'id.metadata' with a 'length' column required to apply the Von Bertalanffy Growth Model", call.=FALSE)
+    if(!id.col %in% colnames(id.metadata)) stop(paste("'", id.col, "' column required in 'id.metadata'", sep=""), call.=FALSE)
+    if(is.null(VBGF.params)) stop("Please supply VBGF.params when von.bertalanffy is set to true", call.=FALSE)
+    if(!inherits(VBGF.params[[1]], "list")) VBGF.params<-list(VBGF.params)
+    if(is.null(id.groups) && length(VBGF.params)>1) stop("Multiple 'VBGF.params' supplied, but no 'id.groups' were defined. Please provide 'id.groups' or reduce 'VBGF.params' to a single element.", call.=FALSE)
+    if(!is.null(id.groups) && length(id.groups)!=length(VBGF.params)){
+      warning("The length of 'VBGF.params' does not match the length of 'id.groups'. The same parameters will be applied to all IDs", call.=FALSE)
+      VBGF.params <- rep(VBGF.params, length(id.groups))
+    }
+    cat("Applying Von Bertalanffy Growth curve to predict lengths at departure times\n")
   }
 
   # check von bertalanffy arguments
@@ -122,7 +124,7 @@ plotRetention <- function(data, id.metadata, site.col="habitat", id.col="ID", ta
   ids_by_site <- split(id.metadata[,id.col], f=id.metadata[,tagsite.col])
   sample_by_site <- unlist(lapply(ids_by_site, length))
   data_attrition <- lapply(ids_by_site, function(x) data[data[,id.col] %in% x,])
-  data_attrition <- mapply(function(data,site){data[data[,site.col]==site,]}, data=data_attrition, site=names(data_attrition), SIMPLIFY=F)
+  data_attrition <- mapply(function(data,site){data[data[,spatial.col]==site,]}, data=data_attrition, site=names(data_attrition), SIMPLIFY=F)
   data_attrition <- lapply(data_attrition, function(x) stats::aggregate(x$days_post_tag, by=list(x[,id.col]), max))
   data_attrition <- lapply(data_attrition, function(x) {colnames(x)<-c("ID", "days_post_tag"); return(x)})
   if(!is.null(color.by)){

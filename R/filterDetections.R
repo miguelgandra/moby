@@ -21,15 +21,11 @@
 #' `land.shape` (shape file containing coastlines) is provided,
 #' leading to more accurate distance estimates.
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing raw animal detections.
-#' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
-#' The length of this vector should match the number of unique animal IDs.
-#' Alternatively, if a single value is provided, it will be applied to all IDs.
 #' @param cutoff.dates Optional. A POSIXct vector containing the estimated expiration dates of the tags
 #' or any other cut-off date beyond which detections should be discarded. The length of this vector
 #' should match the number of unique animal IDs. Alternatively, if a single value is provided, it will be applied to all IDs.
-#' @param id.col Name of the column containing animal IDs. Defaults to "ID".
-#' @param datetime.col Name of the column containing datetimes (in POSIXct format). Defaults to "datetime".
 #' @param min.detections Optional. Discard individuals with fewer than this number of detections.
 #' @param min.days Optional. Minimum number of days an individual must be detected for it to be included;
 #' individuals with fewer days of detections will be discarded.
@@ -52,15 +48,18 @@
 
 filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), cutoff.dates=NULL,
                              id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
+                             lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
                              min.detections=0, min.days=0, hours.threshold=24,
                              max.speed=NULL, speed.unit="m/s", acoustic.range=600,
-                             land.shape=NULL, epsg.code=NULL,... ) {
+                             land.shape=NULL, epsg.code=getDefaults("epsg"), ... ) {
 
   ##############################################################################
   ## Initial checks ############################################################
   ##############################################################################
 
-  cat("Filtering out spurious data\n")
+  # print message
+  .printConsole("Filtering detections")
+  cat("\n")
 
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
@@ -148,6 +147,7 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
 
   # close progress bar
   close(pb)
+  cat("\n")
 
   # reassemble data
   data_filtered <- do.call("rbind", data_individual)
@@ -160,7 +160,8 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   # if max.speed is defined, calculate distance between each two consecutive detections
   if(!is.null(max.speed)){
     cat("Applying speed filter...\n")
-    data_distances <- moby::calculateDistances(data_filtered, land.shape, epsg.code, ...)$data
+    data_distances <- moby::calculateDistances(data_filtered, land.shape, epsg.code, id.col=id.col,
+                                               lon.col=lon.col, lat.col=lat.col, ...)$data
     data_distances <- base::split(data_distances, f=data_distances[,id.col])
     # filter out detections above the maximum defined speed
     for(i in 1:length(data_distances)){
@@ -241,18 +242,18 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   rejected_speed <- do.call("rbind", rejected_speed)
   rejected_min <- do.call("rbind", rejected_min)
   rejected_days <- do.call("rbind", rejected_days)
-  data_rejected <- do.call(plyr::rbind.fill, list(rejected_start, rejected_cutoff, rejected_isolated, rejected_speed, rejected_min, rejected_days))
-  if(!is.null(data_rejected)) {
-    data_rejected <- data_rejected %>% dplyr::select(-reason, reason)
+  data_discarded <- do.call(plyr::rbind.fill, list(rejected_start, rejected_cutoff, rejected_isolated, rejected_speed, rejected_min, rejected_days))
+  if(!is.null(data_discarded)) {
+    data_discarded <- data_discarded %>% dplyr::select(-reason, reason)
   }else{
-    data_rejected <- data_filtered[0,]
+    data_discarded <- data_filtered[0,]
   }
 
-  data_rejected <- data_rejected[order(data_rejected[,id.col], data_rejected[,datetime.col]),]
-  rownames(data_rejected) <- NULL
+  data_discarded <- data_discarded[order(data_discarded[,id.col], data_discarded[,datetime.col]),]
+  rownames(data_discarded) <- NULL
 
   # calculate stats
-  n_removed_total <- nrow(data_rejected)
+  n_removed_total <- nrow(data_discarded)
   percent_total <- sprintf("%.0f", n_removed_total/n_total*100)
   percent_start <- sprintf("%.0f", nrow(rejected_start)/n_total*100)
   percent_start <- ifelse(length(percent_start)>0, paste0(" (", percent_start, "%)"), "")
@@ -306,7 +307,7 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   filter_summary$`Total removed`[percent_removed=="0"] <- "-"
 
   # return results
-  results <- list("data"=data_filtered, "data_rejected"=data_rejected, "summary"=filter_summary)
+  results <- list("data"=data_filtered, "data_discarded"=data_discarded, "summary"=filter_summary)
   return(results)
 }
 

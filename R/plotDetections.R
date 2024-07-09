@@ -40,7 +40,7 @@
 #' @param cex.lab Determines the size of the axes titles. Defaults to 1.8.
 #' @param cex.axis Determines the size of the tick mark labels on the axes. Defaults to 1.4.
 #' @param cex.legend Determines the size of the color legend. Defaults to 1.6.
-#' @param cols Number of columns in the final panel (passed to the mfrow argument). Defaults to 2.
+#' @param cols Number of columns in the final panel. Defaults to 2.
 #' @param legend.cols Number of columns in the legend (when 'color.by' is defined).  Defaults to 3.
 #' @export
 
@@ -158,8 +158,10 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
   oma <- if (length(id.groups) > 1) c(1,8,1,2) else c(1,4,1,2)
   par(mar=c(3,2,3,0), oma=oma)
 
-  ################################################################################
-  # Generate plots ###############################################################
+
+  ##############################################################################
+  # Draw plots #################################################################
+  ##############################################################################
 
   # iterate through each individual
   for (i in 1:(nplots-1)) {
@@ -167,8 +169,8 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
     selected_id <- levels(data[,id.col])[i]
     data_plot <- data_individual[[selected_id]]
 
-    ########################################################
-    # plot detections ######################################
+    #################################################################
+    # plot detections ###############################################
 
     # set plot
     plot(x=data$day, y=data$hour, type="n", axes=F, xlim=range(complete_dates), xaxs="i",
@@ -217,15 +219,15 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
     box()
   }
 
-  ########################################################
-  # add 'color.by' legend ################################
+  #################################################################
+  # add 'color.by' legend #########################################
   par(mar=c(1,1,3,1))
   plot.new()
   legend("center", legend=levels(data[,color.by]), pch=16, col=color.pal, ncol=legend.cols,
          cex=cex.legend, bg=background.color, pt.cex=cex.legend+0.6, y.intersp=1.4)
 
-  ########################################################
-  # add id.group labels ##################################
+  #################################################################
+  # add id.group labels ###########################################
   if (length(id.groups)>1) {
     label_pos <- layout_params$group_positions
     layout_height <- sum(layout_params$heights)

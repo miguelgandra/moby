@@ -277,6 +277,7 @@
   if ("id.groups" %in% names(args) && valid_ids) {
     id.groups <- args$id.groups
     if(!is.null(id.groups)){
+      if(!inherits(id.groups, "list")) errors <- c(errors, "id.groups should be supplied as a named list.")
       if(any(duplicated(unlist(id.groups)))) errors <- c(errors, "Repeated ID(s) in id.groups.")
       if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {warnings <- c(warnings, "Some of the ID(s) in id.groups don't match the IDs in the data")}
       data <- data[data[,id.col] %in% unlist(id.groups),]

@@ -47,7 +47,7 @@ of this variable(s) (e.g. species, ontogeny, sex, habitat, etc).}
 
 \item{aggregate.fun}{Function used to aggregate values by hour and month. Defaults to mean.}
 
-\item{id.col}{Name of the column containing animal IDs Defaults to 'ID'.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{date.col}{Name of the column containing datetimes in POSICX format. Defaults to 'datetime'.}
 

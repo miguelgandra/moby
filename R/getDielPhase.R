@@ -1,5 +1,5 @@
 #######################################################################################################
-# Estimate diel phase at a given datetime and location #################################################
+# Estimate diel phase at a given datetimes and location #################################################
 #######################################################################################################
 
 #' Estimate diel phase
@@ -16,49 +16,67 @@
 #'  • solar.depth=12: nautical twilight\cr
 #'  • solar.depth=18: astronomical twilight\cr
 #'
-#' @param datetime A POSIXct object containing the respective datetimes or time-bins.
-#' @param coordinates A SpatialPoints or matrix object containing longitude and
-#'  latitude coordinates (in that order) at which to estimate sunrise and sunset times.
+#' @param datetimes A POSIXct object containing the respective datetimes or time-bins.
+#' @param coordinates A SpatialPoints, matrix, or data frame object containing longitude and
+#' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
+#' If a single point or a matrix/data frame with one row is provided, the same coordinates
+#' will be used for all calculations.
 #' @param phases Integer indicating the number of diel phases to return (2, 3, or 4).
 #' @param solar.depth Numeric value indicating the angle of the sun below the horizon (in degrees).
-#'  Passed to the \code{\link[suntools]{crepuscule}} function.
+#' Passed to the \code{\link[suntools]{crepuscule}} function.
 #' @return A factor indicating the diel phase.
 #'
 #' @examples
-#' datetime <- as.POSIXct("2024-05-30 12:00:00")
+#' datetimes <- as.POSIXct("2024-05-30 12:00:00")
 #' coordinates <- c(-7.997, 37.008)
-#' getDielPhase(datetime, coordinates, phases=4, solar.depth=12)
+#' getDielPhase(datetimes, coordinates, phases=4, solar.depth=12)
 #'
 #' @export
 
 
-getDielPhase <- function (datetime, coordinates, phases=2, solar.depth=18) {
+getDielPhase <- function (datetimes, coordinates, phases=2, solar.depth=18) {
 
-  # validate number of phases
-  if(!phases %in% c(2,3,4)) stop("Number of phases should be between 2, 3 and 4")
+  # validate arguments
+  if(!phases %in% c(2,3,4)) stop("Number of phases should be between 2, 3 and 4", call.=FALSE)
+  if (!inherits(coordinates, c("SpatialPoints", "matrix", "data.frame"))) stop("Coordinates must be a SpatialPoints, matrix, or data frame object", call.=FALSE)
 
+  # convert SpatialPoints or data frame to matrix if necessary
+  if(inherits(coordinates, "SpatialPoints")) {
+    coordinates <- coordinates@coords
+  }else if (is.data.frame(coordinates)) {
+    if(ncol(coordinates)!=2) stop("Data frame must contain 2 columns (longitude and latitude)", call.=FALSE)
+    coordinates <- as.matrix(coordinates)
+  }
+
+  # if only one row is supplied, repeat it for all datetimes values
+  if (nrow(coordinates)==1) coordinates <- matrix(rep(coordinates, length(datetimes)), ncol=2, byrow=TRUE)
+
+  # validate length of coordinates against length of datetimes
+  if (nrow(coordinates) != length(datetimes)) {
+    stop("Length of coordinates must be either 1 or equal to the length of datetimes", call.=FALSE)
+  }
 
   # calculate sunrise and sunset times for the given coordinates
   coordinates <- matrix(coordinates, ncol=2)
-  sunrise <- suntools::sunriset(coordinates, datetime, POSIXct.out=T, direction="sunrise")$time
-  sunset <- suntools::sunriset(coordinates, datetime, POSIXct.out=T, direction="sunset")$time
+  sunrise <- suntools::sunriset(coordinates, datetimes, POSIXct.out=T, direction="sunrise")$time
+  sunset <- suntools::sunriset(coordinates, datetimes, POSIXct.out=T, direction="sunset")$time
 
   # directly return day/night without further calculations
   if(phases==2) {
-    timeofday <- ifelse(datetime >= sunrise & datetime <= sunset, "day", "night")
+    timeofday <- ifelse(datetimes >= sunrise & datetimes <= sunset, "day", "night")
     return(factor(timeofday, levels=c("day", "night")))
   }
 
   # otherwise calculate dawn/dusk times
-  dusk <- suntools::crepuscule(coordinates, datetime, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
-  prev_dusk <- suntools::crepuscule(coordinates, datetime-60*60*24, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
-  dawn <- suntools::crepuscule(coordinates, datetime, POSIXct.out=T, solarDep=solar.depth, direction="dawn")$time
+  dusk <- suntools::crepuscule(coordinates, datetimes, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
+  prev_dusk <- suntools::crepuscule(coordinates, datetimes-60*60*24, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
+  dawn <- suntools::crepuscule(coordinates, datetimes, POSIXct.out=T, solarDep=solar.depth, direction="dawn")$time
 
   # determine diel phase using a streamlined conditional structure
-  timeofday <- ifelse(datetime > prev_dusk & datetime < dawn, "night",
-                      ifelse(datetime >= dawn & datetime <= sunrise, "dawn",
-                             ifelse(datetime > sunrise & datetime < sunset, "day",
-                                    ifelse(datetime >= sunset & datetime <= dusk, "dusk", "night"))))
+  timeofday <- ifelse(datetimes > prev_dusk & datetimes < dawn, "night",
+                      ifelse(datetimes >= dawn & datetimes <= sunrise, "dawn",
+                             ifelse(datetimes > sunrise & datetimes < sunset, "day",
+                                    ifelse(datetimes >= sunset & datetimes <= dusk, "dusk", "night"))))
 
   # if 3 phases rename dusk and dawn to crepuscule
   if(phases == 3) {

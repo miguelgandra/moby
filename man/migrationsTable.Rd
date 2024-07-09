@@ -6,52 +6,69 @@
 \usage{
 migrationsTable(
   data,
-  sites.col,
-  aggregate.by = NULL,
-  tag.dates = NULL,
-  animals.info = NULL,
+  id.col = getDefaults("id"),
+  datetime.col = getDefaults("datetime"),
+  spatial.col,
+  tagging.dates = getDefaults("tagdates"),
+  id.metadata = NULL,
   id.groups = NULL,
-  id.col = "ID",
-  plot = T,
+  plot = TRUE,
   plot.stats = "all",
-  same.scale = T,
-  von.bertalanffy = F,
-  VBGF.params = NULL
+  same.scale = TRUE,
+  von.bertalanffy = FALSE,
+  VBGF.params = NULL,
+  cex.main = 1.1,
+  cex.axis = 0.7,
+  cex.table = 0.95
 )
 }
 \arguments{
-\item{data}{A data frame containing binned animal detections.}
+\item{data}{A data frame containing animal detections.}
 
-\item{sites.col}{Variable containing locations.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{aggregate.by}{Variable containing locations.}
+\item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
-\item{tag.dates}{A data frame containing two columns, one containing the animal IDs
-(column name defined by 'id.col') and the other the tagging dates in POSIXct format.}
+\item{spatial.col}{Name of the variable/column containing the spatial information
+used to calculate transitions. It can include receiver IDs in case all movements/transitions
+are of interest, or contain (for example) location/habitat classes for broader-scale analyses.}
 
-\item{animals.info}{A data frame containing additional information about the tagged animals,
-such as length, sex or transmitter type. If more than one row exists per animal,
-variables are collapsed before being merged with the remaining stats.}
+\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
+The length of this vector should match the number of unique animal IDs.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
-\item{id.groups}{Optional. A list containing ID groups, used to
-visually aggregate animals belonging to the same class (e.g. different species or life stages).}
+\item{id.metadata}{A data frame containing additional information about the tagged animals,
+such as length, sex or transmitter type. It should contain a column indicating animal IDs,
+as specified by the id.col argument. If the \code{von.bertalanffy} argument is set to TRUE, this data frame
+must also include a "length" column, which specifies the length of each individual at the time of tagging.}
 
-\item{id.col}{Name of the column containing animal IDs Defaults to 'ID'.}
+\item{id.groups}{Optional. A list specifying groups of animal IDs. This parameter allows for the estimation of metrics
+independently for subsets of animals and facilitates visual aggregation of individuals belonging to the same category
+(e.g., different species or life stages).}
 
 \item{plot}{Boolean. If true a plot is generated containing all the stats together with temporal metrics.
 If false, a summary data frame is returned.}
 
-\item{plot.stats}{Indicates which variables to plot. Available options: "all", "none", "depart.hour",
+\item{plot.stats}{Indicates which variables to plot. Available options: "all", "depart.hour",
 "arrival.hour", "depart.month", "arrival.month", "duration". Defaults to "all".}
 
 \item{same.scale}{Standardizes scales across plots and id groups.}
 
 \item{von.bertalanffy}{Optional. Predict lengths at the moment of departure using a Von Bertalanffy Growth model.}
 
-\item{VBGF.params}{A list containing the required parameters to fit the  Von Bertalanffy Growth model.
-e.g.: 'Linf', 'K' and 't0'. Check \code{\link[TropFishR]{VBGF}} function for further details.}
+\item{VBGF.params}{A list containing the required parameters to fit von Bertalanffy growth curves (VBGF), including parameters such as 'Linf', 'K', and 't0'.
+See the \code{\link[TropFishR]{VBGF}} function for detailed information on these parameters. If the data includes multiple species,
+provide separate parameter sets for each, corresponding to the order of \code{id.groups} (a list of lists, where each inner list
+contains the parameters specific to each group or species).}
+
+\item{cex.main}{Numeric. The magnification of main titles in plots (used only if \code{plot} is set to TRUE). Defaults to 1.1.}
+
+\item{cex.axis}{Numeric. The magnification of axis labels in plots (used only if \code{plot} is set to TRUE). Defaults to 0.7.}
+
+\item{cex.table}{Numeric. The magnification of text in the summary table (used only if \code{plot} is set to TRUE). Defaults to 0.95.}
 }
 \description{
-Creates a table containing  migration metrics
-(nº movements between sites, nº migrating individuals, etc.).
+Generates a table containing migration metrics such as the number of movements between sites,
+the number of migrating individuals, and other related statistics. Optionally, visualizations of the
+distribution of some of these metrics can also be produced (e.g., departure and arrival hour, departure and arrival month).
 }

@@ -10,6 +10,8 @@ filterDetections(
   cutoff.dates = NULL,
   id.col = getDefaults("id"),
   datetime.col = getDefaults("datetime"),
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat"),
   min.detections = 0,
   min.days = 0,
   hours.threshold = 24,
@@ -17,7 +19,7 @@ filterDetections(
   speed.unit = "m/s",
   acoustic.range = 600,
   land.shape = NULL,
-  epsg.code = NULL,
+  epsg.code = getDefaults("epsg"),
   ...
 )
 }
@@ -32,9 +34,13 @@ Alternatively, if a single value is provided, it will be applied to all IDs.}
 or any other cut-off date beyond which detections should be discarded. The length of this vector
 should match the number of unique animal IDs. Alternatively, if a single value is provided, it will be applied to all IDs.}
 
-\item{id.col}{Name of the column containing animal IDs. Defaults to "ID".}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{datetime.col}{Name of the column containing datetimes (in POSIXct format). Defaults to "datetime".}
+\item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
+
+\item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
+
+\item{lat.col}{Name of the column containing latitude values (unprojected). Defaults to 'lat'.}
 
 \item{min.detections}{Optional. Discard individuals with fewer than this number of detections.}
 

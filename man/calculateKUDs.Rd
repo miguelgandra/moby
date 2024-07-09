@@ -8,8 +8,8 @@ calculateKUDs(
   data,
   bandwidth,
   grid,
-  id.groups = NULL,
   subset = NULL,
+  id.groups = NULL,
   land.shape = NULL,
   id.col = getDefaults("id"),
   lon.col = getDefaults("lon"),
@@ -24,11 +24,11 @@ calculateKUDs(
 \item{grid}{SpatialPixels object containing the grid over which animal KUDs are going to be estimated
 (see grid argument in the \code{\link[adehabitatHR]{kernelUD}} function).}
 
-\item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
-within each group.}
-
 \item{subset}{If defined, KUDs are calculated independently for each level of this variable.
 If left NULL, single KUDs are calculated for the whole monitoring period.}
+
+\item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
+within each group.}
 
 \item{land.shape}{A shape file containing coastlines.}
 

@@ -19,21 +19,21 @@
 #'  • Autumn: March - May\cr
 #'  • Winter: June - August\cr
 #'
-#' @param date A POSIXct object containing the respective datetimes or time-bins.
+#' @param datetimes A POSIXct object containing the respective datetimes or time-bins.
 #' @param hemisphere A character string specifying the hemisphere ("Northern" or "Southern").
 #' @return A factor indicating the season.
 #' @examples
-#' date <- as.POSIXct("2024-05-30")
-#' getSeason(date, hemisphere="Northern")
+#' datetimes <- as.POSIXct("2024-05-30")
+#' getSeason(datetimes, hemisphere="Northern")
 #' @export
 
-getSeason <- function(date, hemisphere="Northern") {
+getSeason <- function(datetimes, hemisphere="Northern") {
 
   # validate hemisphere input
   if (!hemisphere %in% c("Northern", "Southern")) stop("Hemisphere must be 'Northern' or 'Southern'")
 
   # extract month
-  month <- as.integer(format(date, "%m"))
+  month <- as.integer(format(datetimes, "%m"))
 
   # determine season based on hemisphere
   if (hemisphere == "Northern") {

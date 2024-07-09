@@ -11,9 +11,9 @@
 #' function 'dilutes' traveled distances by the total number of time-bins
 #' passed between each two consecutive positions.
 #'
+#' @inheritParams setDefaults
 #' @param data Output \code{\link{calculateDistances}} function: a data frame
 #' with animal IDS, positions and distances.
-#' @param id.col Name of the column containing animal IDs Defaults to 'ID'.
 #' @param dist.col Name of the column containing distances. Defaults to 'dist_m',
 #' the output of \code{\link{calculateDistances}}.
 #' @param keep.intermediate Boolean indicating if intermediate distances (assigned
@@ -22,15 +22,14 @@
 #' @export
 
 
-interpolateDistances <- function(data, id.col="ID", dist.col="dist_m", keep.intermediate=F){
+interpolateDistances <- function(data, id.col=getDefaults("id"), dist.col="dist_m", keep.intermediate=F){
+
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
 
   # print message
-  cat("Interpolating distances\n")
-
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please assign the correct column name with 'id.col'")
-  }
+  .printConsole("Interpolating distances")
 
   # split data by individual
   data$origin_temp <- 1

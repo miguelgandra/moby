@@ -4,10 +4,10 @@
 \alias{getSeason}
 \title{Estimate annual season}
 \usage{
-getSeason(date, hemisphere = "Northern")
+getSeason(datetimes, hemisphere = "Northern")
 }
 \arguments{
-\item{date}{A POSIXct object containing the respective datetimes or time-bins.}
+\item{datetimes}{A POSIXct object containing the respective datetimes or time-bins.}
 
 \item{hemisphere}{A character string specifying the hemisphere ("Northern" or "Southern").}
 }
@@ -31,6 +31,6 @@ Southern Hemisphere:\cr
 • Winter: June - August\cr
 }
 \examples{
-date <- as.POSIXct("2024-05-30")
-getSeason(date, hemisphere="Northern")
+datetimes <- as.POSIXct("2024-05-30")
+getSeason(datetimes, hemisphere="Northern")
 }

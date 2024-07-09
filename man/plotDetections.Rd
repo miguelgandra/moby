@@ -93,7 +93,7 @@ to prevent them from being hidden behind points' clouds. Defaults to True.}
 
 \item{cex.legend}{Determines the size of the color legend. Defaults to 1.6.}
 
-\item{cols}{Number of columns in the final panel (passed to the mfrow argument). Defaults to 2.}
+\item{cols}{Number of columns in the final panel. Defaults to 2.}
 
 \item{legend.cols}{Number of columns in the legend (when 'color.by' is defined).  Defaults to 3.}
 }

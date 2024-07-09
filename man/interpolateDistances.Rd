@@ -6,7 +6,7 @@
 \usage{
 interpolateDistances(
   data,
-  id.col = "ID",
+  id.col = getDefaults("id"),
   dist.col = "dist_m",
   keep.intermediate = F
 )
@@ -15,7 +15,7 @@ interpolateDistances(
 \item{data}{Output \code{\link{calculateDistances}} function: a data frame
 with animal IDS, positions and distances.}
 
-\item{id.col}{Name of the column containing animal IDs Defaults to 'ID'.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{dist.col}{Name of the column containing distances. Defaults to 'dist_m',
 the output of \code{\link{calculateDistances}}.}

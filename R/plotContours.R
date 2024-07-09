@@ -9,12 +9,12 @@
 #' independently for each ID. It also plots lines illustrating the variation in
 #' diel phases' hours across the study duration (annual variation of daylight time).
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing the variable(s) to plot.
 #' @param variables Variables to plot. Should correspond columns in the data.
 #' Can be either a vector or a single variable.
 #' @param var.titles Display name of the variables (e.g. "Depth (m)"). If NULL, defaults to supplied variable names.
 #' @param plot.title Optional. Main title displayed on top of the plots/panel.
-#' @param id.col Name of the column containing animal IDs Defaults to 'ID'.
 #' @param date.col Name of the column containing datetimes in POSICX format. Defaults to 'datetime'.
 #' @param split.by Optional. If defined, plots are generated individually for each level (or combination of levels)
 #' of this variable(s) (e.g. species, ontogeny, sex, habitat, etc).
