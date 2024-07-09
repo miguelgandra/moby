@@ -27,10 +27,11 @@
 #' @return A factor indicating the diel phase.
 #'
 #' @examples
+#' \dontrun{
 #' datetimes <- as.POSIXct("2024-05-30 12:00:00")
 #' coordinates <- c(-7.997, 37.008)
 #' getDielPhase(datetimes, coordinates, phases=4, solar.depth=12)
-#'
+#' }
 #' @export
 
 

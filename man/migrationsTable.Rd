@@ -61,11 +61,11 @@ See the \code{\link[TropFishR]{VBGF}} function for detailed information on these
 provide separate parameter sets for each, corresponding to the order of \code{id.groups} (a list of lists, where each inner list
 contains the parameters specific to each group or species).}
 
-\item{cex.main}{Numeric. The magnification of main titles in plots (used only if \code{plot} is set to TRUE). Defaults to 1.1.}
+\item{cex.main}{Numeric. Determines the size of main titles (used only if \code{plot} is set to TRUE). Defaults to 1.1.}
 
-\item{cex.axis}{Numeric. The magnification of axis labels in plots (used only if \code{plot} is set to TRUE). Defaults to 0.7.}
+\item{cex.axis}{Numeric. Determines the size of axis labels (used only if \code{plot} is set to TRUE). Defaults to 0.7.}
 
-\item{cex.table}{Numeric. The magnification of text in the summary table (used only if \code{plot} is set to TRUE). Defaults to 0.95.}
+\item{cex.table}{Numeric. Determines the size of text in the summary table (used only if \code{plot} is set to TRUE). Defaults to 0.95.}
 }
 \description{
 Generates a table containing migration metrics such as the number of movements between sites,

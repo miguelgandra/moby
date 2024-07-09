@@ -4,6 +4,7 @@ library(roxygen2)
 devtools::document()
 rcheck <- devtools::check()
 
+cat(rcheck$errors)
 cat(rcheck$warnings[1])
 cat(rcheck$notes)
 
@@ -25,3 +26,4 @@ stringi::stri_escape_unicode("±")
 #usethis::use_build_ignore("Commands")
 #usethis::use_build_ignore("Compile Documentation.R")
 #usethis::use_build_ignore("moby-tutorial.R")
+#usethis::use_build_ignore("R/plotRetention.R")

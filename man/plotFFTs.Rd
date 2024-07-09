@@ -6,7 +6,7 @@
 \usage{
 plotFFTs(
   data,
-  tagging.dates,
+  tagging.dates = getDefaults("tagging.dates"),
   id.col = getDefaults("id"),
   timebin.col = getDefaults("timebin"),
   type = "detections",
@@ -17,7 +17,7 @@ plotFFTs(
   same.scale = T,
   background.col = "grey94",
   cex.title = 2,
-  cex.label = 1.8,
+  cex.lab = 1.8,
   cex.axis = 1.4,
   cols = 2
 )
@@ -54,11 +54,11 @@ Otherwise they are only displayed in the left-most plots to save space.}
 
 \item{cex.title}{Determines the size of the plot title (animal ID). Defaults to 2.}
 
+\item{cex.lab}{Determines the size of the axes titles. Defaults to 1.8.}
+
 \item{cex.axis}{Determines the size of the tick mark labels on the axes. Defaults to 1.4.}
 
 \item{cols}{Number of columns in the final panel.}
-
-\item{cex.lab}{Determines the size of the axes titles. Defaults to 1.8.}
 }
 \description{
 Function that analyzes and plots periodic patterns in detections using a

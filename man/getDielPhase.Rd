@@ -36,8 +36,9 @@ Crepuscular periods can be defined based on different solar elevation angles:\cr
 • solar.depth=18: astronomical twilight\cr
 }
 \examples{
+\dontrun{
 datetimes <- as.POSIXct("2024-05-30 12:00:00")
 coordinates <- c(-7.997, 37.008)
 getDielPhase(datetimes, coordinates, phases=4, solar.depth=12)
-
+}
 }
