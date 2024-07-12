@@ -8,13 +8,13 @@
 #' Implemented statistics include total detections, average detection frequency (per individual),
 #' number of animals detected and number of co-occurrences.
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing animal detections with corresponding time-bins.
 #' @param overlaps List containing counts of stations where animals co-occurred, as returned by
 #' \code{\link{calculateOverlap}}. Only required if type contains "co-occurrences".
 #' @param type Type of statistic to calculate/plot. If more than one type is supplied a grouped barplot
 #' is generated. Possible values are "detections", "average detections", "individuals" and "co-occurrences".
-#' @param id.col Name of the column containing animal identifications. Defaults to "ID".
-#' @param site.col Should match the name of a variable in the supplied data containing the
+#' @param spatial.col Should match the name of a variable in the supplied data containing the
 #' spatial categories to plot (e.g. receivers or broader areas/locations). Defaults to "station".
 #' @param number.stations Replace receiver names with numbers? Useful if receiver names are
 #' too long to be displayed correctly.
@@ -25,8 +25,8 @@
 #' in bars with frequencies >= 5%).
 #' @param legend.pos Legend position.
 #' @param legend.style Legend style (horizontal vs vertical).
-#' @param id.groups Optional. A list containing ID groups, used to
-#' generate different plots to each class (e.g. different species).
+#' @param id.groups Optional. A list containing ID groups, used to generate different
+#' plots to each class (e.g. different species).
 #' @param group.comparisons Controls the type of comparisons to be run, when id.groups are defined.
 #' One of "within", "between" or "all". Defaults to "all".
 #' @param color.pal Color palette for the bars. Should match the number of types defined (1 or 2).
@@ -39,8 +39,9 @@
 ## Main function ######################################################################
 #######################################################################################
 
-plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occurrences"), id.col="ID",
-                             site.col="station", number.stations=F, rotate.labels=F, show.percentage=T,
+plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occurrences"),
+                             id.col=getDefaults("id"), spatial.col=getDefaults("station"),
+                             number.stations=F, rotate.labels=F, show.percentage=T,
                              lab.threshold=NULL, legend.pos="top", legend.style="horizontal",
                              id.groups=NULL, color.pal=NULL, group.comparisons="all", cols=1) {
 
@@ -49,53 +50,33 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
   # Initial checks #####################################################################
   ######################################################################################
 
+  # perform argument checks and return reviewed parameters
+  reviewed_params <- .validateArguments()
+  data <- reviewed_params$data
+
+  # validate additional parameters
+  errors <- c()
   # check type argument
-  if(length(type)>4) {
-    stop("Currently only a maximum of four 'types' can be defined")}
+  if(length(type)>4) errors <- c(errors, "Currently only a maximum of four 'types' can be defined")
+  if(any(!type %in% c("detections", "average detections", "individuals", "co-occurrences"))) errors <- c(errors, "Wrong 'type' argument. Please choose up to two of: 'detections', 'average detections', 'individuals' or 'co-occurrences'")
+  if(!is.null(overlaps) && (!is.data.frame(overlaps) || !c("ids") %in% names(attributes(overlaps)))) errors <- c(errors, "'overlaps' format not recognized. Please make sure to use the output from the 'calculateOverlap' function.")
+  if(!is.null(id.groups) && !group.comparisons %in% c("within", "between", "all")) errors <- c(errors, "Wrong 'group.comparisons' argument. Please choose one of: 'within', 'between' or 'all'")
+  if(length(errors)>0){
+    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+    stop(stop_message, call.=FALSE)
+  }
 
-  # check type argument
-  if(any(!type %in% c("detections", "average detections", "individuals", "co-occurrences"))) {
-    stop("Wrong 'type' argument. Please choose up to two of: 'detections', 'average detections', 'individuals' or 'co-occurrences'")}
+  # check if spatial.col is of class factor (if not, convert)
+  if(class(data[,spatial.col])!="factor"){
+    warning("Converting spatial.col to factor", call.=FALSE)
+    data[,spatial.col] <- as.factor(data[,spatial.col])}
 
-  # check if data contains id.col
-  if(!id.col %in% colnames(data)){
-    stop("ID column not found. Please specify the correct column using 'id.col'")}
-
-  # check if id.col is of class factor (if not, convert)
-  if(class(data[,id.col])!="factor"){
-    cat("Converting ids to factor\n")
-    data[,id.col] <- as.factor(data[,id.col])}
-
-  # check if data contains site.col
-  if(!site.col %in% colnames(data)){
-    stop("Site column not found. Please specify the correct column using 'site.col'")
-    }
-
-  # check if site.col is of class factor (if not, convert)
-  if(class(data[,site.col])!="factor"){
-    cat("Converting site.col to factor\n")
-    data[,site.col] <- as.factor(data[,site.col])}
-
-  # check if site.col levels agree with the supplied overlaps results
+  # check if spatial.col levels agree with the supplied overlaps results
   if(!is.null(overlaps)){
     unique(unlist(overlaps$station_counts))
     overlap_values <- unique(unlist(lapply(overlaps$station_counts, function(x) names(x))))
-    if(!all(overlap_values %in% levels(data[,site.col]))){
-      stop("overlaps values do not match with the levels in the supplied 'site.col' variable")
-    }
-  }
-
-  # reorder ID levels if ID groups are defined
-  if(!is.null(id.groups)){
-    if(any(duplicated(unlist(id.groups)))) {stop("Repeated ID(s) in id.groups")}
-    if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {"Some of the ID(s) in id.groups don't match the IDs in the data"}
-    data <- data[data[,id.col] %in% unlist(id.groups),]
-    data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
-
-    # check group.comparisons argument
-    if(!is.null(group.comparisons)){
-      if(any(!group.comparisons %in% c("within", "between", "all"))) {
-        stop("Wrong 'group.comparisons' argument. Please choose one of: 'within', 'between' or 'all'")}
+    if(!all(overlap_values %in% levels(data[,spatial.col]))){
+      stop("overlaps values do not match with the levels in the supplied 'spatial.col' variable")
     }
   }
 
@@ -151,14 +132,14 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
 
     # calculate nº detections per station
     if(any(type=="detections")) {
-      station_detections <- data.frame(rbind(table(group_data[,site.col])), check.names=F)
+      station_detections <- data.frame(rbind(table(group_data[,spatial.col])), check.names=F)
       counts_list <- append(counts_list, list("detections"=station_detections))
       freqs_list <- append(freqs_list, list("detections"=station_detections/sum(station_detections)))
     }
 
     # calculate average detection frequency per station
     if(any(type=="average detections")) {
-      station_mean_detections <- by(group_data, group_data[,id.col], FUN=function(x) table(x[,site.col]))
+      station_mean_detections <- by(group_data, group_data[,id.col], FUN=function(x) table(x[,spatial.col]))
       station_mean_detections <- do.call("rbind", station_mean_detections)
       station_mean_detections <- station_mean_detections/rowSums(station_mean_detections)
       station_mean_detections <- colMeans(station_mean_detections)
@@ -170,7 +151,7 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
     # calculate number of individuals per station
     if(any(type=="individuals")) {
       nindividuals <- nlevels(group_data[,id.col])
-      station_individuals <- stats::aggregate(group_data[,id.col], by=list(group_data[,site.col]), function(x) length(unique(x)), drop=F)
+      station_individuals <- stats::aggregate(group_data[,id.col], by=list(group_data[,spatial.col]), function(x) length(unique(x)), drop=F)
       colnames(station_individuals) <- c("station", "individuals")
       station_individuals <- data.frame(t(station_individuals), check.names=F)
       colnames(station_individuals) <- station_individuals[1,]
@@ -199,12 +180,12 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
       station_co_occurrences <- plyr::rbind.fill(lapply(station_co_occurrences, function(x) as.data.frame.matrix(t(x))))
       station_co_occurrences <- colSums(station_co_occurrences, na.rm=T)
       station_co_occurrences <- data.frame(t(station_co_occurrences), check.names=F)
-      missing_stations <- as.character(levels(group_data[,site.col])[!levels(group_data[,site.col]) %in% colnames(station_co_occurrences)])
+      missing_stations <- as.character(levels(group_data[,spatial.col])[!levels(group_data[,spatial.col]) %in% colnames(station_co_occurrences)])
       if(length(missing_stations)>0) {
         missing_cols <- as.data.frame(matrix(0, ncol=length(missing_stations)))
         colnames(missing_cols) <- missing_stations
         station_co_occurrences <- cbind(station_co_occurrences, missing_cols)
-        stations_order <- match(levels(group_data[,site.col]), colnames(station_co_occurrences))
+        stations_order <- match(levels(group_data[,spatial.col]), colnames(station_co_occurrences))
         station_co_occurrences <- station_co_occurrences[,stations_order]
       }
       counts_list <- append(counts_list, list("co-occurrences"=station_co_occurrences))
@@ -269,7 +250,7 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
 
   x_las <- 1
   if(number.stations==T){
-    station_labs <- 1:nlevels(data[,site.col])
+    station_labs <- 1:nlevels(data[,spatial.col])
     if(length(station_labs)<14){
       par(mar=c(4,4,2,8))
       legend_cols <- 1}
@@ -279,7 +260,7 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
   if(number.stations==F){
     par(mar=c(4,4,2,2))
     legend_cols <- 1
-    station_labs <- levels(data[,site.col])}
+    station_labs <- levels(data[,spatial.col])}
   if(rotate.labels==T){
     par(mar=par("mar")+c(3,0,0,0))
     x_las <- 2}
@@ -320,7 +301,7 @@ plotStationStats <- function(data, overlaps=NULL, type=c("detections", "co-occur
     axis(1, at=colMeans(station_bars), labels=station_labs, cex.axis=0.75, las=x_las)
     axis(2, at=seq(0, 1, by=0.2), labels=paste0(seq(0, 100, by=20),"%"), las=1, cex.axis=0.8)
     mtext(side=2, text="Frequency", line=3, cex=0.8)
-    if(rotate.labels==F) {mtext(side=1, text=tools::toTitleCase(site.col), line=2.5, cex=0.8)}
+    if(rotate.labels==F) {mtext(side=1, text=tools::toTitleCase(spatial.col), line=2.5, cex=0.8)}
     station_counts <- paste0("n=", station_counts)
     display_freqs <- paste0("(", round(station_freqs*100), "%)")
     if(!is.null(lab.threshold)){

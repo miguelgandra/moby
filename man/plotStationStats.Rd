@@ -8,8 +8,8 @@ plotStationStats(
   data,
   overlaps = NULL,
   type = c("detections", "co-occurrences"),
-  id.col = "ID",
-  site.col = "station",
+  id.col = getDefaults("id"),
+  spatial.col = getDefaults("station"),
   number.stations = F,
   rotate.labels = F,
   show.percentage = T,
@@ -31,9 +31,9 @@ plotStationStats(
 \item{type}{Type of statistic to calculate/plot. If more than one type is supplied a grouped barplot
 is generated. Possible values are "detections", "average detections", "individuals" and "co-occurrences".}
 
-\item{id.col}{Name of the column containing animal identifications. Defaults to "ID".}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{site.col}{Should match the name of a variable in the supplied data containing the
+\item{spatial.col}{Should match the name of a variable in the supplied data containing the
 spatial categories to plot (e.g. receivers or broader areas/locations). Defaults to "station".}
 
 \item{number.stations}{Replace receiver names with numbers? Useful if receiver names are
@@ -51,8 +51,8 @@ in bars with frequencies >= 5\%).}
 
 \item{legend.style}{Legend style (horizontal vs vertical).}
 
-\item{id.groups}{Optional. A list containing ID groups, used to
-generate different plots to each class (e.g. different species).}
+\item{id.groups}{Optional. A list containing ID groups, used to generate different
+plots to each class (e.g. different species).}
 
 \item{color.pal}{Color palette for the bars. Should match the number of types defined (1 or 2).}
 

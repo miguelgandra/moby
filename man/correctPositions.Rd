@@ -9,8 +9,8 @@ correctPositions(
   layer,
   layer.type = "land",
   depth.margin = 0,
-  lon.col = "lon",
-  lat.col = "lat",
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat"),
   plot = F
 )
 }
@@ -21,7 +21,7 @@ corresponding to the inferred animals' positions.}
 \item{layer}{A spatial object representing the geographic layer used to determine land and marine areas.
 This can be either:\cr
 \itemize{
-\item A 'RasterLayer' containing binary land values (land = 1, water = NA) or bathymetric values (negative for underwater).
+\item A 'RasterLayer' containing binary values or bathymetric information (negative values for underwater).
 \item A 'SpatialPolygons' object representing the coastline.
 }}
 

@@ -11,7 +11,7 @@
 #' corresponding to the inferred animals' positions.
 #' @param layer A spatial object representing the geographic layer used to determine land and marine areas.
 #' This can be either:\cr
-#' - A 'RasterLayer' containing binary land values (land = 1, water = NA) or bathymetric values (negative for underwater).
+#' - A 'RasterLayer' containing binary values or bathymetric information (negative values for underwater).
 #' - A 'SpatialPolygons' object representing the coastline.
 #' @param layer.type Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
 #' to contain NA values in water surfaces, if type 'ocean' (binary) the raster is assumed to
@@ -30,7 +30,7 @@
 #' @export
 
 correctPositions <- function(positions, layer, layer.type="land", depth.margin=0,
-                             lon.col="lon", lat.col="lat", plot=F) {
+                             lon.col=getDefaults("lon"), lat.col=getDefaults("lat"), plot=F) {
 
 
   ##############################################################################

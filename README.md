@@ -26,9 +26,8 @@ devtools::install_github("miguelgandra/moby")
 For detailed information on how to use moby, please refer to the package documentation.
 
 
-## Contributing
-Any contributions from the community are warmly welcome! If you have suggestions, bug reports, or would like to contribute code, please feel free to open an issue or submit a pull request.
-
+## Feedback and Contributions
+Even though **moby** has been thoroughly tested ‘in house’, it's possible that new datasets and systems may present unforeseen issues. If you run into any problems or have suggestions for improvement, don’t hesitate to share them on GitHub! Contributions from the community are warmly welcome.
 
 ## License
 This project is licensed under the GPL v3 license.
