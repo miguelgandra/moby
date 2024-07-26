@@ -9,9 +9,9 @@ plotChronogram(
   tagging.dates = getDefaults("tagging.dates"),
   variables = "detections",
   split.by = NULL,
-  style = "raster",
+  style = "points",
   id.col = getDefaults("id"),
-  timebin.col = "timebin",
+  timebin.col = getDefaults("timebin"),
   station.col = getDefaults("station"),
   color.by = NULL,
   color.pal = NULL,
@@ -32,6 +32,7 @@ plotChronogram(
   uniformize.dates = TRUE,
   cex.axis = 1,
   cex.legend = 0.8,
+  cex.moon = 2.5,
   legend.intersp = 1.2,
   legend.cols = NULL,
   cols = NULL,
@@ -106,6 +107,8 @@ to prevent them from being hidden behind denser point clouds.}
 \item{cex.axis}{Determines the size of the text labels on the axes. Defaults to 1.}
 
 \item{cex.legend}{Determines the size of the color legend. Defaults to 0.8.}
+
+\item{cex.moon}{Determines the size of the moon phase symbols, when lunar.info is set to TRUE. Defaults to 2.5.}
 
 \item{legend.intersp}{Vertical distances between legend elements
 (in lines of text shared above/below each legend entry). Defaults to 1.2.}
