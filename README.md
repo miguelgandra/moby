@@ -3,9 +3,10 @@
 
 [![Project Status: Active - The project has reached a stable, usable state and is being actively developed.](https://www.repostatus.org/badges/latest/active.svg)](https://www.repostatus.org/#active)
 [![](https://img.shields.io/badge/lifecycle-experimental-orange.svg)](https://lifecycle.r-lib.org/articles/stages.html#experimental)
-<!-- [![CRAN\_Status\_Badge](http://www.r-pkg.org/badges/version/moby)](https://cran.r-project.org/package=moby) -->
+[![CRAN status](https://www.r-pkg.org/badges/version/moby)](https://CRAN.R-project.org/package=moby)
 [![R-CMD-check](https://github.com/miguelgandra/moby/actions/workflows/R-CMD-check.yaml/badge.svg)](https://github.com/miguelgandra/moby/actions/workflows/R-CMD-check.yaml)
 [![Github All Releases](https://img.shields.io/github/downloads/miguelgandra/moby/total.svg)]()
+
 
 **moby** is an R package designed for the analysis and visualization of passive acoustic telemetry data, primarily focused on marine environments. Acoustic passive telemetry has become an invaluable tool for studying the movement and behaviour of aquatic organisms in their natural habitats. However, the vast amounts of data generated pose unique analytical challenges.
 
