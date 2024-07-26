@@ -171,8 +171,11 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
 
   # set margins
   par(mar=mar, mgp=c(2.5,0.6,0), xpd=T)
+  xmin <- min(tagging.dates, na.rm=T)
+  xmax <- max(data[,datetime.col], na.rm=T)
   # create empty plot
-  plot(x=data[,datetime.col], y=data$id_index, ylim=c(total_rows+1, 0), axes=F, type="n", xlab="", ylab="")
+  plot(x=data[,datetime.col], y=data$id_index, ylim=c(total_rows+1, 0), axes=F, type="n", xlab="", ylab="",
+       xlim=c(xmin, xmax))
   date_lim1 <- lubridate::ceiling_date(as.POSIXct(par("usr")[1], origin='1970-01-01', tz="UTC"), "day")
   date_lim2 <- lubridate::floor_date(as.POSIXct(par("usr")[2], origin='1970-01-01', tz="UTC"), "day")
   complete_dates <- seq.POSIXt(date_lim1, date_lim2, by="day", tz="UTC")
@@ -281,11 +284,16 @@ plotAbacus <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults(
     consec_vals <- paste0(mural_vals, "_", rep(1:length(consec_vals$lengths), consec_vals$lengths))
     mural_vals <- unique(consec_vals)
     mural_divs <- unlist(lapply(mural_vals, function(x) min(which(consec_vals==x))))
+    mural_divs <- c(mural_divs, length(complete_dates))
     mural_vals <- sub("\\_.*", "", mural_vals)
     mural_disp <- zoo::rollapply(mural_divs, width=2, FUN=mean)
     # do not display 1st div if not enough space
-    if(mural_divs[2]/length(complete_dates)<0.06){
+    if(mural_divs[2]/length(complete_dates)<0.15){
       mural_vals <- mural_vals[-1]; mural_divs <- mural_divs[-1]; mural_disp <- mural_disp[-1]
+    }
+    # do not display last div if not enough space
+    if(mural_divs[length(mural_divs)]/length(complete_dates)<0.15){
+      mural_vals <- mural_vals[-length(mural_divs)]; mural_divs <- mural_divs[-length(mural_divs)]; mural_disp <- mural_disp[-length(mural_divs)]
     }
     # discard divs spanning further than the data
     valid_vals<- which(mural_vals %in% unique(strftime(data[,datetime.col], top.mural, tz="UTC")))

@@ -71,6 +71,7 @@
   # Retrieve arguments #########################################################
   ##############################################################################
 
+  calling_fun <- deparse(sys.call(-1)[[1]])
   args <- mget(names(formals(sys.function(sys.parent()))), sys.frame(sys.nframe()-1L))
   data <- args[["data"]]
 
@@ -187,10 +188,10 @@
   }
 
   ##############################################################################
-  # validate variable ##########################################################
+  # validate variables ##########################################################
   if ("variables" %in% names(args)) {
     variables <- args$variables
-    if(!is.null(variable)){
+    if(!is.null(variables) && calling_fun!="plotChronogram"){
       for(v in 1:length(variables)){
         errors <- c(errors, checkColumn(variables[v], "variable"))
       }

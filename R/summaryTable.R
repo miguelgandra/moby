@@ -63,6 +63,11 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), id.metadat
   ## Generate table ############################################################
   ##############################################################################
 
+  # define single id.group if needed
+  if(is.null(id.groups)){
+    id.groups <- list(levels(data[,id.col]))
+  }
+
   # format tagging dates
   tag_dates <- strftime(tagging.dates, format="%d/%m/%Y", tz="UTC")
 

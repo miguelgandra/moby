@@ -45,6 +45,7 @@
 #' @param uniformize.dates Use the same date range for all plots when 'split.by' is defined.
 #' @param cex.axis Determines the size of the text labels on the axes. Defaults to 1.
 #' @param cex.legend Determines the size of the color legend. Defaults to 0.8.
+#' @param cex.moon Determines the size of the moon phase symbols, when lunar.info is set to TRUE. Defaults to 2.5.
 #' @param legend.intersp Vertical distances between legend elements
 #' (in lines of text shared above/below each legend entry). Defaults to 1.2.
 #' @param legend.cols Integer. The number of columns in which to set the legend items.
@@ -55,12 +56,15 @@
 #' @export
 
 
-plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), variables="detections", split.by=NULL, style="raster",
-                           id.col=getDefaults("id"), timebin.col="timebin", station.col=getDefaults("station"), color.by=NULL, color.pal=NULL,
-                           date.format="%d/%b", date.interval=4, date.start=1, diel.lines=4, sunriset.coords, solar.depth=18,
-                           polygons=F, lunar.info=F, background.col="white", grid=TRUE, grid.color="white", highlight.isolated=FALSE,
-                           pt.cex=c(0.5, 3), uniformize.scale=FALSE, uniformize.dates=TRUE, cex.axis=1, cex.legend=0.8,
-                           legend.intersp=1.2, legend.cols=NULL, cols=NULL, ...) {
+plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), variables="detections",
+                           split.by=NULL, style="points", id.col=getDefaults("id"),
+                           timebin.col=getDefaults("timebin"), station.col=getDefaults("station"),
+                           color.by=NULL, color.pal=NULL, date.format="%d/%b", date.interval=4, date.start=1,
+                           diel.lines=4, sunriset.coords, solar.depth=18, polygons=F, lunar.info=F,
+                           background.col="white", grid=TRUE, grid.color="white", highlight.isolated=FALSE,
+                           pt.cex=c(0.5, 3), uniformize.scale=FALSE, uniformize.dates=TRUE,
+                           cex.axis=1, cex.legend=0.8, cex.moon=2.5, legend.intersp=1.2,
+                           legend.cols=NULL, cols=NULL, ...) {
 
   #####################################################################################
   # Initial checks ####################################################################
@@ -70,15 +74,14 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
-  tag.durations <- reviewed_params$tag.durations
 
   # validate additonal variables
-  if(length(variables) == 0 || any(!variables %in% c("detections", "individuals", "co-occurrences"))) stop("Invalid variable(s) specified. Accepted values are: 'detections', 'individuals', or 'co-occurrences'.")
-  if(length(pt.cex)!=2) stop("pt.cex should be a vector of length 2 (min and max)")
+  if(length(variables) == 0 || any(!variables %in% c("detections", "individuals", "co-occurrences"))) stop("Invalid variable(s) specified. Accepted values are: 'detections', 'individuals', or 'co-occurrences'.", call.=FALSE)
+  if(length(pt.cex)!=2) stop("pt.cex should be a vector of length 2 (min and max)", call.=FALSE)
 
   # check if the lunar package is installed
   if(lunar.info==T & !requireNamespace("lunar", quietly=TRUE)){
-    stop("The 'lunar' package is required but is not installed. Please install 'lunar' using install.packages('lunar') and try again.")
+    stop("The 'lunar' package is required but is not installed. Please install 'lunar' using install.packages('lunar') and try again.", call.=FALSE)
   }
 
   # print to console
@@ -94,20 +97,20 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
   if(!is.null(color.by) && style=="points"){
 
     # check if data contains the color.by variable
-    if(!color.by %in% colnames(data)) stop("'color.by' variable not found in the supplied data")
-    if(any(is.na(data[,color.by]))) stop("Missing values in 'color.by' variable")
+    if(!color.by %in% colnames(data)) stop("'color.by' variable not found in the supplied data", call.=FALSE)
+    if(any(is.na(data[,color.by]))) stop("Missing values in 'color.by' variable",  call.=FALSE)
 
     # if class character, convert to factor
     if(inherits(data[,color.by], "character")) {
       data[,color.by] <- as.factor(data[,color.by])
-      warning("'color.by' variable converted to factor")}
+      warning("'color.by' variable converted to factor", call.=FALSE)}
 
     # set color palette for categorical levels (style = "points")
     if(inherits(data[,color.by], "factor")){
       ngroups <- nlevels(data[,color.by])
       if(!is.null(color.pal)){
         if(style=="points" && inherits(color.pal, "function")) color.pal <- color.pal(ngroups)
-        if(length(color.pal)!=ngroups)  warning("The number of colors doesn't match the number of levels in 'color.by' variable")
+        if(length(color.pal)!=ngroups)  warning("The number of colors doesn't match the number of levels in 'color.by' variable", call.=FALSE)
       }else{
         if(ngroups==3) color.pal <- c("#326FA5","#D73134","#1C8E43")
         else if (ngroups>3 & ngroups<10) color.pal <- .economist_pal(ngroups)
@@ -120,7 +123,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
           color.pal <- color.pal(100)
         }else{
           color.pal <- colorRampPalette(color.pal)(100)
-          warning("The color palette was generated using the provided colors")
+          warning("The color palette was generated using the provided colors", call.=FALSE)
         }
       }else{
         color.pal <- .viridis_pal(100)
@@ -136,8 +139,9 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
   #######################################################
   # set color palette for style=="raster"
   if(style=="raster"){
-    if(!is.null(color.pal) && inherits(color.pal, "function")) color.pal <- colorRampPalette(color.pal)
-    if(!is.null(color.by)) warning("'color.by' argument is discarded when plot if of type raster")
+    if(!is.null(color.pal) && !inherits(color.pal, "function")) color.pal <- colorRampPalette(color.pal)
+    if(is.null(color.pal)) color.pal <- .viridis_pal
+    if(!is.null(color.by)) warning("'color.by' argument is discarded when plot if of type raster", call.=FALSE)
   }
 
 
@@ -146,7 +150,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
   if(is.null(legend.cols)){
     legend.cols <- 1
     if(!is.null(color.by) && inherits(data[,color.by], "factor")){
-      if(nlevels(data[,color.by])>=8) legend.cols<-2
+      if(nlevels(data[,color.by])>=15) legend.cols<-2
     }
   }
 
@@ -196,13 +200,13 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       last_dates <- max(data_group[,timebin.col], na.rm=T)
     }
 
-    #round dates
-    first_dates <- lubridate::floor_date(first_dates, unit="day")
-    last_dates <- lubridate::ceiling_date(last_dates, unit="day")-60*60*(interval/60)
-
     # get time bins interval (in minutes)
     interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
     interval <- as.numeric(min(interval[interval>0], na.rm=T))
+
+    #round dates
+    first_dates <- lubridate::floor_date(first_dates, unit="day")
+    last_dates <- lubridate::ceiling_date(last_dates, unit="day")-60*60*(interval/60)
 
     # create complete seq of time-bins
     all_timebins <- seq.POSIXt(first_dates, last_dates, by=paste(interval, "mins"))
@@ -265,6 +269,30 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     names(plot_data_list)[i] <- paste0(group, "<->", var)
   }
 
+
+  #####################################################################################
+  # Extend dates (add left and right 4% margin) #######################################
+  #####################################################################################
+
+  # Define the extension process as a function
+  extend_range <- function(template) {
+    dates <- as.Date(rownames(template))
+    date_range <- as.numeric(max(dates) - min(dates))
+    extend_by <- floor(date_range*0.04)
+    new_start <- min(dates) - extend_by
+    new_end <- max(dates) + extend_by
+    new_dates <- seq(new_start, new_end, by="day")
+    new_template <- data.frame(matrix(NA, nrow=length(new_dates), ncol=ncol(template)))
+    rownames(new_template) <- new_dates
+    colnames(new_template) <- colnames(template)
+    common_dates <- intersect(rownames(new_template), rownames(template))
+    new_template[common_dates, ] <- template[common_dates, ]
+    new_template <- new_template[order(new_dates),]
+    return(new_template)
+  }
+
+  # Apply the function to each data frame in the list using lapply
+  plot_template <- lapply(plot_template, extend_range)
 
 
   #####################################################################################
@@ -330,20 +358,21 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
 
   # set par margins
   if(style=="raster"){
-    mars <- c(5,4,3,4)
+    mars <- c(4,4,3,4)
   }else if (style=="points"){
     if(!is.null(color.by)){
-      if(inherits(data[,color.by], "numeric")) mars <- c(5,4,3,12)
+      if(inherits(data[,color.by], "numeric")) mars <- c(4,4,3,12)
       else
-        if (legend.cols>1) mars <- c(5,4,3,10)
+        if (legend.cols==1) mars <- c(4,4,3,10)
+        else mars <- c(4,4,3,14)
         labels_size <- max(unlist(sapply(levels(data[,color.by]), nchar)))
-        if(labels_size>8 && legend.cols>1) mars <- c(5,4,3,14)
+        if(labels_size>8) mars <- c(4,4,3,14)
     }else{
-      mars <- c(5,4,3,4)
+      mars <- c(4,4,3,4)
     }
   }
-  if(lunar.info==TRUE){
-    mars[3] <- 7
+  if(lunar.info==T){
+    mars[2] <- 6
   }
 
 
@@ -355,9 +384,13 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     timebins <- as.POSIXct(days, "%Y-%m-%d", tz="UTC")
     lunar_illumination <- data.frame("timebin"=timebins, "fraction"=lunar::lunar.illumination(timebins))
     lunar_illumination$phase <- as.character(lunar::lunar.phase(timebins, name=T))
+    monitoring_period <- round(as.numeric(difftime(max(timebins), min(timebins), units="days")))
+    if(monitoring_period>10*30){
+      warning(paste0("Time range (", monitoring_period, " days) may be too large to display lunar illumination accurately. Consider splitting the data into smaller intervals to better visually inspect lunar patterns."), call.=FALSE)
+    }
 
     for(l in 1:cols){
-      par(mar=mars, xpd=T)
+      par(mar=c(3,6,6,mars[4]), xpd=T)
       xcoords <- c(1, seq(1, nrow(lunar_illumination)), nrow(lunar_illumination))
       ycoords <- c(0, lunar_illumination$fraction, 0)
       plot(lunar_illumination$fraction, type="l", lwd=0.5, axes=F, ylim=c(0,1), xlim=c(1, nrow(lunar_illumination)),
@@ -377,11 +410,14 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       moon_indexes <- data.frame("phase"=sub("\\_.*", "", names(moon_indexes)), "index"=moon_indexes, row.names=NULL)
       moon_indexes <- plyr::join(moon_indexes, moon_lookup, by="phase", type="left")
       moon_indexes$fraction2 <- abs(1- moon_indexes$fraction1)
+      moon_indexes <- moon_indexes[moon_indexes$phase %in% c("Full","New"),]
       for(i in 1:nrow(moon_indexes)){
         if(moon_indexes$phase[i]!="Waning"){moon_color <- c("#FFFBEB", "#3C3C3C")}
         if(moon_indexes$phase[i]=="Waxing"){moon_color <- c("#3C3C3C", "#FFFBEB")}
-        plotrix::floating.pie(xpos=moon_indexes$index[i], ypos=1.6, x=as.numeric(moon_indexes[i,c("fraction1", "fraction2")]),
-                              startpos=90*pi/180, col=moon_color, lwd=0.5, border=NULL, xpd=T)
+        plotrix::floating.pie(xpos=moon_indexes$index[i], ypos=1.4, x=as.numeric(moon_indexes[i,c("fraction1", "fraction2")]),
+                              startpos=90*pi/180, col=moon_color, lwd=0.2, radius=cex.moon, xpd=T)
+        plotrix::floating.pie(xpos=moon_indexes$index[i], ypos=1.4, x=as.numeric(moon_indexes[i,c("fraction1", "fraction2")]),
+                              startpos=90*pi/180, col=moon_color, lwd=0.2, border=NA, radius=cex.moon, xpd=T)
       }
     }
   }
@@ -401,15 +437,15 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     group <- plot_combs$group[i]
     var <-  plot_combs$variable[i]
     plot_data <- plot_data_list[[i]]
-    plot_title <- switch(var, detections="N\u00ba of detections", individuals="N\u00ba of individuals",
-                         "co-occurrences"="N\u00ba of co-occurring animals")
-    if(!is.null(split.by)){plot_title <- paste(group, "-", plot_title)}
+    plot_title <- switch(var, detections="n\u00ba of detections", individuals="n\u00ba of individuals",
+                         "co-occurrences"="n\u00ba of co-occurring animals")
+    if(!is.null(split.by)){plot_title <- paste(paste0(toupper(substring(group, 1, 1)), substring(group, 2)), "-", plot_title)}
 
-    # get diel phase timelines
+    # get unique days and hours
     days <- as.POSIXct(rownames(plot_template[[i]]), "%Y-%m-%d", tz="UTC")
     bins <- colnames(plot_template[[i]])
-    interval <- as.numeric(difftime(data[,timebin.col],  dplyr::lag(data[,timebin.col]), units="mins"))
-    interval <- min(interval[interval>0], na.rm=T)
+
+    # get diel phase timelines
     daytimes_table <- getSunTimes(sunriset.coords, min(days), max(days), by="%Y-%m-%d", solar.depth)
     daytimes_table[,-1] <- daytimes_table[,-1] * (60/interval)
     daytimes_table[,-1] <- daytimes_table[,-1] + 1
@@ -420,7 +456,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
     unique_dates <- unique(consec_dates)
     disp_dates <- unique_dates[seq(date.start, length(unique_dates), by=date.interval)]
-    indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
+    indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))[-1]
     disp_indexes <- unlist(lapply(disp_dates, function(x) min(which(consec_dates==x))))
     disp_dates <- sub("\\_.*", "", disp_dates)
 
@@ -429,7 +465,6 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     hours <- lubridate::hour(hours)
     hour_indexes <- sapply(0:23, function(x) min(which(hours==x)))
     disp_hours <- paste0(unique(hours), "h")
-
 
     # set scale
     if(uniformize.scale==T){
@@ -459,8 +494,9 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       plot_matrix <- plot_matrix[,-which(colnames(plot_matrix)=="day")]
       plot_matrix <- plot_matrix[order(rownames(plot_matrix)),]
       plot_matrix <- as.matrix(plot_matrix)
-      image(y=1:length(bins), x=1:length(days), zlim=var_range, z=plot_matrix,  xlab="", ylab="",
-            main="", col=raster_pal, axes=F, cex.lab=0.9, ...)
+      image(y=1:length(bins), x=1:length(days), z=plot_matrix,
+            zlim=var_range, xlim=xlim, xlab="", main="", ylab="",
+            col=raster_pal, axes=F, cex.lab=0.9, ...)
     }
 
     ##########################################################
@@ -468,11 +504,11 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     if(style=="points"){
 
       # create empty plot and fill background
-      plot(0,0, type="n", xlim=c(1, nrow(plot_template[[i]])), ylim=c(1, ncol(plot_template[[i]])), pch=16,
-           xlab="", ylab="", axes=F, xaxs="i")
+      plot(0,0, type="n", xlim=c(1, nrow(plot_template[[i]])), ylim=c(1, ncol(plot_template[[i]])),
+           pch=16, xlab="", ylab="", axes=F, xaxs="i")
       coords_list <- list()
       if(polygons=="season"){
-        seasons_table <- shadeSeasons(min(data[,timebin.col], na.rm=T), max(data[,timebin.col], na.rm=T), interval)
+        seasons_table <- shadeSeasons(min(days), max(days), interval)
         seasons_table$start <- strftime(seasons_table$start, "%Y-%m-%d", tz="UTC")
         seasons_table$end <- strftime(seasons_table$end, "%Y-%m-%d", tz="UTC")
         seasons_table$start <- sapply(seasons_table$start, function(x) min(which(as.character(days)==x)))
@@ -485,13 +521,26 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
         coords <- .legend(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
                                  xpd=T, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=F)
         coords_list <- c(coords_list, list(coords))
-
       } else if(polygons=="diel"){
         rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="grey98", border=NULL)
         x <- 1:length(daytimes_table$sunrises)
-        polygon(c(x, rev(x)), c(daytimes_table$sunrises, rep(par("usr")[3], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=F)
-        polygon(c(x, rev(x)), c(daytimes_table$sunsets, rep(par("usr")[4], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=F)
-        polygon(c(x, rev(x)), c(daytimes_table$sunrises, rev(daytimes_table$sunsets)), col=adjustcolor("#FFFBE1", alpha.f=0.8), border=F)
+        if(diel.lines==2){
+          polygon(c(x, rev(x)), c(daytimes_table$sunrises, rep(par("usr")[3], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=F)
+          polygon(c(x, rev(x)), c(daytimes_table$sunsets, rep(par("usr")[4], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=F)
+          polygon(c(x, rev(x)), c(daytimes_table$sunrises, rev(daytimes_table$sunsets)), col=adjustcolor("#FFFBE1", alpha.f=0.8), border=F)
+          coords <- .legend(x=par("usr")[2], y=par("usr")[4], legend=c("day","night"), fill=adjustcolor(c("#FFFBE1","#CAD9EA"), alpha.f=0.8),
+                            bty="n", xpd=T, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=F)
+        }
+         if(diel.lines==4){
+           polygon(c(x, rev(x)), c(daytimes_table$dawns, rep(par("usr")[3], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=F)
+           polygon(c(x, rev(x)), c(daytimes_table$dusks, rep(par("usr")[4], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=F)
+           polygon(c(x, rev(x)), c(daytimes_table$sunrises, rev(daytimes_table$sunsets)), col=adjustcolor("#FFFBE1", alpha.f=0.8), border=F)
+           polygon(c(x, rev(x)), c(daytimes_table$dawns, rev(daytimes_table$sunrises)), col=adjustcolor("#EDE8EC", alpha.f=0.8), border=F)
+           polygon(c(x, rev(x)), c(daytimes_table$sunsets, rev(daytimes_table$dusks)), col=adjustcolor("#EDE8EC", alpha.f=0.8), border=F)
+           coords <- .legend(x=par("usr")[2], y=par("usr")[4], legend=c("day","night", "crepuscule"), fill=adjustcolor(c("#FFFBE1","#CAD9EA","#EDE8EC"), alpha.f=0.8),
+                             bty="n", xpd=T, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=F)
+         }
+        coords_list <- c(coords_list, list(coords))
       } else {
         rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col=background.col, border=NULL)
       }
@@ -516,7 +565,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       size_labs <- size_labs[size_labs>=min(var_range) & size_labs<=max(var_range) & size_labs>0]
       size_scale <- .rescale(size_labs, from=var_range, to=pt.cex)
       if(length(coords_list)==0){legend.y<-par("usr")[4]
-      }else{legend.y<-abs(coords_list[[1]]$rect$top-coords$rect$h)+1}
+      }else{legend.y<-abs(coords_list[[1]]$rect$top-coords$rect$h)-0.5}
       legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
       coords <- legend(x=legend.x, y=legend.y, legend=size_labs, pch=16, pt.cex=size_scale,
                        bty="n", col=adjustcolor("grey25", alpha.f=0.7), cex=cex.legend, y.intersp=legend.intersp+0.2, xpd=T)
@@ -526,13 +575,16 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       if(!is.null(color.by)){
         if(inherits(data[,color.by], "factor")) {
           # plot legend
-          legend.y<-abs(coords$rect$top-coords$rect$h)+1
-          legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
+          legend.x <- max(unlist(lapply(coords_list, function(x) x$rect$left + x$rect$w + 5)))
+          legend.y <- par("usr")[4]
           legend(x=legend.x, y=legend.y, pch=16, pt.cex=1.4, legend=levels(data[,color.by]), col=color.pal, bty="n",
                  cex=cex.legend, y.intersp=legend.intersp, ncol=legend.cols, xpd=T)
         }
       }
     }
+
+    ##########################################################
+    # add additional elements ################################
 
     # add title
     title(main=plot_title, cex.main=1.2, font=2, line=1)
@@ -540,19 +592,19 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
     # add x axis to the bottom plots
     if(same_dates==T){
       if(i %in% bottom_plots){
-        title(xlab="Date", cex.lab=1)
+        title(xlab="Date", cex.lab=1, line=2.5)
         axis(side=1, labels=disp_dates, at=disp_indexes, cex.axis=cex.axis)
         axis(side=1, labels=F, at=indexes, tck=-0.015, lwd.ticks=0.5)
       }
     }else{
-      title(xlab="Date", cex.lab=1)
+      title(xlab="Date", cex.lab=1, line=2.5)
       axis(side=1, labels=disp_dates, at=disp_indexes, cex.axis=cex.axis)
       axis(side=1, labels=F, at=indexes, tck=-0.015, lwd.ticks=0.5)
     }
 
     # add x axis to the bottom plots
     if(i %in% right_plots){
-      title(ylab="Hour", cex.lab=1)
+      title(ylab="Hour", cex.lab=1, line=3)
       axis(2, at=hour_indexes[c(F,T)], labels=F, tck=-0.015, lwd.ticks=0.5)
       axis(2, at=hour_indexes[c(T,F)], labels=disp_hours[c(T,F)], cex.axis=cex.axis, las=1)
     }

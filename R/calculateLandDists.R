@@ -7,6 +7,7 @@
 #' @description Function to calculate distance to nearest land and additional related metrics,
 #' including direction of movement (inshore/offshore/alongshore).
 
+#' @inheritParams setDefaults
 #' @param data A data frame with animal detections/positions, containing longitude and latitude values (unprojected).
 #' @param land.shape A shapefile containing coastlines or land surfaces.
 #' @param mov.threshold Movement threshold (0 - 1). It establishes the proportion of a step length that must be
@@ -14,7 +15,6 @@
 #' (e.g., with the default mov.threshold of 0.5: if the difference in distance to land between each two
 #' consecutive positions corresponds to more than 50% of the total step length, the movement
 #' is classified either as inshore or offshore, according to its direction).
-#' @param id.col Name of the column containing animal IDs Defaults to 'ID'.
 #' @param lon.col Name of the column containing longitude values. Defaults to 'lon'.
 #' @param lat.col Name of the column containing latitude values. Defaults to 'lat'.
 #' @param dist.col Name of the column containing step lengths in meters (distance between each consecutive position).
@@ -25,8 +25,9 @@
 #' @export
 
 
-calculateLandDists <- function(data, land.shape, mov.threshold=0.5, id.col="ID",
-                                   lon.col="lon", lat.col="lat", dist.col=NULL){
+calculateLandDists <- function(data, land.shape, mov.threshold=0.5, id.col=getDefaults("id"),
+                               lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
+                               dist.col=NULL){
 
 
   ############################################################################

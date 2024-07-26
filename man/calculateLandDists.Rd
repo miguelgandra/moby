@@ -8,9 +8,9 @@ calculateLandDists(
   data,
   land.shape,
   mov.threshold = 0.5,
-  id.col = "ID",
-  lon.col = "lon",
-  lat.col = "lat",
+  id.col = getDefaults("id"),
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat"),
   dist.col = NULL
 )
 }
@@ -25,7 +25,7 @@ perpendicular to shore (away or approaching) in order for a movement to be class
 consecutive positions corresponds to more than 50\% of the total step length, the movement
 is classified either as inshore or offshore, according to its direction).}
 
-\item{id.col}{Name of the column containing animal IDs Defaults to 'ID'.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 

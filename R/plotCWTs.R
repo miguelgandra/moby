@@ -66,6 +66,7 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
     stop("Please supply two values (min and max) in the period.range argument", call.=FALSE)
   }
 
+  data[,id.col] <- droplevels( data[,id.col])
 
   ##############################################################################
   ## Prepare data ##############################################################
