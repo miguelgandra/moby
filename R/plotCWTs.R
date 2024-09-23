@@ -58,14 +58,17 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-  if(!class(data[,variable]) %in% c("numeric", "integer")){
-    stop("Please convert signal to class numeric", call.=FALSE)
+  # validate additional parameters
+  errors <- c()
+  if(!requireNamespace("wavScalogram", quietly=TRUE)) errors <- c(errors, "The 'wavScalogram' package is required for this function but is not installed. Please install 'wavScalogram' using install.packages('wavScalogram') and try again.")
+  if(!class(data[,variable]) %in% c("numeric", "integer")) errors <- c(errors, "Please convert signal to class numeric")
+  if(length(period.range)!=2) errors <- c(errors, "Please supply two values (min and max) in the period.range argument")
+   if(length(errors)>0){
+    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+    stop(stop_message, call.=FALSE)
   }
 
-  if(length(period.range)!=2){
-    stop("Please supply two values (min and max) in the period.range argument", call.=FALSE)
-  }
-
+  # drop missing ID levels
   data[,id.col] <- droplevels( data[,id.col])
 
   ##############################################################################
@@ -140,7 +143,7 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
   plot_ids <- as.integer(apply(plot_layout, 1, function(x) x))
 
   # set par
-  par(mfrow=c(rows, cols), mar=c(4,4,4,6), oma=c(5,5,5,5))
+  par(mfrow=c(rows, cols), mar=c(4,4,4,6), oma=c(4,4,4,4))
 
   # set color pallete
   if(is.null(color.pal)){
@@ -212,9 +215,11 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
 
     # plot cone of influence
     x <- 1:nrow(cwt$coefs)
-    coi_indexes <- .rescale(cwt$coi_maxscale, from=range(cwt$scales), to=c(1, length(cwt$scales)))
-    segments(x0=x[-nrow(cwt$coefs)], y0=coi_indexes[-nrow(cwt$coefs)], x1=x[-1], y1=coi_indexes[-1])
-    polygon(c(x, rev(x)), c(coi_indexes, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=F)
+    coi_indexes <- .rescale(log2(cwt$coi_maxscale+1e-20), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    x <- x[coi_indexes<=par("usr")[4]]
+    coi_indexes <- coi_indexes[coi_indexes<=par("usr")[4]]
+    #segments(x0=x[-nrow(cwt$coefs)], y0=coi_indexes[-nrow(cwt$coefs)], x1=x[-1], y1=coi_indexes[-1])
+    polygon(c(x, rev(x)), c(coi_indexes, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=T)
 
     # add color scale
     if(same.scale==F){

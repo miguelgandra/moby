@@ -151,7 +151,7 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
 
   # reassemble data
   data_filtered <- do.call("rbind", data_individual)
-  data_filtered <- data_filtered[order(data_filtered$datetime, data_filtered[,id.col]),]
+  data_filtered <- data_filtered[order(data_filtered[,datetime.col], data_filtered[,id.col]),]
 
 
   ##############################################################################
