@@ -7,10 +7,13 @@
 summaryTable(
   data,
   tagging.dates = getDefaults("tagdates"),
+  tag.durations = NULL,
   id.metadata = NULL,
   id.col = getDefaults("id"),
   datetime.col = getDefaults("datetime"),
   station.col = getDefaults("station"),
+  residency.index = c("IR1", "IR2", "IWR"),
+  start.point = "release",
   residency.by = NULL,
   id.groups = NULL,
   error.stat = "sd"
@@ -24,6 +27,9 @@ unless a 'detections' column is included to indicate the number of detections fo
 The length of this vector should match the number of unique animal IDs.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
+\item{tag.durations}{Optional. A numeric vector containing the estimated battery
+duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
+
 \item{id.metadata}{A data frame containing metadata about the tagged animals, such as their length,
 sex, or transmitter type. If there are multiple rows per animal, variables will be collapsed before merging with other statistics.}
 
@@ -32,6 +38,27 @@ sex, or transmitter type. If there are multiple rows per animal, variables will 
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
+
+\item{residency.index}{A character string specifying the type of residency index to calculate.
+Options include:
+\itemize{
+\item "IR1": Residency Index 1, calculated as the number of days the animal was detected (Dd) divided by the detection interval (Di), i.e., the number of days between release/first detection and last detection (days at liberty). This represents a maximum residency value, considering only the period for which the animal was known to be alive and the tag operational.
+\item "IR2": Residency Index 2, calculated as the number of days the animal was detected (Dd) divided by the study interval (Dt), i.e., the total number of days between release/first detection and last data download or tag expiration date. This approach provides a minimum residency value, assuming the animal was alive and detectable throughout the study period.
+\item "IWR": Weighted Residency Index, which corresponds to the quotient of IR2/IR1. It quantifies the extent of the gap between the last detection and the end of the monitoring period, weighting the time an animal is detected with the total study period.
+}
+
+The choice of index can affect the interpretation of residency patterns, so it's important to select the one(s) that best fits the study objectives.
+Defaults to "IR1". If \code{tag.durations} are provided, the default changes to "IR2".
+Further information on residency estimation methods can be found in Kraft et al. (2023) and Appert et al. (2023) - see below in the references section.}
+
+\item{start.point}{A character string specifying the starting point for calculating days at liberty.
+Options include:
+\itemize{
+\item \code{"release"}: The release day is used as the starting point for calculating days at liberty.
+\item \code{"first.detection"}: The first detection after tagging is used as the starting point. This option can help account for potential post-release behavior effects.
+}
+
+Defaults to \code{"release"}.}
 
 \item{residency.by}{Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 Defaults to NULL.}
@@ -47,4 +74,15 @@ or 'se' (standard error). Defaults to 'sd'.}
 This function generates a summary table with information about tagged animals,
 including tagging dates, last detection dates, and various monitoring and residency metrics. It allows for the
 inclusion of additional metadata and the calculation of overall means and error metrics.
+}
+\references{
+Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
+Residency and space use estimation methods based on passive acoustic telemetry data.
+Movement Ecology, 11(1), 12.
+https://doi.org/10.1186/s40462-023-00349-y
+
+Appert, C., Udyawer, V., Simpfendorfer, C. A., Heupel, M. R., Scott, M., Currey-Randall, L. M., ... & Chin, A. (2023).
+Use, misuse, and ambiguity of indices of residence in acoustic telemetry studies.
+Marine Ecology Progress Series, 714, 27-44.
+https://doi.org/10.3354/meps14300
 }
