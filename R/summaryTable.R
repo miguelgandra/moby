@@ -37,6 +37,21 @@
 #' will be calculated independently for each group.
 #' @param error.stat The statistic to use for variability/error calculation, either 'sd' (standard deviation)
 #' or 'se' (standard error). Defaults to 'sd'.
+#'
+#' @return A data frame summarizing information on tagged animals, with the following columns:
+#' - `ID`: Unique identifier for each tagged animal.
+#' - Any additional metadata columns from `id.metadata` if provided.
+#' - `Tagging date`: The date when the animal was tagged.
+#' - `Tag duration (d)`: Duration of the tag in days (if provided).
+#' - `Last detection`: The date of the last detection.
+#' - `N Detect`: Total number of detections for the animal.
+#' - `N Receiv`: Number of unique receivers that detected the animal.
+#' - `Monitoring duration (d)`: Total duration of monitoring in days.
+#' - `Detection span (d)`: Number of days between release/first detection and last detection (days at liberty)
+#' - `N days detected`: Total number of days the animal was detected.
+#' - Additional columns for each residency index specified in the `residency.index` parameter.
+#' - If `residency.by` is specified, additional columns for partial residency metrics will be included.
+#'
 #' @references
 #' Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
 #' Residency and space use estimation methods based on passive acoustic telemetry data.
@@ -97,9 +112,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), tag.durati
   if(!is.null(residency.by)) {
     nlevels <- length(unique(data[[residency.by]]))
     if((nlevels*length(residency.index))>=9 && length(residency.index)>1) {
-      #message("Residency.by has multiple levels and more than one residency index will be calculated. This can result in a table with many columns. Do you want to proceed?")
-      # prompt user for input (1 = Yes, 2 = No)
-      #proceed <- menu(c("Yes", "No"), title="Select an option:")
+      # print prompt
       proceed <- menu(c("Yes", "No"), title="Residency.by has multiple levels and more than one residency index will be calculated. This can result in a table with many columns. Do you want to proceed?")
       # if user selects 'No', stop the function
       if(proceed==2) {

@@ -1,6 +1,9 @@
 library(devtools)
 library(roxygen2)
 
+#devtools::install("~/Desktop/moby")
+
+
 devtools::document()
 rcheck <- devtools::check()
 

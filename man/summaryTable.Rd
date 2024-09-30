@@ -70,6 +70,23 @@ will be calculated independently for each group.}
 \item{error.stat}{The statistic to use for variability/error calculation, either 'sd' (standard deviation)
 or 'se' (standard error). Defaults to 'sd'.}
 }
+\value{
+A data frame summarizing information on tagged animals, with the following columns:
+\itemize{
+\item \code{ID}: Unique identifier for each tagged animal.
+\item Any additional metadata columns from \code{id.metadata} if provided.
+\item \verb{Tagging date}: The date when the animal was tagged.
+\item \verb{Tag duration (d)}: Duration of the tag in days (if provided).
+\item \verb{Last detection}: The date of the last detection.
+\item \verb{N Detect}: Total number of detections for the animal.
+\item \verb{N Receiv}: Number of unique receivers that detected the animal.
+\item \verb{Monitoring duration (d)}: Total duration of monitoring in days.
+\item \verb{Detection span (d)}: Number of days between release/first detection and last detection (days at liberty)
+\item \verb{N days detected}: Total number of days the animal was detected.
+\item Additional columns for each residency index specified in the \code{residency.index} parameter.
+\item If \code{residency.by} is specified, additional columns for partial residency metrics will be included.
+}
+}
 \description{
 This function generates a summary table with information about tagged animals,
 including tagging dates, last detection dates, and various monitoring and residency metrics. It allows for the
