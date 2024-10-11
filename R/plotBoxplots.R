@@ -63,8 +63,8 @@ plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, resp
     stop(paste(missing_responses, "response(s) not found in the supplied data"))
   }
 
-  if(class(data[,by])!="factor"){
-    cat("Warning: converting grouping variable to factor\n")
+  if(!inherits(data[,by], "factor")){
+    warning("Converting grouping variable to factor.", call.=FALSE)
     data[,by] <- as.factor(data[,by])
   }
   groups <- levels(data[,by])

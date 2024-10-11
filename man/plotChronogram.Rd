@@ -43,7 +43,7 @@ plotChronogram(
 \item{data}{A data frame containing binned animal detections.}
 
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs.
+The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{variables}{The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".}

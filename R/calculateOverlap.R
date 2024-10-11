@@ -99,14 +99,17 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
   if (!is.null(subset) && !all(subset %in% colnames(table))) errors <- c(errors,  "Subset variable(s) not found in the supplied table.")
   if (!metric %in% c("simple-ratio", "half-weight")) errors <- c(errors, "Metric must be one of 'simple-ratio' or 'half-weight'.")
   if (!group.comparisons %in% c("all", "within", "between")) errors <- c(errors, "Group comparisons must be one of 'all', 'within' or 'between'.")
-  if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "Cores must be a positive integer.")
+  if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "The 'cores' parameter must be a positive integer.")
   if (cores>1 && requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
-  if (cores>1 && requireNamespace("parallel", quietly=TRUE)) errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
   if (cores>1 && requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
-  if(parallel::detectCores()<cores)  errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
+  if (cores>1 && requireNamespace("parallel", quietly=TRUE)){
+    errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
+  }else if(parallel::detectCores()<cores){
+    errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
+  }
   if(length(errors)>0){
-    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
-    stop(stop_message, call.=FALSE)
+    stop_message <- sapply(errors, function(x) paste(strwrap(x), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
   }
 
   # get table attributes

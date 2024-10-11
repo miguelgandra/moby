@@ -2,79 +2,166 @@
 % Please edit documentation in R/plotMaps.R
 \name{plotMaps}
 \alias{plotMaps}
-\title{Plot maps with movement trajectories + home ranges}
+\title{Plot maps with movement trajectories and home range areas.}
 \usage{
 plotMaps(
   data,
-  kud.densities,
+  kernel.densities = NULL,
   animal.tracks = NULL,
   id.groups = NULL,
-  id.col = "ID",
-  lon.col = "lon",
-  lat.col = "lat",
-  land.shape,
+  id.col = getDefaults("id"),
+  lon.col = "x",
+  lat.col = "y",
+  land.shape = NULL,
+  epsg.code = getDefaults("epsg"),
+  land.color = "gray50",
   background.layer = NULL,
   background.pal = NULL,
-  land.color = "gray50",
-  discard.missing = T,
-  kud.transparency = 0,
+  background.title = NULL,
+  discard.missing = TRUE,
+  color.pal = NULL,
+  kud.transparency.threshold = 0.95,
+  tracks.color = "black",
+  tracks.lty = 2,
+  tracks.lwd = 0.2,
+  plot.detections = TRUE,
+  pts.color = "white",
+  pts.cex = 0.7,
+  same.scale = FALSE,
+  kud.legend = TRUE,
+  legend.cex = 0.8,
+  title.color = "black",
+  title.pos = "topleft",
+  title.inset = c(-0.08, 0),
+  title.cex = 1.5,
   scale.meters = NULL,
   scale.pos = "bottomright",
   scale.inset = 0.1,
-  same.scale = FALSE,
-  kud.legend = TRUE,
+  extent.factor = 1.05,
   cols = 3
 )
 }
 \arguments{
-\item{data}{A data frame with animal positions (COAs), containing 'longitude' and 'latitude' columns.}
+\item{data}{A data frame containing animal positions (centers of activity, COAs) with longitude
+and latitude coordinates.}
 
-\item{kud.densities}{Kernel utilization areas ('estUD' class), as returned by \code{\link{calculateKUDs}}.}
+\item{kernel.densities}{Kernel utilization areas ('estUD' class), as returned by \code{\link{calculateKUDs}}.}
 
 \item{animal.tracks}{The output of \code{\link{calculateDistances}}.}
 
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}
 
-\item{id.col}{Name of the column containing animal IDs. Defaults to "ID".}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lon.col}{Name of the column containing projected longitudes. Defaults to "lon".}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
-\item{lat.col}{Name of the column containing projected latitudes. Defaults to "lat".}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
-\item{land.shape}{A projected shape file containing coastlines.}
+\item{land.shape}{Optional. A shapefile containing the coastlines or landmasses to be plotted.}
 
-\item{background.layer}{A projected raster containing a variable to be displayed in the background
-(e.g. bathymetry, temperature, etc.).}
+\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+for projecting the positions. If not specified, the function will attempt to use the CRS from the
+provided land.shape (if available).}
 
-\item{background.pal}{Color palette for the background layer.}
+\item{land.color}{Color used to represent land areas on the map. Default to "gray50".}
 
-\item{land.color}{Color of land areas.}
+\item{background.layer}{Optional. A projected raster object representing an environmental
+variable (e.g., bathymetry, temperature) to be displayed in the background.}
 
-\item{discard.missing}{If true, only individuals with detections are included.
-If false, plots of missing individuals are drawn only with land.shape and provided background.}
+\item{background.pal}{Optional. Color palette for the background raster layer.}
 
-\item{kud.transparency}{Transparency of the kernel utilization areas (0-1).}
+\item{background.title}{Optional. The title or label for the background raster layer legend,
+indicating the type of environmental variable being displayed (e.g., "Bathymetry" or "Temperature").
+If not provided, the default title is "Layer values".}
 
-\item{scale.meters}{Distance covered by the scale bar, in meters. If null, it is
-automatically defined as 20\% of the plot region.}
+\item{discard.missing}{Logical, indicating whether individuals with fewer than 5 detections
+should be excluded from the plots. Defaults to TRUE. If set to FALSE, empty maps will be drawn
+for these individuals, containing only the land.shape and background layer (if provided).}
 
-\item{scale.pos}{Position of the scale bar, specified by keyword.}
+\item{color.pal}{Optional. A color palette used to represent the kernel utilization distribution (KUD)
+density values on the map. If NULL (default), If NULL (default), the \code{terrain.colors} palette is used.}
+
+\item{kud.transparency.threshold}{Numeric threshold (between 0 and 1) for kernel utilization density (KUD) values.
+Areas with KUD values below this threshold will be set to NA, effectively removing lower-density regions
+(only relevant when a background layer is displayed). This threshold corresponds to a contour level;
+for example, a value of 0.95 will exclude areas outside the 95\% kernel utilization contour. Defaults to 0.95.}
+
+\item{tracks.color}{Optional. The color used for the animal movement trajectories
+on the map. Defaults to "black".}
+
+\item{tracks.lty}{Optional. The line type for the animal movement trajectories, as per \code{lty}
+in R graphics. Defaults to 2 (dashed line).}
+
+\item{tracks.lwd}{Optional. The line width for the animal movement trajectories. Defaults to 0.2.}
+
+\item{plot.detections}{Logical. If TRUE (default), individual detection points will be plotted on the map.
+If FALSE, only trajectories and kernel density estimates (if provided) will be shown without displaying individual locations.}
+
+\item{pts.color}{Optional. Color for the individual detection points on the plot. Defaults to "white".}
+
+\item{pts.cex}{Optional. Size of the individual detection points. Defaults to 0.7.}
+
+\item{same.scale}{Logical, whether to enforce the same scale for kernel density (KUD) areas across
+all individuals for comparison. When set to FALSE, each plot will display its own y-axis.
+If TRUE, only the y-axis of the left-most plots will be shown to conserve space. Defaults to FALSE.}
+
+\item{kud.legend}{Logical, whether to display a legend for the KUD density values. Defaults to TRUE.}
+
+\item{legend.cex}{Size of the legend text for KUD density and background layer values (if available).
+Defaults to 0.8.}
+
+\item{title.color}{Optional. The color of the title (animal ID) displayed on each map. Defaults to "black".}
+
+\item{title.pos}{Position of the title (animal ID) on the plot (by keyword). Defaults to "topleft".}
+
+\item{title.inset}{Inset distance of the title from the specified position, as a fraction of the
+plot region. Defaults to c(-0.08, 0).}
+
+\item{title.cex}{Determines the size of the plot title (animal ID). Defaults to 1.5.}
+
+\item{scale.meters}{The length of the scale bar in meters. If set to NULL (default), it is
+automatically set to 20\% of the plot width.}
+
+\item{scale.pos}{The position of the scale bar on the map (e.g., "bottomright").}
 
 \item{scale.inset}{Inset distance(s) from the margins as a fraction of the
 plot region, relatively to the scale bar position.}
 
-\item{same.scale}{Forces same KUD scale across all plots, allowing for
-density comparison between individuals. If set to false, all y-axis are displayed.
-Otherwise they are only displayed in the left-most plots to save space.}
+\item{extent.factor}{Numeric. Factor by which to adjust the extent of the plotting region,
+defined based on the bounding box around animal positions/detections. A value of 1 keeps
+the original bounding box, values greater than 1 increase the extent, and values less
+than 1 decrease it. Defaults to 1.05 (5\% increase).}
 
-\item{kud.legend}{Logical. If TRUE, includes a legend for the KUD densities. Defaults to TRUE.}
-
-\item{cols}{Number of columns in the panel (passed to the mfrow argument). Defaults to 3.}
+\item{cols}{Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 3.}
 }
 \description{
-Produces maps with inferred movement trajectories
-(shortest paths in water) and estimated kernel home-ranges.
-It can also overlay information such as bathymetry or
-sea surface temperature, by plotting a raster in the background.
+This function generates maps that display inferred animal movement trajectories
+(shortest in-water paths) alongside kernel density home range estimates. It can optionally
+overlay additional spatial information such as bathymetry or sea surface temperature using a
+background raster layer.
+}
+\details{
+This function is designed to create multi-panel plots of animal movement and home ranges.
+It is flexible enough to visualize multiple individuals or animal groups (e.g. species),
+while also supporting the overlay of environmental layers such as bathymetry or sea surface temperature.
+The function processes input data (animal positions, kernel utilization distributions, and optional
+movement tracks) and outputs a grid of maps. Each map represents an individual's home range,
+along with optional trajectories and background layers. When multiple individuals are included,
+it allows the option of enforcing a common scale for kernel density areas across all maps for
+comparability.
+}
+\examples{
+\dontrun{
+# Example usage (adjust PDF dimensions as needed)
+pdf("./home-range-maps.pdf", width=12, height=20)
+plotMaps(data = animal_coas,
+         kernel.densities = kud_output,
+         animal.tracks = trajectories,
+         land.shape = coastline_shapefile,
+         id.col = "ID",
+         lat.col = "lat",
+         lon.col = "lon")
+ dev.off()
+}
 }

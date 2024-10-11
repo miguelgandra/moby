@@ -4,31 +4,58 @@
 
 #' Estimate minimum traveled distances
 #'
-#' @description Function to calculate the shortest path in water between consecutive positions.
-#' If no land.shape is provided, linear ('great-circle') distances are calculated instead.
+#' @description This function calculates the shortest path in water between
+#' consecutive positions for multiple individuals. If no land shapefile is provided,
+#' the function defaults to calculating  linear (great-circle) distances. When a land
+#' shapefile is provided, the function can utilize parallel computing to expedite
+#' least-cost path estimation, depending on the number of CPU cores specified.
 #'
 #' @inheritParams setDefaults
-#' @param data A data frame with animal positions, containing longitude and latitude values (unprojected).
-#' @param land.shape A  shape file containing coastlines.
-#' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
-#' If not supplied, CRS is assumed to be the same as in land.shape.
-#' @param grid.resolution Grid cell size in meters  over which shortest paths are going to be estimated.
-#' @param mov.directions Number of directions allowed for shortest path calculation.
-#' Passed to \link[gdistance]{transition}.
-#' @param verbose Output process info and progress bar to console? Defaults to TRUE.
-#' @return A data frame containing (minimum) distances traveled between each consecutive animal position,
-#' calculated separately for each individual.
+#' @param data A data frame with animal positions, containing longitude and latitude values.
+#' @param land.shape Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+#' an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+#' If the provided object is not of class 'sf', the function will attempt to
+#' convert it to an 'sf' object for compatibility with subsequent spatial operations.
+#' @param epsg.code The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+#' for projecting the positions. If not specified, the function will attempt to use the CRS from the
+#' provided land.shape (if available).
+#' @param grid.resolution The grid cell size (in meters) used to estimate shortest paths. A higher
+#' resolution leads to more precise path calculations but may increase computation time.
+#' @param mov.directions Number of movement directions allowed for shortest path calculations, passed
+#' to the \link[gdistance]{transition} function from the **gdistance** package.
+#' @param cores Number of CPU cores to use for the computations. Defaults to 1, which
+#' means no parallel computing (single core).  If set to a value greater than 1,
+#' the function will use parallel computing to speed up calculations. This parameter
+#' is only relevant for estimating least-cost paths, specifically when a \code{land.shape} is provided.
+#' Run \code{parallel::detectCores()} to check the number of available cores.
+#' @param verbose Logical. Should the function output process information and display a progress bar?
+#' Defaults to TRUE.
+#'
+#' @note This function relies on the **gdistance** and **geosphere** packages for calculating
+#' the shortest in-water paths and great-circle distances, respectively.
+#'
+#' @return A list with the following components:
+#'   \item{data}{A data frame containing the calculated (minimum) distances between consecutive animal positions.}
+#'   \item{trajectories}{A list of spatial objects representing the paths between positions.}
+#'   \item{transition_layer}{(If land.shape is provided) The transition cost layer used for shortest path calculations.}
+#'
 #' @export
 
 
-calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resolution=100, mov.directions=16,
-                               id.col=getDefaults("id"), lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
-                               verbose=TRUE){
+calculateDistances <- function(data,
+                               land.shape = NULL,
+                               epsg.code = getDefaults("epsg"),
+                               grid.resolution = 100,
+                               mov.directions = 16,
+                               id.col = getDefaults("id"),
+                               lon.col = getDefaults("lon"),
+                               lat.col = getDefaults("lat"),
+                               cores = 1,
+                               verbose = TRUE){
 
-
-  ############################################################################
-  ## Initial checks ##########################################################
-  ############################################################################
+  ##############################################################################
+  ## Initial checks ############################################################
+  ##############################################################################
 
   # measure running time
   start.time <- Sys.time()
@@ -36,88 +63,75 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
+  land.shape <- reviewed_params$land.shape
 
-  # check if dataset coordinates are in geographic format (unprojected)
-  geographic_coords <-  all(data[,lon.col]>=(-180) & data[,lon.col]<=180 & data[,lat.col]>=(-90) & data[,lat.col]<=90)
-  if(is.na(geographic_coords)){
-    stop("Longitudes/latitudes values are missing and/or in the wrong format\n")
-  }
+  # manage spatial objects
+  coords <- sf::st_as_sf(data, coords=c(lon.col, lat.col))
+  coords_crs <- .checkProjection(coords)
+  spatial_data <- .processSpatial(coords, land.shape, epsg.code)
+  coords <- spatial_data$coords
+  land.shape <- spatial_data$spatial.layer
+  epsg.code <- spatial_data$epsg.code
 
 
-  #############################################################################
-  ## Prepare data for linear-distance calculation #############################
-  ############################################################################
+  ##############################################################################
+  ## Prepare data for linear-distance calculation ##############################
+  ##############################################################################
 
-  # If no land.shape was provided
   if(is.null(land.shape)){
-    if(verbose) {cat("No land shape provided\n")}
-    if(geographic_coords==F){
-      if(is.null(epsg.code)){
-        stop("Please supply longitude and latitude in a geographic CRS /
-           unprojected format (WGS84) or provide an epsg.code", call.=FALSE)
-      }
-      coords <- sp::SpatialPoints(cbind(data[,lon.col], data[,lat.col]))
-      raster::projection(coords) <- epsg.code
-      coords <- sp::spTransform(coords, sp::CRS("+proj=longlat +datum=WGS84"))
-      data$lon_wgs84_tmp <- coords@coords[,1]
-      data$lat_wgs84_tmp <- coords@coords[,2]
+
+    if(verbose) {cat("No land.shape provided\n")}
+
+    # convert coordinates to geographic format (EPSG:4326)
+    if(coords_crs=="projected"){
+      # transform to WGS84 (EPSG:4326)
+      coords_wgs84 <- sf::st_transform(coords, crs=4326)
+      # extract the transformed coordinates
+      data$lon_wgs84_tmp <- sf::st_coordinates(coords_wgs84)[,1]
+      data$lat_wgs84_tmp <- sf::st_coordinates(coords_wgs84)[,2]
     } else {
-      epsg.code <- sp::CRS("+proj=longlat +datum=WGS84")
+      epsg.code <- 4326
       data$lon_wgs84_tmp <- data[,lon.col]
       data$lat_wgs84_tmp <- data[,lat.col]
     }
   }
 
-  ############################################################################
-  ## Prepare data for least-cost distance calculation ########################
-  ############################################################################
+  ##############################################################################
+  ## Prepare data for least-cost distance calculation ##########################
+  ##############################################################################
 
-  # If a land.shape was provided
    if(!is.null(land.shape)){
-    # retrieve epsg.code if not provided
-    if(is.null(epsg.code)){
-      if(!grepl("+units=m", land.shape@proj4string, fixed=T)){
-        stop("Please supply a projected land.shape (in metres)", call.=FALSE)
-      }else{
-        epsg.code <- land.shape@proj4string
-        if(verbose) {warning(paste0("Assuming CRS projection '", epsg.code), call.=FALSE)}
-      }
-    } else {
-      land.shape <- sp::spTransform(land.shape, epsg.code)
-    }
 
-    # convert coordinates
-    if(geographic_coords==T){
+    if(coords_crs=="geographic"){
+      # if the coordinates are already in geographic (WGS84)
       data$lon_wgs84_tmp <- data[,lon.col]
       data$lat_wgs84_tmp <- data[,lat.col]
-      coords <- sp::SpatialPoints(cbind(data$lon_wgs84_tmp, data$lat_wgs84_tmp))
-      raster::projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
-      coords <- sp::spTransform(coords, epsg.code)
-      data$lon_m_tmp <- coords@coords[,1]
-      data$lat_m_tmp <- coords@coords[,2]
+      # extract the transformed coordinates
+      data$lon_m_tmp <- sf::st_coordinates(coords)[,1]
+      data$lat_m_tmp <- sf::st_coordinates(coords)[,2]
     } else {
+      # if the coordinates are already projected (in meters)
       data$lon_m_tmp <- data[,lon.col]
       data$lat_m_tmp <- data[,lat.col]
-      coords <- sp::SpatialPoints(cbind(data$lon_m_tmp, data$lat_m_tmp), epsg.code)
-      coords <- sp::spTransform(coords, sp::CRS("+proj=longlat +datum=WGS84"))
-      data$lon_wgs84_tmp <- coords@coords[,1]
-      data$lat_wgs84_tmp <- coords@coords[,2]
+      # transform back to WGS84 (EPSG:4326)
+      coords_wgs84 <- sf::st_transform(coords, crs=4326)
+      data$lon_wgs84_tmp <- sf::st_coordinates(coords_wgs84)[,1]
+      data$lat_wgs84_tmp <- sf::st_coordinates(coords_wgs84)[,2]
     }
 
-    # check if any coordinate is on land
+    # check if any coordinates overlap land
     pts <- sf::st_multipoint(cbind(data$lon_m_tmp, data$lat_m_tmp))
     pts <- sf::st_sfc(pts, crs=sf::st_crs(epsg.code))
     if(lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=T))>0){
-      warning("Some of the coordinates overlap the supplied land shape", call.=FALSE)
+      warning("Some coordinates overlap with the supplied land shape. Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell, and then rerun the current function with the updated positions.", call.=FALSE)
     }
 
     # create transition layer
     if(verbose) {cat(paste0("Creating transition layer (", grid.resolution, "m grid | ", mov.directions, " directions)\n"))}
-    projected_coords <- sf::st_multipoint(cbind(data$lon_m_tmp, data$lat_m_tmp))
-    projected_coords <- sf::st_sfc(projected_coords, crs=sf::st_crs(epsg.code))
-    template_raster <- raster::raster(raster::extent(sf::st_bbox(projected_coords))*1.2, res=grid.resolution, crs=epsg.code)
+    template_raster <- raster::raster(raster::extent(sf::st_bbox(coords))*1.2, res=grid.resolution, crs=epsg.code)
     template_raster[] <- 0
-    land_raster <- raster::rasterize(land.shape, template_raster, update=T)
+    land.shape.sp <- sf::as_Spatial(land.shape)
+    land_raster <- raster::rasterize(land.shape.sp, template_raster, update=T)
     raster::values(land_raster)[raster::values(land_raster)==1] <- 10^8
     raster::values(land_raster)[raster::values(land_raster)==0] <- 1
     trCost <- gdistance::transition(1/land_raster, transitionFunction=mean, directions=mov.directions)
@@ -125,140 +139,248 @@ calculateDistances <- function(data, land.shape=NULL, epsg.code=NULL, grid.resol
   }
 
 
-  ############################################################################
-  ## Calculate trajectories and estimate distances ###########################
-  ############################################################################
+  ##############################################################################
+  ## Split data by individual and initialize variables #########################
+  ##############################################################################
 
-  # split COAs from different individuals
+  # split COAs by individual
   data_individual <- split(data, f=data[,id.col], drop=F)
-  ids <- levels(data[,id.col])
 
-  # set progress bar
+  # initialize progress bar
   if(verbose){
     pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)
   }
 
-  # initialize variables
+  # initialize trajectories list variable
   final_trajectories <- vector("list", length=length(data_individual))
   names(final_trajectories) <- names(data_individual)
+
+  # initialize a variable to track the number of skipped line segments
   lines_skipped <- 0
 
-  ##########################################################
-  # if land shape was not provided calculate linear distances
+
+  ##############################################################################
+  ## A - Calculate great-circle distances (land.shape not provided) ############
+  ##############################################################################
+
   if(is.null(land.shape)){
-    if(verbose) {cat("Calculating linear path between consecutive positions...\n")}
+
+    # output to console
+    if(verbose) cat("Calculating linear paths between consecutive positions...\n")
+
+    # loop through each individual
     for (i in 1:length(data_individual)) {
-      # if individual doesn't have any detections, jump to next
+
+      # (1) if individual doesn't have any detections, return empty
       if(nrow(data_individual[[i]])<=0){
-        if(verbose) {setTxtProgressBar(pb, i)}
-        next
-      }
-      # else, if individual has only a single detection, return point geometry
-      if(nrow(data_individual[[i]])==1){
-        final_trajectories[[i]] <- NULL
+        final_trajectories[[i]] <- list(NULL)
+
+      # (2) else if individual has only a single detection, return point geometry
+      }else if(nrow(data_individual[[i]])==1){
         data_individual[[i]]$dist_m <- NA
-        if(verbose) {setTxtProgressBar(pb, i)}
-        next
+        final_trajectories[[i]] <- list(NULL)
+
+      # (3) else, calculate great circle distances
+      }else{
+        coords <- as.matrix(data_individual[[i]][,c("lon_wgs84_tmp","lat_wgs84_tmp")])
+        dists <- geosphere::distVincentyEllipsoid(coords)
+        data_individual[[i]]$dist_m <- c(dists, NA)
+        lines <- sf::st_linestring(coords)
+        final_trajectories[[i]] <- sf::st_sf(geometry=sf::st_sfc(lines, crs=epsg.code))
       }
-      # else, calculate great circle distances
-      coords <- as.matrix(data_individual[[i]][,c("lon_wgs84_tmp","lat_wgs84_tmp")])
-      dists <- geosphere::distVincentyEllipsoid(coords)
-      data_individual[[i]]$dist_m <- c(dists, NA)
-      final_trajectories[[i]] <- raster::spLines(coords, crs=epsg.code)
-      if(verbose) {setTxtProgressBar(pb, i)}
-    }
-  }
-
-  ##########################################################
-  # else calculate shortest in-water paths (whenever land is intersected)
-  if(!is.null(land.shape)){
-
-    # iterate through each individual
-    if(verbose) {cat("Calculating shortest in-water path between consecutive positions...\n")}
-    for (i in 1:length(data_individual)) {
-
-      # if individual doesn't have any detections, jump to next
-      if(nrow(data_individual[[i]])==0){
-        if(verbose) {setTxtProgressBar(pb, i)}
-        next
-      }
-
-      # else, if individual has only a single detection, return point geometry
-      if(nrow(data_individual[[i]])==1){
-        final_trajectories[[i]] <- NULL
-        data_individual[[i]]$dist_m <- NA
-        if(verbose) {setTxtProgressBar(pb, i)}
-        next
-      }
-
-      # else, prepare data and calculate linear ("great circle") distances
-      coords <- as.matrix(data_individual[[i]][,c("lon_wgs84_tmp","lat_wgs84_tmp")])
-      coords_m <- as.matrix(data_individual[[i]][,c("lon_m_tmp","lat_m_tmp")])
-      dists <- geosphere::distVincentyEllipsoid(coords)
-      trajectories <- list()
-
-      # then, split the track into consecutive segments
-      for(r in 1:(nrow(coords)-1)){
-        segment <- sp::SpatialLines(list(sp::Lines(sp::Line(rbind(coords_m[r,], coords_m[r+1,])), ID="a")), proj4string=epsg.code)
-        segment <- sf::st_as_sf(segment)
-        is_pt <- all(coords_m[r,] == coords_m[r+1,])
-        in_land <- lengths(sf::st_intersects(segment, sf::st_as_sf(land.shape), sparse=T))>0
-        if(in_land==T & is_pt==F & floor(dists[r])<=grid.resolution){
-          lines_skipped <- lines_skipped+1
-        }
-        # if segment overlaps land and is not a point, calculate shortest in-water path
-        if(in_land==T & is_pt==F & floor(dists[r])>grid.resolution){
-          segment <- gdistance::shortestPath(trCost, coords_m[r,], coords_m[r+1,], output="SpatialLines")
-          segment <- sf::st_as_sf(segment)
-          sf::st_crs(segment) <- sf::st_crs(epsg.code)
-          segment_wgs84 <- sf::st_transform(segment, crs=sf::st_crs("+proj=longlat +datum=WGS84"))
-          dists[r] <- sum(geosphere::distVincentyEllipsoid(sf::st_coordinates(segment_wgs84)[,1:2]))
-        }
-        # save segment
-        trajectories[[r]] <- segment
-      }
-
-      # merge individual's results
-      data_individual[[i]]$dist_m <- c(dists, NA)
-      final_trajectories[[i]] <- do.call(rbind, trajectories)
 
       # update progress bar
-      if(verbose) {setTxtProgressBar(pb, i)}
+      if(verbose) setTxtProgressBar(pb, i)
+    }
+  }
+
+  ##############################################################################
+  ## B - Calculate least-cost paths (single core) ##############################
+  ##############################################################################
+
+  if(!is.null(land.shape) && cores==1){
+
+    # output to console
+    if(verbose) cat("Calculating least-cost paths between consecutive positions...\n")
+
+    # loop through each individual
+    for (i in 1:length(data_individual)) {
+
+      # run function
+      results <- calculateLeastCost(data_individual[[i]], land.shape, trCost, grid.resolution, epsg.code)
+
+      # assign results
+      data_individual[[i]] <- results$data
+      final_trajectories[[i]] <- results$trajectories
+      lines_skipped <- lines_skipped + results$lines_skipped
+
+      # update progress bar
+      if(verbose) setTxtProgressBar(pb, i)
     }
   }
 
 
-  ############################################################################
-  ## Return results ##########################################################
+  ##############################################################################
+  ## C - Calculate least-cost paths (parallel computation) #####################
+  ##############################################################################
 
-  # close progress bar and print time taken
-  if(verbose) {close(pb)}
-  end.time <- Sys.time()
-  time.taken <- end.time - start.time
-  if(verbose)   cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), base::units(time.taken), "\n"))
+  if(!is.null(land.shape) && cores>1){
 
-  # print warning
-  if(verbose & lines_skipped>0) {
-  cat("Warning: ", lines_skipped, " track segment(s) overlapping land but with length <= than the defined grid resolution, original (straight) line(s) preserved\n")
+    # print information to console if verbose mode is enabled
+    if (verbose) cat(paste0("Starting parallel computation: ", cores, " cores\n"))
+    if (verbose) cat("Calculating least-cost paths between consecutive positions...\n")
+
+    # register parallel backend with the specified number of cores
+    cl <- parallel::makeCluster(cores)
+    doSNOW::registerDoSNOW(cl)
+
+    # define the `%dopar%` operator locally for parallel execution
+    `%dopar%` <- foreach::`%dopar%`
+
+    # set progress bar options based on verbose mode
+    if(verbose) opts <- list(progress = function(n) setTxtProgressBar(pb, n))
+    else opts <- NULL
+
+    # perform parallel computation over each individual's data using foreach
+    results_list <- foreach::foreach(i=1:length(data_individual), .options.snow=opts, .packages=c("sf", "gdistance", "geosphere")) %dopar% {
+      calculateLeastCost(data_individual[[i]], land.shape, trCost, grid.resolution, epsg.code)
+    }
+
+    # stop the cluster
+    on.exit(parallel::stopCluster(cl))
+
+    # aggregate results from parallel processing
+    for (i in 1:length(results_list)) {
+      data_individual[[i]] <- results_list[[i]]$data
+      final_trajectories[[i]] <- results_list[[i]]$trajectories
+      lines_skipped <- lines_skipped + results_list[[i]]$lines_skipped
+    }
+
   }
 
-  # reassemble data
+
+  ##############################################################################
+  ## Return results ############################################################
+  ##############################################################################
+
+  # close progress bar and print time taken
+  if(verbose) close(pb)
+  end.time <- Sys.time()
+  time.taken <- end.time - start.time
+  if(verbose) cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), base::units(time.taken), "\n"))
+
+  # issue a warning if any track segments overlapped land and were skipped
+  if(verbose & lines_skipped>0) {
+    warning(paste0("Warning: ", lines_skipped,
+                   " track segment(s) were found overlapping land but had a length less than or equal to the defined grid resolution. ",
+                   "These segments were retained as straight lines in the final output."), call. = FALSE)
+  }
+
+  # combine all individual data frames into one final data frame
   data_individual <- data_individual[unlist(lapply(data_individual, nrow))>0]
   final_data <- do.call("rbind", data_individual)
   rownames(final_data) <- NULL
 
-  # clean out helper columns
-  out_cols <- c("hour_diff", "lon_wgs84_tmp", "lat_wgs84_tmp", "lon_m_tmp", "lat_m_tmp")
+  # clean out temporary helper columns that were used during processing
+  out_cols <- c("lon_wgs84_tmp", "lat_wgs84_tmp", "lon_m_tmp", "lat_m_tmp")
   final_data <- final_data[,-which(colnames(final_data) %in% out_cols)]
 
-  # return distance results
+  # aggregate results into a list, including data and trajectories
   if(is.null(land.shape)){
-    return(list("data"=final_data, "trajectories"=final_trajectories))}
-  else{
-    return(list("data"=final_data, "trajectories"=final_trajectories, "transition_layer"=trCost))}
+    results <- list("data"=final_data, "trajectories"=final_trajectories)
+  }else{
+    results <- list("data"=final_data, "trajectories"=final_trajectories, "transition_layer"=trCost)
+  }
 
+  # add relevant metadata as attributes to the results
+  attr(results, 'epsg.code') <- epsg.code
+  attr(results, 'grid.resolution') <- grid.resolution
+  attr(results, 'mov.directions') <- mov.directions
+  attr(results, 'processing.date') <- Sys.time()
+
+  # return the final results (data, trajectories, and optional transition layer)
+  return(results)
 }
 
+
+
+################################################################################
+# Define least-cost path function ##############################################
+################################################################################
+
+#' Calculate the Least-Cost Path for Individual Detections
+#'
+#' This function computes the least-cost path for individual animal tracks based on
+#' their detection coordinates. It handles cases where individuals may have
+#' zero, one, or multiple detections. The function uses the geodesic distance
+#' calculations and considers land overlaps to determine the shortest in-water path.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+calculateLeastCost <- function(data_individual, land.shape, trCost, grid.resolution, epsg.code){
+
+  # Initialize variable
+  lines_skipped <- 0
+
+  # 1 - If individual doesn't have any detections, return NULL
+  if(nrow(data_individual)==0){
+    final_trajectories  <- list(NULL)
+
+  # 2 - Else if individual has only a single detection, return point geometry
+  }else if(nrow(data_individual)==1){
+    data_individual$dist_m <- NA
+    final_trajectories  <- list(NULL)
+
+  # 3 - Else, calculate in-water distances
+  }else{
+    # prepare coordinate matrices for calculations
+    coords <- as.matrix(data_individual[,c("lon_wgs84_tmp","lat_wgs84_tmp")])
+    coords_m <- as.matrix(data_individual[,c("lon_m_tmp","lat_m_tmp")])
+    # calculate initial geodesic distances between detection points
+    dists <- geosphere::distVincentyEllipsoid(coords)
+    # initialize list to store trajectory segments
+    trajectories <- list()
+    # loop through each consecutive pair of points in the track
+    for(r in 1:(nrow(coords)-1)){
+      # create a segment (line) between the current point and the next point
+      segment <- sf::st_sfc(sf::st_linestring(rbind(coords_m[r, ], coords_m[r + 1, ])), crs=epsg.code)
+      # check if the current segment is a point (i.e., the same start and end)
+      is_pt <- all(coords_m[r,] == coords_m[r+1,])
+      # check if the segment intersects with land
+      in_land <- lengths(sf::st_intersects(segment, sf::st_as_sf(land.shape), sparse=T))>0
+      # if the segment overlaps land and is not a point, and the distance is less than the grid resolution
+      if(in_land==T & is_pt==F & floor(dists[r])<=grid.resolution){
+        lines_skipped <- lines_skipped+1
+      }
+      # if the segment overlaps land and is not a point, calculate shortest in-water path
+      if(in_land==T & is_pt==F & floor(dists[r])>grid.resolution){
+        # calculate the shortest path around land
+        segment <- gdistance::shortestPath(trCost, coords_m[r,], coords_m[r+1,], output="SpatialLines")
+        # convert the segment to a spatial object and set its CRS
+        segment <- sf::st_as_sf(segment)
+        sf::st_crs(segment) <- sf::st_crs(epsg.code)
+        # transform segment coordinates to WGS84 for distance calculation
+        segment_wgs84 <- sf::st_transform(segment, crs=sf::st_crs("+proj=longlat +datum=WGS84"))
+        # update the distance with the calculated distance along the segment
+        dists[r] <- sum(geosphere::distVincentyEllipsoid(sf::st_coordinates(segment_wgs84)[,1:2]))
+      }
+      # save the segment to the trajectories list
+      trajectories[[r]] <- segment
+    }
+
+    # merge the distances into the individual data frame
+    data_individual$dist_m <- c(dists, NA)
+
+    # Convert segments into a simple feature geometry collection
+    final_trajectories <- lapply(trajectories, sf::st_geometry)
+    final_trajectories <- do.call(c, final_trajectories)
+  }
+
+  # return the updated individual data and calculated trajectories
+  return(list("data"=data_individual, "trajectories"=final_trajectories, "lines_skipped"=lines_skipped))
+
+}
 
 #######################################################################################################
 #######################################################################################################

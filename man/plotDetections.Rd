@@ -40,11 +40,13 @@ plotDetections(
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs.
+The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{tag.durations}{Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
+duration of the deployed tags (in days). The length of this vector should match the number of
+unique animal IDs, and the values must be in the same order as the ID levels.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}

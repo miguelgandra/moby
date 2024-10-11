@@ -14,7 +14,9 @@
 #' @param id.metadata A data frame containing metadata about the tagged animals, such as their length,
 #' sex, or transmitter type. If there are multiple rows per animal, variables will be collapsed before merging with other statistics.
 #' @param tag.durations Optional. A numeric vector containing the estimated battery
-#' duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.
+#' duration of the deployed tags (in days). The length of this vector should match the number of
+#' unique animal IDs, and the values must be in the same order as the ID levels.
+#' Alternatively, if a single value is provided, it will be applied to all IDs.
 #' @param residency.index A character string specifying the type of residency index to calculate.
 #' Options include:
 #'  - "IR1": Residency Index 1, calculated as the number of days the animal was detected (Dd) divided by the detection interval (Di), i.e., the number of days between release/first detection and last detection (days at liberty). This represents a maximum residency value, considering only the period for which the animal was known to be alive and the tag operational.
@@ -289,7 +291,7 @@ summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), tag.durati
   attr(stats, 'start.point') <- start.point
   attr(stats, 'residency.by') <- residency.by
   attr(stats, 'id.groups') <- id.groups
-  attr(stats, 'calculation.time') <- Sys.time()
+  attr(stats, 'processing.date') <- Sys.time()
 
   # return table
   return(stats)

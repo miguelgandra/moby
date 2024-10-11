@@ -7,6 +7,7 @@
 calculateLandDists(
   data,
   land.shape,
+  epsg.code = getDefaults("epsg"),
   mov.threshold = 0.5,
   id.col = getDefaults("id"),
   lon.col = getDefaults("lon"),
@@ -17,7 +18,13 @@ calculateLandDists(
 \arguments{
 \item{data}{A data frame with animal detections/positions, containing longitude and latitude values (unprojected).}
 
-\item{land.shape}{A shapefile containing coastlines or land surfaces.}
+\item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+If the provided object is not of class 'sf', the function will attempt to
+convert it to an 'sf' object for compatibility with subsequent spatial operations.}
+
+\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+for projecting positions/layers.}
 
 \item{mov.threshold}{Movement threshold (0 - 1). It establishes the proportion of a step length that must be
 perpendicular to shore (away or approaching) in order for a movement to be classified as inshore or offshore
@@ -31,15 +38,26 @@ is classified either as inshore or offshore, according to its direction).}
 
 \item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
-\item{dist.col}{Name of the column containing step lengths in meters (distance between each consecutive position).
-If left null, the function only calculates distance to land and no additional metrics.}
+\item{dist.col}{Name of the column containing step lengths in meters (distance between consecutive positions).
+This column can be generated using the \code{calculateDistances} function. If left NULL,
+the function will only compute distances to land without calculating additional movement metrics.}
 }
 \value{
 A data frame containing distances to nearest shore and multiple related metrics, including
 direction of movement (inshore/offshore/alongshore) and percentage of movement
 perpendicular to shore (land_ratio).
+
+A data frame that includes the original input data along with the following additional columns:
+\itemize{
+\item \code{land_dist}: The distance (in meters) to the nearest shore or land feature for each position.
+\item \code{land_diff}: The difference in distance to land between consecutive positions.
+\item \code{land_ratio}: The ratio of the absolute change in distance to land relative to the total distance traveled (if \code{dist.col} is provided).
+\item \code{direction}: The direction of movement relative to land (inshore, offshore, alongshore).
+}
 }
 \description{
-Function to calculate distance to nearest land and additional related metrics,
-including direction of movement (inshore/offshore/alongshore).
+This function calculates the distance to the nearest shore or land feature for each
+animal position. Additionally, it computes movement-related metrics such as the direction of movement
+relative to the shore (inshore, offshore, or alongshore) and the proportion of movement
+directed towards or away from land, if step lengths between consecutive positions are provided.
 }

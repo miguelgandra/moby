@@ -119,6 +119,9 @@ NULL
 ## Updated colorlegend function  #################################################################
 ## Adapted from 'shape' package (https://rdrr.io/cran/shape/src/R/colorlegend.R)
 ## - added main.adj + main.inset + support for scientific notation
+## - added tick.length
+## - added horizontal option
+## - added zlab option
 
 #' Color Legend
 #'
@@ -127,99 +130,182 @@ NULL
 #' @keywords internal
 #' @noRd
 
-.colorlegend <- function(col=.viridis_pal(100), zlim, zlevels=5,
-                         dz=NULL, zval=NULL, log=FALSE, posx=c(0.9,0.93), posy=c(0.05,0.9),
-                         main=NULL, main.cex=1.0, main.col="black", main.adj=0.5, lab.col="black",
-                         main.inset=1, digit=0, left=FALSE, lab.scientific=FALSE, ...) {
+.colorlegend <- function(col = .viridis_pal(100),
+                         zlim,
+                         zlevels = 5,
+                         dz = NULL,
+                         zval = NULL,
+                         zlab = NULL,
+                         log = FALSE,
+                         posx = c(0.9, 0.93),
+                         posy = c(0.05, 0.9),
+                         main = NULL,
+                         main.cex = 1.0,
+                         main.col = "black",
+                         main.adj = 0.5,
+                         lab.col = "black",
+                         main.inset = 1,
+                         digit = 0,
+                         left = FALSE,
+                         tick.length = 0.3,
+                         lab.scientific = FALSE,
+                         horizontal = FALSE,
+                         ...) {
 
-  ncol   <- length (col)
-  par (new=TRUE)
+  ## Set the number of colors
+  ncol <- length(col)
+
+  # Set up a new plot layer without erasing the existing plot
+  par(new=TRUE)
+
+  ## Save original margin settings and initialize new margins
   omar <- nmar <- par("mar")
-  nmar[c(2,4)]<-0
-  par (mar = nmar)
 
+  ## Adjust margins based on orientation
+  if (horizontal) {
+    nmar[1] <- max(nmar[1], 4)  # Increase bottom margin for horizontal legend
+  } else {
+    nmar[c(2, 4)] <- 0  # Remove left and right margins for vertical legend
+  }
+
+  ## Apply updated margin settings
+  par(mar=nmar)
+
+  ## Create an empty plot for the legend without axes or frames
   plot(0, type="n", xlab="", ylab="", asp=1, axes=FALSE, frame.plot=FALSE,
        xlim=c(0, 1), ylim=c(0, 1), xaxs="i", yaxs="i")
-  pars   <- par("usr")
 
-  ## Rectangle positions on x and y-axis
-  dx     <- pars[2]-pars[1]
-  xmin   <- pars[1]+posx[1]*dx
-  xmax   <- pars[1]+posx[2]*dx
+  ## Get the plotting area coordinates
+  pars <- par("usr")
 
-  dy     <- pars[4]-pars[3]
-  ymin   <- pars[3]+posy[1]*dy
-  ymax   <- pars[3]+posy[2]*dy
+  ## Calculate the size of the plot area
+  dx <- pars[2] - pars[1]
+  dy <- pars[4] - pars[3]
 
-  ## z-values
-  if (!is.null(zval)) {
-    zz<-zval
-    dz<-NULL
+
+  ## Draw the color legend (horizontal or vertical)
+  if (horizontal) {
+    ## ---- Horizontal Legend ----
+
+    ## Set the position of the legend
+    ymin <- pars[3] + posy[1] * dy
+    ymax <- pars[3] + posy[2] * dy
+    xmin <- pars[1] + posx[1] * dx
+    xmax <- pars[1] + posx[2] * dx
+
+    ## Create colored rectangles for the horizontal legend
+    X <- seq(xmin, xmax, length.out=ncol+1)
+    rect(X[-(ncol+1)], ymin, X[-1], ymax, col=col, border=NA)
+    rect(xmin, ymin, xmax, ymax, border=lab.col)
+
+    ## Determine tick labels (either provided by zval or calculated)
+    if (!is.null(zval)) {
+      zz <- zval
+    } else if (is.null(dz) & !is.null(zlevels)) {
+      zz <- pretty(zlim, n=(zlevels + 1))  # Generate pretty tick labels
+    }
+
+    ## Apply logarithmic scaling if specified
+    if (log) zz <- log10(zz)
+
+    ## Draw tick marks and labels for the horizontal legend
+    if (!is.null(zz)) {
+      Xpos <- xmin + (zz - zlim[1]) / (zlim[2] - zlim[1]) * (xmax - xmin)
+
+      ## Draw ticks
+      tick.ystart <- ymin - (tick.length * (ymax - ymin))  # Tick length as fraction of height
+      tick.yend <- ymin  # Y position of tick end
+      segments(Xpos, tick.ystart, Xpos, tick.yend, col = lab.col)
+
+      ## Format labels (scientific or fixed-point)
+      if (lab.scientific) {
+        labels <- format(zz, scientific = TRUE)
+      } else {
+        labels <- formatC(zz, digits = digit, format = "f")
+      }
+
+      # Replace with custom labels
+      if (!is.null(zlab)) {
+        labels[match(zz, zval)] <- zlab
+      }
+
+
+      ## Adjust y-position to ensure visibility
+      text(Xpos, tick.ystart - 0.02 * dy, labels, col = lab.col, adj=c(0.5, 1), ...)
+    }
+
+
+  } else {
+    ## ---- Vertical Legend ----
+
+    ## Set the position of the legend
+    ymin <- pars[3] + posy[1] * dy
+    ymax <- pars[3] + posy[2] * dy
+    xmin <- pars[1] + posx[1] * dx
+    xmax <- pars[1] + posx[2] * dx
+
+    ## Create colored rectangles for the vertical legend
+    Y <- seq(ymin, ymax, length.out=ncol+1)
+    rect(xmin, Y[-(ncol+1)], xmax, Y[-1], col=col, border=NA)
+    rect(xmin, ymin, xmax, ymax, border=lab.col)
+
+    ## Determine tick labels (either provided by zval or calculated)
+    if (!is.null(zval)) {
+      zz <- zval
+    } else if (is.null(dz) & !is.null(zlevels)) {
+      zz <- pretty(zlim, n=(zlevels + 1))  # Generate pretty tick labels
+    }
+
+    ## Apply logarithmic scaling if specified
+    if (log) zz <- log10(zz)
+
+    ## Draw tick marks and labels for the vertical legend
+    if (!is.null(zz)) {
+      Ypos <- ymin + (zz - zlim[1]) / (zlim[2] - zlim[1]) * (ymax - ymin)
+
+      ## Draw ticks
+      tick.xstart <- if (left) {xmin - (tick.length * (xmax - xmin))} else {xmax}
+      tick.xend <- if (left) {xmin} else {xmax + (tick.length * (xmax - xmin))}
+      segments(tick.xstart, Ypos, tick.xend, Ypos, col = lab.col)
+
+      ## Format labels (scientific or fixed-point)
+      if (lab.scientific) {
+        labels <- format(zz, scientific = TRUE)
+      } else {
+        labels <- formatC(zz, digits = digit, format = "f")
+      }
+
+      # Replace with custom labels
+      if (!is.null(zlab)) {
+        labels[match(zz, zval)] <- zlab
+      }
+
+      # Adjust horizontal alignment based on legend position
+      # 1 for right-alignment, 0 for left-alignment
+      adj_value <- if (left) 1 else 0
+
+      ## Add labels next to ticks
+      #pos <- if (left) 2 else 4
+      text(tick.xend + 0.01 * dx, Ypos, labels, col = lab.col, adj = adj_value, ...)
+    }
   }
 
-  if (is.null(dz)&is.null(zval))
-    if (! is.null(zlevels)) {
-      if (log) {
-        zz <- 10^(pretty(log10(zlim),n=(zlevels+1)))
-      } else
-        zz <-     pretty(zlim,n=(zlevels+1))
-    } else zz <- NULL
-  if (!is.null(dz)) {
-    if (log)
-      zz <- 10^(seq(log10(zlim[1]),log10(zlim[2]),by=dz))
-    if (!log)
-      zz <- seq(zlim[1],zlim[2],by=dz)
-  }
-
-  if (log) {
-    zlim <- log10(zlim)
-    if (! is.null(zz))
-      zz   <- log10(zz)
-  }
-
-  zmin   <- zlim[1]
-  zmax   <- zlim[2]
-
-  ## colors
-  Y <- seq(ymin,ymax,length.out=ncol+1)
-  rect(xmin,Y[-(ncol+1)],xmax,Y[-1],col=col,border=NA)
-  rect(xmin,ymin,xmax,ymax,border=lab.col)
-
-  if (! is.null(zz)) {
-    ## labels
-    dx     <- (xmax-xmin)
-    dy     <- (ymax-ymin)
-
-    if (left) {
-      Dx  <-  -dx  # labels on left..
-      pos <-   2
-      xpos <- xmin+Dx*0.5
+  ## ---- Main Title ----
+  if (!is.null(main)) {
+    if (horizontal) {
+      # Place the title above the horizontal color scale and center it
+      text(mean(c(xmin, xmax)), ymax + 0.05 * dy,  # y-position adjusted to ymax
+           labels = main, adj = c(0.5, 0.5), cex = main.cex, col = main.col)
     } else {
-      Dx  <- +dx  # labels on right..
-      pos <- 4
-      xpos <- xmax+Dx*0.5
+      # Keep the title below the vertical color scale
+      text(mean(c(xmin, xmax)), ymax + 0.05 * dy,
+           labels=main, adj=c(main.adj, 0.5), cex=main.cex, col=main.col)
     }
-
-    Ypos <- ymin+(zz-zmin)/(zmax-zmin)*dy
-    segments(xmin,Ypos,xmax,Ypos,col=lab.col)
-    segments(xpos+Dx*0.25,Ypos,xmin,Ypos,col=lab.col)
-    if(lab.scientific==T){
-      labels <- format(zz, scientific=TRUE)
-    }else{
-      labels <- formatC(zz,digits=digit,format="f")
-    }
-    text (xpos,Ypos,labels,pos=pos,col=lab.col,...)
   }
 
-  if  (!is.null(main)) {
-    for (i in length(main):1)
-      if(main.adj==0){main_pos<-xmin}else if(main.adj==1){main_pos<-xmax}else{main_pos<-mean(c(xmin,xmax))}
-    text (x=main_pos,y=(ymax+0.05*(length(main)-i+1))*main.inset,
-          labels=main[i], adj=c(main.adj, 0.5), cex=main.cex, col=main.col)
-  }
-  par (new=FALSE)
-  par (mar=omar)
-
+  ## Reset the margin settings
+  par(new=FALSE)
+  par(mar=omar)
 }
 
 
@@ -726,13 +812,45 @@ if (!exists("rep_len")) {
 
 #' Set Layout for Grouped Plots
 #'
-#' @description This function creates a layout matrix for plotting several groups of individuals,
-#'  with dividers (empty space) between each group.
+#' @description
+#' This function creates a layout matrix for plotting several groups of individuals,
+#' with dividers (empty space) between each group. It calculates the required number of rows
+#' and columns to accommodate all plots, including optional space for a legend.
+#'
+#' @param n_cols An integer specifying the number of columns to use for the layout.
+#' @param id.groups A list of character vectors, where each vector represents the identifiers
+#' of individuals in each group to be plotted. Each group can contain a variable number of individuals.
+#' @param plots.height A numeric value indicating the height of each plot. Default is 6.
+#' @param dividers.height A numeric value indicating the height of the dividers (empty space)
+#' between groups. Default is 1.
+#' @param legend A logical value indicating whether to include space for a legend. Default is FALSE.
+#' @param min.legend.plots An integer specifying the minimum number of contiguous plots required for the legend. Default is 2.
+#' @param expand.legend A logical value determining whether the space allocated for the legend should occupy
+#' all remaining plots until the end of the matrix (TRUE) or only the number of plots specified by min.legend.plots (FALSE).
+#' Default is TRUE.
+#'
+#' @details
+#' The function calculates the total number of plots required, along with the number of rows
+#' needed to fit all plots and the specified dividers. It then constructs a layout matrix that
+#' can be used with R's `layout()` or `par(mfrow=)` functions for grouped plotting. The function
+#' also calculates the positions of each group within the layout for later reference.
+#'
+#' @return A list containing:
+#' \item{matrix}{A matrix representing the layout of plots, with NA values indicating empty spaces.}
+#' \item{heights}{A numeric vector containing the heights of each row in the layout.}
+#' \item{group_positions}{A numeric vector containing the calculated vertical positions for each group.}
+#'
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
 #' @noRd
 
-.setLayout <- function(n_cols, id.groups, plots.height=6, dividers.height=1, legend) {
+.setLayout <- function(n_cols,
+                       id.groups,
+                       plots.height=6,
+                       dividers.height=1,
+                       legend,
+                       min.legend.plots=2,
+                       expand.legend=TRUE) {
 
   #####################################################################
   # set main plots grid ###############################################
@@ -821,13 +939,26 @@ if (!exists("rep_len")) {
     last_filled_row <- max(filled_positions[, 1])
     last_filled_col <- max(filled_positions[filled_positions[, 1] == last_filled_row, 2])
 
-    # check if there are at least two consecutive NA values in the last row
-    if ((last_filled_col <= n_cols - 2) || (nrow(layout_mat) - last_filled_row > 1)) {
-      # enough space is available, add the legend plot number
-      layout_mat[last_filled_row, (last_filled_col + 1):n_cols] <- current_plot
+    # check if there is enough space for the legend
+    if ((last_filled_col <= n_cols - min.legend.plots) || (nrow(layout_mat) - last_filled_row > 1)) {
+      if (expand.legend) {
+        # occupy all remaining plots in the last row for the legend
+        layout_mat[last_filled_row, (last_filled_col + 1):n_cols] <- current_plot
+      } else {
+        # only occupy the specified number of plots for the legend
+        if (last_filled_col + min.legend.plots <= n_cols) {
+          layout_mat[last_filled_row, (last_filled_col + 1):(last_filled_col + min.legend.plots)] <- current_plot
+        } else {
+          layout_mat <- rbind(layout_mat, rep(current_plot, n_cols))
+          row_heights <- c(row_heights, plots.height)
+        }
+      }
     } else {
       # not enough space, add a new row
-      layout_mat <- rbind(layout_mat, rep(current_plot, n_cols))
+      layout_mat <- rbind(layout_mat, rep(NA, n_cols))
+      if(expand.legend)  layout_mat[nrow(layout_mat), 1:n_cols] <- current_plot
+      else layout_mat[nrow(layout_mat), 1:min.legend.plots] <- current_plot
+      #layout_mat <- rbind(layout_mat, rep(current_plot, n_cols))
       row_heights <- c(row_heights, plots.height)
     }
   }
@@ -835,6 +966,210 @@ if (!exists("rep_len")) {
   # return the layout matrix and row heights
   list(matrix=layout_mat, heights=row_heights, group_positions=group_positions)
 }
+
+
+##################################################################################################
+## Projection check function #####################################################################
+
+#' Check Projection
+#'
+#' @description Determines whether the supplied spatial object is projected or unprojected (geographic).
+#' It checks the CRS of the spatial object and determines its projection status.
+#' If the CRS is not defined, it verifies if the spatial object contains valid geographic coordinates.
+#' @param spatial.object An 'sf' or 'Raster' object.
+#' @return A string indicating whether the spatial object is "projected", "unprojected", or "no CRS".
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.checkProjection <- function(spatial.object) {
+
+  # check if the input is an 'sf' object
+  if (inherits(spatial.object, "sf")) {
+
+    # extract the CRS
+    coords_crs <- sf::st_crs(spatial.object)
+
+    # check if CRS is NULL
+    if (is.na(coords_crs)) {
+      # get coordinates and check if they fall within valid geographic ranges
+      coords <- sf::st_coordinates(spatial.object)
+      lon_is_geographic <- all(coords[,1] >= -180 & coords[,1] <= 180, na.rm = TRUE)
+      lat_is_geographic <- all(coords[,2] >= -90 & coords[,2] <= 90, na.rm = TRUE)
+      # if both longitude and latitude fall within these ranges, it's unprojected
+      if (lon_is_geographic && lat_is_geographic) return("geographic")
+      else return("projected")
+    } else if (sf::st_is_longlat(spatial.object)){
+      return("geographic")
+    } else {
+      return("projected")
+    }
+  }
+
+  # check if the input is a 'Raster' object
+  else if (inherits(spatial.object, "Raster")) {
+
+    # extract the CRS
+    coords_crs <- raster::crs(spatial.object)
+
+    # verify if the CRS is undefined (NULL)
+    if (is.na(coords_crs)) {
+      stop("The Raster layer does not contain CRS information.", call.=FALSE)
+      # check if the CRS corresponds to geographic coordinates (WGS84)
+    } else if (grepl("+proj=longlat +datum=WGS84", coords_crs@projargs, fixed=TRUE)) {
+      return("geographic")
+      # if the CRS does not match geographic, it's considered projected
+    } else {
+      return("projected")
+    }
+  }
+
+  # If neither an 'sf' nor 'Raster' object
+  stop("Input must be an 'sf' or 'Raster' object.", call.=FALSE)
+}
+
+
+##################################################################################################
+## CRS management function #######################################################################
+
+#' Manage Spatial Coordinate Reference Systems
+#'
+#' @description This function manages the coordinate reference systems (CRS) for spatial coordinates
+#' and an optional spatial layer. It determines whether the provided coordinates and spatial
+#' object are projected or geographic and processes them accordingly, based on a supplied EPSG code.
+#'
+#' @param coords A spatial object of class `sf`, containing longitude and latitude values.
+#' @param spatial.layer An optional spatial object of class `sf` or `RasterLayer`.
+#' @param epsg.code An optional numeric EPSG code for the desired coordinate reference system.
+#'
+#' @return A list containing:
+#' \item{coords}{The transformed coordinates in the specified CRS.}
+#' \item{spatial.layer}{The transformed spatial layer (if provided).}
+#' \item{epsg}{The EPSG code used for transformations.}
+#'
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+
+.processSpatial <- function(coords, spatial.layer, epsg.code) {
+
+  ##############################################################################
+  # Determine the coordinate reference system of the provided spatial objects ##
+
+  coords_crs <- .checkProjection(coords)
+  if(!is.null(spatial.layer)) layer_crs <- .checkProjection(spatial.layer)
+  epsg_supplied <- !is.null(epsg.code)
+  if(inherits(spatial.layer, "sf")) layer_epsg <- sf::st_crs(spatial.layer)
+  else if(inherits(spatial.layer, "Raster")) layer_epsg <- sf::st_crs(raster::crs(spatial.layer)@projargs)
+
+  # check if epsg.code is a 'crs' object or an integer
+  if(epsg_supplied){
+    if(inherits(epsg.code, "numeric")) {
+      epsg.code <- sf::st_crs(epsg.code)
+    }else if(!inherits(epsg.code, "crs")) {
+      stop("Invalid EPSG code format. Must be either a numeric value or a valid 'crs' object.", call.=FALSE)
+    }
+  }
+
+  # if the 'spatial.layer' variable is not NULL
+  if(!is.null(spatial.layer)){
+    # check whether 'spatial.layer' is either an 'sf' object or a Raster object
+    if(!inherits(spatial.layer, c("sf","Raster"))) stop("Spatial.layer must be an 'sf' or 'Raster' object.", call.=FALSE)
+    # if 'spatial.layer' is an 'sf' object, remove all attributes
+    if(inherits(spatial.layer, "sf")) spatial.layer[] <- list(geometry=sf::st_geometry(spatial.layer))
+  }
+
+
+  ##############################################################################
+  # Handle cases when spatial.layer is not provided ###############################
+
+  if(is.null(spatial.layer)){
+
+    # 1. Coordinates (geographic), EPSG (missing)
+    if (coords_crs=="geographic" && !epsg_supplied) {
+      stop("Longitudes/latitudes seem to be in a geographic (unprojected) format. Please either project them to a suitable CRS or provide an EPSG code for proper processing.", call.=FALSE)
+
+      # 2. Coordinates (geographic) and EPSG (supplied)
+    } else if (coords_crs=="geographic" && epsg_supplied) {
+      sf::st_crs(coords) <- 4326
+      coords <- sf::st_transform(coords, epsg.code)
+
+      # 3. Coordinates (projected), EPSG (missing)
+    } else if (coords_crs=="projected" && !epsg_supplied) {
+      stop("Longitudes/latitude values seem to be projected but no 'epsg.code' has been supplied. Please provide the corresponding EPSG using the 'epsg.code' argument.", call.=FALSE)
+
+      # 4. Coordinates (projected), EPSG (supplied)
+    } else if (coords_crs=="projected" && epsg_supplied) {
+      sf::st_crs(coords) <- epsg.code
+    }
+
+    ##############################################################################
+    # Handle cases when spatial.layer is provided ###################################
+
+  } else {
+
+    # 1. Coordinates (geographic), spatial.layer (geographic), EPSG (missing)
+    if (coords_crs=="geographic" && layer_crs=="geographic" && !epsg_supplied) {
+      stop("Both spatial.layer and longitudes/latitudes seem to be in a geographic (unprojected) format. Please either project them to a suitable CRS or provide an EPSG code for proper processing.", call.=FALSE)
+
+      # 2. Coordinates (geographic), spatial.layer (geographic), EPSG (supplied)
+    } else if (coords_crs=="geographic" && layer_crs=="geographic" && epsg_supplied) {
+      sf::st_crs(coords) <- 4326
+      coords <- sf::st_transform(coords, epsg.code)
+      if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
+      if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=sf::st_crs(epsg.code$epsg)$proj4string, method="ngb")
+
+      # 3. Coordinates (geographic), spatial.layer (projected), EPSG (missing)
+    } else if (coords_crs=="geographic" && layer_crs=="projected" && !epsg_supplied) {
+      sf::st_crs(coords) <- 4326
+      epsg.code <- layer_epsg
+      coords <- sf::st_transform(coords, epsg.code)
+      warning(paste0("Coordinates projected assuming CRS projection (EPSG:", epsg.code$epsg, ") from spatial.layer."), call.=FALSE)
+
+      # 4. Coordinates (geographic), spatial.layer (projected), EPSG (supplied)
+    } else if (coords_crs=="geographic" && layer_crs=="projected" && epsg_supplied) {
+      if (layer_epsg!=epsg.code) {
+        if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
+        if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=sf::st_crs(epsg.code$epsg)$proj4string, method="ngb")
+        warning(paste("The spatial layer has been projected to the supplied EPSG code:", epsg.code$epsg), call.=FALSE)
+      }
+      sf::st_crs(coords) <- 4326
+      coords <- sf::st_transform(coords, epsg.code)
+
+      # 5. Coordinates (projected), spatial.layer (geographic), EPSG (missing)
+    } else if (coords_crs=="projected" && layer_crs=="geographic" && !epsg_supplied) {
+      stop("Longitudes/latitude values seem to be projected but no 'epsg.code' has been supplied. Please provide the corresponding epsg.code or supply longitude and latitude in a geographic CRS / unprojected format (WGS84).", call.=FALSE)
+
+      # 6. Coordinates (projected), spatial.layer (geographic), EPSG (supplied)
+    } else if (coords_crs=="projected" && layer_crs=="geographic" && epsg_supplied) {
+      sf::st_crs(coords) <- epsg.code
+      if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
+      if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=epsg.code$wkt, method="ngb")
+
+      # 7. Coordinates (projected), spatial.layer (projected), EPSG (missing)
+    } else if (coords_crs=="projected" && layer_crs=="projected" && !epsg_supplied) {
+      epsg.code <- layer_epsg
+      sf::st_crs(coords) <- epsg.code
+      warning(paste("Assuming CRS projection (epsg", epsg.code$epsg, ") from spatial.layer."), call.=FALSE)
+
+      # 8. Coordinates (projected), spatial.layer (projected), EPSG (supplied)
+    } else if (coords_crs=="projected" && layer_crs=="projected" && epsg_supplied) {
+      if (layer_epsg!=epsg.code) {
+        if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
+        if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=epsg.code$wkt, method="ngb")
+        warning(paste("The spatial layer has been projected to the supplied EPSG code:", epsg.code$epsg), call.=FALSE)
+      }
+      sf::st_crs(coords) <- epsg.code
+    }
+  }
+
+  ##############################################################################
+  # Return transformed coordinates and spatial.layer (if applicable) ##############
+
+  return(list(coords=coords, spatial.layer=spatial.layer, epsg.code=epsg.code))
+}
+
 
 
 ##################################################################################################
@@ -851,7 +1186,7 @@ if (!exists("rep_len")) {
 .decimalPlaces <- function(x) {
   if(is.na(x)){return(NA)}
   if (abs(x - round(x)) > .Machine$double.eps^0.5) {
-    nchar(strsplit(sub('0+$', '', as.character(x)), ".", fixed = TRUE)[[1]][[2]])
+    nchar(strsplit(sub('0+$', '', format(x, scientific=FALSE)), ".", fixed = TRUE)[[1]][[2]])
   } else {
     return(0)
   }
@@ -925,6 +1260,7 @@ if (!exists("rep_len")) {
   )
   return(colorRampPalette(viridis_colors)(n))
 }
+
 
 
 ##################################################################################################

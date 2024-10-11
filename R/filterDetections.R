@@ -18,7 +18,7 @@
 #'
 #' Unlike other methods, `filterDetections` accounts for land topographies and
 #' complex coastlines when calculating animal speeds if a
-#' `land.shape` (shape file containing coastlines) is provided,
+#' `land.shape` (shapefile containing coastlines or landmasses) is provided,
 #' leading to more accurate distance estimates.
 #'
 #' @inheritParams setDefaults
@@ -35,7 +35,10 @@
 #' @param acoustic.range Maximum assumed detection range of the acoustic receivers (in metres).
 #' Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers,
 #' when estimating minimum consecutive distances.
-#' @param land.shape Optional. A  shape file containing coastlines.
+#' @param land.shape Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+#' an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+#' If the provided object is not of class 'sf', the function will attempt to
+#' convert it to an 'sf' object for compatibility with subsequent spatial operations.
 #' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
 #' If not supplied, CRS is assumed to be the same as in land.shape.
 #' @param ... Further arguments passed to the \code{\link{calculateDistances}} function
@@ -65,9 +68,10 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
+  land.shape <- reviewed_params$land.shape
 
   # check if speed.unit is valid
-  if(!speed.unit %in% c("m/s", "km/h")) stop("Wrong speed unit. Please select either 'm/s' or 'km/h'")
+  if(!speed.unit %in% c("m/s", "km/h")) stop("Wrong speed unit. Please select either 'm/s' or 'km/h'", call.=FALSE)
 
   # check and replicate cutoff.dates if it is a single value
   if(!is.null(cutoff.dates) && length(cutoff.dates)==1){
@@ -306,8 +310,20 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   filter_summary$`Total removed` <- paste0(filter_summary$`Total removed`, " (",  percent_removed, "%)")
   filter_summary$`Total removed`[percent_removed=="0"] <- "-"
 
-  # return results
+  # aggregate results
   results <- list("data"=data_filtered, "data_discarded"=data_discarded, "summary"=filter_summary)
+
+  # create new attributes to save relevant params
+  attr(results, 'min.detections') <- min.detections
+  attr(results, 'min.days') <- min.days
+  attr(results, 'hours.threshold') <- hours.threshold
+  attr(results, 'max.speed') <- max.speed
+  attr(results, 'speed.unit') <- speed.unit
+  attr(results, 'acoustic.range') <- acoustic.range
+  attr(results, 'epsg.code') <- epsg.code
+  attr(results, 'processing.date') <- Sys.time()
+
+  # return results
   return(results)
 }
 

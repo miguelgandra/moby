@@ -315,17 +315,17 @@ plotMigrations <- function(data,
 
   # set bounding box polygon
   if(!is.null(background.layer)){
-    map_extent <- extent(background.layer)
+    map_extent <- raster::extent(background.layer)
   }else{
-    map_extent <- extent(site_coords)
+    map_extent <- raster::extent(site_coords)
     map_extent[1] <- map_extent[1] - (map_extent[2]-map_extent[1])*bbox.ext[1]
     map_extent[2] <- map_extent[2] + (map_extent[2]-map_extent[1])*bbox.ext[2]
     map_extent[3] <- map_extent[3] - (map_extent[4]-map_extent[3])*bbox.ext[3]
     map_extent[4] <- map_extent[4] + (map_extent[4]-map_extent[3])*bbox.ext[4]
   }
 
-  if(!is.null(land.shape)) {land.shape <- crop(land.shape, map_extent)}
-  map_extent <- SpatialPolygons(list(Polygons(list(Polygon(map_extent)),"1")))
+  if(!is.null(land.shape)) {land.shape <- raster::crop(land.shape, map_extent)}
+  map_extent <- sp::SpatialPolygons(list(sp::Polygons(list(sp::Polygon(map_extent)),"1")))
 
 
   #####################################################################################

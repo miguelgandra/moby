@@ -11,6 +11,7 @@ plotCWTs(
   timebin.col = getDefaults("timebin"),
   period.range = c(3, 48),
   axis.periods = c(6, 12, 16, 24, 48),
+  time.unit = "hours",
   color.pal = NULL,
   date.format = "\%d/\%b",
   date.interval = 4,
@@ -29,7 +30,10 @@ plotCWTs(
 )
 }
 \arguments{
-\item{data}{A data frame containing binned animal detections.}
+\item{data}{A data frame containing binned animal detections or other time-based measurements.
+The time series does not need to be regular; gaps between time bins are allowed.
+If there are gaps between measurements (i.e., missing time bins), the function will
+automatically assume a value of zero for those missing time steps.}
 
 \item{variable}{Name of the column containing the numeric variable to be analyzed.}
 
@@ -37,9 +41,14 @@ plotCWTs(
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
-\item{period.range}{The range of period scales (y-axis limits) to be considered, specified in hours.}
+\item{period.range}{The range of period scales (y-axis limits) to be considered,
+specified in the units defined by \code{time.unit}. Defaults to c(3, 48) in hours.}
 
-\item{axis.periods}{Periods (in hours) to include/highlight in the y-axis.}
+\item{axis.periods}{Periods to include/highlight on the y-axis, specified in the units
+defined by \code{time.unit}. Defaults to c(6,12,16,24,48) in hours.}
+
+\item{time.unit}{Time unit for \code{period.range} and \code{axis.periods}.
+Options are "mins", "hours" and "days". Defaults to "hours".}
 
 \item{color.pal}{Color palette. Defaults to the Jet colormap.}
 
@@ -77,7 +86,7 @@ allowing for density comparison between individuals.}
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}
 
-\item{...}{Further arguments passed to the \code{\link[wavScalogram]{cwt_wst}} function
+\item{...}{Further arguments passed to the \code{\link[wavScalogram]{cwt_wst}} function.
 (e.g. wname, border_effects, waverad).}
 }
 \description{
@@ -85,5 +94,5 @@ Function that analyzes and plots periodic patterns in a time series using a
 Continuous Wavelet Transform (CWT) framework. CWT analysis provides an alternative method
 to the Fast Fourier Transform (FFT) or other time-frequency decomposition techniques,
 enabling the examination of periodicities over time. This function serves mostly as a
-wrapper for the \code{\link[wavScalogram]{cwt_wst}} function.
+wrapper for the \code{\link[wavScalogram]{cwt_wst}} function from the \code{wavScalogram} package.
 }

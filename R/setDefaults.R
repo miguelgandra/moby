@@ -13,11 +13,12 @@
 #' @param datetime.col Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.
 #' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
 #' @param station.col Name of the column containing station/receiver IDs. Defaults to 'station'.
-#' @param lon.col Name of the column containing longitude values (unprojected). Defaults to 'lon'.
-#' @param lat.col Name of the column containing latitude values (unprojected). Defaults to 'lat'.
-#' @param epsg.code Coordinate reference system used to project positions/layers (class 'CRS').
+#' @param lon.col Name of the column containing longitude values. Defaults to 'lon'.
+#' @param lat.col Name of the column containing latitude values. Defaults to 'lat'.
+#' @param epsg.code The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+#' for projecting positions/layers.
 #' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
-#' The length of this vector should match the number of unique animal IDs.
+#' The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
 #' Alternatively, if a single value is provided, it will be applied to all IDs.
 #'
 #' @examples

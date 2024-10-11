@@ -37,9 +37,9 @@ visually aggregate animals belonging to the same class (e.g. different species).
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
-\item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
-\item{lat.col}{Name of the column containing latitude values (unprojected). Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
 \item{dist.col}{Name of the column containing distance values (in meters). Defaults to 'dist_m'.}
 

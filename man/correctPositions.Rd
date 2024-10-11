@@ -5,44 +5,65 @@
 \title{Relocate points on land to the nearest marine cell.}
 \usage{
 correctPositions(
-  positions,
-  layer,
-  layer.type = "land",
-  depth.margin = 0,
+  data,
+  spatial.layer,
+  raster.type = "land",
+  epsg.code = getDefaults("epsg"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
-  plot = F
+  depth.threshold = 0,
+  max.distance.km = 50,
+  plot = FALSE,
+  cores = 1
 )
 }
 \arguments{
-\item{positions}{A data frame containing longitude and latitude values (unprojected lat-long coordinates),
-corresponding to the inferred animals' positions.}
+\item{data}{A data frame with animal positions, containing longitude and latitude values.}
 
-\item{layer}{A spatial object representing the geographic layer used to determine land and marine areas.
-This can be either:\cr
+\item{spatial.layer}{A spatial object used to determine land and marine areas. This can be one of the following:
 \itemize{
-\item A 'RasterLayer' containing binary values or bathymetric information (negative values for underwater).
-\item A 'SpatialPolygons' object representing the coastline.
+\item A \code{RasterLayer} with binary values or bathymetric data.
+\item An \code{sf} or \code{SpatialPolygons} object representing coastlines or landmasses.
 }}
 
-\item{layer.type}{Either 'land', 'ocean' or 'bathy'. If type 'land' (binary) the raster is assumed
-to contain NA values in water surfaces, if type 'ocean' (binary) the raster is assumed to
-contain NA values in land surfaces, else if type 'bathy' the raster is assumed to
-range between 0 (land) to max depth (positive or negative values).}
+\item{raster.type}{A character string indicating the type of raster when \code{spatial.layer} is a \code{Raster}.
+This parameter can be either 'land', 'ocean', or 'bathy'.
+\itemize{
+\item If 'land', the raster is assumed to contain NA values in water surfaces.
+\item If 'water', the raster is assumed to contain NA values in land surfaces.
+\item If 'bathy', the raster is assumed to range between 0 (land) to maximum depth (positive or negative values).
+}}
 
-\item{depth.margin}{A numeric value. If set, shortest in-water paths will be calculated only
-for cells with depths >= this threshold. Only takes effect when raster
-is of type 'bathy'. Defaults to 0 (water vs land).}
+\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+for projecting positions/layers.}
 
 \item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
 \item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
-\item{plot}{Logical, if TRUE, the function will plot the results. Defaults to FALSE.}
+\item{depth.threshold}{A numeric value. If set, shortest in-water paths will be calculated only
+for cells with depths >= this threshold. Only takes effect when raster
+is of type 'bathy'. Defaults to 0 (water vs land).}
+
+\item{max.distance.km}{A numeric value specifying the maximum distance (in kilometers) to consider when relocating points.
+This parameter limits the search radius for the nearest marine cell, ensuring that only cells within the specified distance are evaluated.
+Points that are further than this distance from the nearest water will have their coordinates set to NA.}
+
+\item{plot}{A logical value indicating whether to generate a plot of the relocation process.
+If set to TRUE, the function will plot the \code{spatial.layer} along with the original and updated positions.
+If set to FALSE, no plot will be generated.}
+
+\item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
+means no parallel computing (single core).  If set to a value greater than 1,
+the function will use parallel computing to speed up calculations.
+Run \code{parallel::detectCores()} to check the number of available cores.}
 }
 \value{
-A data frame with corrected positions where points on land are relocated
-to the nearest marine cell.
+A list with two elements:
+\describe{
+\item{data}{The original data frame with updated positions for the points that were relocated from land.}
+\item{summary}{A summary of the input data and changes made to the positions.}
+}
 }
 \description{
 This function relocates positions on land to the nearest marine cell

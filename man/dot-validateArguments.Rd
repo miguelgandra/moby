@@ -24,35 +24,28 @@ completion of required changes and reduce the time it takes to get the function 
 \details{
 The \code{validateArguments} function checks for the following:
 \describe{
-\item{data}{Ensures that the first argument is a data frame.}
-\item{id.col}{Checks that the specified ID column exists in the data frame and converts it to a factor if necessary.}
-\item{datetime.col}{Ensures that the datetime column exists and is in POSIXct format.}
-\item{timebin.col}{Ensures that the time-bin column exists and is in POSIXct format.}
-\item{station.col}{Ensures that the station column exists.}
-\item{split.by}{Validates that the specified column for splitting exists.}
-\item{color.by}{Checks that the color-by column exists, has no missing values, and converts it to a factor if necessary.}
-\item{tagging.dates}{Validates that tagging dates are provided in POSIXct format and match the number of unique IDs if necessary.}
-\item{tag.durations}{Ensures that tag durations are provided and match the number of unique IDs if necessary.}
-\item{id.groups}{Validates the ID groups, ensuring no duplicates and that all IDs exist in the data.}
-\item{color.pal}{Checks that the color palette is either a character vector or a function.}
-\item{diel.lines}{Ensures that diel lines are specified with acceptable values.}
-\item{polygons}{Validates the polygons argument, ensuring it is either FALSE, 'diel', or 'season'.}
-\item{background.color}{Checks that the background color is a valid single color specified as a hex code or a named color.}
-\item{style}{Ensures that the style is either 'raster' or 'points'.}
+\item{data}{Ensures the first argument is a data frame.}
+\item{id.col}{Verifies the ID column exists and converts it to a factor if necessary.}
+\item{datetime.col}{Ensures the datetime column exists and is in POSIXct format.}
+\item{timebin.col}{Checks the time-bin column for existence and correct format.}
+\item{lon.col}{Ensures the longitude column exists and is numeric.}
+\item{lat.col}{Ensures the latitude column exists and is numeric.}
+\item{station.col}{Checks for the existence of the station column.}
+\item{split.by}{Validates the column(s) used to split the data.}
+\item{color.by}{Verifies the color-by column exists and contains no missing values; converts it to a factor if needed.}
+\item{tagging.dates}{Checks tagging dates are in POSIXct format and match the number of unique IDs if required.}
+\item{tag.durations}{Ensures tag durations are specified and correctly matched with unique IDs.}
+\item{id.groups}{Validates that ID groups are unique and present in the data.}
+\item{land.shape}{Checks if the provided spatial object can be converted to class \code{sf} if necessary.}
+\item{color.pal}{Ensures the color palette is either a character vector or a function.}
+\item{diel.lines}{Validates diel line values (0, 2, or 4).}
+\item{polygons}{Checks if the polygons parameter is set to a valid value ('diel', 'season', or FALSE).}
+\item{background.color}{Ensures the background color is a valid hex code or named color.}
+\item{style}{Verifies the style is either 'raster' or 'points'.}
 }
 }
 \note{
 This function is intended for internal use within the \code{moby} package. It helps streamline
 argument validation across multiple functions, ensuring consistency and reducing redundancy.
-}
-\examples{
-\dontrun{
-# Example usage within a function that calls validateArguments
-plotAbacus <- function(data, id.col, datetime.col, ...) {
-  .validateArguments()
-  # Proceed with analysis...
-}
-}
-
 }
 \keyword{internal}

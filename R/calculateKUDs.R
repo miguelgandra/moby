@@ -18,9 +18,10 @@
 #' If left NULL, single KUDs are calculated for the whole monitoring period.
 #' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
 #' within each group.
-#' @param land.shape A shape file containing coastlines.
-#' @param lon.col Name of the column containing projected longitudes. Defaults to "lon".
-#' @param lat.col Name of the column containing projected latitudes. Defaults to "lat".
+#' @param land.shape Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+#' an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+#' If the provided object is not of class 'sf', the function will attempt to
+#' convert it to an 'sf' object for compatibility with subsequent spatial operations.
 #' @return A list containing the estimated UDs, areas corresponding to
 #' 50% and 95% of occurrence probability, and a formatted data frame.
 #' @seealso \code{\link[adehabitatHR]{kernelUD}}
@@ -44,6 +45,7 @@ calculateKUDs <- function(data, bandwidth, grid, subset=NULL, id.groups=NULL,
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
+  land.shape <- reviewed_params$land.shape
 
   # check if adehabitatHR package is installed
   if (!requireNamespace("adehabitatHR", quietly=TRUE)) {
@@ -70,10 +72,10 @@ calculateKUDs <- function(data, bandwidth, grid, subset=NULL, id.groups=NULL,
   ####################################################################
   # if not, calculate KUDS for the entire study duration #############
   if(multiple==F) {
-    cat("Estimating kernel densities for the entire monitoring period...\n")
-    # convert data to class SpatialPointsDataFrame
+    cat("Computing kernel density estimates across the entire monitoring period\n")
+    # convert data to class SpatialPointsDataFrame (required for the kernelUD function)
     coord_cols <- which(colnames(data) %in% c(lon.col, lat.col))
-    data <- sp::SpatialPointsDataFrame(data[,coord_cols], data[,-coord_cols], proj4string=land.shape@proj4string)
+    data <- sp::SpatialPointsDataFrame(data[,coord_cols], data[,-coord_cols], proj4string=sp::CRS(sf::st_crs(land.shape)$proj4string))
     data <- cleanData(data, id.col)
     # estimate kernel density and calculate areas (km²)
     kernel_density <- adehabitatHR::kernelUD(data[,id.col], h=bandwidth, grid=grid)
@@ -229,11 +231,11 @@ cleanData <- function(data, id.col) {
 subtractLand <- function(kud.polygons, land.shape, out.prefix="") {
 
   overlaps_number <- 0
+
   for (i in 1:length(kud.polygons)){
 
     # check if kernel utilization distribution overlaps with land
     polygon <- sf::st_as_sf(kud.polygons[i,])
-    land.shape <-  sf::st_as_sf(land.shape)
     in_land <- lengths(sf::st_intersects(polygon, land.shape, sparse=T))>0
 
     # if not, ignore and go to next

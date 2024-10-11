@@ -7,41 +7,63 @@
 calculateDistances(
   data,
   land.shape = NULL,
-  epsg.code = NULL,
+  epsg.code = getDefaults("epsg"),
   grid.resolution = 100,
   mov.directions = 16,
   id.col = getDefaults("id"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
+  cores = 1,
   verbose = TRUE
 )
 }
 \arguments{
-\item{data}{A data frame with animal positions, containing longitude and latitude values (unprojected).}
+\item{data}{A data frame with animal positions, containing longitude and latitude values.}
 
-\item{land.shape}{A  shape file containing coastlines.}
+\item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+If the provided object is not of class 'sf', the function will attempt to
+convert it to an 'sf' object for compatibility with subsequent spatial operations.}
 
-\item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
-If not supplied, CRS is assumed to be the same as in land.shape.}
+\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+for projecting the positions. If not specified, the function will attempt to use the CRS from the
+provided land.shape (if available).}
 
-\item{grid.resolution}{Grid cell size in meters  over which shortest paths are going to be estimated.}
+\item{grid.resolution}{The grid cell size (in meters) used to estimate shortest paths. A higher
+resolution leads to more precise path calculations but may increase computation time.}
 
-\item{mov.directions}{Number of directions allowed for shortest path calculation.
-Passed to \link[gdistance]{transition}.}
+\item{mov.directions}{Number of movement directions allowed for shortest path calculations, passed
+to the \link[gdistance]{transition} function from the \strong{gdistance} package.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
-\item{lat.col}{Name of the column containing latitude values (unprojected). Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
-\item{verbose}{Output process info and progress bar to console? Defaults to TRUE.}
+\item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
+means no parallel computing (single core).  If set to a value greater than 1,
+the function will use parallel computing to speed up calculations. This parameter
+is only relevant for estimating least-cost paths, specifically when a \code{land.shape} is provided.
+Run \code{parallel::detectCores()} to check the number of available cores.}
+
+\item{verbose}{Logical. Should the function output process information and display a progress bar?
+Defaults to TRUE.}
 }
 \value{
-A data frame containing (minimum) distances traveled between each consecutive animal position,
-calculated separately for each individual.
+A list with the following components:
+\item{data}{A data frame containing the calculated (minimum) distances between consecutive animal positions.}
+\item{trajectories}{A list of spatial objects representing the paths between positions.}
+\item{transition_layer}{(If land.shape is provided) The transition cost layer used for shortest path calculations.}
 }
 \description{
-Function to calculate the shortest path in water between consecutive positions.
-If no land.shape is provided, linear ('great-circle') distances are calculated instead.
+This function calculates the shortest path in water between
+consecutive positions for multiple individuals. If no land shapefile is provided,
+the function defaults to calculating  linear (great-circle) distances. When a land
+shapefile is provided, the function can utilize parallel computing to expedite
+least-cost path estimation, depending on the number of CPU cores specified.
+}
+\note{
+This function relies on the \strong{gdistance} and \strong{geosphere} packages for calculating
+the shortest in-water paths and great-circle distances, respectively.
 }

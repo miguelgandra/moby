@@ -87,9 +87,9 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, iterations=10
   if (!is.null(random.seed) && !inherits(random.seed, "numeric")) errors <- c(errors, "The random seed must be an integer.")
   if (!alternative %in% c("two.sided", "less", "greater")) errors <- c(errors, "Invalid value for argument 'alternative'. Must be one of 'two.sided', 'less', or 'greater'.")
   if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "Cores must be a positive integer.")
-  if (cores>1 && requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
-  if (cores>1 && requireNamespace("parallel", quietly=TRUE)) errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
-  if (cores>1 && requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
+  if (cores>1 && !requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
+  if (cores>1 && !requireNamespace("parallel", quietly=TRUE)) errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
+  if (cores>1 && !requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
   if(parallel::detectCores()<cores)  errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
   if(length(errors)>0){
     stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
@@ -250,7 +250,7 @@ randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, iterations=10
 
       # close progress bar and stop cluster
       close(pb)
-      parallel::stopCluster(cl)
+      on.exit(parallel::stopCluster(cl))
     }
 
 

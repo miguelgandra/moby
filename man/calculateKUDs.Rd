@@ -30,13 +30,16 @@ If left NULL, single KUDs are calculated for the whole monitoring period.}
 \item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
 within each group.}
 
-\item{land.shape}{A shape file containing coastlines.}
+\item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+If the provided object is not of class 'sf', the function will attempt to
+convert it to an 'sf' object for compatibility with subsequent spatial operations.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lon.col}{Name of the column containing projected longitudes. Defaults to "lon".}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
-\item{lat.col}{Name of the column containing projected latitudes. Defaults to "lat".}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 }
 \value{
 A list containing the estimated UDs, areas corresponding to

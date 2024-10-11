@@ -24,11 +24,13 @@ summaryTable(
 unless a 'detections' column is included to indicate the number of detections for each row.}
 
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs.
+The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{tag.durations}{Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
+duration of the deployed tags (in days). The length of this vector should match the number of
+unique animal IDs, and the values must be in the same order as the ID levels.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{id.metadata}{A data frame containing metadata about the tagged animals, such as their length,
 sex, or transmitter type. If there are multiple rows per animal, variables will be collapsed before merging with other statistics.}

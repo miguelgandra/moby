@@ -27,7 +27,7 @@ filterDetections(
 \item{data}{A data frame containing raw animal detections.}
 
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs.
+The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{cutoff.dates}{Optional. A POSIXct vector containing the estimated expiration dates of the tags
@@ -38,9 +38,9 @@ should match the number of unique animal IDs. Alternatively, if a single value i
 
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
-\item{lon.col}{Name of the column containing longitude values (unprojected). Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
-\item{lat.col}{Name of the column containing latitude values (unprojected). Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
 \item{min.detections}{Optional. Discard individuals with fewer than this number of detections.}
 
@@ -57,7 +57,10 @@ individuals with fewer days of detections will be discarded.}
 Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers,
 when estimating minimum consecutive distances.}
 
-\item{land.shape}{Optional. A  shape file containing coastlines.}
+\item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
+an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
+If the provided object is not of class 'sf', the function will attempt to
+convert it to an 'sf' object for compatibility with subsequent spatial operations.}
 
 \item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
 If not supplied, CRS is assumed to be the same as in land.shape.}
@@ -85,6 +88,6 @@ It implements six distinct criteria:
 
 Unlike other methods, \code{filterDetections} accounts for land topographies and
 complex coastlines when calculating animal speeds if a
-\code{land.shape} (shape file containing coastlines) is provided,
+\code{land.shape} (shapefile containing coastlines or landmasses) is provided,
 leading to more accurate distance estimates.
 }

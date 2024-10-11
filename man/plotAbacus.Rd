@@ -22,16 +22,16 @@ plotAbacus(
   background.col = "grey96",
   pch = 16,
   pt.cex = 1,
+  release.pch = 8,
+  end.pch = 4,
   transparency = 0,
-  highlight.isolated = T,
+  highlight.isolated = TRUE,
   cex.lab = 0.8,
   cex.axis = 0.7,
   cex.legend = 0.7,
   cex.mural = 0.7,
   legend.intersp = 1.2,
-  legend.cols = NULL,
-  release.pch = 8,
-  end.pch = 4
+  legend.cols = NULL
 )
 }
 \arguments{
@@ -46,11 +46,13 @@ This parameter can be used for example to differentiate detections by station,
 animal trait, or temporal category. If NULL, all detections will be plotted in a single color.}
 
 \item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs.
+The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
 Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{tag.durations}{Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). If a single value is provided, it will be applied to all IDs.}
+duration of the deployed tags (in days). The length of this vector should match the number of
+unique animal IDs, and the values must be in the same order as the ID levels.
+Alternatively, if a single value is provided, it will be applied to all IDs.}
 
 \item{id.groups}{Optional. A named list containing ID groups used to visually aggregate
 animals belonging to the same class (e.g., different species, sexes or ages). Each element of
@@ -85,6 +87,10 @@ Used if season.shade is set to FALSE. Defaults to "grey96".}
 
 \item{pt.cex}{Numeric. The expansion factor for the points (detections). Defaults to 1.}
 
+\item{release.pch}{The symbol to use for the release/tagging date. Defaults to 8 (star).}
+
+\item{end.pch}{The symbol to use for the estimated end date of the tag's lifetime. Defaults to 4 (cross).}
+
 \item{transparency}{Numeric. The transparency level of the detections (points),
 ranging from 0 (fully opaque) to 1 (fully transparent). Defaults to 0.}
 
@@ -106,10 +112,6 @@ brought forward to prevent them from being hidden behind denser point clouds
 
 \item{legend.cols}{Integer. The number of columns in which to set the legend items.
 If NULL, it is set automatically based on the number of levels. Defaults to NULL.}
-
-\item{release.pch}{The symbol to use for the release/tagging date. Defaults to 8 (star).}
-
-\item{end.pch}{The symbol to use for the estimated end date of the tag's lifetime. Defaults to 4 (cross).}
 }
 \value{
 Generates an abacus plot

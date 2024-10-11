@@ -8,14 +8,21 @@
 #' Continuous Wavelet Transform (CWT) framework. CWT analysis provides an alternative method
 #' to the Fast Fourier Transform (FFT) or other time-frequency decomposition techniques,
 #' enabling the examination of periodicities over time. This function serves mostly as a
-#' wrapper for the \code{\link[wavScalogram]{cwt_wst}} function.
+#' wrapper for the \code{\link[wavScalogram]{cwt_wst}} function from the `wavScalogram` package.
 #'
 #'
 #' @inheritParams setDefaults
-#' @param data A data frame containing binned animal detections.
+#' @param data A data frame containing binned animal detections or other time-based measurements.
+#' The time series does not need to be regular; gaps between time bins are allowed.
+#' If there are gaps between measurements (i.e., missing time bins), the function will
+#' automatically assume a value of zero for those missing time steps.
 #' @param variable Name of the column containing the numeric variable to be analyzed.
-#' @param period.range The range of period scales (y-axis limits) to be considered, specified in hours.
-#' @param axis.periods Periods (in hours) to include/highlight in the y-axis.
+#' @param period.range The range of period scales (y-axis limits) to be considered,
+#' specified in the units defined by \code{time.unit}. Defaults to c(3, 48) in hours.
+#' @param axis.periods Periods to include/highlight on the y-axis, specified in the units
+#' defined by \code{time.unit}. Defaults to c(6,12,16,24,48) in hours.
+#' @param time.unit Time unit for `period.range` and `axis.periods`.
+#' Options are "mins", "hours" and "days". Defaults to "hours".
 #' @param color.pal Color palette. Defaults to the Jet colormap.
 #' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
 #' defining the x-axis labels. Defaults to month ("%d/%b").
@@ -38,16 +45,17 @@
 #' allowing for density comparison between individuals.
 #' @param id.groups Optional. A list containing ID groups, used to
 #' visually aggregate animals belonging to the same class (e.g. different species).
-#' @param ... Further arguments passed to the \code{\link[wavScalogram]{cwt_wst}} function
+#' @param ... Further arguments passed to the \code{\link[wavScalogram]{cwt_wst}} function.
 #' (e.g. wname, border_effects, waverad).
 #' @export
 
 
 plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"),
-                     period.range=c(3, 48), axis.periods=c(6,12,16,24,48), color.pal=NULL,
-                     date.format="%d/%b", date.interval=4, date.start=1, min.days=NULL, detrend=F,
-                     cex.main=1.2, cex.lab=1.1, cex.axis=1, legend.xpos=c(0.90, 0.915),
-                     legend.ypos=c(0.15, 0.85), cols=1, same.scale=F, id.groups=NULL, ...) {
+                     period.range=c(3,48), axis.periods=c(6,12,16,24,48), time.unit="hours",
+                     color.pal=NULL, date.format="%d/%b", date.interval=4, date.start=1,
+                     min.days=NULL, detrend=F, cex.main=1.2, cex.lab=1.1, cex.axis=1,
+                     legend.xpos=c(0.90, 0.915), legend.ypos=c(0.15, 0.85),
+                     cols=1, same.scale=F, id.groups=NULL, ...) {
 
 
   ##############################################################################
@@ -71,6 +79,21 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
   # drop missing ID levels
   data[,id.col] <- droplevels( data[,id.col])
 
+  # validate time.unit and convert periods accordingly
+  if (time.unit=="mins") {
+    period.range <- period.range
+    axis.periods <- axis.periods
+  } else if (time.unit=="hours") {
+    period.range <- period.range * 60
+    axis.periods <- axis.periods * 60
+  } else if (time.unit=="days") {
+    period.range <- period.range * 1440
+    axis.periods <- axis.periods * 1440
+  } else {
+    stop("Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
+  }
+
+
   ##############################################################################
   ## Prepare data ##############################################################
   ##############################################################################
@@ -79,12 +102,8 @@ plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDe
   cwt_table <- createWideTable(data, id.col=id.col, timebin.col=timebin.col,
                                value.col=variable,  agg.fun=mean)
 
-  # convert hour periods to minutes
-  period.range <- period.range*60
-
   # offset min period by 30 mins to avoid truncation after CWT
   period.range[1] <-  period.range[1] - 30
-
 
   # subset individuals based on minimum number of days with data
   if(!is.null(min.days)){

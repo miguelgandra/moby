@@ -19,37 +19,29 @@
 #' @details
 #' The `validateArguments` function checks for the following:
 #' \describe{
-#'   \item{data}{Ensures that the first argument is a data frame.}
-#'   \item{id.col}{Checks that the specified ID column exists in the data frame and converts it to a factor if necessary.}
-#'   \item{datetime.col}{Ensures that the datetime column exists and is in POSIXct format.}
-#'   \item{timebin.col}{Ensures that the time-bin column exists and is in POSIXct format.}
-#'   \item{station.col}{Ensures that the station column exists.}
-#'   \item{split.by}{Validates that the specified column for splitting exists.}
-#'   \item{color.by}{Checks that the color-by column exists, has no missing values, and converts it to a factor if necessary.}
-#'   \item{tagging.dates}{Validates that tagging dates are provided in POSIXct format and match the number of unique IDs if necessary.}
-#'   \item{tag.durations}{Ensures that tag durations are provided and match the number of unique IDs if necessary.}
-#'   \item{id.groups}{Validates the ID groups, ensuring no duplicates and that all IDs exist in the data.}
-#'   \item{color.pal}{Checks that the color palette is either a character vector or a function.}
-#'   \item{diel.lines}{Ensures that diel lines are specified with acceptable values.}
-#'   \item{polygons}{Validates the polygons argument, ensuring it is either FALSE, 'diel', or 'season'.}
-#'   \item{background.color}{Checks that the background color is a valid single color specified as a hex code or a named color.}
-#'   \item{style}{Ensures that the style is either 'raster' or 'points'.}
+#'   \item{data}{Ensures the first argument is a data frame.}
+#'   \item{id.col}{Verifies the ID column exists and converts it to a factor if necessary.}
+#'   \item{datetime.col}{Ensures the datetime column exists and is in POSIXct format.}
+#'   \item{timebin.col}{Checks the time-bin column for existence and correct format.}
+#'   \item{lon.col}{Ensures the longitude column exists and is numeric.}
+#'   \item{lat.col}{Ensures the latitude column exists and is numeric.}
+#'   \item{station.col}{Checks for the existence of the station column.}
+#'   \item{split.by}{Validates the column(s) used to split the data.}
+#'   \item{color.by}{Verifies the color-by column exists and contains no missing values; converts it to a factor if needed.}
+#'   \item{tagging.dates}{Checks tagging dates are in POSIXct format and match the number of unique IDs if required.}
+#'   \item{tag.durations}{Ensures tag durations are specified and correctly matched with unique IDs.}
+#'   \item{id.groups}{Validates that ID groups are unique and present in the data.}
+#'   \item{land.shape}{Checks if the provided spatial object can be converted to class `sf` if necessary.}
+#'   \item{color.pal}{Ensures the color palette is either a character vector or a function.}
+#'   \item{diel.lines}{Validates diel line values (0, 2, or 4).}
+#'   \item{polygons}{Checks if the polygons parameter is set to a valid value ('diel', 'season', or FALSE).}
+#'   \item{background.color}{Ensures the background color is a valid hex code or named color.}
+#'   \item{style}{Verifies the style is either 'raster' or 'points'.}
 #' }
 #'
 #' @note
 #' This function is intended for internal use within the `moby` package. It helps streamline
 #' argument validation across multiple functions, ensuring consistency and reducing redundancy.
-#' @keywords internal
-#'
-#' @examples
-#' \dontrun{
-#' # Example usage within a function that calls validateArguments
-#' plotAbacus <- function(data, id.col, datetime.col, ...) {
-#'   .validateArguments()
-#'   # Proceed with analysis...
-#' }
-#' }
-#'
 #' @keywords internal
 
 .validateArguments <- function() {
@@ -79,6 +71,7 @@
   color.by <- NULL
   tagging.dates <- NULL
   tag.durations <- NULL
+  land.shape <- NULL
 
   # initialize strings to return all error and warning messages at once
   errors <- c()
@@ -130,15 +123,20 @@
   # validate lon.col   #####################################################
   if ("lon.col" %in% names(args)) {
     lon.col <- args$lon.col
-    errors <- c(errors, checkColumn(lon.col, "longitude column"))
+    lon_msg <- checkColumn(lon.col, "longitude column")
+    if(!is.null(lon_msg))  errors <- c(errors, lon_msg)
+    else if (!is.numeric(data[[lon.col]])) errors <- c(errors, paste("The column", lon.col, "must be numeric."))
   }
 
   ##############################################################################
   # validate lat.col   #####################################################
   if ("lat.col" %in% names(args)) {
     lat.col <- args$lat.col
-    errors <- c(errors, checkColumn(lat.col, "latitude column"))
+    lat_msg <- checkColumn(lat.col, "latitude column")
+    if(!is.null(lat_msg))  errors <- c(errors, lat_msg)
+    else if (!is.numeric(data[[lat.col]])) errors <- c(errors, paste("The column", lat.col, "must be numeric."))
   }
+
 
   ##############################################################################
   # validate station.col #######################################################
@@ -158,7 +156,9 @@
   # validate dist.col ##########################################################
   if ("dist.col" %in% names(args)) {
     dist.col <- args$dist.col
-    errors <- c(errors, checkColumn(dist.col, "distance column"))
+    if(!is.null(dist.col)) {
+      errors <- c(errors, checkColumn(dist.col, "distance column"))
+    }
   }
 
 
@@ -292,6 +292,32 @@
     }
   }
 
+
+  ##############################################################################
+  # validate land.shape ########################################################
+  if ("land.shape" %in% names(args)) {
+    land.shape <- args$land.shape
+
+    # ensure 'land.shape' is not NULL
+    if(!is.null(land.shape)){
+      # check if the object is already of class 'sf'
+      if(!inherits(land.shape, "sf")) {
+        # if 'land.shape' is not of class 'sf', check if it can be converted
+        if(!inherits(land.shape, c("SpatialPolygonsDataFrame", "SpatialPolygons"))) {
+          errors <- c(errors, "The provided 'land.shape' could not be converted to class 'sf'. Please provide a valid spatial object.")
+        }else{
+          # attempt to convert 'land.shape' to an 'sf' object
+          tryCatch({
+            land.shape <- sf::st_as_sf(land.shape)
+            warnings <- c(warnings, "land.shape converted to class 'sf'.")
+          }, error = function(e) {
+            errors <- c(errors, "The provided 'land.shape' could not be converted to class 'sf'. Please provide a valid spatial object.")
+          })
+        }
+      }
+    }
+  }
+
   ##############################################################################
   # validate color.pal   #######################################################
   if ("color.pal" %in% names(args)) {
@@ -299,11 +325,6 @@
     if(!is.null(color.pal) && !inherits(color.pal, c("character", "function")))
       errors <- c(errors, "Invalid color palette. Please supply either a character vector w/ the colors or a function that generates colors.")
   }
-
-  # if(!is.null(color.by) && !is.null(color.pal)) {
-  #   if (length(color.pal) < nlevels(data[, color.by])) stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels")
-  #   if (length(color.pal) > nlevels(data[, color.by])) warning("The number of specified colors exceeds the number of levels in color.by")
-  # }
 
 
   ##############################################################################
@@ -335,7 +356,7 @@
   }
 
   ##############################################################################
-  # Validate style #############################################################
+  # Validate 'style' argument###################################################
   if ("style" %in% names(args)) {
     style <- args$style
     if(!style %in% c("raster", "points")) errors <- c(errors, "Invalid style specified. Accepted values are: 'raster' or 'points'.")
@@ -343,20 +364,38 @@
 
 
   ##############################################################################
+  # Validate 'cores' argument for parallel computing ###########################
+  if ("cores" %in% names(args)) {
+    cores <- args$cores
+    if (cores>1){
+      if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "The 'cores' parameter must be a positive integer.")
+      if (!requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
+      if (!requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
+      if (!requireNamespace("parallel", quietly=TRUE)){
+        errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
+      }else{
+          if(is.numeric(cores) && parallel::detectCores()<cores) errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
+      }
+    }
+  }
+
+  ##############################################################################
   # Return errors and/or warnings ##############################################
-  if(length(errors)>0){
-    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+  if (length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
     stop(stop_message, call.=FALSE)
   }
-  if(length(warnings)>0){
-    warning_message <- c("\n", paste0("- ", warnings, collapse="\n"))
-    warning(warnings, call.=FALSE)
+  if (length(warnings)>0){
+    warning_message <- sapply(warnings, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    warning_message <- c("\n", paste0("- ", warning_message, collapse="\n"))
+    warning(warning_message, call.=FALSE)
   }
 
 
   ##############################################################################
   # return potentially modified data   #########################################
-  return(list("data"=data, "tagging.dates"=tagging.dates, "tag.durations"=tag.durations))
+  return(list("data"=data, "tagging.dates"=tagging.dates, "tag.durations"=tag.durations, "land.shape"=land.shape))
 }
 
 #######################################################################################################
