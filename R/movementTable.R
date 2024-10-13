@@ -138,7 +138,7 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=getDefaults("
 
     # calculate means ± se and format missing values
     values <- suppressWarnings(as.matrix(sapply(movement_stats[,-1], as.numeric)))
-    decimal_digits <- apply(values, 2, decimalPlaces)
+    decimal_digits <- apply(values, 2, .decimalPlaces)
     decimal_digits <- apply(decimal_digits, 2, max, na.rm=T)
     movement_stats$ID <- as.character(movement_stats$ID)
     movement_stats[nrow(movement_stats)+1,] <- NA

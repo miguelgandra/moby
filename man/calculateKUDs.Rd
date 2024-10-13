@@ -13,7 +13,8 @@ calculateKUDs(
   land.shape = NULL,
   id.col = getDefaults("id"),
   lon.col = getDefaults("lon"),
-  lat.col = getDefaults("lat")
+  lat.col = getDefaults("lat"),
+  epsg.code = getDefaults("epsg")
 )
 }
 \arguments{
@@ -40,6 +41,9 @@ convert it to an 'sf' object for compatibility with subsequent spatial operation
 \item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
 
 \item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+
+\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+for projecting positions/layers.}
 }
 \value{
 A list containing the estimated UDs, areas corresponding to

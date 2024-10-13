@@ -307,7 +307,8 @@ migrationsTable <- function(data, id.col=getDefaults("id"), datetime.col=getDefa
   # prepare layout
   mat_table <-  matrix(1:ncell(final_table), nrow=nrow(final_table), byrow=TRUE)
   nplots <- length(plot.stats)
-  mat_graphs <- matrix((ncell(final_table)+1):(ncell(final_table)+nplots*nrow(final_table)), nrow=nrow(final_table), byrow=T)
+  n_cells <- prod(dim(final_table))
+  mat_graphs <- matrix((n_cells+1):(n_cells+nplots*nrow(final_table)), nrow=nrow(final_table), byrow=T)
 
   # calculate left and bottom plots for axes placement
   stationary <- which(!grepl("-->", final_table$Type, fixed=TRUE))

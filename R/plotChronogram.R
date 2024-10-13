@@ -495,7 +495,7 @@ plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), var
       plot_matrix <- plot_matrix[order(rownames(plot_matrix)),]
       plot_matrix <- as.matrix(plot_matrix)
       image(y=1:length(bins), x=1:length(days), z=plot_matrix,
-            zlim=var_range, xlim=xlim, xlab="", main="", ylab="",
+            zlim=var_range, xlab="", main="", ylab="",
             col=raster_pal, axes=F, cex.lab=0.9, ...)
     }
 

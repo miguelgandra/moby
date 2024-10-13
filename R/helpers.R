@@ -1139,7 +1139,7 @@ if (!exists("rep_len")) {
 
       # 5. Coordinates (projected), spatial.layer (geographic), EPSG (missing)
     } else if (coords_crs=="projected" && layer_crs=="geographic" && !epsg_supplied) {
-      stop("Longitudes/latitude values seem to be projected but no 'epsg.code' has been supplied. Please provide the corresponding epsg.code or supply longitude and latitude in a geographic CRS / unprojected format (WGS84).", call.=FALSE)
+      stop("Longitudes/latitude values seem to be projected but no EPSG code has been supplied. Please provide the corresponding epsg.code or supply longitude and latitude in a geographic CRS / unprojected format (WGS84).", call.=FALSE)
 
       # 6. Coordinates (projected), spatial.layer (geographic), EPSG (supplied)
     } else if (coords_crs=="projected" && layer_crs=="geographic" && epsg_supplied) {
@@ -1151,14 +1151,19 @@ if (!exists("rep_len")) {
     } else if (coords_crs=="projected" && layer_crs=="projected" && !epsg_supplied) {
       epsg.code <- layer_epsg
       sf::st_crs(coords) <- epsg.code
-      warning(paste("Assuming CRS projection (epsg", epsg.code$epsg, ") from spatial.layer."), call.=FALSE)
+      if(!is.na(epsg.code$epsg)){
+        warning(paste0("No EPSG code supplied. Assuming CRS projection with EPSG:", epsg.code$epsg,
+                      " based on the provided spatial.layer."), call.=FALSE)
+      }else{
+        warning("No EPSG code supplied. Assuming CRS projection from the provided spatial.layer.", call.=FALSE)
+      }
 
       # 8. Coordinates (projected), spatial.layer (projected), EPSG (supplied)
     } else if (coords_crs=="projected" && layer_crs=="projected" && epsg_supplied) {
       if (layer_epsg!=epsg.code) {
         if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
         if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=epsg.code$wkt, method="ngb")
-        warning(paste("The spatial layer has been projected to the supplied EPSG code:", epsg.code$epsg), call.=FALSE)
+        warning(paste("The spatial layer has been reprojected to the supplied EPSG code:", epsg.code$epsg), call.=FALSE)
       }
       sf::st_crs(coords) <- epsg.code
     }

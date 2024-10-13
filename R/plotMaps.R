@@ -32,9 +32,6 @@
 #' for these individuals, containing only the land.shape and background layer (if provided).
 #' @param color.pal Optional. A color palette used to represent the kernel utilization distribution (KUD)
 #' density values on the map. If NULL (default), If NULL (default), the \code{terrain.colors} palette is used.
-#' @param kud.transparency.threshold A numeric threshold for kernel utilization density (KUD) areas.
-#' KUD values below this threshold will be set to NA, effectively removing lower-utilization areas from the visualization.
-#' The default value is 0.95, retaining only areas with KUD values corresponding to the 95th percentile.
 #' @param kud.transparency.threshold Numeric threshold (between 0 and 1) for kernel utilization density (KUD) values.
 #' Areas with KUD values below this threshold will be set to NA, effectively removing lower-density regions
 #' (only relevant when a background layer is displayed). This threshold corresponds to a contour level;
@@ -107,8 +104,8 @@ plotMaps <- function(data,
                      animal.tracks = NULL,
                      id.groups = NULL,
                      id.col = getDefaults("id"),
-                     lon.col = "x",
-                     lat.col = "y",
+                     lon.col = getDefaults("lon"),
+                     lat.col = getDefaults("lat"),
                      land.shape = NULL,
                      epsg.code = getDefaults("epsg"),
                      land.color = "gray50",
@@ -212,7 +209,7 @@ plotMaps <- function(data,
   }
 
   # manage spatial objects
-  coords <- st_as_sf(data, coords=c(lon.col, lat.col))
+  coords <- sf::st_as_sf(data, coords=c(lon.col, lat.col))
   spatial_data <- .processSpatial(coords, land.shape, epsg.code)
   coords <- spatial_data$coords
   land.shape <- spatial_data$spatial.layer
@@ -233,7 +230,7 @@ plotMaps <- function(data,
 
   # set the color palette for plotting
   if(is.null(color.pal)){
-    color.pal <- rev(adjustcolor(terrain.colors(100), alpha.f=(1-kud.transparency)))
+    color.pal <- rev(terrain.colors(100))
   }
 
   # ensure pts.color and pts.cex can be used as vectors of three elements
@@ -348,7 +345,7 @@ plotMaps <- function(data,
       ###########################################################
       # overlay land shape to the plot ##########################
       if(!is.null(land.shape)){
-        plot(land.shape, col=land.color, border=NA, main="", add=TRUE)
+        plot(sf::st_geometry(land.shape), col=land.color, border=NA, main="", add=TRUE)
       }
 
       ###########################################################

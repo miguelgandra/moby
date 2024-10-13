@@ -60,6 +60,16 @@ calculateDistances <- function(data,
   # measure running time
   start.time <- Sys.time()
 
+  # capture the name of the 'land.shape' object
+  if(!is.null(land.shape)){
+    land_shape_name <- deparse(substitute(land.shape))
+  # if no land shape is provided, set related parameters to NULL
+  }else{
+    land_shape_name <- NULL
+    grid.resolution <- NULL
+    mov.directions <- NULL
+  }
+
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
@@ -293,9 +303,12 @@ calculateDistances <- function(data,
   }
 
   # add relevant metadata as attributes to the results
+
+  attr(results, 'land.shape') <- land_shape_name
   attr(results, 'epsg.code') <- epsg.code
   attr(results, 'grid.resolution') <- grid.resolution
   attr(results, 'mov.directions') <- mov.directions
+  attr(results, 'cores') <- cores
   attr(results, 'processing.date') <- Sys.time()
 
   # return the final results (data, trajectories, and optional transition layer)

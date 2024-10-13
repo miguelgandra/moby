@@ -309,7 +309,7 @@
           # attempt to convert 'land.shape' to an 'sf' object
           tryCatch({
             land.shape <- sf::st_as_sf(land.shape)
-            warnings <- c(warnings, "land.shape converted to class 'sf'.")
+            warnings <- c(warnings, "The provided 'land.shape' was internally converted to 'sf' for spatial processing.")
           }, error = function(e) {
             errors <- c(errors, "The provided 'land.shape' could not be converted to class 'sf'. Please provide a valid spatial object.")
           })

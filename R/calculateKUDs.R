@@ -31,9 +31,16 @@
 ################################################################################
 ## Main function - Estimate Kernel Density #####################################
 
-calculateKUDs <- function(data, bandwidth, grid, subset=NULL, id.groups=NULL,
-                          land.shape=NULL, id.col=getDefaults("id"),
-                          lon.col=getDefaults("lon"), lat.col=getDefaults("lat")) {
+calculateKUDs <- function(data,
+                          bandwidth,
+                          grid,
+                          subset = NULL,
+                          id.groups = NULL,
+                          land.shape = NULL,
+                          id.col = getDefaults("id"),
+                          lon.col = getDefaults("lon"),
+                          lat.col=getDefaults("lat"),
+                          epsg.code = getDefaults("epsg")) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -49,16 +56,17 @@ calculateKUDs <- function(data, bandwidth, grid, subset=NULL, id.groups=NULL,
 
   # check if adehabitatHR package is installed
   if (!requireNamespace("adehabitatHR", quietly=TRUE)) {
-    stop("The 'adehabitatHR' package is required for this function but is not installed. Please install 'adehabitatHR' using install.packages('adehabitatHR') and try again.")
+    stop("The 'adehabitatHR' package is required for this function but is not installed. Please install 'adehabitatHR' using install.packages('adehabitatHR') and try again.", call.=FALSE)
   }
 
-  # check if dataset coordinates are projected
-  geographic_coords <-  all(data[,lon.col]>=(-180) & data[,lon.col]<=180 & data[,lat.col]>=(-90) & data[,lat.col]<=90)
-  if(is.na(geographic_coords)){
-    stop("Longitudes/latitudes values are missing and/or in the wrong format")
-  }else if(geographic_coords==T & !grepl("+proj=longlat +datum=WGS84", raster::projection(grid), fixed=T)){
-    stop("Longitudes/latitudes and supplied UD grid appear to have different projections")
-  }
+  # manage spatial objects
+  coords <- sf::st_as_sf(data, coords=c(lon.col, lat.col))
+  coords_crs <- .checkProjection(coords)
+  spatial_data <- .processSpatial(coords, land.shape, epsg.code)
+  coords <- spatial_data$coords
+  land.shape <- spatial_data$spatial.layer
+  epsg.code <- spatial_data$epsg.code
+
 
 
 
