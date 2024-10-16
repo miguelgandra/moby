@@ -3,7 +3,6 @@
 export(calculateDistances)
 export(calculateFrequencies)
 export(calculateKUDs)
-export(calculateKUDs2)
 export(calculateLandDists)
 export(calculateOverlap)
 export(correctPositions)

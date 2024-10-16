@@ -7,34 +7,47 @@
 calculateKUDs(
   data,
   bandwidth,
-  grid,
+  spatial.grid = NULL,
   subset = NULL,
   id.groups = NULL,
   land.shape = NULL,
   id.col = getDefaults("id"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
-  epsg.code = getDefaults("epsg")
+  epsg.code = getDefaults("epsg"),
+  contour.percent = c(50, 95),
+  verbose = FALSE
 )
 }
 \arguments{
 \item{data}{A data frame with animal positions (COAs), containing 'longitude' and 'latitude' columns.}
 
-\item{bandwidth}{Kernel bandwidth (h) - smoothing parameter used to calculate KUDs.}
+\item{bandwidth}{Numeric. The smoothing parameter (h) that controls the width of the kernel
+used in the UD estimation. The bandwidth controls how much smoothing is applied to the data:
+smaller values result in a more detailed and localized estimation of space use,  while larger
+values produce smoother, more broad distributions. This parameter is passed to the \code{h} argument
+of the \code{\link[adehabitatHR]{kernelUD}} function. For further information, see
+the "Details" section below.}
 
-\item{grid}{SpatialPixels object containing the grid over which animal KUDs are going to be estimated
-(see grid argument in the \code{\link[adehabitatHR]{kernelUD}} function).}
+\item{spatial.grid}{Optional. A \code{Raster} or \code{SpatialPixels} object representing the
+grid over which the animal kernel utilization distributions (KUDs) will be estimated
+(see the \code{grid} argument in \code{\link[adehabitatHR]{kernelUD}}). If set to \code{NULL},
+the function will automatically generate an appropriate grid based on the spatial extent
+of the supplied animal's positions.}
 
-\item{subset}{If defined, KUDs are calculated independently for each level of this variable.
-If left NULL, single KUDs are calculated for the whole monitoring period.}
+\item{subset}{Optional. A variable used to subset the data, allowing KUDs to be calculated independently
+for each level of this variable. This should be the name of a column in the provided dataset.
+If left \code{NULL}, KUDs are calculated for the whole monitoring period.}
 
-\item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
-within each group.}
+\item{id.groups}{Optional. A named list where each element represents a group (e.g., species, sex, or age class),
+containing a vector of IDs for that group. If supplied, KUDs will be calculated
+independently for each group. The names of the list correspond to the group labels.}
 
-\item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
-an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
-If the provided object is not of class 'sf', the function will attempt to
-convert it to an 'sf' object for compatibility with subsequent spatial operations.}
+\item{land.shape}{Optional. A shapefile containing coastlines or landmasses,
+provided either as an 'sf' object or as a 'SpatialPolygonsDataFrame'/'SpatialPolygons' object.
+If the input is not in 'sf' format, the function will automatically convert it to 'sf'
+to ensure compatibility with subsequent spatial operations. Used to clip and exclude
+any portions of the estimated areas that overlap with landmasses.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
@@ -44,16 +57,95 @@ convert it to an 'sf' object for compatibility with subsequent spatial operation
 
 \item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
 for projecting positions/layers.}
+
+\item{contour.percent}{Numeric vector. The percentages for which isopleths (contour areas)
+are calculated. Defaults to 50\% and 95\%, representing core and total areas of utilization.}
+
+\item{verbose}{Logical. If TRUE, the function will print detailed processing
+information. Defaults to FALSE.}
 }
 \value{
-A list containing the estimated UDs, areas corresponding to
-50\% and 95\% of occurrence probability, and a formatted data frame.
+A list containing:
+\item{kernel_density}{An object of class "estUDm" with the estimated kernel utilization distributions.
+If a subset variable was provided, this will contain a list of "estUDm" objects, one for each group.}
+\item{summary_table}{A data frame summarizing the area estimates for the specified contours (isopleths).}
+\item{contours}{One 'sf' object for each specified contour. If a subset variable was provided, an additional
+column is included to distinguish between different groups.}
+
+The results list also contains multiple attributes to store relevant metadata,
+such as function options and processing details. These attributes might be useful
+for tracking parameters and ensuring reproducibility of the analysis.
 }
 \description{
-Pipeline to calculate animals' utilization areas using kernel
-density estimation, based on \code{\link[adehabitatHR]{kernelUD}} function. It estimates
-areas corresponding to 50\% and 95\% of occurrence probability (automatically subtracting
-portions over land masses) and allows estimation of KUDs independently by group.
+This function calculates animal utilization areas using kernel
+density estimation, based on the \code{\link[adehabitatHR]{kernelUD}} function
+(\code{adehabitatHR} package). It allows for estimating utilization areas corresponding to
+specified utilization contours (isopleths), with default values of 50\% and 95\%.
+Additionally, the function subtracts portions of these areas that overlap with
+landmasses and can independently estimate kernel utilization distributions (KUDs)
+for different groups or time periods.
+}
+\details{
+This function estimates kernel utilization distributions (KUDs) based on animal location data,
+allowing for quick analyses of space-use patterns. For a comprehensive overview of other
+home-range estimation methods, check out Kraft et al. (2023) (full reference below in the References section).
+The function also includes options for handling landmasses and for grouping data by
+subsets or groups for independent analysis.
+
+\strong{Land clipping}: Land clipping is applied post-hoc, after kernel density estimation.
+If you need to account for physical barriers like land during UD estimation, consider alternative
+methods (e.g. dynamic Brownian Bridge Movement Models as provided in the \code{RSP} package;
+Niella et al. 2020).
+
+\strong{Bandwidth (h)}: The smoothing factor, or bandwidth (h), is a critical parameter in
+kernel utilization distribution (KUD) analysis, representing the standard deviation of the kernel.
+It defines the extent to which a location can influence the home range estimation and
+the overall density estimate. The choice of bandwidth significantly impacts the results
+of the analysis. The bandwidth can either be fixed (using a single value for all data points)
+or variable (adapting based on point density). The current function only implements a fixed bandwidth.
+\itemize{
+\item A larger bandwidth increases the influence of more distant data points on the home range estimation,
+leading to a wider utilization distribution (UD) and a larger overall home range size.
+This increased smoothing can help mitigate sampling errors but may obscure finer details,
+retaining only the most prominent features of the spatial data.
+\item Conversely, a smaller bandwidth allows for greater detail at smaller spatial scales
+but might result in more fragmented home range estimates.
+}
+\subsection{Bandwidth Selection Methods}{
+
+The optimal bandwidth is not universally defined and depends on the specific context and dataset.
+Several methods are available for selecting the bandwidth, including:
+\itemize{
+\item \strong{Reference Bandwidth (Href):} A constant based on data variance, assuming normally
+distributed data. It provides consistent smoothing but may overestimate home range size in sparse datasets.
+\item \strong{LSCV (Least-Squares Cross-Validation):} Minimizes error between observed and
+predicted data, but may undersmooth in sparse datasets.
+\item \strong{Ad-Hoc Choice:} Researchers manually select a bandwidth based on prior
+knowledge or exploratory data analysis.
+\item \strong{Direct Plug-In:} Estimates bandwidth by solving equations based on the second
+derivative of the kernel density. Computationally intensive but can yield robust results, especially in complex datasets.
+}
+
+In some cases, bandwidth is adjusted based on the detection range in the array, particularly when spatial estimates produce smaller, disconnected isopleths.
+Adjusting the bandwidth can help form continuous areas that better reflect biological relevance.
+}
+}
+\references{
+Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
+Residency and space use estimation methods based on passive acoustic telemetry data.
+Movement Ecology, 11(1), 12.
+https://doi.org/10.1186/s40462-023-00349-y
+
+Niella, Y., Flávio, H., Smoothey, A. F., Aarestrup, K., Taylor, M. D., Peddemors,
+V. M., & Harcourt, R. (2020). Refined Shortest Paths (RSP): Incorporation of
+topography in space use estimation from node‐based telemetry data.
+Methods in Ecology and Evolution, 11(12), 1733-1742.
+https://doi.org/10.1111/2041-210X.13484
+
+Worton, B. J. (1989).
+Kernel methods for estimating the utilization distribution in home‐range studies.
+Ecology, 70(1), 164-168.
+https://doi.org/10.2307/1938423
 }
 \seealso{
 \code{\link[adehabitatHR]{kernelUD}}
