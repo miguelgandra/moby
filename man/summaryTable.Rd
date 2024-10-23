@@ -44,9 +44,12 @@ sex, or transmitter type. If there are multiple rows per animal, variables will 
 \item{residency.index}{A character string specifying the type of residency index to calculate.
 Options include:
 \itemize{
-\item "IR1": Residency Index 1, calculated as the number of days the animal was detected (Dd) divided by the detection interval (Di), i.e., the number of days between release/first detection and last detection (days at liberty). This represents a maximum residency value, considering only the period for which the animal was known to be alive and the tag operational.
-\item "IR2": Residency Index 2, calculated as the number of days the animal was detected (Dd) divided by the study interval (Dt), i.e., the total number of days between release/first detection and last data download or tag expiration date. This approach provides a minimum residency value, assuming the animal was alive and detectable throughout the study period.
-\item "IWR": Weighted Residency Index, which corresponds to the quotient of IR2/IR1. It quantifies the extent of the gap between the last detection and the end of the monitoring period, weighting the time an animal is detected with the total study period.
+\item "IR1": Residency Index 1, calculated as the number of days the animal was detected (Dd) divided by the detection interval (Di), i.e., the number of days between release/first detection and last detection (days at liberty).
+This represents a maximum residency value, considering only the period for which the animal was known to be alive and the tag operational.
+\item "IR2": Residency Index 2, calculated as the number of days the animal was detected (Dd) divided by the study interval (Dt), i.e., the total number of days between release/first detection and last data download or tag expiration date.
+This approach provides a minimum residency value, assuming the animal was alive and detectable throughout the study period.
+\item "IWR": Weighted Residency Index, which corresponds to the IR2 index weighted by the ratio between the detection interval (Di, the number of days between the first and last detection) and the study interval (Dt, the total monitoring period).
+This accounts for the number of days detected and the spread of detections within the monitoring period, providing a measure of residency that balances the frequency of detections with their temporal distribution.
 }
 
 The choice of index can affect the interpretation of residency patterns, so it's important to select the one(s) that best fits the study objectives.
