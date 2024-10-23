@@ -218,7 +218,7 @@ calculateKUDs <- function(data,
     cat("Estimating kernel utilization distributions...\n")
 
     # compute KUDs for the entire dataset
-    final_results <- .computeKUDs(coords, id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, verbose)
+    final_results <- .computeKUDs(coords, id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, epsg.code, verbose)
 
     # extract the 'spatial.grid' from the final results
     spatial.grid <- final_results$spatial.grid
@@ -254,7 +254,7 @@ calculateKUDs <- function(data,
     # compute KUDs for each group separately
     kud_results <- lapply(1:length(group_coords), function(i) {
       cat(paste0("Estimating kernel utilization distributions [", names(group_coords)[i], "]...\n"))
-      group_results <- .computeKUDs(group_coords[[i]], id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, verbose)
+      group_results <- .computeKUDs(group_coords[[i]], id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, epsg.code, verbose)
       if(is.null(group_results)) return(NA)
       else return(group_results)
     })
@@ -497,7 +497,7 @@ calculateKUDs <- function(data,
 #' @noRd
 
 .computeKUDs <- function(coords, id.col, bandwidth, coords.bbox, contour.percent,
-                         spatial.grid, land.shape, verbose){
+                         spatial.grid, land.shape, epsg.code, verbose){
 
   # initialize the expand factor, which will be used to gradually increase the spatial grid extent
   expand_factor <- 0.05

@@ -39,7 +39,7 @@ is classified either as inshore or offshore, according to its direction).}
 \item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
 \item{dist.col}{Name of the column containing step lengths in meters (distance between consecutive positions).
-This column can be generated using the \code{calculateDistances} function. If left NULL,
+This column can be generated using the \code{calculateTracks} function. If left NULL,
 the function will only compute distances to land without calculating additional movement metrics.}
 }
 \value{

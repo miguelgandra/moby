@@ -47,7 +47,7 @@ and latitude coordinates.}
 
 \item{kernel.densities}{Kernel utilization areas ('estUD' class), as returned by \code{\link{calculateKUDs}}.}
 
-\item{animal.tracks}{The output of \code{\link{calculateDistances}}.}
+\item{animal.tracks}{The output of \code{\link{calculateTracks}}.}
 
 \item{id.groups}{Optional. A list containing ID groups, used to
 visually aggregate animals belonging to the same class (e.g. different species).}

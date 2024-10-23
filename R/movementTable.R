@@ -9,7 +9,7 @@
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing binned animal detections and distances traveled,
-#' as returned by \code{\link{calculateDistances}}.
+#' as returned by \code{\link{calculateTracks}}.
 #' @param kud.results Output of \code{\link{calculateKUDs}}.
 #' @param land.shape A projected shape file containing coastlines.
 #' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
@@ -18,7 +18,7 @@
 #' visually aggregate animals belonging to the same class (e.g. different species).
 #' @param dist.col Name of the column containing distance values (in meters). Defaults to 'dist_m'.
 #' @param discard.missing If true, only individuals with detections are included.
-#' @param ... Further arguments passed to \code{\link{calculateDistances}} function,
+#' @param ... Further arguments passed to \code{\link{calculateTracks}} function,
 #' in order to calculate distances between the first and last recorded detection, for each individual.
 #' @export
 
@@ -119,9 +119,9 @@ movementTable <- function(data, kud.results, land.shape, epsg.code=getDefaults("
     rownames(start_end_coas) <- NULL
     start_end_coas$type <- factor(start_end_coas$type, levels=c("start","end"))
     start_end_coas <- start_end_coas[order(start_end_coas$id, start_end_coas$type),]
-    start_end_dists <- calculateDistances(start_end_coas, land.shape=land.shape,
-                                          epsg.code=epsg.code, id.col="id", verbose=FALSE,
-                                          lon.col=lon.col, lat.col=lat.col, ...)$data
+    start_end_dists <- calculateTracks(start_end_coas, land.shape=land.shape,
+                                       epsg.code=epsg.code, id.col="id", verbose=FALSE,
+                                       lon.col=lon.col, lat.col=lat.col, ...)$data
     start_end_dists <- start_end_dists$dist_m[!is.na(start_end_dists$dist_m)]
     li_index <- sprintf("%.2f", start_end_dists/total_dist)
     li_index[li_index=="NaN"] <- "NA"

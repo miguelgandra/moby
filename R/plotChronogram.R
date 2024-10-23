@@ -32,7 +32,7 @@
 #' @param sunriset.coords A SpatialPoints or matrix object containing longitude and
 #' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
 #' @param solar.depth Angle of the sun below the horizon (in degrees). Passed the
-#' solarDep argument in \code{\link[maptools]{crepuscule}} function.
+#' `solarDep` argument in \code{\link[suntools]{crepuscule}} function.
 #' @param lunar.info Include top mural containing lunar illumination?
 #' @param background.col If style is set to points, defines the background color of the plot.
 #' @param grid If true, a grid is plotted (horizontal and vertical guides across the entire plot).

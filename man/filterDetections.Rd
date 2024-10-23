@@ -65,7 +65,7 @@ convert it to an 'sf' object for compatibility with subsequent spatial operation
 \item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
 If not supplied, CRS is assumed to be the same as in land.shape.}
 
-\item{...}{Further arguments passed to the \code{\link{calculateDistances}} function
+\item{...}{Further arguments passed to the \code{\link{calculateTracks}} function
 (e.g., grid.resolution and mov.directions).}
 }
 \value{

@@ -27,7 +27,7 @@
 #' @param sunriset.coords A SpatialPoints or matrix object containing longitude and
 #' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
 #' @param solar.depth Angle of the sun below the horizon (in degrees). Passed to the
-#' solarDep argument in \code{\link[maptools]{crepuscule}} function. Defaults to 18 (astronomical twilight).
+#' `solarDep` argument in \code{\link[suntools]{crepuscule}} function. Defaults to 18 (astronomical twilight).
 #' @param cex.main Determines the size of the title(s). Defaults to 1.1.
 #' @param cex.lab Determines the size of the y-axis and y-axis labels. Defaults to 1.
 #' @param cex.axis Determines the size of the text labels on the axes. Defaults to 0.8.

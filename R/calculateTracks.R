@@ -42,16 +42,16 @@
 #' @export
 
 
-calculateDistances <- function(data,
-                               land.shape = NULL,
-                               epsg.code = getDefaults("epsg"),
-                               grid.resolution = 100,
-                               mov.directions = 16,
-                               id.col = getDefaults("id"),
-                               lon.col = getDefaults("lon"),
-                               lat.col = getDefaults("lat"),
-                               cores = 1,
-                               verbose = TRUE){
+calculateTracks <- function(data,
+                            land.shape = NULL,
+                            epsg.code = getDefaults("epsg"),
+                            grid.resolution = 100,
+                            mov.directions = 16,
+                            id.col = getDefaults("id"),
+                            lon.col = getDefaults("lon"),
+                            lat.col = getDefaults("lat"),
+                            cores = 1,
+                            verbose = TRUE){
 
   ##############################################################################
   ## Initial checks ############################################################

@@ -13,7 +13,7 @@
 #' @param data A data frame containing animal positions (centers of activity, COAs) with longitude
 #' and latitude coordinates.
 #' @param kernel.densities Kernel utilization areas ('estUD' class), as returned by \code{\link{calculateKUDs}}.
-#' @param animal.tracks The output of \code{\link{calculateDistances}}.
+#' @param animal.tracks The output of \code{\link{calculateTracks}}.
 #' @param id.groups Optional. A list containing ID groups, used to
 #' visually aggregate animals belonging to the same class (e.g. different species).
 #' @param land.shape Optional. A shapefile containing the coastlines or landmasses to be plotted.

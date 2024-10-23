@@ -21,7 +21,7 @@
 #' consecutive positions corresponds to more than 50% of the total step length, the movement
 #' is classified either as inshore or offshore, according to its direction).
 #' @param dist.col Name of the column containing step lengths in meters (distance between consecutive positions).
-#' This column can be generated using the \code{calculateDistances} function. If left NULL,
+#' This column can be generated using the \code{calculateTracks} function. If left NULL,
 #' the function will only compute distances to land without calculating additional movement metrics.
 #' @return A data frame containing distances to nearest shore and multiple related metrics, including
 #' direction of movement (inshore/offshore/alongshore) and percentage of movement

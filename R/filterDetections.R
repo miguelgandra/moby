@@ -41,7 +41,7 @@
 #' convert it to an 'sf' object for compatibility with subsequent spatial operations.
 #' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
 #' If not supplied, CRS is assumed to be the same as in land.shape.
-#' @param ... Further arguments passed to the \code{\link{calculateDistances}} function
+#' @param ... Further arguments passed to the \code{\link{calculateTracks}} function
 #' (e.g., grid.resolution and mov.directions).
 #' @return A list containing both the filtered data and the rejected detections,
 #' as well as a detailed summary of the filtered out data by individual.
@@ -164,7 +164,7 @@ filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), c
   # if max.speed is defined, calculate distance between each two consecutive detections
   if(!is.null(max.speed)){
     cat("Applying speed filter...\n")
-    data_distances <- moby::calculateDistances(data_filtered, land.shape, epsg.code, id.col=id.col,
+    data_distances <- moby::calculateTracks(data_filtered, land.shape, epsg.code, id.col=id.col,
                                                lon.col=lon.col, lat.col=lat.col, ...)$data
     data_distances <- base::split(data_distances, f=data_distances[,id.col])
     # filter out detections above the maximum defined speed

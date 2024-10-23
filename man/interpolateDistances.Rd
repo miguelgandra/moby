@@ -12,13 +12,13 @@ interpolateDistances(
 )
 }
 \arguments{
-\item{data}{Output \code{\link{calculateDistances}} function: a data frame
+\item{data}{Output \code{\link{calculateTracks}} function: a data frame
 with animal IDS, positions and distances.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{dist.col}{Name of the column containing distances. Defaults to 'dist_m',
-the output of \code{\link{calculateDistances}}.}
+the output of \code{\link{calculateTracks}}.}
 
 \item{keep.intermediate}{Boolean indicating if intermediate distances (assigned
 to time-bins without detections) should be kept or discarded. Defaults to false.}
@@ -29,7 +29,7 @@ Original data frame plus missing time-bins (with diluted distances)
 \description{
 Function to interpolate (average) distances across all timebins.
 If an animal goes undetected for large periods of time, large distance spikes
-may occur after running the \code{\link{calculateDistances}} function.
+may occur after running the \code{\link{calculateTracks}} function.
 Hence, to avoid large biases when averaging distances per hour or day, this
 function 'dilutes' traveled distances by the total number of time-bins
 passed between each two consecutive positions.

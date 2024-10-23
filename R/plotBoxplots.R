@@ -9,7 +9,7 @@
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing animal detections and distances traveled,
-#' as returned by \code{\link{calculateDistances}}.
+#' as returned by \code{\link{calculateTracks}}.
 #' @param subsetted.overlap List containing pairwise overlaps estimated by a given
 #' time-frame (e.g. diel phase), as returned by \code{\link{calculateOverlap}} using "subset".
 #' Only required if overlap is included as a response.

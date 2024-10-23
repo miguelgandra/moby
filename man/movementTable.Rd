@@ -21,7 +21,7 @@ movementTable(
 }
 \arguments{
 \item{data}{A data frame containing binned animal detections and distances traveled,
-as returned by \code{\link{calculateDistances}}.}
+as returned by \code{\link{calculateTracks}}.}
 
 \item{kud.results}{Output of \code{\link{calculateKUDs}}.}
 
@@ -45,7 +45,7 @@ visually aggregate animals belonging to the same class (e.g. different species).
 
 \item{discard.missing}{If true, only individuals with detections are included.}
 
-\item{...}{Further arguments passed to \code{\link{calculateDistances}} function,
+\item{...}{Further arguments passed to \code{\link{calculateTracks}} function,
 in order to calculate distances between the first and last recorded detection, for each individual.}
 }
 \description{
