@@ -15,17 +15,18 @@
 #' Can be either a vector or a single variable.
 #' @param var.titles Display name of the variables (e.g. "Depth (m)"). If NULL, defaults to supplied variable names.
 #' @param plot.title Optional. Main title displayed on top of the plots/panel.
-#' @param date.col Name of the column containing datetimes in POSICX format. Defaults to 'datetime'.
+#' @param datetime.col Name of the column containing datetimes in POSICX format. Defaults to 'datetime'.
 #' @param split.by Optional. If defined, plots are generated individually for each level (or combination of levels)
 #' of this variable(s) (e.g. species, ontogeny, sex, habitat, etc).
 #' @param aggregate.fun Function used to aggregate values by hour and month. Defaults to mean.
-#' @param color.pal Color palette for the contour plot.
+#' @param color.pal Color palette for the contour plot. If NULL, defaults to the viridis color palette.
 #' @param diel.lines Number indicating the number of diel phase lines (boundaries)
-#' to display. Either 2 (corresponding to sunrise and sunset) or 4 (depicting
-#' dawn, sunrise, sunset, dusk).
+#' to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
+#' (depicting dawn, sunrise, sunset, dusk). Defaults to 4.
 #' @param diel.lines.col Color of the diel lines. Defaults to black.
 #' @param sunriset.coords A SpatialPoints or matrix object containing longitude and
-#' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
+#' latitude coordinates (in that order) at which to estimate sunrise and sunset times
+#' (if `diel.lines` > 0).
 #' @param solar.depth Angle of the sun below the horizon (in degrees). Passed to the
 #' `solarDep` argument in \code{\link[suntools]{crepuscule}} function. Defaults to 18 (astronomical twilight).
 #' @param cex.main Determines the size of the title(s). Defaults to 1.1.
@@ -47,13 +48,32 @@
 #' @export
 
 
-plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, split.by=NULL,
-                         aggregate.fun=function(x) mean(x, na.rm=T), id.col=getDefaults("id"),
-                         date.col=getDefaults("datetime"), color.pal=NULL, diel.lines=4,
-                         diel.lines.col="black", sunriset.coords,  solar.depth=18,
-                         cex.main=1.1, cex.lab=1, cex.axis=0.8, grid=T, invert.scale=FALSE,
-                         uniformize.scale=FALSE, legend.xpos=c(0.89, 0.92), legend.ypos=c(0.15, 0.85),
-                         tz="UTC", cols=1, disable.par=FALSE, ...) {
+plotContours <- function(data,
+                         variables,
+                         var.titles = NULL,
+                         plot.title = NULL,
+                         split.by = NULL,
+                         aggregate.fun = function(x) mean(x, na.rm=T),
+                         id.col = getDefaults("id"),
+                         datetime.col = getDefaults("datetime"),
+                         color.pal = NULL,
+                         diel.lines = 4,
+                         diel.lines.col = "black",
+                         sunriset.coords = NULL,
+                         solar.depth = 18,
+                         cex.main = 1.1,
+                         cex.lab = 1,
+                         cex.axis = 0.8,
+                         grid = TRUE,
+                         invert.scale = FALSE,
+                         uniformize.scale = FALSE,
+                         legend.xpos = c(0.89, 0.92),
+                         legend.ypos = c(0.15, 0.85),
+                         tz = "UTC",
+                         cols = 1,
+                         disable.par = FALSE,
+                         ...) {
+
 
   #####################################################################################
   # Initial checks ####################################################################
@@ -63,57 +83,68 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-
-  # check grouping variable(s)
-  if(!is.null(split.by)){
-
-    # convert all grouping columns to factor
-    for(s in split.by){
-      if(!inherits(data[,s], "factor")){
-        warning("Converting split.by column to factor", call.=FALSE)
-        data[,s] <- as.factor(data[,s])
-      }
-    }
-    # if more than one grouping variable, create a new column using interactions
-    if(length(split.by)>1){
-      data$dummy_group <- apply(data[split.by], 1, function(x) paste(x, collapse=" "))
-      data$dummy_group <- as.factor(data$dummy_group)
-      split.by <- "dummy_group"
-    }
-  # else create a single artificial group
-  }else{
-    data$dummy_group <- "1"
-    data$dummy_group <- as.factor(data$dummy_group)
-    split.by <- "dummy_group"
+  # validate additional parameters
+  errors <- c()
+  if(!is.null(var.titles) & length(variables)!=length(var.titles)) errors <- c(errors, "Number of variables and variables' titles do not match.")
+  if(diel.lines>0 && is.null(sunriset.coords))  errors <- c(errors, "Sunrise/sunset coordinates must be provided if 'diel.lines' is greater than 0.")
+  if(length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
+    stop(stop_message, call.=FALSE)
   }
 
-  # validate var titles
-  if(!is.null(var.titles) & length(variables)!=length(var.titles)) stop("Number of variables and variables' titles do not match", call.=FALSE)
 
-  # set color palette
+  # set the color palette if none provided
   if(is.null(color.pal)) color.pal <- .viridis_pal
   if(!inherits(color.pal, "function")) color.pal <- colorRampPalette(color.pal)
-
 
   # print to console
   .printConsole("Generating contour plot(s)")
 
 
   #####################################################################################
+  # Process grouping variables ########################################################
+  #####################################################################################
+
+  # process grouping variable(s) if provided
+  if(!is.null(split.by)){
+    # ensure grouping columns are factors for consistent plotting
+    for(s in split.by){
+      if(!inherits(data[,s], "factor")){
+        warning("Converting split.by column to factor", call.=FALSE)
+        data[,s] <- as.factor(data[,s])
+      }
+    }
+    # if multiple grouping variables, create a single interaction column to track combinations
+    if(length(split.by)>1){
+      data$dummy_group <- apply(data[split.by], 1, function(x) paste(x, collapse=" "))
+      data$dummy_group <- as.factor(data$dummy_group)
+      split.by <- "dummy_group"
+    }
+
+  # if no grouping variable, assign all data to a single artificial group
+  }else{
+    data$dummy_group <- "1"
+    data$dummy_group <- as.factor(data$dummy_group)
+    split.by <- "dummy_group"
+  }
+
+
+  #####################################################################################
   # Aggregate data and calculate stats ################################################
   #####################################################################################
 
-  # get month and hour
-  data$month_tmp <- strftime(data[,date.col], "%m", tz=tz)
-  data$hour_tmp <- strftime(data[,date.col], "%H", tz=tz)
+  # extract month and hour from datetime column
+  data$month_tmp <- strftime(data[,datetime.col], "%m", tz=tz)
+  data$hour_tmp <- strftime(data[,datetime.col], "%H", tz=tz)
   all_months <- sprintf("%02d", 1:12)
 
-  # aggregate data
+  # aggregate data by ID, month, hour, and group
   aggregated_data <- stats::aggregate(data[,variables], by=list(data[,id.col], data$month_tmp, data$hour_tmp, data[,split.by]), aggregate.fun, simplify=T, drop=T)
   colnames(aggregated_data)[1:4] <- c("id", "month", "hour", "group")
   colnames(aggregated_data)[5:ncol(aggregated_data)] <- variables
 
-  # calculate nº individuals with data for each variable and group
+  # calculate number of individuals with data per variable and group
   nids <- list()
   for(v in 1:length(variables)){
     var <- variables[v]
@@ -125,10 +156,12 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
   }
   nids <- do.call("rbind", nids)
 
-  # calculate variables' averages for each group (per month and hour)
+  # calculate monthly and hourly averages for each group
   aggregated_data <- stats::aggregate(aggregated_data[,variables], by=list(aggregated_data$group, aggregated_data$month, aggregated_data$hour), mean, na.rm=T)
   colnames(aggregated_data)[1:3] <- c("group", "month", "hour")
   colnames(aggregated_data)[4:ncol(aggregated_data)] <- variables
+
+  # fill in missing month/hour combinations for all groups
   complete_seqs <- expand.grid("group"=unique(data[,split.by]), "hour"=formatC(0:23, 1, flag=0), "month"=all_months)
   missing_seqs <- dplyr::anti_join(complete_seqs, aggregated_data, by=c("group", "hour","month"))
   if(nrow(missing_seqs)>0){
@@ -147,23 +180,29 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
   # Prepare plot variables ############################################################
   #####################################################################################
 
-  sunriset_start <- min(data[,date.col])
-  sunriset_end <- max(data[,date.col])
-  daytimes_table <- getSunTimes(sunriset.coords, sunriset_start, sunriset_end, solar.depth, by="%m")
-  daytimes_table <- daytimes_table[order(daytimes_table$interval),]
-  daytimes_table$interval <- as.numeric(daytimes_table$interval)
+  # calculate sunrise and sunset times for the specified coordinates and date range
+  if(diel.lines>0){
+    sunriset_start <- min(data[,datetime.col])
+    sunriset_end <- max(data[,datetime.col])
+    daytimes_table <- getSunTimes(sunriset.coords, sunriset_start, sunriset_end, solar.depth, by="%m")
+    daytimes_table <- daytimes_table[order(daytimes_table$interval),]
+    daytimes_table$interval <- as.numeric(daytimes_table$interval)
+  }
+
+  # define hour labels to mark every two hours on the x-axis
   hour_labels <- paste0(formatC(0:23, 1, flag=0),"h")[c(TRUE, FALSE)]
+
+  # set a default color palette if none is provided
   if(is.null(color.pal)){
     blues <- colorRampPalette(colors=c("#06405C", "#00537B", "#0985C2", "white"))(60)
     reds <- colorRampPalette(colors=c("white", "#B23E42", "#5C1315"))(40)
     color.pal <- colorRampPalette(colors=c(blues, reds))
   }
 
-  # set layout
+  # set up the graphical layout for multi-panel plots if necessary
   if(disable.par==F){
     nplots <- length(aggregated_data)*length(variables)
     rows <- ceiling(nplots/cols)
-
     par(mfrow=c(rows, cols), mgp=c(2.2,0.6,3), mar=c(4,4,4,6))
     if(!is.null(plot.title)){
       par(oma=c(0,0,2.5,0))
@@ -177,13 +216,13 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
   # Plot contours #####################################################################
   #####################################################################################
 
-  # iterate through each group
+  # iterate through each group in the aggregated data
   for(i in 1:length(aggregated_data)){
 
-    # iterate through each variable
+    # iterate through each specified variable
     for(v in 1:length(variables)){
 
-      # generate 2D matrix
+      # generate a 2D matrix for the current variable across hours and months
       var <- variables[v]
       contour_matrix <- matrix(aggregated_data[[i]][,var], nrow=24, ncol=12)
       colnames(contour_matrix) <- month.abb
@@ -199,7 +238,7 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
         scale <- range(contour_matrix, na.rm=T)
       }
 
-      # set plot title
+      # define the plot title based on group name and variable title if available
       if(length(aggregated_data)>1){
         if(!is.null(var.titles)){plot_title <- paste(names(aggregated_data)[i], "-", var.titles[v])
         }else{plot_title <- paste(names(aggregated_data)[i], "-", var)}
@@ -208,25 +247,37 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
         }else{plot_title <- var}
       }
 
+      # add a subtitle for sample size in the plot
       plot_sub <- nids$nids[nids$group==names(aggregated_data)[i] & nids$var==var]
       plot_sub <- paste0("(n=", plot_sub, ")")
 
-      # generate plot
+
+      ##########################################################################
+      # generate the contour plot ##############################################
       .filled.contour(x=1:12, y=0:24, z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
                       xlab="Months", ylab="Hours", nlevels=100, color.palette=color.pal, cex.lab=cex.lab, zlim=scale,
                       plot.axes = {
+                        # configure x-axis for months and y-axis for hours
                         axis(1, labels=month.abb, at=1:12, cex.axis=cex.axis, pos=0)
                         axis(2, labels=hour_labels, at=seq(0, 23, by=2), cex.axis=cex.axis, las=1, pos=1)
                         axis(2, labels=F, at=seq(0, 23, by=1), tck=-0.015, lwd.ticks=0.5, pos=1)
-                        if(diel.lines==4){lines(daytimes_table$interval, daytimes_table$dawns, lty=2, col=diel.lines.col)}
-                        lines(daytimes_table$interval, daytimes_table$sunrises, lty=2, col=diel.lines.col)
-                        lines(daytimes_table$interval, daytimes_table$sunsets, lty=2, col=diel.lines.col)
-                        if(diel.lines==4){lines(daytimes_table$interval, daytimes_table$dusks, lty=2, col=diel.lines.col)}
+                        # plot lines for different daylight periods (dawn, sunrise, sunset, dusk)
+                        if(diel.lines>0){
+                          lines(daytimes_table$interval, daytimes_table$sunrises, lty=2, col=diel.lines.col)
+                          lines(daytimes_table$interval, daytimes_table$sunsets, lty=2, col=diel.lines.col)
+                        }
+                        if(diel.lines==4){
+                          lines(daytimes_table$interval, daytimes_table$dawns, lty=2, col=diel.lines.col)
+                          lines(daytimes_table$interval, daytimes_table$dusks, lty=2, col=diel.lines.col)
+                        }
+                        # add grid lines if enabled
                         if(grid==T){
                           abline(v=1:12, lwd=0.03)
                           abline(h=seq(0, 23, by=1), lwd=0.03)
                         }}, ...)
+      # add the sample size as a title below the main title
       title(main=plot_sub, line=0.7, font.main=2, cex.main=0.9)
+      # set up the color scale legend
       scale_labs <- pretty(scale, min.n=4)
       scale_labs <- scale_labs[scale_labs>=min(scale) & scale_labs<=max(scale)]
       color_scale <- color.pal(100)
@@ -234,10 +285,10 @@ plotContours <- function(data, variables, var.titles=NULL, plot.title=NULL, spli
       digits <- max(.decimalPlaces(scale_labs))
       .colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=T,
                          posx=legend.xpos, posy=legend.ypos, main="", main.cex=0.8, cex=cex.axis)
-
     }
   }
 
+  # add an overall title for the entire plot, if specified
   if(!is.null(plot.title)){
     mtext(text=plot.title, side=3, cex=1.25, font=2, line=-0.5, outer=T)
   }

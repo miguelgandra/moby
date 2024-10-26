@@ -190,10 +190,11 @@
   ##############################################################################
   # validate variables ##########################################################
   if ("variables" %in% names(args)) {
-    variables <- args$variables
-    if(!is.null(variables) && calling_fun!="plotChronogram"){
-      for(v in 1:length(variables)){
-        errors <- c(errors, checkColumn(variables[v], "variable"))
+    all_variables <- args$variables
+    if(!is.null(all_variables) && calling_fun!="plotChronogram"){
+      for(v in 1:length(all_variables)){
+        variables <- all_variables[v]
+        errors <- c(errors, checkColumn(variables, "variable"))
       }
     }
   }

@@ -12,16 +12,16 @@ plotContours(
   split.by = NULL,
   aggregate.fun = function(x) mean(x, na.rm = T),
   id.col = getDefaults("id"),
-  date.col = getDefaults("datetime"),
+  datetime.col = getDefaults("datetime"),
   color.pal = NULL,
   diel.lines = 4,
   diel.lines.col = "black",
-  sunriset.coords,
+  sunriset.coords = NULL,
   solar.depth = 18,
   cex.main = 1.1,
   cex.lab = 1,
   cex.axis = 0.8,
-  grid = T,
+  grid = TRUE,
   invert.scale = FALSE,
   uniformize.scale = FALSE,
   legend.xpos = c(0.89, 0.92),
@@ -49,21 +49,22 @@ of this variable(s) (e.g. species, ontogeny, sex, habitat, etc).}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{date.col}{Name of the column containing datetimes in POSICX format. Defaults to 'datetime'.}
+\item{datetime.col}{Name of the column containing datetimes in POSICX format. Defaults to 'datetime'.}
 
-\item{color.pal}{Color palette for the contour plot.}
+\item{color.pal}{Color palette for the contour plot. If NULL, defaults to the viridis color palette.}
 
 \item{diel.lines}{Number indicating the number of diel phase lines (boundaries)
-to display. Either 2 (corresponding to sunrise and sunset) or 4 (depicting
-dawn, sunrise, sunset, dusk).}
+to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
+(depicting dawn, sunrise, sunset, dusk). Defaults to 4.}
 
 \item{diel.lines.col}{Color of the diel lines. Defaults to black.}
 
 \item{sunriset.coords}{A SpatialPoints or matrix object containing longitude and
-latitude coordinates (in that order) at which to estimate sunrise and sunset times.}
+latitude coordinates (in that order) at which to estimate sunrise and sunset times
+(if \code{diel.lines} > 0).}
 
 \item{solar.depth}{Angle of the sun below the horizon (in degrees). Passed to the
-solarDep argument in \code{\link[maptools]{crepuscule}} function. Defaults to 18 (astronomical twilight).}
+\code{solarDep} argument in \code{\link[suntools]{crepuscule}} function. Defaults to 18 (astronomical twilight).}
 
 \item{cex.main}{Determines the size of the title(s). Defaults to 1.1.}
 

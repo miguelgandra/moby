@@ -37,6 +37,10 @@ NULL
 ## Updated filled.contour function  ##############################################################
 ## Adapted from https://gist.github.com/epijim/6514388 ###########################################
 
+# Modification by Ian Taylor of the filled.contour function to remove the key and
+# facilitate overplotting with contour(). Further modified by Carey McGilliard and
+# Bridget Ferris to allow multiple plots on one page
+
 #' Filled Contour Plot with Modified Options
 #'
 #' @description Produces a filled contour plot with additional modifications for flexibility.
@@ -44,74 +48,92 @@ NULL
 #' @keywords internal
 #' @noRd
 
-.filled.contour <- function (x = seq(0, 1, length.out = nrow(z)),
-                            y = seq(0, 1, length.out = ncol(z)), z, xlim = range(x, finite = TRUE),
-                            ylim = range(y, finite = TRUE), zlim = range(z, finite = TRUE),
-                            levels = pretty(zlim, nlevels), nlevels = 20, color.palette = cm.colors,
-                            col = color.palette(length(levels) - 1), plot.title, plot.axes,
-                            key.title, key.axes, asp = NA, xaxs = "i", yaxs = "i", las = 1,
-                            axes = TRUE, frame.plot = axes, mar, invert.scale=FALSE, ...){
+.filled.contour <- function(x = seq(0, 1, length.out = nrow(z)),
+                            y = seq(0, 1, length.out = ncol(z)),
+                            z,
+                            xlim = range(x, finite = TRUE),
+                            ylim = range(y, finite = TRUE),
+                            zlim = range(z, finite = TRUE),
+                            levels = pretty(zlim, nlevels),
+                            nlevels = 20,
+                            color.palette = cm.colors,
+                            col = color.palette(length(levels) - 1),
+                            plot.title,
+                            plot.axes,
+                            key.title,
+                            key.axes,
+                            asp = NA,
+                            xaxs = "i",
+                            yaxs = "i",
+                            las = 1,
+                            axes = TRUE,
+                            frame.plot = axes,
+                            mar,
+                            invert.scale=FALSE,
+                            ...){
 
-  # modification by Ian Taylor of the filled.contour function
-  # to remove the key and facilitate overplotting with contour()
-  # further modified by Carey McGilliard and Bridget Ferris
-  # to allow multiple plots on one page
-
+  # input validation
   if (missing(z)) {
     if (!missing(x)) {
       if (is.list(x)) {
         z <- x$z
         y <- x$y
         x <- x$x
-      }
-      else {
+      } else {
         z <- x
         x <- seq.int(0, 1, length.out = nrow(z))
       }
-    }
-    else stop("no 'z' matrix specified")
-  }
-  else if (is.list(x)) {
+    } else stop("no 'z' matrix specified")
+  } else if (is.list(x)) {
     y <- x$y
     x <- x$x
   }
+
+  # verify x and y values are increasing
   if (any(diff(x) <= 0) || any(diff(y) <= 0))
     stop("increasing 'x' and 'y' values expected")
-  # mar.orig <- (par.orig <- par(c("mar", "las", "mfrow")))$mar
-  # on.exit(par(par.orig))
-  # w <- (3 + mar.orig[2]) * par("csi") * 2.54
-  # par(las = las)
-  # mar <- mar.orig
+
+  # plot initialization
   plot.new()
 
+  # invert scale if needed
   if(invert.scale){
     zscale <- rev(range(levels))
   }else{
     zscale <- range(levels)
   }
 
-  # par(mar=mar)
-  plot.window(xlim, ylim, "", xaxs = xaxs, yaxs = yaxs, asp = asp)
-  if (!is.matrix(z) || nrow(z) <= 1 || ncol(z) <= 1)
-    stop("no proper 'z' matrix specified")
-  if (!is.double(z))
-    storage.mode(z) <- "double"
-  .filled.contour(as.double(x), as.double(y), z, as.double(levels),
-                  col = col)
+  # set up plotting window
+  plot.window(xlim = xlim, ylim = ylim, "", xaxs = xaxs, yaxs = yaxs, asp = asp)
+
+  # validate matrix structure of z
+  if (!is.matrix(z) || nrow(z) <= 1 || ncol(z) <= 1) stop("no proper 'z' matrix specified")
+  if (!is.double(z)) storage.mode(z) <- "double"
+
+  # draw filled contour
+  graphics::.filled.contour(
+    as.double(x), as.double(y), z, as.double(levels),
+    col = col
+  )
+
+
+  # draw axes and title
   if (missing(plot.axes)) {
     if (axes) {
       title(main = "", xlab = "", ylab = "")
       Axis(x, side = 1)
       Axis(y, side = 2)
     }
+  } else {
+    plot.axes
   }
-  else plot.axes
-  if (frame.plot)
-    box()
-  if (missing(plot.title))
-    title(...)
-  else plot.title
+
+  # draw frame and title
+  if (frame.plot) box()
+  if (missing(plot.title)) title(...) else plot.title
+
   invisible()
+
 }
 
 
@@ -340,123 +362,88 @@ NULL
 ## Adapted from raster::scalebar #################################################################
 ##  - added new 'bar.lwd' argument to set the border line width of the scalebars and
 ##  - added new 'bar.height' argument to control the scalebar thickness
+##  - added new 'label.color' argument to control the color of the text labels
+##  - added new 'label.offset' argument to control the spacing of the text labels
 
 #' Scale Bar
 #'
 #' @description Adds a scale bar to a plot, supporting both line and bar types.
+#'
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
 #' @noRd
 
 .scalebar <- function (d, xy=NULL, type="line", divs=2, below="", bar.lwd=0.4, bar.height=1.5,
-                      lonlat=NULL, label, adj=c(0.5, -0.5), lwd=2, ...)
-{
+                      lonlat=NULL, label, adj=c(0.5, -0.5), lwd=2, label.color="black", label.offset=0.6, ...){
+
+  # check if scale bar type is valid
   stopifnot(type %in% c("line", "bar"))
+
+  # retrieve current plot parameters
   pr <- graphics::par()
+
+  # determine if coordinates are in longitude/latitude format based on plot range
   if (is.null(lonlat)) {
-    if (pr$usr[1] > -181 & pr$usr[2] < 181 & pr$yaxp[1] >
-        -200 & pr$yaxp[2] < 200) {
-      lonlat <- TRUE
-    }
-    else {
-      lonlat <- FALSE
-    }
+    lonlat <- pr$usr[1] > -181 & pr$usr[2] < 181 & pr$yaxp[1] > -200 & pr$yaxp[2] < 200
   }
+
+  # if in longitude/latitude, calculate bar distance based on latitude midpoint
   if (lonlat) {
     lat <- mean(pr$yaxp[1:2])
     if (missing(d)) {
-      dx <- (pr$usr[2] - pr$usr[1])/10
-      d <- raster::pointDistance(cbind(0, lat), cbind(dx, lat),
-                         TRUE)
-      d <- signif(d/1000, 2)
+      # Estimate distance d if missing, based on plot range
+      dx <- (pr$usr[2] - pr$usr[1]) / 10
+      d <- raster::pointDistance(cbind(0, lat), cbind(dx, lat), TRUE)
+      d <- signif(d / 1000, 2)  # Convert meters to kilometers and round
       label <- NULL
     }
+    # calculate end point of the scale bar
     p <- cbind(0, lat)
-    dd <- .destPoint(p, d * 1000)
-    dd <- dd[1, 1]
-  }
-  else {
-    if (missing(d)) {
-      d <- round(10 * (pr$usr[2] - pr$usr[1])/10)/10
-      label <- NULL
-    }
+    dd <- .destPoint(p, d * 1000)[1, 1]  # Convert km to meters
+  } else {
+    # in projected units, estimate distance d if missing, based on plot width
+    if (missing(d)) d <- round(10 * (pr$usr[2] - pr$usr[1]) / 10) / 10
     dd <- d
   }
+
+  # set default scale bar position if `xy` is not provided
   if (is.null(xy)) {
-    padding = c(5, 5)/100
+    padding <- c(5, 5) / 100  # Padding as a percentage of plot range
     parrange <- c(pr$usr[2] - pr$usr[1], pr$usr[4] - pr$usr[3])
-    xy <- c(pr$usr[1] + (padding[1] * parrange[1]), pr$usr[3] +
-              (padding[2] * parrange[2]))
+    xy <- c(pr$usr[1] + padding[1] * parrange[1], pr$usr[3] + padding[2] * parrange[2])
   }
+
+  # adjust `adj` for label offset (distance from scale bar)
+  adj <- c(0.5, -label.offset)
+
   if (type == "line") {
-    lines(matrix(c(xy[1], xy[2], xy[1] + dd, xy[2]), byrow = T,
-                 nrow = 2), lwd = lwd, ...)
-    if (missing(label)) {
-      label <- paste(d)
-    }
-    if (is.null(label)) {
-      label <- paste(d)
-    }
-    if (missing(adj)) {
-      adj <- c(0.5, -0.2 - lwd/20)
-    }
-    text(xy[1] + (0.5 * dd), xy[2], labels = label, adj = adj,
-         ...)
-  }
-  else if (type == "bar") {
+    # draw a line for the scale bar
+    lines(matrix(c(xy[1], xy[2], xy[1] + dd, xy[2]), byrow = TRUE, nrow = 2), lwd = bar.lwd, ...)
+    # set label text if not provided, defaulting to distance `d`
+    label <- if (missing(label)) paste(d) else label
+    text(xy[1] + 0.5 * dd, xy[2], labels = label, adj = adj, col = label.color, ...)
+
+  } else if (type == "bar") {
+    # for segmented bar, calculate bar height based on `dd` and `bar.height`
     stopifnot(divs > 0)
-    if (missing(adj)) {
-      adj <- c(0.5, -1)
+    lwd <- dd / 25 * bar.height
+
+    # if 2 divisions, draw a two-color bar and label start, middle, and end
+    if (divs == 2) {
+      half <- xy[1] + dd / 2
+      graphics::polygon(c(xy[1], xy[1], half, half), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]), col = "white", lwd = bar.lwd)
+      graphics::polygon(c(half, half, xy[1] + dd, xy[1] + dd), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]), col = "black", lwd = bar.lwd)
+      label <- if (missing(label)) c("0", "", d) else label
+      text(xy[1], xy[2] + lwd, labels = label[1], adj = adj, col = label.color, ...)
+      text(xy[1] + 0.5 * dd, xy[2] + lwd, labels = label[2], adj = adj, col = label.color, ...)
+      text(xy[1] + dd, xy[2] + lwd, labels = label[3], adj = adj, col = label.color, ...)
+
     }
 
-    lwd <- dd/25 * bar.height
-    if (divs == 2) {
-      half <- xy[1] + dd/2
-      graphics::polygon(c(xy[1], xy[1], half, half), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]),
-                        col = "white", lwd=bar.lwd)
-      graphics::polygon(c(half, half, xy[1] + dd, xy[1] + dd), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]),
-                        col = "black", lwd=bar.lwd)
-      if (missing(label)) {
-        label <- c("0", "", d)
-      }
-      if (is.null(label)) {
-        label <- c("0", "", d)
-      }
-      text(xy[1], xy[2], labels = label[1], adj = adj,
-           ...)
-      text(xy[1] + 0.5 * dd, xy[2], labels = label[2],
-           adj = adj, ...)
-      text(xy[1] + dd, xy[2], labels = label[3], adj = adj,
-           ...)
-    }
-    else {
-      q1 <- xy[1] + dd/4
-      half <- xy[1] + dd/2
-      q3 <- xy[1] + 3 * dd/4
-      end <- xy[1] + dd
-      graphics::polygon(c(xy[1], xy[1], q1, q1), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]),
-                        col = "white", lwd=bar.lwd)
-      graphics::polygon(c(q1, q1, half, half), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]),
-                        col = "black", lwd=bar.lwd)
-      graphics::polygon(c(half, half, q3, q3), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]),
-                        col = "white", lwd=bar.lwd)
-      graphics::polygon(c(q3, q3, end, end), c(xy[2], xy[2] + lwd, xy[2] + lwd, xy[2]),
-                        col = "black", lwd=bar.lwd)
-      if (missing(label)) {
-        label <- c("0", round(0.5 * d), d)
-      }
-      if (is.null(label)) {
-        label <- c("0", round(0.5 * d), d)
-      }
-      text(xy[1], xy[2], labels = label[1], adj = adj,
-           ...)
-      text(half, xy[2], labels = label[2], adj = adj, ...)
-      text(end, xy[2], labels = label[3], adj = adj, ...)
-    }
+    # if `below` text provided, place it below the scale bar with adjusted `adj`
     if (below != "") {
-      adj[2] <- -adj[2]
-      text(xy[1] + (0.5 * dd), xy[2], labels = below, adj = adj,
-           ...)
+      adj[2] <- label.offset  # Adjust adj to place below text further away
+      text(xy[1] + 0.5 * dd, xy[2]-lwd, labels = below, adj = adj, col = label.color, ...)
     }
   }
 }

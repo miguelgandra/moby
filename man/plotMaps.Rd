@@ -35,9 +35,10 @@ plotMaps(
   title.inset = c(-0.08, 0),
   title.cex = 1.5,
   scale.meters = NULL,
+  scale.color = "black",
   scale.pos = "bottomright",
   scale.inset = 0.1,
-  extent.factor = 1.05,
+  extent.factor = 1.1,
   cols = 3
 )
 }
@@ -123,6 +124,8 @@ plot region. Defaults to c(-0.08, 0).}
 \item{scale.meters}{The length of the scale bar in meters. If set to NULL (default), it is
 automatically set to 20\% of the plot width.}
 
+\item{scale.color}{Optional. The color of the scale bar legend displayed on each map. Defaults to "black".}
+
 \item{scale.pos}{The position of the scale bar on the map (e.g., "bottomright").}
 
 \item{scale.inset}{Inset distance(s) from the margins as a fraction of the
@@ -131,7 +134,7 @@ plot region, relatively to the scale bar position.}
 \item{extent.factor}{Numeric. Factor by which to adjust the extent of the plotting region,
 defined based on the bounding box around animal positions/detections. A value of 1 keeps
 the original bounding box, values greater than 1 increase the extent, and values less
-than 1 decrease it. Defaults to 1.05 (5\% increase).}
+than 1 decrease it. Defaults to 1.1 (10\% increase).}
 
 \item{cols}{Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 3.}
 }

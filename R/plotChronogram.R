@@ -56,15 +56,38 @@
 #' @export
 
 
-plotChronogram <- function(data, tagging.dates=getDefaults("tagging.dates"), variables="detections",
-                           split.by=NULL, style="points", id.col=getDefaults("id"),
-                           timebin.col=getDefaults("timebin"), station.col=getDefaults("station"),
-                           color.by=NULL, color.pal=NULL, date.format="%d/%b", date.interval=4, date.start=1,
-                           diel.lines=4, sunriset.coords, solar.depth=18, polygons=F, lunar.info=F,
-                           background.col="white", grid=TRUE, grid.color="white", highlight.isolated=FALSE,
-                           pt.cex=c(0.5, 3), uniformize.scale=FALSE, uniformize.dates=TRUE,
-                           cex.axis=1, cex.legend=0.8, cex.moon=2.5, legend.intersp=1.2,
-                           legend.cols=NULL, cols=NULL, ...) {
+plotChronogram <- function(data,
+                           tagging.dates = getDefaults("tagging.dates"),
+                           variables = "detections",
+                           split.by = NULL,
+                           style = "points",
+                           id.col = getDefaults("id"),
+                           timebin.col = getDefaults("timebin"),
+                           station.col = getDefaults("station"),
+                           color.by = NULL,
+                           color.pal = NULL,
+                           date.format = "%d/%b",
+                           date.interval = 4,
+                           date.start = 1,
+                           diel.lines = 4,
+                           sunriset.coords,
+                           solar.depth = 18,
+                           polygons = FALSE,
+                           lunar.info = FALSE,
+                           background.col = "white",
+                           grid = TRUE,
+                           grid.color = "white",
+                           highlight.isolated = FALSE,
+                           pt.cex = c(0.5, 3),
+                           uniformize.scale = FALSE,
+                           uniformize.dates = TRUE,
+                           cex.axis=1,
+                           cex.legend = 0.8,
+                           cex.moon = 2.5,
+                           legend.intersp = 1.2,
+                           legend.cols = NULL,
+                           cols = NULL,
+                           ...) {
 
   #####################################################################################
   # Initial checks ####################################################################

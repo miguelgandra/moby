@@ -305,7 +305,7 @@ migrationsTable <- function(data, id.col=getDefaults("id"), datetime.col=getDefa
   if(any(grepl("Duration", plot.stats, fixed=TRUE))) final_table <- final_table[,-which(grepl("Duration", colnames(final_table), fixed=TRUE))]
 
   # prepare layout
-  mat_table <-  matrix(1:ncell(final_table), nrow=nrow(final_table), byrow=TRUE)
+  mat_table <-  matrix(1:raster::ncell(final_table), nrow=nrow(final_table), byrow=TRUE)
   nplots <- length(plot.stats)
   n_cells <- prod(dim(final_table))
   mat_graphs <- matrix((n_cells+1):(n_cells+nplots*nrow(final_table)), nrow=nrow(final_table), byrow=T)
@@ -318,7 +318,7 @@ migrationsTable <- function(data, id.col=getDefaults("id"), datetime.col=getDefa
   bottom_plots <- c(bottom_plots, nrow(final_table))
 
   # set layout
-  total_cells <- ncell(cbind(mat_table, mat_graphs))
+  total_cells <- raster::ncell(cbind(mat_table, mat_graphs))
   final_mat <- cbind(mat_table, rep(total_cells+1, nrow(mat_table)), mat_graphs)
   final_mat <- rbind(final_mat, matrix(data=max(final_mat)+1, ncol=ncol(final_mat), nrow=1))
   layout_widths <- c(3.2, rep(0.9, ncol(mat_table)-1), 0.5, rep(1.5, ncol(mat_graphs)))

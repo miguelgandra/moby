@@ -66,13 +66,14 @@
 #' @param title.cex Determines the size of the plot title (animal ID). Defaults to 1.5.
 #' @param scale.meters The length of the scale bar in meters. If set to NULL (default), it is
 #' automatically set to 20% of the plot width.
+#' @param scale.color Optional. The color of the scale bar legend displayed on each map. Defaults to "black".
 #' @param scale.pos The position of the scale bar on the map (e.g., "bottomright").
 #' @param scale.inset Inset distance(s) from the margins as a fraction of the
 #' plot region, relatively to the scale bar position.
 #' @param extent.factor Numeric. Factor by which to adjust the extent of the plotting region,
 #' defined based on the bounding box around animal positions/detections. A value of 1 keeps
 #' the original bounding box, values greater than 1 increase the extent, and values less
-#' than 1 decrease it. Defaults to 1.05 (5% increase).
+#' than 1 decrease it. Defaults to 1.1 (10% increase).
 #' @param cols Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 3.
 #' @export
 #'
@@ -129,9 +130,10 @@ plotMaps <- function(data,
                      title.inset = c(-0.08, 0),
                      title.cex = 1.5,
                      scale.meters = NULL,
+                     scale.color = "black",
                      scale.pos = "bottomright",
                      scale.inset = 0.1,
-                     extent.factor = 1.05,
+                     extent.factor = 1.1,
                      cols = 3) {
 
 
@@ -230,6 +232,7 @@ plotMaps <- function(data,
 
   # set the color palette for plotting
   if(is.null(color.pal)){
+    #color.pal <- colorRampPalette(c("#00032F", "blue2", "blue", "#8754A2", "#FD4CB3", "#F9A35D", "yellow", "#faf873"))(100)
     color.pal <- rev(terrain.colors(100))
   }
 
@@ -238,7 +241,12 @@ plotMaps <- function(data,
   if(length(pts.cex)==1) pts.cex <- rep(pts.cex, 3)
 
   # define the plot boundaries (bounding box) based on the animal positions
-  bbox <- sf::st_bbox(coords)*extent.factor
+  bbox <- sf::st_bbox(coords)
+
+  # expand bounding box by a given % in all directions
+  dx <- bbox["xmax"]-bbox["xmin"]
+  dy <- bbox["ymax"]-bbox["ymin"]
+  bbox <- bbox + c(-dx, -dy, dx, dy) * (extent.factor - 1)
 
   # crop the land.shape and background.layer (if provided)
   if(!is.null(land.shape)) suppressWarnings(land.shape <- sf::st_crop(land.shape, bbox))
@@ -320,7 +328,7 @@ plotMaps <- function(data,
         if(nrow(data_individual[[i]])>0 && id %in% names(kernel.densities)){
           plot_kernel <- TRUE
           # convert the KUD densities for the current individual to a raster format
-          r <- raster::raster(methods::as(kernel.densities[[id]],"SpatialPixelsDataFrame"))
+          r <- raster::raster(methods::as(kernel.densities[[id]], "SpatialPixelsDataFrame"))
           # save original density values
           kud_values <- raster::values(r)
           # set density values above threshold to NA for transparency
@@ -337,6 +345,8 @@ plotMaps <- function(data,
           # determine the KUD scale based on the same.scale option
           if(same.scale) kud_scale <- kud_range
           else kud_scale <- range(kud_values, na.rm=T)
+          # crop
+          r <- raster::crop(r, raster::extent(bbox))
           # overlay KUD density on the plot
           suppressWarnings(raster::image(r, zlim=kud_scale, axes=F, col=color.pal, asp=1, add=T))
         }
@@ -370,7 +380,8 @@ plotMaps <- function(data,
       ###########################################################
       # position the scale bar based on the specified scale position and inset
       scale_xy <- .getPosition(scale.pos, inset=scale.inset)
-      .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", label=c(0, scale_km/2, scale_km), lwd=0.2, cex=0.7)
+      .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", lwd=0.2,
+                label=c(0, scale_km/2, scale_km), label.color=scale.color, cex=0.7)
 
       ###########################################################
       # add a box around the plot with specified line type and width
@@ -381,10 +392,18 @@ plotMaps <- function(data,
       if(!is.null(kernel.densities) && same.scale==F && kud.legend && plot_kernel){
         kud_ticks <- quantile(kud_scale, probs=seq(0, 1, by=0.2), na.rm=T)
         kud_labels <- paste0(seq(0, 100, by=20), "%")
+        # get relative plot area dimensions
+        plt <- par("plt")
+        plot_width <- plt[2] - plt[1]
+        # define fixed offset and bar width as a fraction of plot width
+        fixed_offset <- 0.025
+        bar_width <- 0.025
+        # calculate posx relative to the plot area, ensuring a consistent distance from the right
+        posx <- c(plt[2] + fixed_offset, plt[2] + fixed_offset + bar_width)
+        # plot color scale
         .colorlegend(col=color.pal, zlim=kud_scale, zval=kud_ticks, zlab=kud_labels,
-                     posx=c(0.840, 0.865), posy=c(0.2, 0.7), main="KUD\ndensity\n\n",
-                     main.cex=legend.cex+0.2, main.adj=0, cex=legend.cex)
-
+                     posx=posx, posy=c(0.2, 0.7), main="KUD\ndensity\n\n",
+                     main.cex=legend.cex+0.1, main.adj=0, cex=legend.cex)
       }
     }
 

@@ -21,8 +21,8 @@ plotChronogram(
   diel.lines = 4,
   sunriset.coords,
   solar.depth = 18,
-  polygons = F,
-  lunar.info = F,
+  polygons = FALSE,
+  lunar.info = FALSE,
   background.col = "white",
   grid = TRUE,
   grid.color = "white",
@@ -81,7 +81,7 @@ to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
 latitude coordinates (in that order) at which to estimate sunrise and sunset times.}
 
 \item{solar.depth}{Angle of the sun below the horizon (in degrees). Passed the
-solarDep argument in \code{\link[maptools]{crepuscule}} function.}
+\code{solarDep} argument in \code{\link[suntools]{crepuscule}} function.}
 
 \item{polygons}{Either "diel", "season". If style is set to points, can be used to highlight
 diel or seasonal phases using color-coded polygons. Defaults to F (no polygons).}
