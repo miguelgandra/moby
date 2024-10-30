@@ -50,12 +50,28 @@
 #' @export
 
 
-plotCWTs <- function(data, variable, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"),
-                     period.range=c(3,48), axis.periods=c(6,12,16,24,48), time.unit="hours",
-                     color.pal=NULL, date.format="%d/%b", date.interval=4, date.start=1,
-                     min.days=NULL, detrend=F, cex.main=1.2, cex.lab=1.1, cex.axis=1,
-                     legend.xpos=c(0.90, 0.915), legend.ypos=c(0.15, 0.85),
-                     cols=1, same.scale=F, id.groups=NULL, ...) {
+plotCWTs <- function(data,
+                     variable,
+                     id.col = getDefaults("id"),
+                     timebin.col = getDefaults("timebin"),
+                     period.range = c(3, 48),
+                     axis.periods = c(6, 12, 16, 24, 48),
+                     time.unit = "hours",
+                     color.pal = NULL,
+                     date.format = "%d/%b",
+                     date.interval = 4,
+                     date.start = 1,
+                     min.days = NULL,
+                     detrend = FALSE,
+                     cex.main = 1.2,
+                     cex.lab = 1.1,
+                     cex.axis = 1,
+                     legend.xpos = c(0.90, 0.915),
+                     legend.ypos = c(0.15, 0.85),
+                     cols = 1,
+                     same.scale = FALSE,
+                     id.groups = NULL,
+                     ...) {
 
 
   ##############################################################################

@@ -6,9 +6,9 @@
 \usage{
 plotStationsMap(
   data,
-  split.by = "timeofday",
-  lon.name = "longitude",
-  lat.name = "latitude",
+  split.by = NULL,
+  lon.col = getDefaults("lon"),
+  lat.col = getDefaults("lat"),
   pie.color = NULL,
   land.shape,
   land.color = "gray50",
@@ -27,9 +27,9 @@ plotStationsMap(
 separately for each level of this variable. If NULL, frequencies are calculated
 for the entire study duration. Defaults to "timeofday".}
 
-\item{lon.name}{Name of the column containing longitude values.}
+\item{lon.col}{Name of the column containing longitude values.}
 
-\item{lat.name}{Name of the column containing latitude values.}
+\item{lat.col}{Name of the column containing latitude values.}
 
 \item{pie.color}{Color of the pie charts. Single value if 'split.by' is not defined, otherwise
 a vector containing the same number of colors as the number of levels in the grouping variable.}

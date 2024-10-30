@@ -49,12 +49,22 @@
 #' @export
 
 
-filterDetections <- function(data, tagging.dates=getDefaults("tagging.dates"), cutoff.dates=NULL,
-                             id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
-                             lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
-                             min.detections=0, min.days=0, hours.threshold=24,
-                             max.speed=NULL, speed.unit="m/s", acoustic.range=600,
-                             land.shape=NULL, epsg.code=getDefaults("epsg"), ... ) {
+filterDetections <- function(data,
+                             tagging.dates = getDefaults("tagging.dates"),
+                             cutoff.dates = NULL,
+                             id.col = getDefaults("id"),
+                             datetime.col = getDefaults("datetime"),
+                             lon.col = getDefaults("lon"),
+                             lat.col = getDefaults("lat"),
+                             min.detections = 0,
+                             min.days = 0,
+                             hours.threshold = 24,
+                             max.speed = NULL,
+                             speed.unit = "m/s",
+                             acoustic.range = 600,
+                             land.shape = NULL,
+                             epsg.code = getDefaults("epsg"),
+                             ... ) {
 
   ##############################################################################
   ## Initial checks ############################################################

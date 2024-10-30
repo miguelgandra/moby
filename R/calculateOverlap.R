@@ -85,8 +85,12 @@
 #' If id.groups or a subset variable is defined, these results are nested within each of the grouping levels.
 #' @export
 
-calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-ratio",
-                             group.comparisons="all", cores=1) {
+calculateOverlap <- function(table,
+                             id.groups = NULL,
+                             subset = NULL,
+                             metric = "simple-ratio",
+                             group.comparisons = "all",
+                             cores = 1) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -261,6 +265,7 @@ calculateOverlap <- function(table, id.groups=NULL, subset=NULL, metric="simple-
   attr(results, 'metric') <- metric
   attr(results, 'subset') <- subset
   attr(results, 'group.comparisons') <- group.comparisons
+  attr(results, 'processing.date') <- Sys.time()
 
   # print run time
   end.time <- Sys.time()

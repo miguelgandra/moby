@@ -72,10 +72,18 @@
 #' @export
 
 
-summaryTable <- function(data, tagging.dates=getDefaults("tagdates"), tag.durations=NULL,
-                         id.metadata=NULL, id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
-                         station.col=getDefaults("station"), residency.index=c("IR1", "IR2", "IWR"),
-                         start.point="release", residency.by=NULL, id.groups=NULL, error.stat="sd") {
+summaryTable <- function(data,
+                         tagging.dates = getDefaults("tagdates"),
+                         tag.durations = NULL,
+                         id.metadata = NULL,
+                         id.col = getDefaults("id"),
+                         datetime.col = getDefaults("datetime"),
+                         station.col = getDefaults("station"),
+                         residency.index = c("IR1", "IR2", "IWR"),
+                         start.point = "release",
+                         residency.by = NULL,
+                         id.groups = NULL,
+                         error.stat = "sd") {
 
 
   ##############################################################################

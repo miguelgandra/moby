@@ -11,12 +11,12 @@ plotBoxplots(
   responses,
   by,
   id.col = getDefaults("id"),
-  discard.incomplete = T,
-  display.n = F,
+  discard.incomplete = TRUE,
+  display.n = FALSE,
   box.colors = NULL,
   outliers = FALSE,
   background.color = "gray96",
-  box.pattern = F,
+  box.pattern = FALSE,
   cols = 2
 )
 }

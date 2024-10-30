@@ -36,11 +36,21 @@
 #' @export
 
 
-migrationsTable <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
-                            spatial.col, tagging.dates=getDefaults("tagdates"),
-                            id.metadata=NULL, id.groups=NULL, plot=TRUE, plot.stats="all",
-                            same.scale=TRUE, von.bertalanffy=FALSE, VBGF.params=NULL,
-                            cex.main=1.1, cex.axis=0.7, cex.table=0.95) {
+migrationsTable <- function(data,
+                            id.col = getDefaults("id"),
+                            datetime.col = getDefaults("datetime"),
+                            spatial.col,
+                            tagging.dates = getDefaults("tagdates"),
+                            id.metadata = NULL,
+                            id.groups = NULL,
+                            plot = TRUE,
+                            plot.stats = "all",
+                            same.scale = TRUE,
+                            von.bertalanffy = FALSE,
+                            VBGF.params = NULL,
+                            cex.main = 1.1,
+                            cex.axis = 0.7,
+                            cex.table = 0.95) {
 
 
   ##############################################################################

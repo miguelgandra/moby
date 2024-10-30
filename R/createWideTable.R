@@ -50,8 +50,15 @@
 #' createWideTable(data, value.col="detections", start.dates=start.dates, end.dates=end.dates)
 #' }
 
-createWideTable <- function(data, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"), value.col,
-                            start.dates=NULL, end.dates=NULL, agg.fun=NULL, round.dates=FALSE, verbose=TRUE) {
+createWideTable <- function(data,
+                            id.col = getDefaults("id"),
+                            timebin.col = getDefaults("timebin"),
+                            value.col,
+                            start.dates = NULL,
+                            end.dates = NULL,
+                            agg.fun = NULL,
+                            round.dates = FALSE,
+                            verbose = TRUE) {
 
 
   ##############################################################################

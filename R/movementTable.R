@@ -23,10 +23,18 @@
 #' @export
 
 
-movementTable <- function(data, kud.results, land.shape, epsg.code=getDefaults("epsg"),
-                          id.groups=NULL, id.col=getDefaults("id"), timebin.col=getDefaults("timebin"),
-                          lon.col=getDefaults("lon"), lat.col=getDefaults("lat"),
-                          dist.col="dist_m", discard.missing=T, ...) {
+movementTable <- function(data,
+                          kud.results,
+                          land.shape,
+                          epsg.code = getDefaults("epsg"),
+                          id.groups = NULL,
+                          id.col = getDefaults("id"),
+                          timebin.col = getDefaults("timebin"),
+                          lon.col = getDefaults("lon"),
+                          lat.col = getDefaults("lat"),
+                          dist.col = "dist_m",
+                          discard.missing = T,
+                          ...) {
 
   ##############################################################################
   ## Initial checks ############################################################

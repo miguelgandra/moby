@@ -71,8 +71,14 @@
 #' @export
 
 
-randomizeOverlaps <- function(table, overlaps, constraint.by=NULL, iterations=1000,
-                              alternative=c("two.sided"), conf.level=0.95, cores=1, random.seed=NULL) {
+randomizeOverlaps <- function(table,
+                              overlaps,
+                              constraint.by = NULL,
+                              iterations = 1000,
+                              alternative = c("two.sided"),
+                              conf.level = 0.95,
+                              cores = 1,
+                              random.seed = NULL) {
 
   ##############################################################################
   ## Initial checks ############################################################

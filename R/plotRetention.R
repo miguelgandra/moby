@@ -36,10 +36,20 @@
 #' @export
 
 
-plotRetention <- function(data, id.metadata, spatial.col="habitat", id.col=getDefaults("id"),
-                          tagging.dates=getDefaults("tagging.dates"), tagsite.col="tagging_location", color.by=NULL,
-                          color.pal=NULL, aggregate.fun="mean", same.scale=FALSE,
-                          background.col="grey96", cols=1, von.bertalanffy=FALSE, VBGF.params=NULL) {
+plotRetention <- function(data,
+                          id.metadata,
+                          spatial.col = "habitat",
+                          id.col = getDefaults("id"),
+                          tagging.dates = getDefaults("tagging.dates"),
+                          tagsite.col = "tagging_location",
+                          color.by = NULL,
+                          color.pal = NULL,
+                          aggregate.fun = "mean",
+                          same.scale = FALSE,
+                          background.col = "grey96",
+                          cols = 1,
+                          von.bertalanffy = FALSE,
+                          VBGF.params=NULL) {
 
 
   ############################################################################

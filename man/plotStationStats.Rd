@@ -6,63 +6,90 @@
 \usage{
 plotStationStats(
   data,
-  overlaps = NULL,
   type = c("detections", "co-occurrences"),
-  id.col = getDefaults("id"),
-  spatial.col = getDefaults("station"),
-  number.stations = F,
-  rotate.labels = F,
-  show.percentage = T,
-  lab.threshold = NULL,
-  legend.pos = "top",
-  legend.style = "horizontal",
   id.groups = NULL,
-  color.pal = NULL,
   group.comparisons = "all",
+  id.col = getDefaults("id"),
+  timebin.col = getDefaults("timebin"),
+  station.col = getDefaults("station"),
+  aggregate.by = NULL,
+  color.pal = NULL,
+  number.locations = FALSE,
+  rotate.names = FALSE,
+  show.percentage = TRUE,
+  show.counts = TRUE,
+  annot.threshold = NULL,
+  annot.cex = 0.7,
+  title.pos = "top",
+  title.inset = c(0, 0.02),
+  title.cex = 1.1,
+  label.cex = 1,
+  axis.cex = 0.9,
+  legend.pos = "topright",
+  legend.style = "vertical",
+  legend.cex = 0.7,
   cols = 1
 )
 }
 \arguments{
 \item{data}{A data frame containing animal detections with corresponding time-bins.}
 
-\item{overlaps}{List containing counts of stations where animals co-occurred, as returned by
-\code{\link{calculateOverlap}}. Only required if type contains "co-occurrences".}
-
 \item{type}{Type of statistic to calculate/plot. If more than one type is supplied a grouped barplot
 is generated. Possible values are "detections", "average detections", "individuals" and "co-occurrences".}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
-
-\item{spatial.col}{Should match the name of a variable in the supplied data containing the
-spatial categories to plot (e.g. receivers or broader areas/locations). Defaults to "station".}
-
-\item{number.stations}{Replace receiver names with numbers? Useful if receiver names are
-too long to be displayed correctly.}
-
-\item{rotate.labels}{Another alternative to address long receiver names.}
-
-\item{show.percentage}{If true, percentages are displayed on top of each bar.}
-
-\item{lab.threshold}{Optional. If defined, text labels are only only displayed to
-frequencies above this threshold (e.g., if lab.threshold=0.05 count values are only displayed
-in bars with frequencies >= 5\%).}
-
-\item{legend.pos}{Legend position.}
-
-\item{legend.style}{Legend style (horizontal vs vertical).}
 
 \item{id.groups}{Optional. A list containing ID groups, used to generate different
 plots to each class (e.g. different species).}
 
-\item{color.pal}{Color palette for the bars. Should match the number of types defined (1 or 2).}
-
 \item{group.comparisons}{Controls the type of comparisons to be run, when id.groups are defined.
-One of "within", "between" or "all". Defaults to "all".}
+Only relevant to estimate co-occurrences. One of "within" (intra-group), "between" (inter-group) or "all" (both). Defaults to "all".}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
+
+\item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
+
+\item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
+
+\item{aggregate.by}{Column name for aggregating statistics (defaults to \code{station.col}).}
+
+\item{color.pal}{A color palette for the bars; the length should match the number of \code{type} values provided.}
+
+\item{number.locations}{Logical. If \code{TRUE}, replaces location names with numbers (for clearer display when names are long).}
+
+\item{rotate.names}{Logical. If \code{TRUE}, rotates location names on the x-axis.}
+
+\item{show.percentage}{Logical. If \code{TRUE}, percentages are displayed above each bar.}
+
+\item{show.counts}{Logical. If \code{TRUE}, shows the count above each bar.}
+
+\item{annot.threshold}{Numeric (optional). Minimum count required to display
+labels on bars (e.g., \code{1} only labels bars with counts greater than 1).
+Useful for reducing visual clutter in plots with many bars.}
+
+\item{annot.cex}{Numeric. Font size for bar annotation text. Defaults to 0.7.}
+
+\item{title.pos}{Position of the title on the plot (by keyword). Defaults to "top".}
+
+\item{title.inset}{Inset distance of the title from the specified position, as a fraction of the
+plot region. Defaults to}
+
+\item{title.cex}{Numeric. Font size for the plot title. Defaults to 1.1.}
+
+\item{label.cex}{Numeric. Font size for axis labels. Defaults to 1.}
+
+\item{axis.cex}{Numeric. Font size for axis text. Defaults to 0.9.}
+
+\item{legend.pos}{Legend position.}
+
+\item{legend.style}{Orientation of the legend, either "horizontal" or "vertical".}
+
+\item{legend.cex}{Numeric. Font size for legend text. Defaults to 0.7.}
 
 \item{cols}{Number of columns in the final panel (passed to the mfrow argument).}
 }
 \description{
-Calculates several receivers' statistics and generates corresponding barplots.
-Implemented statistics include total detections, average detection frequency (per individual),
-number of animals detected and number of co-occurrences.
+Calculates and plots receiver-based statistics, such as total and average detections,
+the number of unique individuals detected, and co-occurrence events. This function generates grouped bar plots,
+enabling side-by-side comparisons of specified statistics across stations or other broader spatial categories.
+Additionally, users can compute and plot statistics separately for animal groups (e.g., different species or sexes)
+and adjust a range of plot aesthetic options.
 }

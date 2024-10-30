@@ -17,14 +17,14 @@ plotCWTs(
   date.interval = 4,
   date.start = 1,
   min.days = NULL,
-  detrend = F,
+  detrend = FALSE,
   cex.main = 1.2,
   cex.lab = 1.1,
   cex.axis = 1,
   legend.xpos = c(0.9, 0.915),
   legend.ypos = c(0.15, 0.85),
   cols = 1,
-  same.scale = F,
+  same.scale = FALSE,
   id.groups = NULL,
   ...
 )

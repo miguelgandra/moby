@@ -12,8 +12,8 @@
 #' @param split.by If defined, detection frequencies on each receiver are calculated
 #' separately for each level of this variable. If NULL, frequencies are calculated
 #' for the entire study duration. Defaults to "timeofday".
-#' @param lon.name Name of the column containing longitude values.
-#' @param lat.name Name of the column containing latitude values.
+#' @param lon.col Name of the column containing longitude values.
+#' @param lat.col Name of the column containing latitude values.
 #' @param pie.color Color of the pie charts. Single value if 'split.by' is not defined, otherwise
 #' a vector containing the same number of colors as the number of levels in the grouping variable.
 #' @param land.shape A shape file containing coastlines.
@@ -33,10 +33,19 @@
 #######################################################################################
 ## Main function - plots map with the receivers #######################################
 
-plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", lat.name="latitude",
-                            pie.color=NULL, land.shape, land.color="gray50", background.col="#F3F7F7",
-                            background.layer=NULL,  background.pal=NULL, scale.meters=NULL,
-                            scale.pos="bottomright", scale.inset=0.1) {
+plotStationsMap <- function(data,
+                            split.by = NULL,
+                            lon.col = getDefaults("lon"),
+                            lat.col = getDefaults("lat"),
+                            pie.color = NULL,
+                            land.shape,
+                            land.color = "gray50",
+                            background.col = "#F3F7F7",
+                            background.layer = NULL,
+                            background.pal = NULL,
+                            scale.meters = NULL,
+                            scale.pos = "bottomright",
+                            scale.inset = 0.1) {
 
   ############################################################################
   ## Initial checks ##########################################################
@@ -45,7 +54,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
     stop("split.by variable not found in the supplied data")
   }
 
-  if(!lon.name %in% colnames(data) | !lat.name %in% colnames(data)){
+  if(!lon.col %in% colnames(data) | !lat.col %in% colnames(data)){
     stop("longitude/latitude columns not found in the supplied data")
   }
 
@@ -110,7 +119,7 @@ plotStationsMap <- function(data, split.by="timeofday", lon.name="longitude", la
 
   ############################################################################
   ## Grab station coordinates ################################################
-  stations_list <- stats::aggregate(cbind(data[,lon.name], data[,lat.name]), by=list(data$station), mean)
+  stations_list <- stats::aggregate(cbind(data[,lon.col], data[,lat.col]), by=list(data$station), mean)
   colnames(stations_list) <- c("station", "longitude", "latitude")
   coordinates <- sp::SpatialPoints(cbind(stations_list$longitude, stations_list$latitude))
   raster::projection(coordinates) <- CRS("+proj=longlat +datum=WGS84")

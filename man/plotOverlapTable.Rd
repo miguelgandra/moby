@@ -11,9 +11,9 @@ plotOverlapTable(
   type = "significance",
   group.comparisons = "both",
   color.pal = NULL,
-  discard.empty = T,
-  id.col = "ID",
-  full.scale = F,
+  discard.empty = TRUE,
+  id.col = getDefaults("id"),
+  full.scale = FALSE,
   sort.by = NULL
 )
 }

@@ -36,9 +36,19 @@
 ################################################################################
 # Main function - generate boxplots ####################################################
 
-plotBoxplots <- function(data, subsetted.overlap=NULL, subsetted.kuds=NULL, responses, by,
-                         id.col=getDefaults("id"), discard.incomplete=T, display.n=F, box.colors=NULL,
-                         outliers=FALSE, background.color="gray96", box.pattern=F, cols=2){
+plotBoxplots <- function(data,
+                         subsetted.overlap = NULL,
+                         subsetted.kuds = NULL,
+                         responses,
+                         by,
+                         id.col = getDefaults("id"),
+                         discard.incomplete = TRUE,
+                         display.n = FALSE,
+                         box.colors = NULL,
+                         outliers = FALSE,
+                         background.color = "gray96",
+                         box.pattern = FALSE,
+                         cols = 2){
 
   ################################################################################
   # Initial checks ###############################################################

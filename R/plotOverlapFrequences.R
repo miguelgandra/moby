@@ -33,9 +33,16 @@
 # Main function - plot frequencies of co-occurring group sizes #######################
 ######################################################################################
 
-plotOverlapFrequences <- function(table, n.individuals, split.by=NULL, id.groups=NULL,
-                                  group.comparisons="all", legend.pos="topright", legend.style="horizontal",
-                                  bar.colors=NULL, levels.order=NULL, cols=1) {
+plotOverlapFrequences <- function(table,
+                                  n.individuals,
+                                  split.by = NULL,
+                                  id.groups = NULL,
+                                  group.comparisons = "all",
+                                  legend.pos = "topright",
+                                  legend.style = "horizontal",
+                                  bar.colors = NULL,
+                                  levels.order = NULL,
+                                  cols = 1) {
 
 
   ######################################################################################
