@@ -15,19 +15,20 @@ plotMigrations(
   id.metadata = NULL,
   land.shape = NULL,
   land.color = "gray50",
+  epsg.code = getDefaults("epsg"),
   background.layer = NULL,
   background.pal = "#F3F7F7",
   title.cex = 1,
   color.nodes.by = "detection",
   nodes.color = c("darkblue", "black"),
   nodes.alpha = 0.8,
-  nodes.size = c(0.04, 0.08),
+  nodes.size = c(0.05, 0.1),
   nodes.label.wrap = FALSE,
   nodes.label.cex = 0.5,
   nodes.label.color = "white",
-  repel.nodes = FALSE,
+  repel.nodes = TRUE,
   repel.buffer = 1.1,
-  edge.type = c("movements", "individuals"),
+  edge.type = "movements",
   edge.color = "darkblue",
   edge.curved = 0.5,
   edge.width = c(0.4, 3.5),
@@ -41,7 +42,8 @@ plotMigrations(
   scale.inset = c(0, 0.05),
   scale.height = 1.5,
   scale.cex = 0.6,
-  bbox.ext = 0.2,
+  extent.factor = 1.1,
+  cols = 1,
   ...
 )
 }
@@ -70,6 +72,9 @@ Used to indicate the number of tagged individuals at each site.}
 
 \item{land.color}{Optional. Color of land areas. Defaults to "gray50".}
 
+\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
+for projecting positions/layers.}
+
 \item{background.layer}{Optional. A projected raster containing a variable to be displayed in the background
 (e.g. bathymetry, temperature, etc.).}
 
@@ -95,7 +100,7 @@ to the x-axis in terms of percentage (see details). See \code{\link[netdiffuseR]
 
 \item{nodes.label.color}{The font color for vertex labels. Defaults to white.}
 
-\item{repel.nodes}{Logical. If TRUE, nodes are plotted using a repulsion algorithm to avoid overlap. Defaults to FALSE.}
+\item{repel.nodes}{Logical. If TRUE, nodes are plotted using a repulsion algorithm to avoid overlap. Defaults to TRUE}
 
 \item{repel.buffer}{Controls the amount of space between nodes if repel.nodes is set to TRUE. Defaults to 1.1.}
 
@@ -138,10 +143,12 @@ are given, the first is used for x- distance, the second for y-distance. Default
 
 \item{scale.cex}{Size of the scale bar values. Defaults to 0.6.}
 
-\item{bbox.ext}{Amount of extension of the bounding box around the coordinates.
-It can be numeric (same extension into all four directions), vector of two (first x, then y directional extension)
-or vector of four (xmin, xmax, ymin, ymax extension). Default is 0.2 (extends the bounding box by 20\%).
-Only considered if a background layer is not supplied. Defaults to 0.2.}
+\item{extent.factor}{Numeric. Factor by which to adjust the extent of the plotting region,
+defined based on the bounding box around animal positions/detections. A value of 1 keeps
+the original bounding box, values greater than 1 increase the extent, and values less
+than 1 decrease it. Defaults to 1.1 (10\% increase).}
+
+\item{cols}{Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 1.}
 
 \item{...}{Arguments passed to the \code{\link[igraph]{plot.igraph}} function.
 See \code{\link[igraph]{igraph.plotting}} for the complete parameters list.}

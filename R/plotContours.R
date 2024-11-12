@@ -53,7 +53,7 @@ plotContours <- function(data,
                          var.titles = NULL,
                          plot.title = NULL,
                          split.by = NULL,
-                         aggregate.fun = function(x) mean(x, na.rm=T),
+                         aggregate.fun = function(x) mean(x, na.rm=TRUE),
                          id.col = getDefaults("id"),
                          datetime.col = getDefaults("datetime"),
                          color.pal = NULL,
@@ -140,7 +140,7 @@ plotContours <- function(data,
   all_months <- sprintf("%02d", 1:12)
 
   # aggregate data by ID, month, hour, and group
-  aggregated_data <- stats::aggregate(data[,variables], by=list(data[,id.col], data$month_tmp, data$hour_tmp, data[,split.by]), aggregate.fun, simplify=T, drop=T)
+  aggregated_data <- stats::aggregate(data[,variables], by=list(data[,id.col], data$month_tmp, data$hour_tmp, data[,split.by]), aggregate.fun, simplify=TRUE, drop=TRUE)
   colnames(aggregated_data)[1:4] <- c("id", "month", "hour", "group")
   colnames(aggregated_data)[5:ncol(aggregated_data)] <- variables
 
@@ -157,7 +157,7 @@ plotContours <- function(data,
   nids <- do.call("rbind", nids)
 
   # calculate monthly and hourly averages for each group
-  aggregated_data <- stats::aggregate(aggregated_data[,variables], by=list(aggregated_data$group, aggregated_data$month, aggregated_data$hour), mean, na.rm=T)
+  aggregated_data <- stats::aggregate(aggregated_data[,variables], by=list(aggregated_data$group, aggregated_data$month, aggregated_data$hour), mean, na.rm=TRUE)
   colnames(aggregated_data)[1:3] <- c("group", "month", "hour")
   colnames(aggregated_data)[4:ncol(aggregated_data)] <- variables
 
@@ -169,7 +169,7 @@ plotContours <- function(data,
   }
   aggregated_data$month <- factor(aggregated_data$month, levels=all_months)
   aggregated_data <- aggregated_data[order(aggregated_data$group, aggregated_data$month, aggregated_data$hour),]
-  aggregated_data <- split(aggregated_data, f=aggregated_data$group, drop=T)
+  aggregated_data <- split(aggregated_data, f=aggregated_data$group, drop=TRUE)
 
 
   # join all data (to uniformize scales, if required)
@@ -200,7 +200,7 @@ plotContours <- function(data,
   }
 
   # set up the graphical layout for multi-panel plots if necessary
-  if(disable.par==F){
+  if(!disable.par){
     nplots <- length(aggregated_data)*length(variables)
     rows <- ceiling(nplots/cols)
     par(mfrow=c(rows, cols), mgp=c(2.2,0.6,3), mar=c(4,4,4,6))
@@ -230,12 +230,12 @@ plotContours <- function(data,
       contour_matrix <- rbind(contour_matrix, contour_matrix[1,])
 
       # set variable scale
-      if(uniformize.scale==T){
-        var_min <- min(complete_data[,var], na.rm=T)
-        var_max <- max(complete_data[,var], na.rm=T)
+      if(uniformize.scale){
+        var_min <- min(complete_data[,var], na.rm=TRUE)
+        var_max <- max(complete_data[,var], na.rm=TRUE)
         scale <- c(min(var_min), max(var_max))
       } else {
-        scale <- range(contour_matrix, na.rm=T)
+        scale <- range(contour_matrix, na.rm=TRUE)
       }
 
       # define the plot title based on group name and variable title if available
@@ -260,7 +260,7 @@ plotContours <- function(data,
                         # configure x-axis for months and y-axis for hours
                         axis(1, labels=month.abb, at=1:12, cex.axis=cex.axis, pos=0)
                         axis(2, labels=hour_labels, at=seq(0, 23, by=2), cex.axis=cex.axis, las=1, pos=1)
-                        axis(2, labels=F, at=seq(0, 23, by=1), tck=-0.015, lwd.ticks=0.5, pos=1)
+                        axis(2, labels=FALSE, at=seq(0, 23, by=1), tck=-0.015, lwd.ticks=0.5, pos=1)
                         # plot lines for different daylight periods (dawn, sunrise, sunset, dusk)
                         if(diel.lines>0){
                           lines(daytimes_table$interval, daytimes_table$sunrises, lty=2, col=diel.lines.col)
@@ -271,7 +271,7 @@ plotContours <- function(data,
                           lines(daytimes_table$interval, daytimes_table$dusks, lty=2, col=diel.lines.col)
                         }
                         # add grid lines if enabled
-                        if(grid==T){
+                        if(grid){
                           abline(v=1:12, lwd=0.03)
                           abline(h=seq(0, 23, by=1), lwd=0.03)
                         }}, ...)
@@ -281,16 +281,16 @@ plotContours <- function(data,
       scale_labs <- pretty(scale, min.n=4)
       scale_labs <- scale_labs[scale_labs>=min(scale) & scale_labs<=max(scale)]
       color_scale <- color.pal(100)
-      if(invert.scale==T){scale<-rev(scale); color_scale<-rev(color_scale)}
+      if(invert.scale){scale<-rev(scale); color_scale<-rev(color_scale)}
       digits <- max(.decimalPlaces(scale_labs))
-      .colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=T,
+      .colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=TRUE,
                          posx=legend.xpos, posy=legend.ypos, main="", main.cex=0.8, cex=cex.axis)
     }
   }
 
   # add an overall title for the entire plot, if specified
   if(!is.null(plot.title)){
-    mtext(text=plot.title, side=3, cex=1.25, font=2, line=-0.5, outer=T)
+    mtext(text=plot.title, side=3, cex=1.25, font=2, line=-0.5, outer=TRUE)
   }
 
 }

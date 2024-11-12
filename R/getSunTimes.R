@@ -31,10 +31,10 @@ getSunTimes <- function(sunriset.coords, start.time, end.time, by="%m", solar.de
   }
 
   timebins <- seq.POSIXt(from=start.time, to=end.time, by=60*60*24)
-  sunrises <- suntools::sunriset(sunriset.coords, timebins, POSIXct.out=T, direction="sunrise")$time
-  sunsets <- suntools::sunriset(sunriset.coords, timebins, POSIXct.out=T, direction="sunset")$time
-  dusks <- suntools::crepuscule(sunriset.coords, timebins, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
-  dawns <- suntools::crepuscule(sunriset.coords, timebins, POSIXct.out=T, solarDep=solar.depth, direction="dawn")$time
+  sunrises <- suntools::sunriset(sunriset.coords, timebins, POSIXct.out=TRUE, direction="sunrise")$time
+  sunsets <- suntools::sunriset(sunriset.coords, timebins, POSIXct.out=TRUE, direction="sunset")$time
+  dusks <- suntools::crepuscule(sunriset.coords, timebins, POSIXct.out=TRUE, solarDep=solar.depth, direction="dusk")$time
+  dawns <- suntools::crepuscule(sunriset.coords, timebins, POSIXct.out=TRUE, solarDep=solar.depth, direction="dawn")$time
 
   intervals <- strftime(timebins, by)
   sunrises <- as.POSIXlt(sunrises)

@@ -102,9 +102,13 @@ plotAbacus <- function(data,
 
   # check color.by variable
   if(!is.null(color.by) && !is.null(color.pal)) {
-    if (length(color.pal) < nlevels(data[, color.by])) stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels")
-    if (length(color.pal) > nlevels(data[, color.by])) warning("The number of specified colors exceeds the number of levels in color.by")
+    if (length(color.pal) < nlevels(data[, color.by])) stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels", call.=FALSE)
+    if (length(color.pal) > nlevels(data[, color.by])) warning("The number of specified colors exceeds the number of levels in color.by", call.=FALSE)
   }
+
+  # save the current par settings and ensure they are restored upon function exit
+  original_par <- par(no.readonly=TRUE)
+  on.exit(par(original_par))
 
   # print to console
   .printConsole("Generating abacus plot")
@@ -121,7 +125,7 @@ plotAbacus <- function(data,
 
   # discard missing animals if required
   missing_IDs <- which(table(data[,id.col])==0)
-  if(discard.missing==T){
+  if(discard.missing){
     if(length(missing_IDs)>0){
       tagging.dates <- tagging.dates[-missing_IDs]
       tag.durations <- tag.durations[-missing_IDs]
@@ -193,11 +197,11 @@ plotAbacus <- function(data,
   ##############################################################################
 
   # set margins
-  par(mar=mar, mgp=c(2.5,0.6,0), xpd=T)
-  xmin <- min(tagging.dates, na.rm=T)
-  xmax <- max(data[,datetime.col], na.rm=T)
+  par(mar=mar, mgp=c(2.5,0.6,0), xpd=TRUE)
+  xmin <- min(tagging.dates, na.rm=TRUE)
+  xmax <- max(data[,datetime.col], na.rm=TRUE)
   # create empty plot
-  plot(x=data[,datetime.col], y=data$id_index, ylim=c(total_rows+1, 0), axes=F, type="n", xlab="", ylab="",
+  plot(x=data[,datetime.col], y=data$id_index, ylim=c(total_rows+1, 0), axes=FALSE, type="n", xlab="", ylab="",
        xlim=c(xmin, xmax))
   date_lim1 <- lubridate::ceiling_date(as.POSIXct(par("usr")[1], origin='1970-01-01', tz="UTC"), "day")
   date_lim2 <- lubridate::floor_date(as.POSIXct(par("usr")[2], origin='1970-01-01', tz="UTC"), "day")
@@ -212,7 +216,7 @@ plotAbacus <- function(data,
     mtext(names(id.groups), side=2, at=label_pos, line=2.4, cex=cex.lab)
   }
   # shade seasons or add backgound
-  if(season.shade==T) {
+  if(season.shade) {
     seasons_table <- moby::shadeSeasons(date_lim1, date_lim2, interval=60*24)
     seasons_table$start <- as.numeric(seasons_table$start)
     seasons_table$end <- as.numeric(seasons_table$end)
@@ -222,7 +226,7 @@ plotAbacus <- function(data,
     seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
     seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
     coords <- .legend(x=par("usr")[2], y=0, legend=seasons_legend$season, fill=seasons_legend$color,
-                      bty="n", border="black", xpd=T, y.intersp=1.6, box.cex=c(1.6, 1.2), cex=cex.legend)
+                      bty="n", border="black", xpd=TRUE, y.intersp=1.6, box.cex=c(1.6, 1.2), cex=cex.legend)
   } else {
     rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=0, ytop=total_rows+1, col=background.col, border="black")
   }
@@ -236,13 +240,13 @@ plotAbacus <- function(data,
     segments(x0=par("usr")[1], x1=par("usr")[2], y0=i, lty=2, lwd=0.5)
     # if highlight.isolated, reorder detections using run length encoding,
     # plotting isolated detections in front
-    if(highlight.isolated==T){
+    if(highlight.isolated){
       pts <- pts[order(pts[,datetime.col]),]
       runs <- rle(pts$plot_color)
       runs_length <-  rep(runs$lengths, runs$lengths)
       runs_value <- rep(runs$values, runs$lengths)
       runs_table <- data.frame(runs_length, runs_value)
-      sorted_rows <- order(runs_table$runs_length, decreasing=T)
+      sorted_rows <- order(runs_table$runs_length, decreasing=TRUE)
       pts <- pts[sorted_rows,]
     }
     # add points
@@ -274,7 +278,7 @@ plotAbacus <- function(data,
   consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
   unique_dates <- unique(consec_dates)
   indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
-  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=T), max(data[,datetime.col], na.rm=T), "day"), date.format)
+  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=TRUE), max(data[,datetime.col], na.rm=TRUE), "day"), date.format)
   start <- min(which(sub("\\_.*", "", unique_dates)==detec_dates[1]))
   end <- max(which(sub("\\_.*", "", unique_dates)==detec_dates[length(detec_dates)]))
   indexes <- indexes[start:end]
@@ -284,7 +288,7 @@ plotAbacus <- function(data,
   disp_dates <- sub("\\_.*", "", disp_dates)
   # add axes
   axis(side=1, labels=disp_dates, at=complete_dates[disp_indexes], cex.axis=cex.axis, pos=total_rows+1)
-  axis(side=1, labels=F, at=complete_dates[indexes], pos=total_rows+1, tck=-0.006, lwd.ticks=0.5)
+  axis(side=1, labels=FALSE, at=complete_dates[indexes], pos=total_rows+1, tck=-0.006, lwd.ticks=0.5)
   id_rows <- stats::aggregate(data$row_index, by=list(data[,id.col]), unique)$x
   axis(side=2, labels=levels(data[,id.col]), at=id_rows, las=1, cex.axis=cex.axis)
   # add color legend if necessary
@@ -292,11 +296,11 @@ plotAbacus <- function(data,
     legend.y <- abs(coords$rect$top-coords$rect$h)+1
     legend.x <- par("usr")[2] + (par("usr")[2]-par("usr")[1])*0.01
     legend(x=legend.x, y=legend.y, legend=groups, pch=pch, col=adjustcolor(color.pal, alpha.f=(1-transparency)),
-           bty="n", border=NA, xpd=T, y.intersp=legend.intersp, ncol=legend.cols, pt.cex=pt.cex*1.2, cex=cex.legend)
+           bty="n", border=NA, xpd=TRUE, y.intersp=legend.intersp, ncol=legend.cols, pt.cex=pt.cex*1.2, cex=cex.legend)
   }
   # add box
-  rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=0, ytop=total_rows+1, col=NA, border="black", xpd=T)
-  if(top.mural!=F){
+  rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=0, ytop=total_rows+1, col=NA, border="black", xpd=TRUE)
+  if(top.mural!=FALSE){
     mural_height <- 1.3
     mural_gap <- (total_rows+1)/60
     mural_bottom <- 0 - mural_gap
@@ -326,8 +330,6 @@ plotAbacus <- function(data,
     segments(x0=complete_dates[mural_divs], y0=mural_bottom, y1=mural_top, col="white", lwd=1.5)
     text(x=complete_dates[mural_disp], y=mural_center, labels=mural_vals, col="white", cex=cex.mural, adj=0.5)
   }
-  #reset par
-  par(mar=c(5, 4, 4, 2) + 0.1)
 }
 
 

@@ -22,7 +22,7 @@
 #' @export
 
 
-interpolateDistances <- function(data, id.col=getDefaults("id"), dist.col="dist_m", keep.intermediate=F){
+interpolateDistances <- function(data, id.col=getDefaults("id"), dist.col="dist_m", keep.intermediate=FALSE){
 
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
@@ -48,11 +48,11 @@ interpolateDistances <- function(data, id.col=getDefaults("id"), dist.col="dist_
 
     # add missing (in-between) timebins
     interval <- difftime(data_out$timebin, dplyr::lag(data_out$timebin), units="min")
-    interval <- as.numeric(min(interval[interval>0], na.rm=T))
+    interval <- as.numeric(min(interval[interval>0], na.rm=TRUE))
     complete_seq <- seq.POSIXt(from=min(data_out$timebin), to=max(data_out$timebin), by=interval*60)
     complete_seq <- data.frame("timebin"=complete_seq, "ID"=unique(data_out[,id.col]))
     colnames(complete_seq)[2] <- id.col
-    data_out <- merge(data_out, complete_seq, by=c("timebin",id.col), all=T)
+    data_out <- merge(data_out, complete_seq, by=c("timebin",id.col), all=TRUE)
     data_out <- data_out[order(data_out$timebin),]
 
     # interpolate distances
@@ -63,7 +63,7 @@ interpolateDistances <- function(data, id.col=getDefaults("id"), dist.col="dist_
     replace_vals <- lapply(replace_vals, function(x) rep(x[1]/length(x), length(x)))
     data_out[,dist.col][unlist(to_replace)] <- unlist(replace_vals)
     data_out[,dist.col][nrow(data_out)] <- NA
-    if(keep.intermediate==F) {data_out[,dist.col][is.na(data_out$origin_temp)]<-NA}
+    if(!keep.intermediate) {data_out[,dist.col][is.na(data_out$origin_temp)]<-NA}
     data_list[[i]] <- data_out
   }
   close(pb)

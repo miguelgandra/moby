@@ -52,7 +52,7 @@
 #' @param overlap.line.color Color of the line representing observed overlap in the null model plot. Defaults to "red2".
 #' @param overlap.line.lwd Line width of the observed overlap line. Defaults to 3.
 #' @param overlap.line.lty Line type of the observed overlap line. Defaults to 1.
-#' @param hist.side Position of the null model histogram relative to the network plot, either "bottom" or "left". Defaults to "bottom".
+#' @param hist.side Position of the null model histogram relative to the network plot, either "bottom" or "right". Defaults to "bottom".
 #' @param standardize.freqs Logical. If TRUE, standardizes frequencies in the null model plot. Defaults to FALSE.
 #' @param cols Number of columns for the plot layout. Defaults to NULL.
 #' @param ... Further arguments passed to \code{\link[qgraph]{qgraph}}.
@@ -119,11 +119,17 @@ plotOverlap <- function(overlaps = NULL,
     if (!inherits(random.results, "list")) errors <- c(errors, "random.results must be a list, as expected from the output of the 'randomizeOverlaps' function.")
     if (!"metric" %in% names(attributes(random.results))) errors <- c(errors, "random.results format not recognized. Please make sure to use the output from the 'randomizeOverlaps' function.")
   }
+  # validate 'hist.side'
+  if(!hist.side %in% c("bottom", "right")) errors <- c(errors, "hist.side must be one of 'bottom' or 'right'.")
   # print errors if any
   if(length(errors)>0){
     stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
     stop(stop_message, call.=FALSE)
   }
+
+  # save the current par settings and ensure they are restored upon function exit
+  original_par <- par(no.readonly=TRUE)
+  on.exit(par(original_par))
 
   # set legend.inset
   if(length(legend.inset)==1)  legend.inset <- rep(legend.inset, 2)
@@ -158,7 +164,7 @@ plotOverlap <- function(overlaps = NULL,
   ##############################################################################
 
   # add missing ids if required
-  if(remove.missing==FALSE){
+  if(!remove.missing){
     all_pairs <- as.data.frame(t(combn(complete_ids, 2)))
     colnames(all_pairs) <- c("id1", "id2")
     existing_pairs <- pairwise_overlaps[, c("id1", "id2")]
@@ -168,8 +174,8 @@ plotOverlap <- function(overlaps = NULL,
     missing_pairs <- all_pairs[!paste(all_pairs$id1, all_pairs$id2) %in% paste(existing_pairs$id1, existing_pairs$id2), ]
     if(nrow(missing_pairs)>0){
       if(!is.null(id.groups)){
-        missing_pairs$group1 <- names(id.groups)[as.numeric(plyr::mapvalues(missing_pairs$id1, id_lookup$id, id_lookup$group, warn_missing=F))]
-        missing_pairs$group2 <- names(id.groups)[as.numeric(plyr::mapvalues(missing_pairs$id2, id_lookup$id, id_lookup$group, warn_missing=F))]
+        missing_pairs$group1 <- names(id.groups)[as.numeric(plyr::mapvalues(missing_pairs$id1, id_lookup$id, id_lookup$group, warn_missing=FALSE))]
+        missing_pairs$group2 <- names(id.groups)[as.numeric(plyr::mapvalues(missing_pairs$id2, id_lookup$id, id_lookup$group, warn_missing=FALSE))]
         missing_pairs$type <- paste(missing_pairs$group1, "<->", missing_pairs$group2)
       }
       pairwise_overlaps <- plyr::rbind.fill(pairwise_overlaps, missing_pairs)
@@ -200,11 +206,11 @@ plotOverlap <- function(overlaps = NULL,
   # convert color.nodes.by to factor if required
   if(!inherits(color.nodes.by, "factor")){
     color.nodes.by <- as.factor(color.nodes.by)
-    warning("'color.nodes.by' vector converted to factor", call.=FALSE)
+    warning("'color.nodes.by' vector converted to factor.", call.=FALSE)
   }
 
   # assign names to scale.nodes.by
-  if (!is.null(scale.nodes.by) %% is.null(names(scale.nodes.by))){
+  if (!is.null(scale.nodes.by) && is.null(names(scale.nodes.by))){
     names(scale.nodes.by) <- complete_ids
   }
 
@@ -213,7 +219,7 @@ plotOverlap <- function(overlaps = NULL,
   unique_ids <- lapply(group_overlaps, function(x) unique(c(x$id1, x$id2)))
   group_overlaps <- mapply(function(x,ids){x$id1<-factor(x$id1, levels=ids); return(x)}, x=group_overlaps, ids=unique_ids, SIMPLIFY=FALSE)
   group_overlaps <- mapply(function(x,ids){x$id2<-factor(x$id2, levels=ids); return(x)}, x=group_overlaps, ids=unique_ids, SIMPLIFY=FALSE)
-  network_matrices <- lapply(group_overlaps, function(x) reshape2::dcast(x, formula="id1~id2", value.var="overlap", drop=F))
+  network_matrices <- lapply(group_overlaps, function(x) reshape2::dcast(x, formula="id1~id2", value.var="overlap", drop=FALSE))
   network_matrices <- lapply(network_matrices, function(x) {rownames(x)<-x$id1; return(x[,-1])})
   network_matrices <- lapply(network_matrices, as.matrix)
 
@@ -221,7 +227,7 @@ plotOverlap <- function(overlaps = NULL,
   valid_overlaps <- pairwise_overlaps[!is.na(pairwise_overlaps$overlap),]
 
   # calculate average shared monitoring period
-  shared_period <- aggregate(valid_overlaps$shared_monit_days, by=list(valid_overlaps$type), mean, na.rm=T)
+  shared_period <- aggregate(valid_overlaps$shared_monit_days, by=list(valid_overlaps$type), mean, na.rm=TRUE)
   colnames(shared_period) <- c("type", "days")
 
   # get nº of dyads
@@ -263,16 +269,20 @@ plotOverlap <- function(overlaps = NULL,
     # define cut and min values
     vals <- as.numeric(network_matrices[[i]])
     vals <- vals[!is.na(vals)]
-    vals <- vals[order(vals, decreasing=T)]
+    vals <- vals[order(vals, decreasing=TRUE)]
     if(is.null(min.val)) min.val <- quantile(vals, 0.5)
     if(is.null(cut.val)) cut.val <- quantile(vals, 0.9)
     network.params[[i]] <- c(min.val, cut.val)
 
     # set node properties
     network_ids <- colnames(network_matrices[[i]])
-    node_sizes <- as.numeric(plyr::mapvalues(network_ids, names(scale.nodes.by), scale.nodes.by, warn_missing=F))
-    node.sizes.list[[i]] <- .rescale(node_sizes, from=range(scale.nodes.by), nodes.size)
-    node_types <- as.numeric(plyr::mapvalues(network_ids, names(color.nodes.by), color.nodes.by, warn_missing=F))
+    if(!is.null(scale.nodes.by)){
+      node_sizes <- as.numeric(plyr::mapvalues(network_ids, names(scale.nodes.by), scale.nodes.by, warn_missing=FALSE))
+      node.sizes.list[[i]] <- .rescale(node_sizes, from=range(scale.nodes.by), nodes.size)
+    }else{
+      node.sizes.list[[i]] <- rep(mean(nodes.size), length(network_ids))
+    }
+    node_types <- as.numeric(plyr::mapvalues(network_ids, names(color.nodes.by), color.nodes.by, warn_missing=FALSE))
     node.colors.list[[i]] <- nodes.color[node_types]
 
     # set edge properties (overlap)
@@ -312,101 +322,109 @@ plotOverlap <- function(overlaps = NULL,
     freq_range <- range(max_freqs)
   }
 
-  ##############################################################################
-  ## Set layout params #########################################################
-  ##############################################################################
-
-  # # plot null distribution below each network
-  # if(!is.null(overlaps) && !is.null(random.results) && hist.side==1){
-  #   if(is.null(cols)){
-  #     cols <- length(types)
-  #     rows <- 2
-  #   }else{
-  #     rows <- ceiling(length(types)/cols)
-  #     rows <- rows*2
-  #   }
-  #   par(mfcol=c(rows,cols))
-  # # plot null distribution on the right of each network
-  # }else if(!is.null(overlaps) && !is.null(random.results) && hist.side==2){
-  #   if(is.null(cols)){
-  #     cols <- 2
-  #     rows <- length(types)
-  #   }else{
-  #     if(cols==1) {cols<-2; warning(paste("Number of columns is set to 1, but hist.side is set to 2 (right side). An additional column will be added."), call.=FALSE)}
-  #     if(cols>2 && !cols%%2==0) stop(paste("Number of columns is set to", cols, "but hist.side is set to 2 (right side). This might lead to an unintended layout"), call.=FALSE)
-  #     rows <- ceiling(length(types)*2/cols)
-  #   }
-  #   mat <- matrix(1:(cols*rows), ncol=cols)
-  #
-  #   par(mfrow=c(rows,cols))
-  # # only plot null distributions or overlap networks
-  # }else{
-  #   if(is.null(cols)){
-  #     cols <- length(types)
-  #     rows <- 1
-  #   }else{
-  #     rows <- ceiling(length(types)/cols)
-  #   }
-  #   par(mfrow=c(rows,cols))
-  # }
-
 
   ##############################################################################
   ## Set layout params #########################################################
   ##############################################################################
 
-  ################################################
-  if(!is.null(overlaps) && !is.null(random.results) && hist.side=="left"){
-    if(is.null(cols)) {
-      cols <- 2
-      rows <- length(types)
-    }else{
-      if(cols==1) {cols<-2; warning(paste("Number of columns is set to 1, but hist.side is set to 2 (right side). An additional column will be added."), call.=FALSE)}
-      if(cols>2 && !cols%%2==0) stop(paste("Number of columns is set to", cols, "but hist.side is set to 2 (right side). This might lead to an unintended layout"), call.=FALSE)
-      rows <- ceiling(length(types)*2/cols)
-    }
-    n_plots <- cols*rows
-    n_titles <- length(types)
-    title_rows <- matrix(rep(seq(1, n_titles*3, by=3), each=2), ncol=cols, byrow=TRUE)
-    plot_rows <- matrix(seq(2, n_plots+n_titles)[c(T,T,F)], ncol=cols, byrow=TRUE)
-    layout_mat <- rbind(title_rows, plot_rows)
-    layout_mat <- layout_mat[order(layout_mat[,1]),]
-    title_indices <- which(layout_mat[,1]==layout_mat[,2])
-    margins_network <- c(5.1, 4.1, 1, 2.1)
-    margins_hist <- c(5, 3.5, 1, 2)
+  # count the number of plots to create
+  n_groups <- length(types)
+  plots_per_group <- sum(!is.null(overlaps), !is.null(random.results))
+  cols_per_group <- ifelse(hist.side == "right" && plots_per_group == 2, 2, 1)
+  total_plots <- n_groups * plots_per_group
+
+  # determine number of rows and columns for layout
+  if(is.null(cols)) {
+    cols <- ifelse(hist.side=="bottom" || plots_per_group==1, n_groups, 2)
+  }else{
+    if(cols==1 && plots_per_group==2 && hist.side == "right") {cols<-2; warning(paste("Number of columns is set to 1, but hist.side is set to right side. An additional column will be added."), call.=FALSE)}
+    if(cols>2 && !cols%%2==0 && plots_per_group==2 && hist.side == "right") stop(paste("Number of columns is set to", cols, "but hist.side is set to left side). This might lead to an unintended layout"), call.=FALSE)
   }
 
-  layout_heights <- rep(6, nrow(layout_mat))
-  layout_heights[title_indices] <- 0.5
-  graphics::layout(layout_mat, heights=layout_heights)
+  # initialize a list to store the layout matrix rows and a vector for row heights
+  layout_rows <- list()
+  row_heights <- c()
+  plot_index <- 1
+
+  # iterate over each group
+  for (i in 1:n_groups) {
+
+    # add a blank plot at the top for the title of the group
+    layout_rows[[length(layout_rows) + 1]] <- rep(plot_index, cols_per_group)
+    row_heights <- c(row_heights, 0.8)
+    plot_index <- plot_index + 1
+
+    # add the network plot if overlaps were supplied
+    if (!is.null(overlaps)) {
+      if (hist.side == "right") {
+        # network on left, blank space for histogram on right
+        layout_rows[[length(layout_rows) + 1]] <- rep(plot_index, 2)
+      } else {
+        # network plot fills only one column
+        layout_rows[[length(layout_rows) + 1]] <- plot_index
+      }
+      row_heights <- c(row_heights, 6)
+      plot_index <- plot_index + 1
+    }
+
+    # add the histogram plot if random.results is supplied
+    if (!is.null(random.results)) {
+      if (hist.side == "right" && plots_per_group == 2) {
+        # histogram on right, network on left
+        layout_rows[[length(layout_rows)]] <- c(plot_index -1, plot_index)
+      } else {
+        # histogram fills the row
+        layout_rows[[length(layout_rows) + 1]] <- plot_index
+        row_heights <- c(row_heights, 6)
+      }
+      plot_index <- plot_index + 1
+    }
+  }
+
+  # convert layout rows to a single vector and reshape based on 'cols' parameter
+  layout_vector <- unlist(layout_rows)
+  n_rows <- ceiling(length(layout_vector) / cols)
+  #fill_by_row <- hist.side != "bottom" && plots_per_group != 1
+  fill_by_row <- ifelse(hist.side == "bottom" || plots_per_group==1, FALSE, TRUE)
+  layout_matrix <- matrix(c(layout_vector, rep(NA, n_rows *cols - length(layout_vector))), ncol=cols, byrow=fill_by_row)
+
+  # fill any NA positions
+  na_positions <- which(is.na(layout_matrix))
+  if(length(na_positions)>0) layout_matrix[na_positions] <- max(layout_matrix, na.rm=TRUE) + 1
+
+  # set layout
+  graphics::layout(layout_matrix, heights=row_heights)
+
+  # set margin settings
+  if(plot.stats) margins_network <- c(10, 2.5, 2, 2.5)
+  else margins_network <- c(4, 2.5, 2, 2.5)
+  margins_hist <- c(5, 3.5, 1, 2)
+
 
   ##############################################################################
   ## Generate figure ###########################################################
   ##############################################################################
 
-  par(oma=c(0,0,0,0), mgp=c(2.6, 1, 0))
+  par(oma=c(1,1,1,1), mgp=c(2.6, 1, 0))
 
   # iterate over each matrix
-  for(i in 1:length(types)){
+  for(i in 1:n_groups){
 
     ############################################################################
     # title ####################################################################
 
-    par(mar=c(0,0,0,0))
+    par(mar=c(1, 0, 1, 0))
     plot.new()
-    text(0.5, 0.5, names(network_matrices)[i], cex=cex.title, font=2)
+    graphics::text(x=0.5, y=0.5, labels=names(network_matrices)[i], cex=cex.title, font=2)
 
     ############################################################################
     # overlap network(s) #######################################################
 
     if(!is.null(overlaps)){
 
-      # set margins
-      par(mar=margins_network)
-
       # plot network
       qgraph::qgraph(network_matrices[[i]],
-                     mar = c(6, 2.5, 1, 2.5),
+                     mar = margins_network,
                      layout = network.layout,
                      directed = FALSE,
                      minimum = network.params[[i]][1],
@@ -436,14 +454,13 @@ plotOverlap <- function(overlaps = NULL,
                      ...)
 
       # add title plus stats
-      if(hist.side==1) title(main=names(network_matrices)[i], cex.main=cex.title, line=4.5, font=2, xpd=NA)
-      if(plot.stats==TRUE){
+      if(plot.stats){
         network_metrics1 <- paste0("N\u00ba of individuals: ", ncol(network_matrices[[i]]))
         network_metrics2 <- paste0("N\u00ba of dyads: ", n_dyads$n_dyads[i])
         network_metrics3 <- paste0("Mean binary degree: ", sprintf("%.1f", binary_degree[i]))
         network_metrics4 <- paste0("Mean shared period: ", sprintf("%.0f", shared_period$days[i]), " days")
-        legend("bottomleft", inset=c(0.06, -0.08), legend=c(network_metrics1, network_metrics2, network_metrics3, network_metrics4),
-               bty="n", y.intersp=0.8, cex=cex.legend, xpd=NA)
+        legend("bottomleft", inset=c(0.06, 0.06), legend=c(network_metrics1, network_metrics2, network_metrics3, network_metrics4),
+               bty="n", y.intersp=1, cex=cex.legend, xpd=NA)
       }
 
     }
@@ -495,12 +512,11 @@ plotOverlap <- function(overlaps = NULL,
       hist(null_dist, breaks=60, col=NA, border=FALSE, main="", xlab="", ylab="", yaxs="i", axes=FALSE, ylim=ylim, xlim=xlim)
       if(!is.null(background.col)) rect(par('usr')[1], par('usr')[3], par('usr')[2], par('usr')[4], col="grey96", border=NULL)
       hist(null_dist, breaks=60, col=adjustcolor(bar.colors, alpha.f=0.7), lwd=0.05, main="", xlab="", ylab="",
-           xlim=xlim, ylim=ylim, axes=FALSE, las=1, yaxs="i", add=T)
-      if(is.null(overlaps)) title(main=types[i], cex.main=cex.title, line=8, font=2, xpd=NA)
+           xlim=xlim, ylim=ylim, axes=FALSE, las=1, yaxs="i", add=TRUE)
+      # add axes labels
       title(xlab="Overlap (%)", cex.lab=cex.lab, xpd=NA)
       title(ylab="Frequency", cex.lab=cex.lab, xpd=NA)
-      #mtext(text="Frequency", side=2, line=2.5, xpd=NA, cex=lab.cex)
-      #mtext(text="Overlap (%)", side=1, line=2.8, xpd=NA, cex=lab.cex)
+      # add axes
       axis(1, at=grid::grid.pretty(axis_range, n=6), labels=sprintf("%.2f", grid::grid.pretty(axis_range, n=6)), pos=0, las=1, cex.axis=cex.axis)
       axis(2, at=grid::grid.pretty(ylim), labels=grid::grid.pretty(ylim), las=1, cex.axis=cex.axis)
       # add axis break (if required)

@@ -36,7 +36,7 @@
 #' @param nodes.label.wrap Logical. If TRUE, splits node labels into multiple lines (to better fit within the nodes). Defaults to FALSE.
 #' @param nodes.label.cex The font size for vertex labels. Defaults to 0.5.
 #' @param nodes.label.color The font color for vertex labels. Defaults to white.
-#' @param repel.nodes Logical. If TRUE, nodes are plotted using a repulsion algorithm to avoid overlap. Defaults to FALSE.
+#' @param repel.nodes Logical. If TRUE, nodes are plotted using a repulsion algorithm to avoid overlap. Defaults to TRUE
 #' @param repel.buffer Controls the amount of space between nodes if repel.nodes is set to TRUE. Defaults to 1.1.
 #' @param edge.type A character string indicating the metric to be used to calculate the network edges.
 #' It can be either "movements" to represent the number of movements between sites or "individuals"
@@ -63,10 +63,11 @@
 #' are given, the first is used for x- distance, the second for y-distance. Defaults to c(0, 0.05).
 #' @param scale.height Controls the thickness of the scale bar. Defaults to 1.5.
 #' @param scale.cex Size of the scale bar values. Defaults to 0.6.
-#' @param bbox.ext Amount of extension of the bounding box around the coordinates.
-#' It can be numeric (same extension into all four directions), vector of two (first x, then y directional extension)
-#' or vector of four (xmin, xmax, ymin, ymax extension). Default is 0.2 (extends the bounding box by 20%).
-#' Only considered if a background layer is not supplied. Defaults to 0.2.
+#' @param extent.factor Numeric. Factor by which to adjust the extent of the plotting region,
+#' defined based on the bounding box around animal positions/detections. A value of 1 keeps
+#' the original bounding box, values greater than 1 increase the extent, and values less
+#' than 1 decrease it. Defaults to 1.1 (10% increase).
+#' @param cols Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 1.
 #' @param ... Arguments passed to the \code{\link[igraph]{plot.igraph}} function.
 #' See \code{\link[igraph]{igraph.plotting}} for the complete parameters list.
 #'
@@ -108,19 +109,20 @@ plotMigrations <- function(data,
                            id.metadata = NULL,
                            land.shape = NULL,
                            land.color = "gray50",
+                           epsg.code = getDefaults("epsg"),
                            background.layer = NULL,
                            background.pal = "#F3F7F7",
                            title.cex = 1,
                            color.nodes.by = "detection",
                            nodes.color = c("darkblue", "black"),
                            nodes.alpha = 0.8,
-                           nodes.size = c(0.04, 0.08),
+                           nodes.size = c(0.05, 0.10),
                            nodes.label.wrap = FALSE,
                            nodes.label.cex = 0.5,
                            nodes.label.color = "white",
-                           repel.nodes = FALSE,
+                           repel.nodes = TRUE,
                            repel.buffer = 1.1,
-                           edge.type = c("movements", "individuals"),
+                           edge.type = "movements",
                            edge.color = "darkblue",
                            edge.curved = 0.5,
                            edge.width = c(0.4, 3.5),
@@ -134,7 +136,8 @@ plotMigrations <- function(data,
                            scale.inset = c(0, 0.05),
                            scale.height = 1.5,
                            scale.cex = 0.6,
-                           bbox.ext = 0.2,
+                           extent.factor = 1.1,
+                           cols = 1,
                            ...) {
 
   #####################################################################################
@@ -147,64 +150,64 @@ plotMigrations <- function(data,
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
+  land.shape <- reviewed_params$land.shape
 
+  # validate additional parameters
+  errors <- c()
   # check if id.metadata contains the required columns
   if(!is.null(id.metadata)){
-    if(!id.col %in% colnames(id.metadata)) stop("'id.col' variable not found in the supplied id.metadata", call.=FALSE)
-    if(!spatial.col %in% colnames(id.metadata)) stop("'spatial.col' variable not found in the supplied id.metadata", call.=FALSE)
+    if(!id.col %in% colnames(id.metadata)) errors <- errors("'id.col' variable not found in the supplied id.metadata")
+    if(!spatial.col %in% colnames(id.metadata)) errors <- errors("'spatial.col' variable not found in the supplied id.metadata")
+  }
+  if(!requireNamespace("igraph", quietly=TRUE)) errors <- errors("The 'igraph' package is required but is not installed. Please install 'igraph' using install.packages('igraph') and try again.")
+  if(repel.nodes && !requireNamespace("packcircles", quietly=TRUE)) errors <- errors("The 'packcircles' package is required for the repel.nodes feature but is not installed.
+                                                                                     Please install it by running install.packages('packcircles'), and then try again.")
+  if(!edge.type %in% c("movements", "individuals")) errors <- errors("'edge.type' must be either 'movements' or 'individuals'")
+  if(!color.nodes.by %in% c("detection", "group", colnames(data))) errors <- errors("Please set a valid 'color.nodes.by' argument")
+  if(length(nodes.size)!=2) errors <- errors("Please supply a min and max value for the node sizes")
+  if(length(edge.width)!=2) errors <- errors("Please supply a min and max value for the edge width")
+  if(length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
+    stop(stop_message, call.=FALSE)
   }
 
-  # check if edge.type is valid
-  if(!edge.type %in% c("movements", "individuals")) stop("'edge.type' must be either 'movements' or 'individuals'", call. = FALSE)
+  # save the current par settings and ensure they are restored upon function exit
+  original_par <- par(no.readonly=TRUE)
+  on.exit(par(original_par))
 
-  # check color.nodes.by argument
-  if(!color.nodes.by %in% c("detection", "group", colnames(data))) stop("Please set a valid 'color.nodes.by' argument", call.=FALSE)
-  if(color.nodes.by=="group" & is.null(id.groups)) warning("'color.nodes.by' set to group but id.groups were not supplied. Only the first node color will be used", call.=FALSE)
+  # manage spatial objects
+  site_coords <- stats::aggregate(data[,c(lon.col, lat.col)], by=list(data[,spatial.col]), mean)
+  colnames(site_coords)[1] <- "site"
+  coords <- sf::st_as_sf(site_coords, coords=c(lon.col, lat.col))
+  spatial_data <- .processSpatial(coords, land.shape, epsg.code)
+  coords <- spatial_data$coords
+  land.shape <- spatial_data$spatial.layer
+  epsg.code <- spatial_data$epsg.code
 
-  # check if node size is of length 2
-  if(length(nodes.size)!=2) stop("Please supply a min and max value for the node sizes", call.=FALSE)
-
-  # check if edge edge.width is of length 2
-  if(length(edge.width)!=2) stop("Please supply a min and max value for the edge width", call.=FALSE)
-
-  # check if dataset coordinates are projected (meters)
-  geographic_coords <- all(data[, lon.col]>=-180 & data[,lon.col]<=180 & data[,lat.col]>=-90 & data[,lat.col]<=90)
-  if(geographic_coords) {
-    if(!is.null(land.shape) || !is.null(background.layer)) {
-      if(!is.null(land.shape)) epsg_code <- raster::proj4string(land.shape)
-      else if(!is.null(background.layer)) epsg_code <- raster::proj4string(background.layer)
-      if(!raster::isLonLat(epsg_code)){
-        warning("Projecting coordinates based on the CRS of the supplied land shape or background layer", call.=FALSE)
-        coords <- sp::SpatialPoints(data[,c(lon.col, lat.col)])
-        raster::projection(coords) <- sp::CRS("+proj=longlat +datum=WGS84")
-        coords <- sp::spTransform(coords, epsg_code)
-        data[,lon.col] <- coords@coords[,1]
-        data[,lat.col] <- coords@coords[,2]
-        geographic_coords <- FALSE
-      }
+  # check layer projections
+  if(!is.null(background.layer) && !is.null(land.shape)){
+    if(!raster::compareCRS(raster::projection(background.layer), epsg.code$proj4string)){
+      background.layer <- raster::projectRaster(background.layer, crs=epsg.code$proj4string)
+      warning_message <- "- The 'background.layer' has been reprojected to match 'land.shape'."
+      warning(paste(strwrap(warning_message, width=getOption("width")), collapse="\n"), call.=FALSE)
     }
   }
 
-  # check if scale bar can be plotted with geographic coordinates
-  if(!is.null(scale.km) && geographic_coords) warning("Projected coordinates are required to plot a scale bar. Please provide coordinates in a projected coordinate system.", call.=FALSE)
-
-  # check layer projections
-  if(!is.null(background.layer) & !is.null(land.shape)){
-    if(!raster::compareCRS(land.shape@proj4string, background.layer@crs))
-      warning("land.shape and background.layer seem to have different CRS projections", call.=FALSE)
-  }
-
   # check if there color palette is
-  if(!is.null(background.layer) & length(background.pal)==1){
-    warning("Using a new color palette for the background layer. To override, please supply > 1 color\n")
+  if(!is.null(background.layer) && length(background.pal)==1){
+    warning_message <- "- Using a new color palette for the background layer. To override, please supply > 1 color."
+    warning(paste(strwrap(warning_message, width=getOption("width")), collapse="\n"), call.=FALSE)
     if(is.null(levels(background.layer))) background.pal <- adjustcolor(terrain.colors(100), 0.75)
     if(!is.null(levels(background.layer))) background.pal <- terrain.colors(length(levels(background.layer)[[1]][,2]))
   }
 
-  # check if the igraph package is installed
-  if(!requireNamespace("igraph", quietly=TRUE)){
-    stop("The 'igraph' package is required but is not installed. Please install 'igraph' using install.packages('igraph') and try again.", call.=FALSE)
+  # check color nodes argument
+  if(color.nodes.by=="group" && is.null(id.groups)){
+    warning_message <- "Parameter 'color.nodes.by' is set to 'group' but id.groups were not supplied. Only the first node color will be used."
+    warning(paste(strwrap(warning_message, getOption("width")), collapse="\n"), call.=FALSE)
   }
+
 
 
   #####################################################################################
@@ -212,14 +215,10 @@ plotMigrations <- function(data,
   #####################################################################################
 
   # set id groups
-  if(is.null(id.groups)) {
-    id.groups<-list(levels(data[,id.col]))
-  }
+  if(is.null(id.groups)) id.groups <- list(levels(data[,id.col]))
 
   # convert to factor
-  if(!is.factor(data[,spatial.col])){
-    data[,spatial.col] <- as.factor(data[,spatial.col])
-  }
+  if(!is.factor(data[,spatial.col])) data[,spatial.col] <- as.factor(data[,spatial.col])
 
   # split data
   n_groups <- length(id.groups)
@@ -242,7 +241,7 @@ plotMigrations <- function(data,
   for(g in 1:n_groups){
 
     #  data by individual
-    data_individual <- split(data_groupped[[g]], f=data_groupped[[g]][,id.col], drop=T)
+    data_individual <- split(data_groupped[[g]], f=data_groupped[[g]][,id.col], drop=TRUE)
 
     # calculate transitions
     transitions_list <- list()
@@ -254,8 +253,8 @@ plotMigrations <- function(data,
       if(!is.null(id.metadata)){
         id <- unique(data_individual[[i]][,id.col])
         tagging_site <- as.character(id.metadata[id.metadata[,id.col]==id, spatial.col])
+        tagging_site <- factor(tagging_site, levels=levels(transition_data))
         transition_data <- c(tagging_site, transition_data)
-        transition_data <- factor(transition_data, levels=levels(data[,spatial.col]))
       }
       transitions_list[[i]] <- table(head(transition_data,-1), tail(transition_data,-1))
     }
@@ -268,7 +267,7 @@ plotMigrations <- function(data,
 
     # calculate nº individuals on each site
     nindividuals <- stats::aggregate(data_groupped[[g]][,id.col], by=list(data_groupped[[g]][,spatial.col]),
-                             function(x) length(unique(x)), drop=F)
+                             function(x) length(unique(x)), drop=FALSE)
     colnames(nindividuals) <- c(spatial.col, "nids")
     nindividuals$nids[is.na(nindividuals$nids)] <- 0
     node_individuals[[g]]  <- nindividuals
@@ -293,56 +292,47 @@ plotMigrations <- function(data,
   }
 
 
-  #####################################################################################
-  # Set geographic coordinates ########################################################
-  #####################################################################################
+  ##############################################################################
+  ## Prepare plot parameters ###################################################
+  ##############################################################################
 
-  # convert node coords to spatial points
-  site_coords <- stats::aggregate(data[,c(lon.col, lat.col)], by=list(data[,spatial.col]), mean)
-  colnames(site_coords)[1] <- "site"
-  site_coords <- sp::SpatialPointsDataFrame(site_coords[,2:3], data=site_coords)
+  # define the plot boundaries (bounding box) based on the animal positions
+  bbox <- sf::st_bbox(coords)
 
-  # project coords if needed
-  if(geographic_coords==T){
-    sp::proj4string(site_coords) <- sp::CRS("+proj=longlat +datum=WGS84")
-  }else{
-    sp::proj4string(site_coords) <- sp::CRS(epsg_code)
+  # expand bounding box by a given % in all directions
+  dx <- bbox["xmax"]-bbox["xmin"]
+  dy <- bbox["ymax"]-bbox["ymin"]
+  bbox <- bbox + c(-dx, -dy, dx, dy) * (extent.factor - 1)
+
+  # crop 'land.shape' and 'background.layer' to the bounding box
+  if(!is.null(land.shape)) land.shape <- sf::st_crop(sf::st_geometry(land.shape), bbox)
+  if(!is.null(background.layer)) background.layer <- raster::crop(background.layer, raster::extent(bbox))
+
+  # configure layout dimensions for multi-panel plots
+  rows <- ceiling(n_groups/cols)
+  par(mfrow=c(rows, cols), oma=c(0,0,0,0))
+
+  # set layout variables
+  if(!is.null(background.layer)) par(mar=c(1,2,2,6))
+  else par(mar=c(1,2,2,1))
+
+  # set diagonal values to 0 in movement transition matrices (self-transitions not relevant)
+  transition_movements <- lapply(transition_movements, function(x) {diag(x)<-0; return(x)})
+  transition_animals <- lapply(transition_animals, function(x) {diag(x)<-0; return(x)})
+
+  # define edge values based on the specified 'edge.type' parameter
+  if(edge.type=="movements") all_movements <- reshape2::melt(transition_movements)$value
+  else if(edge.type=="individuals") all_movements <- reshape2::melt(transition_animals)$value
+
+  # if a single edge color is provided, replicate it to match the number of groups
+  if(length(edge.color)==1){
+    edge.color <- rep(edge.color, n_groups)
   }
-
-  # format bbox.ext multiplier
-  if(length(bbox.ext)==1) bbox.ext <- rep(bbox.ext, 4)
-  if(length(bbox.ext)==2) bbox.ext <- rep(bbox.ext/2, each=2)
-
-  # set bounding box polygon
-  if(!is.null(background.layer)){
-    map_extent <- raster::extent(background.layer)
-  }else{
-    map_extent <- raster::extent(site_coords)
-    map_extent[1] <- map_extent[1] - (map_extent[2]-map_extent[1])*bbox.ext[1]
-    map_extent[2] <- map_extent[2] + (map_extent[2]-map_extent[1])*bbox.ext[2]
-    map_extent[3] <- map_extent[3] - (map_extent[4]-map_extent[3])*bbox.ext[3]
-    map_extent[4] <- map_extent[4] + (map_extent[4]-map_extent[3])*bbox.ext[4]
-  }
-
-  if(!is.null(land.shape)) {land.shape <- raster::crop(land.shape, map_extent)}
-  map_extent <- sp::SpatialPolygons(list(sp::Polygons(list(sp::Polygon(map_extent)),"1")))
 
 
   #####################################################################################
   # Plot network(s) ###################################################################
   #####################################################################################
-
-  # set layout variables
-  if(!is.null(background.layer)) {
-    par(mfrow=c(n_groups,1), mar=c(1,2,2,6), oma=c(0,0,0,0))
-  }else{
-    par(mfrow=c(n_groups,1), mar=c(1,2,2,1), oma=c(0,0,0,0))
-  }
-  transition_movements <- lapply(transition_movements, function(x) {diag(x)<-0; return(x)})
-  transition_animals <- lapply(transition_animals, function(x) {diag(x)<-0; return(x)})
-
-  if(edge.type=="movements") all_movements <- reshape2::melt(transition_movements)$value
-  else if(edge.type=="individuals") all_movements <- reshape2::melt(transition_animals)$value
 
   # loop through each one of the id.groups
   for(g in 1:n_groups){
@@ -354,63 +344,61 @@ plotMigrations <- function(data,
     edges <- edges[edges$value>0,]
     edges <- edges[edges$site1!=edges$site2,]
 
-    # plot bounding box
-    plot(map_extent, col=NA, border=F, axes=F, xaxs="i", yaxs="i")
-    rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=par("usr")[3], ytop=par("usr")[4], col=background.pal[1], border="black")
+    # create an empty plot with specified bounding box
+    plot(x= bbox[c("xmin", "xmax")], y=bbox[c("ymin", "ymax")], type='n',
+         xlab="", ylab="", main="", axes=FALSE, asp=1, xaxs="i", yaxs="i")
 
     # add background layer or background color
-    if(!is.null(background.layer)){
+    if(is.null(background.layer)){
+      rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=par("usr")[3], ytop=par("usr")[4], col=background.pal[1], border="black")
+    }else{
       if(is.null(levels(background.layer))) {
-        plot(background.layer, col=background.pal, legend=T, axes=F, add=T,
-             axis.args=list(cex.axis=0.7))
+        raster::plot(background.layer, col=background.pal, legend=TRUE, axes=FALSE, add=TRUE,
+             axis.args=list(cex.axis=0.7), legend.width=1.2, legend.shrink=0.6)
       }else{
-        plot(background.layer, col=background.pal, legend=F, axes=F, add=T)
-        legend("right", legend=rev(levels(background.layer)[[1]][,2]), xpd=T,
+        raster::plot(background.layer, col=background.pal, legend=FALSE, axes=FALSE, add=TRUE)
+        legend("right", legend=rev(levels(background.layer)[[1]][,2]), xpd=TRUE,
                fill=rev(background.pal), inset=-0.18, bty="n", cex=0.7)
       }
+      box()
     }
 
-    if(!is.null(land.shape)){
-      plot(land.shape, col=land.color, border=NA, add=T)
-    }
+    # add land.shape
+    if(!is.null(land.shape)) plot(sf::st_geometry(land.shape), col=land.color, border=NA, add=TRUE)
 
     # add network title
-    if(n_groups>1) title(main=names(id.groups)[g], cex.main=title.cex, line=1.2, xpd=T)
-    else title(main="Spatial Network", cex.main=title.cex, line=1.2, xpd=T)
+    if(n_groups>1) title(main=names(id.groups)[g], cex.main=title.cex, line=1.2, xpd=TRUE)
+    else title(main="Spatial Network", cex.main=title.cex, line=1.2, xpd=TRUE)
     metric <- ifelse(edge.type=="movements", "n\u00ba of movements", "n\u00ba of transiting individuals")
-    title(main=tools::toTitleCase(metric), cex.main=title.cex-0.3, line=0.4, font.main=1, xpd=T)
-
-    # # add network title
-    # metric <- ifelse(edge.type=="movements", "nº of movements", "nº of transiting individuals")
-    # if(n_groups>1) title(main=paste(names(id.groups)[g], "-", metric), cex.main=title.cex, line=1, xpd=T)
-    # else title(main=tools::toTitleCase(metric), cex.main=title.cex, line=1, xpd=T)
+    title(main=tools::toTitleCase(metric), cex.main=title.cex-0.3, line=0.4, font.main=1, xpd=TRUE)
 
     # add scale bar
-    if(geographic_coords==FALSE){
-      if(is.null(scale.km)) scale.km <- min(pretty((bbox[2]-bbox[1])*0.15))/1000
-      scale_xy <- .getPosition(scale.pos, inset=scale.inset)
-      scale.meters <- scale.km*1000
-      .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", bar.height=scale.height,
-                       label=c(0, scale.km/2, scale.km), lwd=0.2, cex=scale.cex, bar.lwd=0.2)
-    }
+    if(is.null(scale.km)) scale.km <- round(min(pretty((bbox["xmax"]-bbox["xmin"])*0.15))/1000)
+    scale_xy <- .getPosition(scale.pos, inset=scale.inset)
+    scale.meters <- scale.km*1000
+    # adjusting the x position based on alignment
+    if (grepl("right", scale.pos)) scale_xy[1] <- scale_xy[1] - scale.meters
+    else if (grepl("center", scale.pos) || scale.pos %in% c("top", "bottom")) scale_xy[1] <- scale_xy[1] - (scale.meters/2)
+    .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", bar.height=scale.height,
+              label=c(0, scale.km/2, scale.km), lwd=0.2, cex=scale.cex, bar.lwd=0.2)
+
 
     #set network variables
     nanimals <- node_individuals[[g]]
     colnames(nanimals)[1] <- "site"
-    nanimals <- nanimals[match(site_coords@data$site, nanimals$site), "nids"]
-    map_bbox <- raster::extent(map_extent)
+    nanimals <- nanimals[match(coords$site, nanimals$site), "nids"]
+    map_bbox <- raster::extent(bbox)
     node_size <- .rescale_vertex_igraph(nanimals, minmax.relative.size=c(nodes.size[1], nodes.size[2]))
 
     # set node names
     if(!is.null(id.metadata)){
       node_titles <- paste0(node_individuals[[g]]$site, " (", node_tagged[[g]]$tagged, ")",
       "\n", "n=", node_individuals[[g]]$nids)
-      node_titles <- gsub(" (0)", "", node_titles, fixed=T)
+      node_titles <- gsub(" (0)", "", node_titles, fixed=TRUE)
     }else{
       node_titles <- paste0(node_individuals[[g]]$site, "\n", "n=", node_individuals[[g]]$nids)
     }
     if(nodes.label.wrap==TRUE) node_titles <- gsub(" ", "\n", node_titles, fixed=TRUE)
-
 
     # set node colors
     if(color.nodes.by=="detection"){
@@ -418,6 +406,12 @@ plotMigrations <- function(data,
       vertex_color[nanimals==0] <- nodes.color[2]
     } else if(color.nodes.by=="group"){
       vertex_color <- rep(nodes.color[g], length.out=length(nanimals))
+    }else if(is.numeric(data[,color.nodes.by])){
+      node_classes <- stats::aggregate(data[,color.nodes.by], by=list(data[,spatial.col]), mean, na.rm=TRUE)
+      colnames(node_classes) <- c("node", "class")
+      node_classes$class <- round(.rescale(node_classes$class, to=c(1,100)))
+      nodes.color <- colorRampPalette(nodes.color)(100)
+      vertex_color <- nodes.color[node_classes$class]
     } else {
       node_classes <- stats::aggregate(data[,color.nodes.by], by=list(data[,spatial.col]), function(x) names(table(x))[which.max(table(x))])
       colnames(node_classes) <- c("node", "class")
@@ -427,33 +421,41 @@ plotMigrations <- function(data,
     vertex_color <- adjustcolor(vertex_color, alpha.f=nodes.alpha)
 
     # set nodes position
-    if(repel.nodes==TRUE){
+    if(repel.nodes){
       radii <- (par("usr")[2]-par("usr")[1])*c(0.035, 0.07)
       radii <- plotrix::rescale(node_size, newrange=radii)
-      repel_data <- cbind(site_coords@coords, "radius"=radii*repel.buffer)
+      repel_data <- cbind(sf::st_coordinates(coords), "radius"=radii*repel.buffer)
       new_coords <- packcircles::circleRepelLayout(repel_data, xlim=map_bbox[1:2], ylim=map_bbox[3:4],
-                                                   sizetype=c("radius"), wrap=F, weights=1)$layout
-      site_coords@coords <- as.matrix(new_coords[,1:2])
-      site_coords@data[,2:3] <- new_coords[,1:2]
+                                                   sizetype=c("radius"), wrap=FALSE, weights=1)$layout
+      new_coords <- cbind(site_coords[,1], new_coords[,c("x","y")])
+      colnames(new_coords) <- c(spatial.col, "x", "y")
+      coords <- sf::st_as_sf(new_coords, coords=c("x", "y"), crs=epsg.code)
     }
 
-
     # plot network
-    network <- igraph::graph_from_data_frame(edges, directed=T, vertices=site_coords@data)
+    network <- igraph::graph_from_data_frame(edges, directed=TRUE, vertices=coords)
     igraph::V(network)$name <- node_titles
     igraph::E(network)$width <- .rescale(edges$value, from=range(all_movements), to=edge.width)
-    igraph::plot.igraph(network, layout=as.matrix(site_coords@data[,2:3]), add=T, rescale=F,
-                        edge.color=edge.color[g], edge.curved=edge.curved,
-                        vertex.size=node_size, vertex.color=vertex_color,
-                        vertex.label.family="Helvetica", vertex.label.color=nodes.label.color, vertex.label.cex=nodes.label.cex,
-                        edge.arrow.size=edge.arrow.size, edge.arrow.width=edge.arrow.width,
-                        edge.label=paste0("(",edges$value,")\n"), edge.label.family="Helvetica",
-                        edge.label.cex=edge.label.cex, edge.label.color=edge.label.color, edge.label.font=edge.label.font, ...)
+    igraph::plot.igraph(network,
+                        layout = sf::st_coordinates(coords),
+                        add = TRUE,
+                        rescale = FALSE,
+                        edge.color = edge.color[g],
+                        edge.curved = edge.curved,
+                        vertex.size = node_size,
+                        vertex.color = vertex_color,
+                        vertex.label.family = "Helvetica",
+                        vertex.label.color = nodes.label.color,
+                        vertex.label.cex = nodes.label.cex,
+                        edge.arrow.size = edge.arrow.size,
+                        edge.arrow.width = edge.arrow.width,
+                        edge.label = paste0("(",edges$value,")\n"),
+                        edge.label.family = "Helvetica",
+                        edge.label.cex = edge.label.cex,
+                        edge.label.color = edge.label.color,
+                        edge.label.font = edge.label.font,
+                        ...)
   }
-
-  #reset par
-  par(mfrow=c(1,1), mar=c(5,4,4,2) + 0.1)
-
 }
 
 #######################################################################################################

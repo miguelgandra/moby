@@ -212,7 +212,7 @@ calculateKUDs <- function(data,
 
   #######################################################################
   # if no subset provided, calculate the KUDs for the whole dataset #####
-  if(multiple==F) {
+  if(!multiple) {
 
     # print status message to console
     cat("Estimating kernel utilization distributions...\n")
@@ -249,7 +249,7 @@ calculateKUDs <- function(data,
       # check if any ID from the current group is found in the other groups
       repeated_ids[[i]] <- any(subset_ids %in% remaining_ids)
     }
-    repeated_ids <- any(unlist(repeated_ids)==T)
+    repeated_ids <- any(unlist(repeated_ids))
 
     # compute KUDs for each group separately
     kud_results <- lapply(1:length(group_coords), function(i) {
@@ -270,14 +270,14 @@ calculateKUDs <- function(data,
     kud_results <- lapply(kud_results, function(x) x[-length(x)])
 
     # combine the summary tables
-    if(repeated_ids==T){
+    if(repeated_ids){
       summary_table <- lapply(kud_results, function(x) x$summary_table)
       summary_table <- mapply(function(table, group){colnames(table)[-1] <- paste(group, "-", colnames(table)[-1]); return(table)},
                               table=summary_table, group=names(kud_results), SIMPLIFY=FALSE)
       summary_table <- Reduce(function(x,y) merge(x, y, all=TRUE, by="ID"), summary_table)
       summary_table <- summary_table[match(levels(data[[id.col]]), summary_table$ID), ]
       summary_table <- summary_table[!is.na(summary_table$ID),]
-      coa_cols <- grepl("COAs", colnames(summary_table), fixed=T)
+      coa_cols <- grepl("COAs", colnames(summary_table), fixed=TRUE)
       summary_table[coa_cols][is.na(summary_table[coa_cols])] <- 0
       summary_table[is.na(summary_table)] <- "-"
     }else{

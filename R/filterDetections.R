@@ -141,7 +141,7 @@ filterDetections <- function(data,
 
 
     # filter out detections occurring alone in periods > hours.threshold
-    if(hours.threshold!=F){
+    if(hours.threshold!=FALSE){
       detections_isolated <- which(data_subset$hour_diff>hours.threshold & dplyr::lag(data_subset$hour_diff)>hours.threshold)
       detections_isolated <- c(detections_isolated, which(is.na(data_subset$hour_diff) & dplyr::lag(data_subset$hour_diff)>hours.threshold))
       detections_isolated <- c(detections_isolated, which(data_subset$hour_diff>hours.threshold & is.na(dplyr::lag(data_subset$hour_diff))))
@@ -228,7 +228,6 @@ filterDetections <- function(data,
     for (i in 1:nfish) {
       data_individual[[i]]$day <- strftime(data_individual[[i]][,datetime.col], "%d-%m-%Y", tz="UTC")
       ndays <- length(unique(data_individual[[i]]$day))
-      #ndays <- difftime(max(data_individual[[i]][,datetime.col], na.rm=T), min(data_individual[[i]][,datetime.col], na.rm=T),  units="days")
       if(ndays<min.days & nrow(data_individual[[i]])>0){
         rejected_days[[i]] <- data_individual[[i]]
         rejected_days[[i]]$reason <- paste("individual with detections on fewer than", min.days)
@@ -299,7 +298,7 @@ filterDetections <- function(data,
   cat(paste0("  \u2022 before tagging: ", sum(n_removed_start), percent_start, " from ", ids_start, " individuals\n"))
   if(!is.null(cutoff.dates)){
     cat(paste0("  \u2022 after cut-off date: ", sum(n_removed_cutoff), percent_cutoff, " from ", ids_cutoff, " individuals\n"))}
-  if(hours.threshold!=F){
+  if(hours.threshold!=FALSE){
     cat(paste0("  \u2022 isolated ", hours.threshold, "h radius: ", sum(n_removed_isolated),  percent_isolated, " from ", ids_isolated, " individuals\n"))}
   if(!is.null(max.speed)){
     cat(paste0("  \u2022 above max speed (", max.speed, " ", speed.unit, "): ", sum(n_removed_speed), percent_speed, " from ", ids_speed, " individuals\n"))}

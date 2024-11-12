@@ -8,8 +8,8 @@
 #' Continuous Wavelet Transform (CWT) framework. CWT analysis provides an alternative method
 #' to the Fast Fourier Transform (FFT) or other time-frequency decomposition techniques,
 #' enabling the examination of periodicities over time. This function serves mostly as a
-#' wrapper for the \code{\link[wavScalogram]{cwt_wst}} function from the `wavScalogram` package.
-#'
+#' wrapper for the \code{\link[wavScalogram]{cwt_wst}} function from the `wavScalogram` package
+#' (Bolos & Benitez, 2022).
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing binned animal detections or other time-based measurements.
@@ -17,6 +17,15 @@
 #' If there are gaps between measurements (i.e., missing time bins), the function will
 #' automatically assume a value of zero for those missing time steps.
 #' @param variable Name of the column containing the numeric variable to be analyzed.
+#' @param plot.title A string specifying the title of the plot. By default, this title is
+#' automatically generated as "Wavelet Power Spectrum" followed by the `variable` name.
+#' @param id.groups Optional. A list containing ID groups, used to
+#' visually aggregate animals belonging to the same class (e.g. different species).
+#' @param wavelet.type A character string specifying the wavelet type to be used in the continuous wavelet transform.
+#' This is passed to the `wname` argument in the \code{\link[wavScalogram]{cwt_wst}} function.
+#' Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is "MORLET".
+#' @param same.scale Forces same spectral scale (zlims) across all plots,
+#' allowing for density comparison between individuals.
 #' @param period.range The range of period scales (y-axis limits) to be considered,
 #' specified in the units defined by \code{time.unit}. Defaults to c(3, 48) in hours.
 #' @param axis.periods Periods to include/highlight on the y-axis, specified in the units
@@ -24,53 +33,62 @@
 #' @param time.unit Time unit for `period.range` and `axis.periods`.
 #' Options are "mins", "hours" and "days". Defaults to "hours".
 #' @param color.pal Color palette. Defaults to the Jet colormap.
+#' @param min.days Discard individuals that were detected in less than x days.
+#' @param detrend Detrend time series using differences (\code{\link[base]{diff}})
+#' rather than the actual values. Defaults to False.
 #' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
 #' defining the x-axis labels. Defaults to month ("%d/%b").
 #' @param date.interval Number defining the interval between each
 #' displayed date (x-axis label). Defaults to 4.
 #' @param date.start Integer defining the first displayed date (can be used in combination
 #'  with 'date.interval" to better control the x-axis labels). Defaults to 1.
-#' @param min.days Discard individuals that were detected in less than x days.
-#' @param detrend Detrend time series using differences (\code{\link[base]{diff}})
-#' rather than the actual values. Defaults to False.
 #' @param cex.main Determines the size of the title(s). Defaults to 1.2.
 #' @param cex.lab Determines the size of the y-axis and y-axis labels. Defaults to 1.1.
 #' @param cex.axis Determines the size of the text labels on the axes. Defaults to 1.
+#' @param cex.legend Determines the size of the text labels on the color legend. Defaults to 0.9.
 #' @param legend.xpos Relative position of left and right edge of color bar on first axis (0-1).
 #' Defaults to c(0.90, 0.915).
 #' @param legend.ypos Relative position of left and right edge of color bar on second axis (0-1).
 #' Defaults to c(0.15, 0.85).
 #' @param cols Number of columns in the final panel (passed to the mfrow argument).
-#' @param same.scale Forces same spectral scale (zlims) across all plots,
-#' allowing for density comparison between individuals.
-#' @param id.groups Optional. A list containing ID groups, used to
-#' visually aggregate animals belonging to the same class (e.g. different species).
+#' @param cores Number of CPU cores to use for the computations. Defaults to 1, which
+#' means no parallel computing (single core).  If set to a value greater than 1,
+#' the function will use parallel computing to speed up calculations.
+#' Run \code{parallel::detectCores()} to check the number of available cores.
 #' @param ... Further arguments passed to the \code{\link[wavScalogram]{cwt_wst}} function.
-#' (e.g. wname, border_effects, waverad).
+#' (e.g. border_effects, waverad).
+#'
+#' @references
+#' Bolos, V. J., & Benitez, R. (2022). wavScalogram: an R package with scalogram wavelet tools for time series analysis. The R Journal, 14(2), 164-185.
+#'
 #' @export
 
 
 plotCWTs <- function(data,
                      variable,
+                     plot.title = paste("Wavelet Power Spectrum -", tools::toTitleCase(variable)),
                      id.col = getDefaults("id"),
                      timebin.col = getDefaults("timebin"),
+                     id.groups = NULL,
+                     wavelet.type = "MORLET",
+                     same.scale = FALSE,
                      period.range = c(3, 48),
                      axis.periods = c(6, 12, 16, 24, 48),
                      time.unit = "hours",
                      color.pal = NULL,
+                     min.days = NULL,
+                     detrend = FALSE,
                      date.format = "%d/%b",
                      date.interval = 4,
                      date.start = 1,
-                     min.days = NULL,
-                     detrend = FALSE,
                      cex.main = 1.2,
                      cex.lab = 1.1,
                      cex.axis = 1,
-                     legend.xpos = c(0.90, 0.915),
+                     cex.legend = 0.9,
+                     legend.xpos = c(0.895, 0.91),
                      legend.ypos = c(0.15, 0.85),
                      cols = 1,
-                     same.scale = FALSE,
-                     id.groups = NULL,
+                     cores = 1,
                      ...) {
 
 
@@ -86,27 +104,34 @@ plotCWTs <- function(data,
   errors <- c()
   if(!requireNamespace("wavScalogram", quietly=TRUE)) errors <- c(errors, "The 'wavScalogram' package is required for this function but is not installed. Please install 'wavScalogram' using install.packages('wavScalogram') and try again.")
   if(!class(data[,variable]) %in% c("numeric", "integer")) errors <- c(errors, "Please convert signal to class numeric")
-  if(length(period.range)!=2) errors <- c(errors, "Please supply two values (min and max) in the period.range argument")
-   if(length(errors)>0){
-    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+  if (!is.numeric(period.range) || length(period.range) != 2) errors <- c(errors, "`period.range` must be a numeric vector of length 2 (min and max).")
+  if(!time.unit %in% c("mins", "hours", "days")) errors <- c(errors, "Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
+  if(length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
     stop(stop_message, call.=FALSE)
   }
+
+  # save the current par settings and ensure they are restored upon function exit
+  original_par <- par(no.readonly=TRUE)
+  on.exit(par(original_par))
 
   # drop missing ID levels
   data[,id.col] <- droplevels( data[,id.col])
 
-  # validate time.unit and convert periods accordingly
+  # convert time.unit periods
   if (time.unit=="mins") {
     period.range <- period.range
-    axis.periods <- axis.periods
+    time_factor <- 1
+    unit_abbrev <- "mins"
   } else if (time.unit=="hours") {
     period.range <- period.range * 60
-    axis.periods <- axis.periods * 60
+    time_factor <- 60
+    unit_abbrev <- "h"
   } else if (time.unit=="days") {
     period.range <- period.range * 1440
-    axis.periods <- axis.periods * 1440
-  } else {
-    stop("Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
+    time_factor <- 1440
+    unit_abbrev <- "days"
   }
 
 
@@ -135,7 +160,7 @@ plotCWTs <- function(data,
   }
 
   # split data by individual
-  data_individual <- sapply(selected_individuals, function(i) cwt_table[,i+1], simplify=F)
+  data_individual <- lapply(selected_individuals, function(i) cwt_table[,i+1])
   data_individual <- lapply(data_individual, function(x) x[!is.na(x)])
   names(data_individual) <- levels(data[,id.col])[selected_individuals]
   data_ts <- lapply(data_individual, ts)
@@ -143,7 +168,7 @@ plotCWTs <- function(data,
 
   # get time bins interval (in minutes)
   interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
-  interval <- as.numeric(min(interval[interval>0], na.rm=T))
+  interval <- as.numeric(min(interval[interval>0], na.rm=TRUE))
 
 
   ##############################################################################
@@ -158,9 +183,9 @@ plotCWTs <- function(data,
     rows <- do.call("sum", group_rows)
     group_plots <- lapply(group_rows, function(x) x*cols)
     animal_indexes <- mapply(function(nids, nplots) {if(nids<nplots){c(1:nids, rep(NA, nplots-nids))}else{1:nids}},
-                             nids=group_numbers, nplots=group_plots, SIMPLIFY=F)
-    for(i in 2:length(animal_indexes)){animal_indexes[[i]]<-animal_indexes[[i]]+max(animal_indexes[[i-1]], na.rm=T)}
-    animal_indexes <- unlist(animal_indexes, use.names=F)
+                             nids=group_numbers, nplots=group_plots, SIMPLIFY=FALSE)
+    for(i in 2:length(animal_indexes)){animal_indexes[[i]]<-animal_indexes[[i]]+max(animal_indexes[[i-1]], na.rm=TRUE)}
+    animal_indexes <- unlist(animal_indexes, use.names=FALSE)
     background_pal <- grey.colors(length(id.groups), start=0.97, end=0.93)
   } else{
     rows <- ceiling(nindividuals/cols)
@@ -173,12 +198,12 @@ plotCWTs <- function(data,
     background_col <- "gray96"
   }
 
-  plot_layout <- matrix(animal_indexes, nrow=rows, ncol=cols, byrow=T)
-  bottom_plots <- apply(plot_layout, 2, max, na.rm=T)
+  plot_layout <- matrix(animal_indexes, nrow=rows, ncol=cols, byrow=TRUE)
+  bottom_plots <- apply(plot_layout, 2, max, na.rm=TRUE)
   plot_ids <- as.integer(apply(plot_layout, 1, function(x) x))
 
   # set par
-  par(mfrow=c(rows, cols), mar=c(4,4,4,6), oma=c(4,4,4,4))
+  par(mfrow=c(rows,cols), mar=c(4,5,4,6), oma=c(2,2,3,2), mgp=c(3, 0.8, 0))
 
   # set color pallete
   if(is.null(color.pal)){
@@ -190,45 +215,101 @@ plotCWTs <- function(data,
   ## Calculate CWTs - Morlet wavelet spectrum ##################################
   ##############################################################################
 
-  # compute CWTs
+  # print message to console
   cat("Calculating wavelet periodograms...\n")
-  if(detrend==T) {data_ts <-  lapply(data_ts, diff)}
-  cwts <- lapply(data_ts, function(x) wavScalogram::cwt_wst(x, dt=interval, scales=c(period.range, 20), powerscales=T, wname="MORLET",
-                                                            border_effects="BE", makefigure=F, energy_density=T, figureperiod=T, ...))
 
+  # if detrending is requested, apply a difference operation to the time series
+  if(detrend) data_ts <- lapply(data_ts, diff)
+
+  # initialize progress bar
+  pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)
+
+
+  ########################################################################
+  # use parallel computing ###############################################
+  if(cores>1) {
+
+    # print information to console
+    cat(paste0("Starting parallel computation: ", cores, " cores\n"))
+
+    # register parallel backend with the specified number of cores
+    cl <- parallel::makeCluster(cores)
+    doSNOW::registerDoSNOW(cl)
+
+    # define the `%dopar%` operator locally for parallel execution
+    `%dopar%` <- foreach::`%dopar%`
+
+    # set progress bar option
+    opts <- list(progress = function(n) setTxtProgressBar(pb, n))
+
+    # perform parallel computation over each individual's data using foreach
+    cwts <- foreach::foreach(i=1:length(data_ts), .options.snow=opts, .packages="wavScalogram") %dopar% {
+      wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range, 20), powerscales=TRUE, wname=wavelet.type,
+                            border_effects="BE", makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
+    }
+
+    # ensure the cluster is stopped after computation
+    on.exit(parallel::stopCluster(cl))
+
+  ########################################################################
+  # fallback to sequential processing if cores == 1   ####################
+  } else {
+
+    # initialize list to store the results
+    cwts <- vector("list", length(data_ts))
+
+    # loop through each individual
+    for(i in 1:length(data_ts)){
+      # calculate wavelet periodograms
+      cwts[[i]] <- wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range, 20), powerscales=TRUE, wname=wavelet.type,
+                                         border_effects="BE", makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
+      # update progress bar
+      setTxtProgressBar(pb, i)
+    }
+  }
+
+  # close the progress bar
+  close(pb)
+
+  # calculate the range of the absolute squared coefficients across all individuals
   density_range <- lapply(cwts, function(x) range(abs(x$coefs)^2))
   density_range <- range(unlist(density_range))
 
 
-  #############################################################################################
-  # Plot CWTs #################################################################################
+  ##############################################################################
+  # Plot CWTs ##################################################################
+  ##############################################################################
 
+  # loop through each selected individual to plot the CWTs
   for (i in plot_ids) {
 
-    # if NA, add empty plot and go to next
+    # if the ID is NA, skip this iteration and create an empty plot
     if(is.na(i)) {
       plot.new()
       next
     }
 
-    # else generate CWTs
+    # otherwise, generate the CWT plot for the current individual
     id <- selected_individuals[i]
     cwt <- cwts[[i]]
-    Z <- abs(cwt$coefs)^2
+
+    # compute the wavelet power spectrum (Z), scaling the coefficients by the scales (energy density)
+    Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
+
+    # set density limits for the plot
+    if(same.scale) zlim <- density_range
+    else zlim <- range(Z)
 
     # plot CWT spectrum
-    if(same.scale==F){
-      graphics::image(x=1:nrow(cwt$coefs), y=1:ncol(cwt$coefs), z=Z, col=color.pal, axes=F, useRaster=T, main="",
-                      xlab="Date", ylab="Period (h)", frame.plot=T, cex.lab=cex.lab, xaxs="i", yaxs="i")
-    }else{
-      graphics::image(x=1:nrow(cwt$coefs), y=1:ncol(cwt$coefs), z=Z, zlim=density_range, col=color.pal, axes=F, useRaster=T, main="",
-                      xlab="Date", ylab="Period (h)", frame.plot=T, cex.lab=cex.lab, xaxs="i", yaxs="i")
-    }
+    graphics::image(x=1:nrow(cwt$coefs), y=1:ncol(cwt$coefs), z=Z, zlim = zlim,
+                    col=color.pal, axes=FALSE, useRaster=TRUE, main="", xlab="Date",
+                    ylab = paste0("Period (", unit_abbrev, ")"),
+                    frame.plot = TRUE, cex.lab = cex.lab, xaxs = "i", yaxs = "i")
 
-    # add individual id
+    # add the individual ID as a title
     title(main=levels(data[,id.col])[id], cex.main=cex.main, line=1)
 
-    # plot date axis
+    # add date axis
     all_dates <- cwt_table[,timebin.col][!is.na(cwt_table[,id+1])]
     all_dates <- strftime(all_dates, date.format)
     consec_dates <- rle(all_dates)
@@ -239,42 +320,35 @@ plotCWTs <- function(data,
     disp_indexes <- unlist(lapply(disp_dates, function(x) min(which(consec_dates==x))))
     disp_dates <- sub("\\_.*", "", disp_dates)
     axis(1, labels=disp_dates, at=disp_indexes, cex.axis=cex.axis)
-    axis(1, labels=F, at=indexes, tck=-0.02, lwd.ticks=0.5)
+    axis(1, labels=FALSE, at=indexes, tck=-0.02, lwd.ticks=0.5)
 
-    # plot scale axis
-    period_indexes <- .rescale(log2(axis.periods*60), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    # add scale (period) axis
+    period_indexes <- .rescale(log2(axis.periods*time_factor), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
     axis(2, at=period_indexes, labels=axis.periods, cex.axis=cex.axis, las=1)
 
-    # add guide lines
+    # add guide lines for each period
     abline(h=period_indexes, lty=5, col="grey70", lwd=0.7)
 
-    # plot cone of influence
+    # plot the cone of influence (COI) to indicate regions with reduced reliability
     x <- 1:nrow(cwt$coefs)
-    coi_indexes <- .rescale(log2(cwt$coi_maxscale+1e-20), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
-    x <- x[coi_indexes<=par("usr")[4]]
-    coi_indexes <- coi_indexes[coi_indexes<=par("usr")[4]]
-    #segments(x0=x[-nrow(cwt$coefs)], y0=coi_indexes[-nrow(cwt$coefs)], x1=x[-1], y1=coi_indexes[-1])
-    polygon(c(x, rev(x)), c(coi_indexes, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=T)
+    coi_values <- .rescale(log2(cwt$coi_maxscale*cwt$fourierfactor+1e-20), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    coi_indices <- which(coi_values>=1 & coi_values<=par("usr")[4])
+    coi_values <- coi_values[coi_indices]
+    x <- x[coi_indices]
+    polygon(c(x, rev(x)), c(coi_values, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=TRUE)
 
-    # add color scale
-    if(same.scale==F){
-      density_labs <- pretty(c(min(Z), max(Z)), min.n=4)
-      density_labs <- density_labs[density_labs>=min(Z) & density_labs<=max(Z)]
-      .colorlegend(col=color.pal, zlim=range(Z), zval=density_labs, posx=legend.xpos,
-                   posy=legend.ypos, main="", main.cex=1, digit=1, cex=0.9)
-    }else{
-      density_labs <- pretty(density_range)
-      density_labs <- density_labs[density_labs>=min(density_range) & density_labs<=max(density_range)]
-      .colorlegend(col=color.pal, zlim=density_range, zval=density_labs, posx=legend.xpos,
-                   posy=legend.ypos, main="", main.cex=1, digit=0, cex=0.9)
-    }
-
+    # add a color legend to the plot
+    density_labs <- pretty(zlim)
+    density_labs <- density_labs[density_labs>=min(zlim) & density_labs<=max(zlim)]
+    digits <- max(.decimalPlaces(density_labs))
+    .colorlegend(col=color.pal, zlim=zlim, zval=density_labs, posx=legend.xpos,
+                 posy=legend.ypos, main="", main.cex=1, digit=digits, cex=cex.legend)
   }
 
-  # add top title
-  mtext(text=paste("Wavelet Power Spectrum -", tools::toTitleCase(variable)), side=3, line=1, outer=T, cex=cex.main, font=2)
+  # add a top title for the whole plot
+  mtext(text=plot.title, side=3, line=1, outer=T, cex=cex.main, font=2)
 
-  # if id.groups defined, add group legend
+  # if groupings are defined, add a legend for the groups
   if(!is.null(id.groups)){
     label_pos <- rev(unlist(lapply(group_rows, function(x) x/2)))
     for(i in 2:length(group_rows)){label_pos[i]<-label_pos[i]+rev(group_rows)[[i-1]]}
@@ -283,8 +357,6 @@ plotCWTs <- function(data,
          srt=90, cex=cex.main, font=2, xpd=NA)
   }
 
-  #reset par
-  par(mar=c(5, 4, 4, 2) + 0.1)
 }
 
 

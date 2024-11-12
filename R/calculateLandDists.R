@@ -101,7 +101,7 @@ calculateLandDists <- function(data,
   land_dists <- terra::distance(coord_matrix, land_shape_matrix, lonlat=TRUE, pairwise=FALSE)
 
   # for each point, retrieve the minimum distance to the nearest landmass
-  data$land_dist <- apply(land_dists, 1, min, na.rm=T)
+  data$land_dist <- apply(land_dists, 1, min, na.rm=TRUE)
 
 
   ##############################################################################
@@ -113,7 +113,7 @@ calculateLandDists <- function(data,
   if(!is.null(dist.col)){
 
     # split data by individual
-    data_individual <- split(data, f=data[,id.col], drop=T)
+    data_individual <- split(data, f=data[,id.col], drop=TRUE)
 
     # initialize the progress bar
     pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)

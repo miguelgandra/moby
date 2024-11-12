@@ -369,9 +369,9 @@ correctPositions <- function(data,
   # output final summary of the relocation process
   cat(paste0("Points relocated: ", length(relocated_indices), "\n"))
   if(length(skipped_indices)>0) cat(paste0("Points skipped: ", length(skipped_indices), "\n"))
-  mean_distance <- suppressWarnings(round(mean(unlist(distances), na.rm=T)))
-  min_distance <- suppressWarnings(round(min(unlist(distances), na.rm=T)))
-  max_distance <- suppressWarnings(round(max(unlist(distances), na.rm=T)))
+  mean_distance <- suppressWarnings(round(mean(unlist(distances), na.rm=TRUE)))
+  min_distance <- suppressWarnings(round(min(unlist(distances), na.rm=TRUE)))
+  max_distance <- suppressWarnings(round(max(unlist(distances), na.rm=TRUE)))
   if(!is.infinite(mean_distance) && !is.na(mean_distance)){
     cat(paste0("Mean relocation distance: ", mean_distance, " m (from ", min_distance," m to ", max_distance," m)\n"))
   }

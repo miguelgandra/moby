@@ -112,8 +112,9 @@ calculateOverlap <- function(table,
     errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
   }
   if(length(errors)>0){
-    stop_message <- sapply(errors, function(x) paste(strwrap(x), collapse="\n"))
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
     stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
+    stop(stop_message, call.=FALSE)
   }
 
   # get table attributes

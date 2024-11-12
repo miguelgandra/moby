@@ -30,12 +30,21 @@
 #' @export
 
 
-plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
-                     id.col=getDefaults("id"),
-                     timebin.col=getDefaults("timebin"), type="detections",
-                     id.groups=NULL, axis.periods=c(48,24,12,8,6),
-                     min.days=10, detrend=T, same.scale=T, background.col="grey94",
-                     cex.title=2, cex.lab=1.8, cex.axis=1.4, cols=2) {
+plotFFTs <- function(data,
+                     tagging.dates = getDefaults("tagging.dates"),
+                     id.col = getDefaults("id"),
+                     timebin.col = getDefaults("timebin"),
+                     type = "detections",
+                     id.groups = NULL,
+                     axis.periods = c(48,24,12,8,6),
+                     min.days = 10,
+                     detrend = TRUE,
+                     same.scale = TRUE,
+                     background.col = "grey94",
+                     cex.title = 2,
+                     cex.lab = 1.8,
+                     cex.axis = 1.4,
+                     cols = 2) {
 
 
   ##############################################################################
@@ -55,6 +64,10 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
     stop("The 'TSA' package is required for this function but is not installed. Please install 'TSA' using install.packages('TSA') and try again.")
   }
 
+  # save the current par settings and ensure they are restored upon function exit
+  original_par <- par(no.readonly=TRUE)
+  on.exit(par(original_par))
+
 
   ##############################################################################
   # Prepare data ###############################################################
@@ -67,7 +80,7 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
 
   # get time bin interval
   interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
-  interval <- as.numeric(min(interval[interval>0], na.rm=T))
+  interval <- as.numeric(min(interval[interval>0], na.rm=TRUE))
   time_fraction <- 60/interval
 
   # create data frame with number of detections
@@ -98,7 +111,7 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
   }
 
   # split data by individual
-  data_individual <- sapply(selected_individuals, function(i) fft_table[,i], simplify=F)
+  data_individual <- sapply(selected_individuals, function(i) fft_table[,i], simplify=FALSE)
   data_individual <- lapply(data_individual, function(x) x[!is.na(x)])
   names(data_individual) <- selected_individuals
   data_ts <- lapply(data_individual, ts)
@@ -112,22 +125,22 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
   layout_params <- .setLayout(cols, id.groups, plots.height=6, dividers.height=2, legend=FALSE)
   bottom_indices <- apply(layout_params$matrix, 2, function(x) {
     plots_rle <- rle(!is.na(x))
-    return(x[cumsum(plots_rle$lengths)[plots_rle$values==TRUE]])
+    return(x[cumsum(plots_rle$lengths)[plots_rle$values]])
     }, simplify=FALSE)
   bottom_indices <- unlist(bottom_indices)
   bottom_indices <- bottom_indices[order(bottom_indices)]
-  nplots <- max(layout_params$matrix, na.rm=T)
+  nplots <- max(layout_params$matrix, na.rm=TRUE)
   layout_params$matrix[is.na(layout_params$matrix)] <- nplots + 1
   layout(mat=layout_params$matrix, heights=layout_params$heights)
 
   # set margins
-  if(length(id.groups)>1 && same.scale==FALSE){
+  if(length(id.groups)>1 && !same.scale){
     oma <- c(4, 3, 1, 1)
     mar <- c(1.5, 8, 0, 0)
-  }else if(length(id.groups)>1 && same.scale==TRUE){
+  }else if(length(id.groups)>1 && same.scale){
     oma <- c(4, 10, 1, 1)
     mar <- c(1.5, 1, 0, 0)
-  }else if(length(id.groups)==1 && same.scale==FALSE){
+  }else if(length(id.groups)==1 && !same.scale){
     oma <- c(4, 1, 1, 1)
     mar <- c(1.5, 8, 0, 0)
   }else{
@@ -140,8 +153,8 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
 
   # compute periodograms
   ffts <- list()
-  if(detrend==T) {ffts <- lapply(data_ts, function(x) TSA::periodogram(diff(x), plot=F))}
-  if(detrend==F) {ffts <- lapply(data_ts, function(x) TSA::periodogram(x, plot=F))}
+  if(detrend) ffts <- lapply(data_ts, function(x) TSA::periodogram(diff(x), plot=FALSE))
+  else ffts <- lapply(data_ts, function(x) TSA::periodogram(x, plot=FALSE))
   max_freq <- 1/(max(axis.periods*time_fraction)*1.25)
   max_density <- lapply(ffts, function(x) max(x$spec[x$freq>max_freq & x$freq<0.25]))
   max_density <- max(unlist(max_density))
@@ -164,7 +177,7 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
     densities <- fft$spec[which(fft$freq>max_freq & fft$freq<0.25)]
 
     # define y-axis range and labels
-    if(same.scale==TRUE){
+    if(same.scale){
       yrange <- c(0, max_density)
       ylabels <- pretty(yrange)
     }else{
@@ -173,12 +186,12 @@ plotFFTs <- function(data, tagging.dates=getDefaults("tagging.dates"),
     }
 
     # draw plot
-    plot(x=periods, y=densities, type="n", axes=F, ylab="", xlab="", ylim=yrange)
+    plot(x=periods, y=densities, type="n", axes=FALSE, ylab="", xlab="", ylim=yrange)
     rect(xleft=par("usr")[1], xright=par("usr")[2], ybottom=par("usr")[3], ytop=par("usr")[4], col=background.col, border=NULL)
     points(x=periods, y=densities, type="h")
 
     # draw y axis
-    if(same.scale==F || i %in% layout_params$matrix[,1]){
+    if(!same.scale || i %in% layout_params$matrix[,1]){
       title(ylab="Spectral density", line=4.8, cex.lab=cex.lab, xpd=NA)
       disp_vals <- sprintf(paste0("%.", max_digits, "f"), ylabels)
       axis(2, at=ylabels, labels=disp_vals, las=1, cex.axis=cex.axis, col=NA, col.ticks=1)

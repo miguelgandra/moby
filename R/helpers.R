@@ -29,7 +29,8 @@ NULL
 #' @noRd
 
 .printConsole <- function(string){
-  cat(paste0("\033[0;", 1, "m", string, "\033[0m", "\n"))
+  wrapped_text <- strwrap(string, width=getOption("width")*1.2)
+  cat(paste0("\033[0;", 1, "m", wrapped_text, "\033[0m", "\n"))
 }
 
 
@@ -344,15 +345,41 @@ NULL
 
 .getPosition <- function(keyword, inset) {
   usr <- par("usr")
-  if(length(inset)==1)  inset <- rep_len(inset, 2)
-  insetx <- inset[1] * (usr[2] - usr[1]) * 2
-  left <- switch(keyword, bottomright=, topright=, right=usr[2]-insetx,
-                 bottomleft=, left=, topleft=usr[1]+insetx, bottom=,
-                 top=, center=(usr[1] + usr[2L])/2)
+
+  # Ensure `inset` has exactly two values
+  if (length(inset) == 1) inset <- rep_len(inset, 2)
+
+  # Calculate inset offsets for x and y
+  insetx <- inset[1] * (usr[2] - usr[1])
   insety <- inset[2] * (usr[4] - usr[3])
-  top <- switch(keyword, bottomright=, bottom=, bottomleft=usr[3]+insety,
-                topleft=, top=, topright=usr[4]-insety, left=, right=,
-                center=(usr[3]+usr[4])/2)
+
+  # Determine left and top positions based on keyword
+  left <- switch(keyword,
+                 bottomright = usr[2] - insetx,
+                 topright = usr[2] - insetx,
+                 right = usr[2] - insetx,
+                 bottomleft = usr[1] + insetx,
+                 left = usr[1] + insetx,
+                 topleft = usr[1] + insetx,
+                 bottom = (usr[1] + usr[2]) / 2,
+                 top = (usr[1] + usr[2]) / 2,
+                 center = (usr[1] + usr[2]) / 2,
+                 stop("Invalid keyword for position: ", keyword)
+  )
+
+  top <- switch(keyword,
+                bottomright = usr[3] + insety,
+                bottom = usr[3] + insety,
+                bottomleft = usr[3] + insety,
+                topleft = usr[4] - insety,
+                top = usr[4] - insety,
+                topright = usr[4] - insety,
+                left = (usr[3] + usr[4]) / 2,
+                right = (usr[3] + usr[4]) / 2,
+                center = (usr[3] + usr[4]) / 2,
+                stop("Invalid keyword for position: ", keyword)
+  )
+
   return(c(left, top))
 }
 
@@ -1068,6 +1095,10 @@ if (!exists("rep_len")) {
   }
 
 
+  # initialize string to return warning message
+  warning_message <- c()
+
+
   ##############################################################################
   # Handle cases when spatial.layer is not provided ###############################
 
@@ -1112,14 +1143,19 @@ if (!exists("rep_len")) {
       sf::st_crs(coords) <- 4326
       epsg.code <- layer_epsg
       coords <- sf::st_transform(coords, epsg.code)
-      warning(paste0("Coordinates projected assuming CRS projection (EPSG:", epsg.code$epsg, ") from spatial.layer."), call.=FALSE)
+      if(!is.na(epsg.code$epsg)){
+        warning_message <- paste0("No EPSG code supplied. Coordinates projected assuming CRS projection with EPSG:", epsg.code$epsg,
+                                  " based on the provided spatial.layer.")
+      }else{
+        warning_message <- "No EPSG code supplied. Coordinates projected assuming the CRS projection from the provided spatial.layer."
+      }
 
       # 4. Coordinates (geographic), spatial.layer (projected), EPSG (supplied)
     } else if (coords_crs=="geographic" && layer_crs=="projected" && epsg_supplied) {
       if (layer_epsg!=epsg.code) {
         if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
         if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=sf::st_crs(epsg.code$epsg)$proj4string, method="ngb")
-        warning(paste("The spatial layer has been projected to the supplied EPSG code:", epsg.code$epsg), call.=FALSE)
+        warning_message <- paste("The spatial layer has been projected to the supplied EPSG code:", epsg.code$epsg)
       }
       sf::st_crs(coords) <- 4326
       coords <- sf::st_transform(coords, epsg.code)
@@ -1139,10 +1175,10 @@ if (!exists("rep_len")) {
       epsg.code <- layer_epsg
       sf::st_crs(coords) <- epsg.code
       if(!is.na(epsg.code$epsg)){
-        warning(paste0("No EPSG code supplied. Assuming CRS projection with EPSG:", epsg.code$epsg,
-                      " based on the provided spatial.layer."), call.=FALSE)
+        warning_message <- paste0("No EPSG code supplied. Assuming CRS projection with EPSG:", epsg.code$epsg,
+                                  " based on the provided spatial.layer.")
       }else{
-        warning("No EPSG code supplied. Assuming CRS projection from the provided spatial.layer.", call.=FALSE)
+        warning_message <- "No EPSG code supplied. Assuming CRS projection from the provided spatial.layer."
       }
 
       # 8. Coordinates (projected), spatial.layer (projected), EPSG (supplied)
@@ -1150,14 +1186,25 @@ if (!exists("rep_len")) {
       if (layer_epsg!=epsg.code) {
         if(inherits(spatial.layer, "sf")) spatial.layer <- sf::st_transform(spatial.layer, epsg.code)
         if(inherits(spatial.layer, "Raster")) spatial.layer <- raster::projectRaster(spatial.layer, crs=epsg.code$wkt, method="ngb")
-        warning(paste("The spatial layer has been reprojected to the supplied EPSG code:", epsg.code$epsg), call.=FALSE)
+        warning_message <- paste("The spatial layer has been reprojected to the supplied EPSG code:", epsg.code$epsg)
       }
       sf::st_crs(coords) <- epsg.code
     }
   }
 
   ##############################################################################
-  # Return transformed coordinates and spatial.layer (if applicable) ##############
+  # Print warnings #############################################################
+
+  if (length(warning_message)>0){
+    warning_message <- sapply(warning_message, function(x) paste("-", x))
+    warning_message <- sapply(warning_message, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    sapply(warning_message, function(x) warning(x, call.=FALSE))
+  }
+
+
+
+  ##############################################################################
+  # Return transformed coordinates and spatial.layer (if applicable) ###########
 
   return(list(coords=coords, spatial.layer=spatial.layer, epsg.code=epsg.code))
 }

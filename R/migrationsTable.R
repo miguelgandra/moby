@@ -64,7 +64,7 @@ migrationsTable <- function(data,
 
 
   # perform argument checks for von bertalanffy growth models
-  if(von.bertalanffy==TRUE){
+  if(von.bertalanffy){
     if (!requireNamespace("TropFishR", quietly=TRUE)) stop("The 'TropFishR' package is required for this function but is not installed. Please install 'TropFishR' using install.packages('TropFishR') and try again.", call.=FALSE)
     if(is.null(id.metadata) | !c("length") %in% colnames(id.metadata)) stop("'id.metadata' with a 'length' column required to apply the Von Bertalanffy Growth Model", call.=FALSE)
     if(!id.col %in% colnames(id.metadata)) stop(paste("'", id.col, "' column required in 'id.metadata'", sep=""), call.=FALSE)
@@ -112,7 +112,7 @@ migrationsTable <- function(data,
   for(g in 1:length(id.groups)){
 
     # calculate nº of transitions per individual
-    data_individual <- split(data_group[[g]], f=data_group[[g]][,id.col], drop=T)
+    data_individual <- split(data_group[[g]], f=data_group[[g]][,id.col], drop=TRUE)
     transitions <- list()
     transition_times <- list()
     for(i in 1:length(data_individual)) {
@@ -174,7 +174,7 @@ migrationsTable <- function(data,
     ############################################################################
 
     # create table with nº movements per migration type
-    movements <- colSums(migrations, na.rm=T)
+    movements <- colSums(migrations, na.rm=TRUE)
     migrations_table <- reshape2::melt(movements)
     colnames(migrations_table) <- "Movements"
     migrations_table$Type <- rownames(migrations_table)
@@ -197,11 +197,11 @@ migrationsTable <- function(data,
       numeric_cols <- col_classes$column[col_classes$class %in% c("numeric", "integer")]
       character_cols <- col_classes$column[col_classes$class %in% c("factor", "character")]
       for(n in numeric_cols){
-        mean_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) mean(x[,n], na.rm=T))))$value
-        se_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) plotrix::std.error(x[,n], na.rm=T))))$value
-        digits <- max(.decimalPlaces(id.metadata[,n]), na.rm=T)+1
+        mean_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) mean(x[,n], na.rm=TRUE))))$value
+        se_values <- reshape2::melt(unlist(lapply(migrating_ids_data, function(x) plotrix::std.error(x[,n], na.rm=TRUE))))$value
+        digits <- max(.decimalPlaces(id.metadata[,n]), na.rm=TRUE)+1
         mean_values <- data.frame("mean"=paste(sprintf(paste0("%.", digits, "f"), mean_values), "\u00b1", sprintf(paste0("%.", digits, "f"), se_values)))
-        mean_values <- sapply(mean_values, function(x) gsub(" \u00b1 NA", "", x, fixed=T))
+        mean_values <- sapply(mean_values, function(x) gsub(" \u00b1 NA", "", x, fixed=TRUE))
         colnames(mean_values) <- paste0("Mean ", tools::toTitleCase(n))
         migrations_table <- cbind(migrations_table, mean_values)
       }
@@ -210,7 +210,7 @@ migrationsTable <- function(data,
         count_values <- lapply(count_values, function(x) paste(x, names(x), collapse = " | "))
         na_values <- lapply(migrating_ids_data, function(x) length(which(is.na(x[,c]))))
         count_values <- reshape2::melt(unlist(mapply(function(a,b) paste(a, "|", b, "NA"), a=count_values, b=na_values)))$value
-        count_values <- gsub(" | 0 NA", "", count_values, fixed=T)
+        count_values <- gsub(" | 0 NA", "", count_values, fixed=TRUE)
         count_values <- data.frame(count_values)
         colnames(count_values) <- tools::toTitleCase(c)
         count_values[unlist(na_values)==migrations_table$individuals,] <- "NA"
@@ -219,18 +219,18 @@ migrationsTable <- function(data,
     }
 
     # predict growth if required
-    if(von.bertalanffy==T){
+    if(von.bertalanffy){
       VBGF_group <- VBGF.params[[g]]
       transition_times <- plyr::join(transition_times, id.metadata[,c(id.col, "length")], by=id.col, type="left")
-      ages_at_tagging <- TropFishR::VBGF(param=VBGF_group, L=transition_times$length, na.rm=F)
+      ages_at_tagging <- TropFishR::VBGF(param=VBGF_group, L=transition_times$length, na.rm=FALSE)
       ages_at_departure <- ages_at_tagging + (transition_times$days_between_depart_tag/365)
-      transition_times$lengths_at_departure <- TropFishR::VBGF(param=VBGF_group, t=ages_at_departure, na.rm=F)
-      growth_table <- stats::aggregate(transition_times$lengths_at_departure, by=list(transition_times$transition), mean, na.rm=T)
+      transition_times$lengths_at_departure <- TropFishR::VBGF(param=VBGF_group, t=ages_at_departure, na.rm=FALSE)
+      growth_table <- stats::aggregate(transition_times$lengths_at_departure, by=list(transition_times$transition), mean, na.rm=TRUE)
       growth_table$x <- sprintf("%.1f",  growth_table$x)
       se_lengths_at_departure <- stats::aggregate(transition_times$lengths_at_departure, by=list(transition_times$transition), function(x) plotrix::std.error(x))
       se_lengths_at_departure$x <- sprintf("%.1f",  se_lengths_at_departure$x)
       growth_table$x <- paste( growth_table$x, "\u00b1", se_lengths_at_departure$x)
-      growth_table$x <- gsub(" \u00b1 NA", "", growth_table$x, fixed=T)
+      growth_table$x <- gsub(" \u00b1 NA", "", growth_table$x, fixed=TRUE)
       colnames(growth_table) <- c("Type", "Depart Length")
       migrations_table <- plyr::join(migrations_table, growth_table, by="Type", type="left")
     }
@@ -240,7 +240,7 @@ migrationsTable <- function(data,
     migrations_table$site2 <-  sub(".*--> ", "", migrations_table$Type)
     migrations_table$site1 <- factor(migrations_table$site1, levels=ordered_sites)
     migrations_table$site2 <- factor(migrations_table$site2, levels=ordered_sites)
-    migrations_table$transitions <- grepl("-->", migrations_table$Type, fixed=T)
+    migrations_table$transitions <- grepl("-->", migrations_table$Type, fixed=TRUE)
     migrations_table <- migrations_table[order(migrations_table$site1, migrations_table$transitions, migrations_table$site2 ),]
     migrations_table <- migrations_table[,-which(colnames(migrations_table) %in% c("site1", "site2", "transitions"))]
 
@@ -318,7 +318,7 @@ migrationsTable <- function(data,
   mat_table <-  matrix(1:raster::ncell(final_table), nrow=nrow(final_table), byrow=TRUE)
   nplots <- length(plot.stats)
   n_cells <- prod(dim(final_table))
-  mat_graphs <- matrix((n_cells+1):(n_cells+nplots*nrow(final_table)), nrow=nrow(final_table), byrow=T)
+  mat_graphs <- matrix((n_cells+1):(n_cells+nplots*nrow(final_table)), nrow=nrow(final_table), byrow=TRUE)
 
   # calculate left and bottom plots for axes placement
   stationary <- which(!grepl("-->", final_table$Type, fixed=TRUE))
@@ -380,14 +380,14 @@ migrationsTable <- function(data,
   ## add barplots #######################################################
 
   # set graph headers
-  plot.stats <- tools::toTitleCase(gsub(".", " ", plot.stats, fixed=T))
+  plot.stats <- tools::toTitleCase(gsub(".", " ", plot.stats, fixed=TRUE))
 
   # cycle through each row
   current_group <- ifelse(length(id.groups)>1, 0, 1)
   for(i in 1:nrow(final_table)){
 
     # adjust par settings
-    if(same.scale==TRUE) par(mar=c(0.35, 0.5, 0.35, 0.5))
+    if(same.scale) par(mar=c(0.35, 0.5, 0.35, 0.5))
     else par(mar=c(0.35, 0.6, 0.35, 0.6), mgp=c(2.5, 0.4, 0))
     transition <- final_table$Type[i]
 
@@ -428,11 +428,11 @@ migrationsTable <- function(data,
     arrival_month <- table(factor(arrival_month, levels=1:12))
 
     # set y-axis scale
-    if(same.scale==T){
+    if(same.scale){
       graphs_max<-panel_max
     }else{
       graphs_max <- max(c(depart_hour, arrival_hour, depart_month, arrival_month))*1.05
-      duration_range <- range(as.numeric(group_data$duration_h), na.rm=T)
+      duration_range <- range(as.numeric(group_data$duration_h), na.rm=TRUE)
     }
     graphs_axis <- pretty(c(0,graphs_max))
     graphs_axis <- unique(as.integer(graphs_axis))
@@ -455,8 +455,8 @@ migrationsTable <- function(data,
         b <- graphics::barplot(item$data, axes=FALSE, col=item$color, names.arg=FALSE, ylim=c(0, graphs_max), add=TRUE)
         if(i==1) title(main=stat, line=1.25, font=2, cex.main=cex.main, xpd=NA)
         if(i %in% bottom_plots) axis(1, at=b, labels=item$labels, cex.axis=cex.axis, tck=tick_length, xpd=NA)
-        if(same.scale==TRUE && plot.stats[1]==stat) axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
-        else if(same.scale==FALSE) axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
+        if(same.scale && plot.stats[1]==stat) axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
+        else if(!same.scale) axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
         box()
       } else if(stat=="Duration") {
         boxplot(duration, horizontal=TRUE, axes=FALSE, ylim=duration_range)
@@ -466,8 +466,8 @@ migrationsTable <- function(data,
         duration_labels <- pretty(duration_range, n=6)
         duration_labels <- duration_labels[duration_labels >= duration_range[1] & duration_labels <= duration_range[2]]
         if(i %in% bottom_plots) axis(1, at=duration_labels, labels=duration_labels, cex.axis=cex.axis, tck=tick_length, xpd=NA)
-        if(same.scale==TRUE && plot.stats[1]=="Duration") axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
-        else if(same.scale==FALSE) axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
+        if(same.scale && plot.stats[1]=="Duration") axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
+        else if(!same.scale) axis(2, at=graphs_axis, labels=graphs_axis, cex.axis=cex.axis, tck=tick_length, las=1)
         box()
       }
     }

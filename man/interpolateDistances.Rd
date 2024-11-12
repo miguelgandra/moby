@@ -8,7 +8,7 @@ interpolateDistances(
   data,
   id.col = getDefaults("id"),
   dist.col = "dist_m",
-  keep.intermediate = F
+  keep.intermediate = FALSE
 )
 }
 \arguments{

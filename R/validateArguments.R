@@ -85,7 +85,7 @@
   ##############################################################################
   # validate data ##############################################################
   if (!inherits(data, "data.frame")) {
-    stop(paste0(names(args)[1], " must be a data frame"), call.=FALSE)
+    stop(paste0(names(args)[1], " must be a data frame."), call.=FALSE)
   }
 
   ##############################################################################
@@ -97,7 +97,7 @@
     # convert to factor
     if (valid_ids && !inherits(data[, id.col], "factor")){
       data[, id.col] <- as.factor(data[, id.col])
-      warnings <- c(warnings, "'id.col' converted to factor")
+      warnings <- c(warnings, "'id.col' converted to factor.")
     }
   }
 
@@ -209,7 +209,7 @@
       else if(any(is.na(data[, color.by]))) errors <- c(errors, "Missing values in color.by variable.")
       else if(inherits(data[,color.by], "character")) {
         data[,color.by] <- as.factor(data[,color.by])
-        warnings <- c(warnings, "'color.by' variable converted to factor")}
+        warnings <- c(warnings, "'color.by' variable converted to factor.")}
     }
   }
 
@@ -282,7 +282,7 @@
       if(!inherits(id.groups, "list") || is.null(names(id.groups)) ) errors <- c(errors, "id.groups should be supplied as a named list.")
       else{
         if(any(duplicated(unlist(id.groups)))) errors <- c(errors, "Repeated ID(s) in id.groups.")
-        if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {warnings <- c(warnings, "Some of the ID(s) in id.groups don't match the IDs in the data")}
+        if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {warnings <- c(warnings, "Some of the ID(s) in id.groups don't match the IDs in the data.")}
         data <- data[data[,id.col] %in% unlist(id.groups),]
         if(!is.null(tagging.dates)){
           tagging.dates <- tagging.dates[match(unlist(id.groups), levels(data[,id.col]))]
@@ -342,7 +342,7 @@
   # validate polygons ##########################################################
   if ("polygons" %in% names(args)) {
     polygons <- args$polygons
-    if(!polygons %in% c(FALSE, "diel","season")) errors <- c(errors,"Invalid 'polygons' specified. Accepted values are: 'diel', 'season' or 'FALSE' (disabled)")
+    if(!polygons %in% c(FALSE, "diel","season")) errors <- c(errors,"Invalid 'polygons' specified. Accepted values are: 'diel', 'season' or 'FALSE' (disabled).")
   }
 
   ##############################################################################
@@ -382,6 +382,16 @@
     }
   }
 
+
+  ##############################################################################
+  # Validate 'cols' argument ###################################################
+  if ("cols" %in% names(args)) {
+    cols <- args$cols
+    if (!is.null(cols)){
+      if (!is.numeric(cols) || length(cols) > 1 || cols %% 1 != 0) errors <- c(errors, "The 'cols' parameter (number of columns) must be a single positive integer.")
+    }
+  }
+
   ##############################################################################
   # Return errors and/or warnings ##############################################
   if (length(errors)>0){
@@ -390,9 +400,9 @@
     stop(stop_message, call.=FALSE)
   }
   if (length(warnings)>0){
-    warning_message <- sapply(warnings, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
-    warning_message <- c("\n", paste0("- ", warning_message, collapse="\n"))
-    warning(warning_message, call.=FALSE)
+    warning_message <- sapply(warnings, function(x) paste("-", x))
+    warning_message <- sapply(warning_message, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    sapply(warning_message, function(x) warning(x, call.=FALSE))
   }
 
 

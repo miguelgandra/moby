@@ -10,7 +10,7 @@ plotContours(
   var.titles = NULL,
   plot.title = NULL,
   split.by = NULL,
-  aggregate.fun = function(x) mean(x, na.rm = T),
+  aggregate.fun = function(x) mean(x, na.rm = TRUE),
   id.col = getDefaults("id"),
   datetime.col = getDefaults("datetime"),
   color.pal = NULL,

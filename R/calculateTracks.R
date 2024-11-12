@@ -132,7 +132,7 @@ calculateTracks <- function(data,
     # check if any coordinates overlap land
     pts <- sf::st_multipoint(cbind(data$lon_m_tmp, data$lat_m_tmp))
     pts <- sf::st_sfc(pts, crs=sf::st_crs(epsg.code))
-    if(lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=T))>0){
+    if(lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=TRUE))>0){
       warning("Some coordinates overlap with the supplied land shape. Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell, and then rerun the current function with the updated positions.", call.=FALSE)
     }
 
@@ -141,7 +141,7 @@ calculateTracks <- function(data,
     template_raster <- raster::raster(raster::extent(sf::st_bbox(coords))*1.2, res=grid.resolution, crs=epsg.code)
     template_raster[] <- 0
     land.shape.sp <- sf::as_Spatial(land.shape)
-    land_raster <- raster::rasterize(land.shape.sp, template_raster, update=T)
+    land_raster <- raster::rasterize(land.shape.sp, template_raster, update=TRUE)
     raster::values(land_raster)[raster::values(land_raster)==1] <- 10^8
     raster::values(land_raster)[raster::values(land_raster)==0] <- 1
     trCost <- gdistance::transition(1/land_raster, transitionFunction=mean, directions=mov.directions)
@@ -154,7 +154,7 @@ calculateTracks <- function(data,
   ##############################################################################
 
   # split COAs by individual
-  data_individual <- split(data, f=data[,id.col], drop=F)
+  data_individual <- split(data, f=data[,id.col], drop=FALSE)
 
   # initialize progress bar
   if(verbose){
@@ -361,13 +361,13 @@ calculateLeastCost <- function(data_individual, land.shape, trCost, grid.resolut
       # check if the current segment is a point (i.e., the same start and end)
       is_pt <- all(coords_m[r,] == coords_m[r+1,])
       # check if the segment intersects with land
-      in_land <- lengths(sf::st_intersects(segment, sf::st_as_sf(land.shape), sparse=T))>0
+      in_land <- lengths(sf::st_intersects(segment, sf::st_as_sf(land.shape), sparse=TRUE))>0
       # if the segment overlaps land and is not a point, and the distance is less than the grid resolution
-      if(in_land==T & is_pt==F & floor(dists[r])<=grid.resolution){
+      if(in_land & !is_pt & floor(dists[r])<=grid.resolution){
         lines_skipped <- lines_skipped+1
       }
       # if the segment overlaps land and is not a point, calculate shortest in-water path
-      if(in_land==T & is_pt==F & floor(dists[r])>grid.resolution){
+      if(in_land & !is_pt & floor(dists[r])>grid.resolution){
         # calculate the shortest path around land
         segment <- gdistance::shortestPath(trCost, coords_m[r,], coords_m[r+1,], output="SpatialLines")
         # convert the segment to a spatial object and set its CRS

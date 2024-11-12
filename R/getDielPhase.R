@@ -59,8 +59,8 @@ getDielPhase <- function (datetimes, coordinates, phases=2, solar.depth=18) {
 
   # calculate sunrise and sunset times for the given coordinates
   coordinates <- matrix(coordinates, ncol=2)
-  sunrise <- suntools::sunriset(coordinates, datetimes, POSIXct.out=T, direction="sunrise")$time
-  sunset <- suntools::sunriset(coordinates, datetimes, POSIXct.out=T, direction="sunset")$time
+  sunrise <- suntools::sunriset(coordinates, datetimes, POSIXct.out=TRUE, direction="sunrise")$time
+  sunset <- suntools::sunriset(coordinates, datetimes, POSIXct.out=TRUE, direction="sunset")$time
 
   # directly return day/night without further calculations
   if(phases==2) {
@@ -69,9 +69,9 @@ getDielPhase <- function (datetimes, coordinates, phases=2, solar.depth=18) {
   }
 
   # otherwise calculate dawn/dusk times
-  dusk <- suntools::crepuscule(coordinates, datetimes, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
-  prev_dusk <- suntools::crepuscule(coordinates, datetimes-60*60*24, POSIXct.out=T, solarDep=solar.depth, direction="dusk")$time
-  dawn <- suntools::crepuscule(coordinates, datetimes, POSIXct.out=T, solarDep=solar.depth, direction="dawn")$time
+  dusk <- suntools::crepuscule(coordinates, datetimes, POSIXct.out=TRUE, solarDep=solar.depth, direction="dusk")$time
+  prev_dusk <- suntools::crepuscule(coordinates, datetimes-60*60*24, POSIXct.out=TRUE, solarDep=solar.depth, direction="dusk")$time
+  dawn <- suntools::crepuscule(coordinates, datetimes, POSIXct.out=TRUE, solarDep=solar.depth, direction="dawn")$time
 
   # determine diel phase using a streamlined conditional structure
   timeofday <- ifelse(datetimes > prev_dusk & datetimes < dawn, "night",

@@ -21,7 +21,11 @@
 #' @export
 
 
-calculateFrequencies <- function(table, n.individuals, tagging.dates, type="detections", subset=NULL) {
+calculateFrequencies <- function(table,
+                                 n.individuals,
+                                 tagging.dates,
+                                 type = "detections",
+                                 subset = NULL) {
 
   # initial checks
   if(!class(table[,2]) %in% c("integer","numeric")) {stop("Supplied table needs to contain number of detections")}
@@ -49,7 +53,7 @@ calculateFrequencies <- function(table, n.individuals, tagging.dates, type="dete
 
   ##########################################################################
   # if not, calculate frequencies for the entire study duration ############
-  if(multiple==F){
+  if(!multiple){
     if(length(out_cols)>0) {
       data_list[[1]] <- table[,-out_cols]
     }else{
@@ -60,15 +64,15 @@ calculateFrequencies <- function(table, n.individuals, tagging.dates, type="dete
 
   ###########################################################################
   # else, split data and calculate frequencies independently for each group #
-  if(multiple==T){
+  if(multiple){
 
     # check if subset groups are available in the supplied data
-    if(any(!subset %in% colnames(table))) {stop("supplied grouping variables could not be found")}
+    if(any(!subset %in% colnames(table))) {stop("supplied grouping variables could not be found", call.=FALSE)}
 
     # split data
-    table_subset <- sapply(subset, function(x) split(table, f=(table[,x])), simplify=F, USE.NAMES=T)
+    table_subset <- sapply(subset, function(x) split(table, f=(table[,x])), simplify=FALSE, USE.NAMES=TRUE)
     group_names <- unlist(lapply(table_subset, names))
-    table_subset <- unlist(table_subset, recursive=F, use.names=T)
+    table_subset <- unlist(table_subset, recursive=FALSE, use.names=TRUE)
     names(table_subset) <- group_names
     data_subset <- lapply(table_subset, function(x) x[,-out_cols])
     data_list <- data_subset
@@ -93,7 +97,7 @@ calculateFrequencies <- function(table, n.individuals, tagging.dates, type="dete
       setTxtProgressBar(pb, f)
       individual_data <- data[,f+1][data$timebin>=tagging.dates[f] & data$timebin<=last.detections[f]]
       if(length(individual_data)==0) {hourly_frequences[f]<-NA; next}
-      detections <- sum(individual_data, na.rm=T)
+      detections <- sum(individual_data, na.rm=TRUE)
       hourly_frequences[f] <- detections/(length(individual_data)*interval/60)
     }
 
@@ -104,8 +108,12 @@ calculateFrequencies <- function(table, n.individuals, tagging.dates, type="dete
   }
 
   # return final results
-  if(multiple==T) {names(results) <- names(data_list)}
-  if(multiple==F) {results <- unlist(results, recursive=F)}
+  if (multiple) {
+    names(results) <- names(data_list)
+  } else {
+    results <- unlist(results, recursive=FALSE)
+  }
+
   if(length(missing_individuals)>0) {cat(paste0(length(missing_individuals), " individual(s) with no detections\n"))}
   return(results)
 }

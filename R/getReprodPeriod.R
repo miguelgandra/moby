@@ -45,14 +45,14 @@ getReprodPeriod <- function(datetimes, spawning.start, spawning.end, format="%m"
   year <- strftime(datetimes, "%Y", tz=tz)
 
   # add dummy year if missing in the format
-  if(!grepl("%y|%Y", format, fixed=T)){
+  if(!grepl("%y|%Y", format, fixed=TRUE)){
     format <- paste0(format, "/%Y")
     spawning.start <- paste0(spawning.start, "/", year)
     spawning.end <- paste0(spawning.end, "/", year)
   }
 
   # add day of month if missing in the format
-  if(!grepl("%d", format, fixed=T)){
+  if(!grepl("%d", format, fixed=TRUE)){
     format <- paste0("%d/", format)
     spawning.start <- paste0("01/", spawning.start)
     end.month <- as.POSIXct(paste0("01/", spawning.end), format, tz=tz)

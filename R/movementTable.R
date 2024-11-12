@@ -33,7 +33,7 @@ movementTable <- function(data,
                           lon.col = getDefaults("lon"),
                           lat.col = getDefaults("lat"),
                           dist.col = "dist_m",
-                          discard.missing = T,
+                          discard.missing = TRUE,
                           ...) {
 
   ##############################################################################
@@ -55,7 +55,7 @@ movementTable <- function(data,
 
   # retrieve epsg.code if not provided
   if(is.null(epsg.code)){
-    if(!grepl("+units=m", land.shape@proj4string, fixed=T)){
+    if(!grepl("+units=m", land.shape@proj4string, fixed=TRUE)){
       stop("Please supply a projected land.shape (in metres)")
     }else{
       epsg.code <- land.shape@proj4string
@@ -71,7 +71,7 @@ movementTable <- function(data,
    interval <- unlist(lapply(interval, unique))
    interval <- unique(interval[!is.na(interval)])
    if(length(unique(interval))>2) {
-     data <- interpolateDistances(data, keep.intermediate=T)
+     data <- interpolateDistances(data, keep.intermediate=TRUE)
      individual_data <- split(data, f=data[,id.col])
      interval <- lapply(individual_data, function(x) difftime(x[,timebin.col], dplyr::lag(x[,timebin.col]), units="min"))
      interval <- unlist(lapply(interval, unique))
@@ -96,15 +96,15 @@ movementTable <- function(data,
     data[,id.col] <- droplevels(data[,id.col])
 
     #total distance traveled (km)
-    total_dist <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), sum, na.rm=T, drop=F)$x)
+    total_dist <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), sum, na.rm=TRUE, drop=FALSE)$x)
     total_distance <- sprintf("%.1f", total_dist/1000)
 
     # rate of movement (hourly distance - m/h)
-    mean_rom <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), mean, na.rm=T, drop=F)$x)
+    mean_rom <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), mean, na.rm=TRUE, drop=FALSE)$x)
     mean_rom <- mean_rom*60/interval
-    max_rom <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), max, na.rm=T, drop=F)$x)
+    max_rom <- as.numeric(stats::aggregate(data[,dist.col], by=list(data[,id.col]), max, na.rm=TRUE, drop=FALSE)$x)
     max_rom <- max_rom*60/interval
-    if(mean(mean_rom, na.rm=T)>1000 & mean(max_rom, na.rm=T)>1000){
+    if(mean(mean_rom, na.rm=TRUE)>1000 & mean(max_rom, na.rm=TRUE)>1000){
       mean_rom <- mean_rom/1000
       max_rom <- max_rom/1000
       rom_units <- "km/h"
@@ -115,11 +115,11 @@ movementTable <- function(data,
     max_rom <- sprintf("%.1f", max_rom)
 
     ## linearity index
-    first_coas <- by(data, data[,id.col], function(x) x[which.min(x[,timebin.col]),c(lon.col, lat.col)], simplify=F)
+    first_coas <- by(data, data[,id.col], function(x) x[which.min(x[,timebin.col]),c(lon.col, lat.col)], simplify=FALSE)
     first_coas <- do.call("rbind", first_coas)
     first_coas$id <- rownames(first_coas)
     first_coas$type <- "start"
-    last_coas <- by(data, data[,id.col], function(x) x[which.max(x[,timebin.col]),c(lon.col, lat.col)], simplify=F)
+    last_coas <- by(data, data[,id.col], function(x) x[which.max(x[,timebin.col]),c(lon.col, lat.col)], simplify=FALSE)
     last_coas <- do.call("rbind", last_coas)
     last_coas$id <- rownames(last_coas)
     last_coas$type <- "end"
@@ -138,7 +138,7 @@ movementTable <- function(data,
     # overall movement stats
     movement_stats <- data.frame("ID"=levels(data[,id.col]), "Distance (km)"=total_distance,
                                  "ROM"=mean_rom, "Max ROM"=max_rom,
-                                 "LI"=li_index, check.names=F, row.names=NULL)
+                                 "LI"=li_index, check.names=FALSE, row.names=NULL)
     colnames(movement_stats)[3] <- paste0(colnames(movement_stats)[3], " (", rom_units,")")
     colnames(movement_stats)[4] <- paste0(colnames(movement_stats)[4], " (", rom_units,")")
     movement_stats <- plyr::join(movement_stats, kud.results[[i]], by="ID", type="left")
@@ -147,18 +147,18 @@ movementTable <- function(data,
     # calculate means ± se and format missing values
     values <- suppressWarnings(as.matrix(sapply(movement_stats[,-1], as.numeric)))
     decimal_digits <- apply(values, 2, .decimalPlaces)
-    decimal_digits <- apply(decimal_digits, 2, max, na.rm=T)
+    decimal_digits <- apply(decimal_digits, 2, max, na.rm=TRUE)
     movement_stats$ID <- as.character(movement_stats$ID)
     movement_stats[nrow(movement_stats)+1,] <- NA
     movement_stats$ID[nrow(movement_stats)] <- "mean"
-    movement_stats[nrow(movement_stats), -1] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(values, na.rm=T))
+    movement_stats[nrow(movement_stats), -1] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(values, na.rm=TRUE))
     errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(values, 2, plotrix::std.error)))
     movement_stats[nrow(movement_stats), -1] <- paste(movement_stats[nrow(movement_stats), -1], "\u00b1", errors)
     movement_stats[is.na(movement_stats)] <- "-"
     movement_stats[movement_stats=="NA"] <- "-"
 
     # discard missing IDs if required
-    if(discard.missing==T){
+    if(discard.missing){
       missing_ids <- names(table(data[,id.col])[table(data[,id.col])==0])
       movement_stats <- movement_stats[!movement_stats$ID %in% missing_ids,]
     }

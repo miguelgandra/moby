@@ -116,9 +116,9 @@ createWideTable <- function(data,
     if(value_type %in% c("character", "factor")){
       assignVal <- function(x){names(which.max(table(x)))}
       data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
-                                    fill=NA_character_, fun.aggregate=assignVal, drop=F)
+                                    fill=NA_character_, fun.aggregate=assignVal, drop=FALSE)
       ties <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
-                              fill=NA_character_, fun.aggregate=checkTies, drop=F)
+                              fill=NA_character_, fun.aggregate=checkTies, drop=FALSE)
       ties$count <- apply(ties[,-1], 1, function(x) length(which(!is.na(x))))
       ties <- ties[ties$count>0,]
 
@@ -127,7 +127,7 @@ createWideTable <- function(data,
         colnames(ties) <- c("timebin", "ID", "ties")
         ties <- ties[!is.na(ties$ties),]
         warning(paste0(nrow(ties), " instances with value ties\n"), call.=FALSE)
-        if(verbose==T){
+        if(verbose){
           cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
           cat("First value assigned:\n")
           if(nrow(ties)<=10){print(ties)}else{print(head(ties))}
@@ -138,13 +138,13 @@ createWideTable <- function(data,
     # aggregate values (assign sum)
     if(value_type %in% c("numeric", "integer")){
       data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
-                                    fill=0, fun.aggregate=sum, drop=F)
+                                    fill=0, fun.aggregate=sum, drop=FALSE)
     }
 
   # else use supplied function to aggregate values
   }else{
     data_table <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
-                                  fill=0, fun.aggregate=agg.fun, drop=F)
+                                  fill=0, fun.aggregate=agg.fun, drop=FALSE)
 }
 
 
@@ -166,17 +166,17 @@ createWideTable <- function(data,
 
   # get time bins interval (in minutes)
   interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
-  interval <- as.numeric(min(interval[interval>0], na.rm=T))
+  interval <- as.numeric(min(interval[interval>0], na.rm=TRUE))
 
 
   # create complete sequence of timebins for the study duration
   # round dates if needed
-  if(round.dates==T){
-    start <-  lubridate::floor_date(min(start.dates, na.rm=T), unit="day")
-    end <- lubridate::ceiling_date(max(end.dates, na.rm=T), unit="day")-60*60*(interval/60)
+  if(round.dates){
+    start <-  lubridate::floor_date(min(start.dates, na.rm=TRUE), unit="day")
+    end <- lubridate::ceiling_date(max(end.dates, na.rm=TRUE), unit="day")-60*60*(interval/60)
   } else {
-    start <- min(start.dates, na.rm=T)
-    end <- max(end.dates, na.rm=T)
+    start <- min(start.dates, na.rm=TRUE)
+    end <- max(end.dates, na.rm=TRUE)
   }
   time_seq <- seq.POSIXt(from=start, to=end, by=interval*60)
   time_seq <- as.POSIXct(setdiff(time_seq, data_table[,timebin.col]), origin='1970-01-01', tz="UTC")

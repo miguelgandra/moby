@@ -15,7 +15,7 @@ movementTable(
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   dist.col = "dist_m",
-  discard.missing = T,
+  discard.missing = TRUE,
   ...
 )
 }

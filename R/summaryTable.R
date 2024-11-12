@@ -145,7 +145,7 @@ summaryTable <- function(data,
 
   # define error function
   getErrorFun <- function(x) {
-    if(error.stat=="sd"){return(sd(x, na.rm=T))}
+    if(error.stat=="sd"){return(sd(x, na.rm=TRUE))}
     if(error.stat=="se"){return(plotrix::std.error(x))}
   }
 
@@ -169,7 +169,7 @@ summaryTable <- function(data,
 
   # calculate number of detections
   if("detections" %in% colnames(data)){
-    detections <- as.integer(stats::aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=F)$detections)
+    detections <- as.integer(stats::aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=FALSE)$detections)
   }else{
     warning("No 'detections' column found, assuming one detection per row.", call.=FALSE)
     detections <- as.integer(table(data[,id.col]))
@@ -177,7 +177,7 @@ summaryTable <- function(data,
   detections[detections==0] <- NA
 
   # calculate number of receivers
-  receivers <- stats::aggregate(data[,station.col], by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
+  receivers <- stats::aggregate(data[,station.col], by=list(data[,id.col]), function(x) length(unique(x)), drop=FALSE)$x
 
 
   # determine start dates based on the 'start.point' parameter
@@ -190,12 +190,12 @@ summaryTable <- function(data,
 
   # determine end dates (if tag.duration are not available, use the last dataset detection)
   if (is.null(tag.durations)) {
-    end_dates <- rep(max(data[,datetime.col], na.rm=T), length(tagging.dates))
+    end_dates <- rep(max(data[,datetime.col], na.rm=TRUE), length(tagging.dates))
   }
 
   # days with detections (Dd)
   data$date <- strftime(data[,datetime.col], format="%d-%m-%Y", tz="UTC")
-  Dd <- stats::aggregate(data$date, by=list(data[,id.col]), function(x) length(unique(x)), drop=F)$x
+  Dd <- stats::aggregate(data$date, by=list(data[,id.col]), function(x) length(unique(x)), drop=FALSE)$x
 
   # calculate days between 1st and last detection (Di) - days at liberty
   # + 1 accounts for the inclusive nature of days (i.e., if an animal is tagged on a specific day and last detected on the same day = 1 day at liberty)
@@ -216,7 +216,7 @@ summaryTable <- function(data,
   # aggregate stats
   stats <- data.frame("ID"=levels(data[,id.col]), "Tagging date"=tag_dates, "Last detection"=last_dates,
                       "N Detect"=detections, "N Receiv"=receivers, "Monitoring duration (d)"=Dt, "Detection span (d)"=Di,
-                      "N days detected"=Dd, row.names=NULL, check.names=F)
+                      "N days detected"=Dd, row.names=NULL, check.names=FALSE)
 
   # add tag durations if available
   if(!is.null(tag.durations)){
@@ -236,7 +236,7 @@ summaryTable <- function(data,
     for (index in residency.index) {
       for (i in seq_along(data_groupped)) {
         data_subset <- data_groupped[[i]]
-        Dd_partial <- stats::aggregate(data_subset$date, by=list(data_subset[,id.col]),  function(x) length(unique(x)), drop=F)$x
+        Dd_partial <- stats::aggregate(data_subset$date, by=list(data_subset[,id.col]),  function(x) length(unique(x)), drop=FALSE)$x
         stats[paste(index, names(data_groupped)[i])] <- calculateResidencyIndex(Dd_partial, Di, Dt, index)
       }
     }
@@ -246,7 +246,7 @@ summaryTable <- function(data,
   if(!is.null(id.metadata)) {
     column_types <- sapply(1:ncol(id.metadata),function(c) class(id.metadata[,c]))
     numeric_cols <- which(column_types %in% c("numeric", "integer"))
-    animal_info <- stats::aggregate(id.metadata[,-1], by=list(id.metadata[,id.col]), function(x) paste(unique(x), collapse="/"), drop=F)
+    animal_info <- stats::aggregate(id.metadata[,-1], by=list(id.metadata[,id.col]), function(x) paste(unique(x), collapse="/"), drop=FALSE)
     animal_info[animal_info=="NA"] <- NA
     animal_info[,numeric_cols] <- as.numeric(animal_info[,numeric_cols] )
     colnames(animal_info)[1] <- "ID"
@@ -260,7 +260,7 @@ summaryTable <- function(data,
   numeric_cols <- which(column_types %in% c("numeric", "integer"))
   numeric_cols <- numeric_cols[!numeric_cols %in% IR_cols]
   decimal_digits <- apply(stats[,numeric_cols], 2, .decimalPlaces)
-  decimal_digits <- apply(decimal_digits, 2, max, na.rm=T)
+  decimal_digits <- apply(decimal_digits, 2, max, na.rm=TRUE)
   n_groups <- length(id.groups)
   group_stats <- lapply(id.groups, function(x) stats[stats$ID %in% x,])
   for(i in 1:n_groups){
@@ -268,12 +268,12 @@ summaryTable <- function(data,
     group[nrow(group)+1,] <- NA
     group$ID[nrow(group)] <- "mean"
     # format numeric columns
-    group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols], na.rm=T))
+    group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols], na.rm=TRUE))
     errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols], 2, getErrorFun)))
     group[nrow(group), numeric_cols] <- paste(group[nrow(group), numeric_cols], "\u00b1", errors)
     for(c in numeric_cols) group[-nrow(group), c] <- sprintf(paste0("%.", decimal_digits[which(numeric_cols==c)], "f"),  as.numeric(group[-nrow(group), c]))
     # format residency columns
-    group[nrow(group), IR_cols] <- sprintf("%.2f", colMeans(group[,IR_cols], na.rm=T))
+    group[nrow(group), IR_cols] <- sprintf("%.2f", colMeans(group[,IR_cols], na.rm=TRUE))
     errors <- sprintf("%.2f", unlist(apply(group[,IR_cols], 2, getErrorFun)))
     group[nrow(group), IR_cols] <- paste(group[nrow(group), IR_cols], "\u00b1", errors)
     for(c in IR_cols) group[-nrow(group), c] <- sprintf("%.2f", as.numeric(group[-nrow(group), c]))
@@ -290,7 +290,7 @@ summaryTable <- function(data,
     group_labels$ID <- names(id.groups)
     group_labels <- split(group_labels, f=group_labels$ID)
     group_labels <- group_labels[match(names(group_labels), names(id.groups))]
-    group_stats <- mapply(function(label, stats) {rbind(label, stats)}, label=group_labels, stats=group_stats, SIMPLIFY=F)
+    group_stats <- mapply(function(label, stats) {rbind(label, stats)}, label=group_labels, stats=group_stats, SIMPLIFY=FALSE)
   }
 
   # aggregate table

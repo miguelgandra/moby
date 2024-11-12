@@ -47,13 +47,31 @@
 #' @export
 
 
-plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefaults("datetime"),
-                           tagging.dates=getDefaults("tagging.dates"), tag.durations=NULL,
-                           id.groups=NULL, discard.missing=T, color.by=NULL, color.pal=NULL,
-                           date.format="%b/%y", date.interval=4, date.start=1, sunriset.coords,
-                           diel.lines=2, background.color="gray96", highlight.isolated=T,
-                           pt.cex=1.6, grid=F, grid.color="white", cex.title=2.2,
-                           cex.lab=1.8, cex.axis=1.4, cex.legend=1.6, cols=2, legend.cols=3){
+plotDetections <- function(data,
+                           id.col = getDefaults("id"),
+                           datetime.col = getDefaults("datetime"),
+                           tagging.dates = getDefaults("tagging.dates"),
+                           tag.durations = NULL,
+                           id.groups = NULL,
+                           discard.missing = TRUE,
+                           color.by = NULL,
+                           color.pal = NULL,
+                           date.format = "%b/%y",
+                           date.interval = 4,
+                           date.start = 1,
+                           sunriset.coords,
+                           diel.lines = 2,
+                           background.color = "gray96",
+                           highlight.isolated = TRUE,
+                           pt.cex = 1.6,
+                           grid = FALSE,
+                           grid.color = "white",
+                           cex.title = 2.2,
+                           cex.lab = 1.8,
+                           cex.axis = 1.4,
+                           cex.legend = 1.6,
+                           cols = 2,
+                           legend.cols = 3){
 
   ##############################################################################
   # Initial checks #############################################################
@@ -91,7 +109,7 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
 
   # discard missing animals if required
   missing_IDs <- which(table(data[,id.col])==0)
-  if(discard.missing==T){
+  if(discard.missing){
     if(length(missing_IDs)>0){
       tagging.dates <- tagging.dates[-missing_IDs]
       tag.durations <- tag.durations[-missing_IDs]
@@ -135,7 +153,7 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
   consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
   unique_dates <- unique(consec_dates)
   indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
-  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=T), max(data[,datetime.col], na.rm=T), "day"), date.format)
+  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=TRUE), max(data[,datetime.col], na.rm=TRUE), "day"), date.format)
   start <- min(which(sub("\\_.*", "", unique_dates)==detec_dates[1]))
   end <- max(which(sub("\\_.*", "", unique_dates)==detec_dates[length(detec_dates)]))
   indexes <- indexes[start:end]
@@ -152,7 +170,7 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
 
   # set layout grid
   layout_params <- .setLayout(cols, id.groups, plots.height=6, dividers.height=1, legend=TRUE)
-  nplots <- max(layout_params$matrix, na.rm=T)
+  nplots <- max(layout_params$matrix, na.rm=TRUE)
   layout_params$matrix[is.na(layout_params$matrix)] <- nplots + 1
   layout(mat=layout_params$matrix, heights=layout_params$heights)
 
@@ -175,7 +193,7 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
     # plot detections ###############################################
 
     # set plot
-    plot(x=data$day, y=data$hour, type="n", axes=F, xlim=range(complete_dates), xaxs="i",
+    plot(x=data$day, y=data$hour, type="n", axes=FALSE, xlim=range(complete_dates), xaxs="i",
          ylim=c(0,24), xlab="", ylab="", main=selected_id, cex.main=cex.title)
     # add background
     rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4], col=background.color)
@@ -183,24 +201,24 @@ plotDetections <- function(data, id.col=getDefaults("id"), datetime.col=getDefau
     if(grid==TRUE) abline(h=0:24, v=complete_dates[disp_indexes], lwd=0.05, col=grid.color)
     # add horizontal x-axis
     axis(side=1, labels=disp_dates, at=complete_dates[disp_indexes], cex.axis=cex.axis)
-    axis(side=1, labels=F, at=complete_dates[indexes], tck=-0.015, lwd.ticks=0.5)
+    axis(side=1, labels=FALSE, at=complete_dates[indexes], tck=-0.015, lwd.ticks=0.5)
     # add vertical y-axis
     if(i %in% layout_params$matrix[,1]){
       #mtext(text="Hour", side=2, line=4.5, cex=cex.lab)
       title(ylab="Hour", cex.lab=cex.lab, line=4, xpd=NA)
       axis(2, labels=hour_labels, at=seq(0, 24, by=2), tck=-0.03, cex.axis=cex.axis, las=1)
-      axis(2, labels=F, at=0:24, tck=-0.015, lwd.ticks=0.5)
+      axis(2, labels=FALSE, at=0:24, tck=-0.015, lwd.ticks=0.5)
     }
     # draw points
     if(nrow(data_plot)>0){
       # if highlight.isolated, reorder detections using run length encoding
-      if(highlight.isolated==T){
+      if(highlight.isolated){
         data_plot <- data_plot[!is.na(data_plot[,color.by]),]
         runs <- rle(as.character(data_plot[,color.by]))
         data_plot$run_length <- rep(runs$lengths, runs$lengths)
         data_plot$run_value <- rep(runs$values, runs$lengths)
         data_plot <- data_plot[!is.na(data_plot$run_value),]
-        data_plot <- data_plot[order(data_plot$run_length, decreasing=T),]
+        data_plot <- data_plot[order(data_plot$run_length, decreasing=TRUE),]
       }
       points(x=data_plot$day, y=data_plot$hour, col=color.pal[data_plot[,color.by]], pch=16, cex=pt.cex)
     }

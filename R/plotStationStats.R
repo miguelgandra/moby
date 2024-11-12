@@ -80,24 +80,27 @@ plotStationStats <- function(data,
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-  # save the current par settings
-  original_par <- par(no.readonly=TRUE)
-
   # validate additional parameters
   errors <- c()
   # check type argument
-  if(length(type)>4) errors <- c(errors, "Currently only a maximum of four 'types' can be defined")
-  if(any(!type %in% c("detections", "average detections", "individuals", "co-occurrences"))) errors <- c(errors, "Wrong 'type' argument. Please choose up to two of: 'detections', 'average detections', 'individuals' or 'co-occurrences'")
-  if(!is.null(id.groups) && !group.comparisons %in% c("within", "between", "all")) errors <- c(errors, "Wrong 'group.comparisons' argument. Please choose one of: 'within', 'between' or 'all'")
+  if(length(type)>4) errors <- c(errors, "Currently only a maximum of four 'types' can be defined.")
+  if(any(!type %in% c("detections", "average detections", "individuals", "co-occurrences"))) errors <- c(errors, "Wrong 'type' argument. Please choose up to two of: 'detections', 'average detections', 'individuals' or 'co-occurrences'.")
+  if(!is.null(id.groups) && !group.comparisons %in% c("within", "between", "all")) errors <- c(errors, "Wrong 'group.comparisons' argument. Please choose one of: 'within', 'between' or 'all'.")
   if(length(errors)>0){
-    stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
     stop(stop_message, call.=FALSE)
   }
 
+  # save the current par settings and ensure they are restored upon function exit
+  original_par <- par(no.readonly=TRUE)
+  on.exit(par(original_par))
+
   # convert station column to a factor if not already
-  if(class(data[,station.col])!="factor"){
-    warning("Converting station.col to factor", call.=FALSE)
-    data[,station.col] <- as.factor(data[,station.col])}
+  if(!is.factor(data[,station.col])){
+    warning("Converting 'station.col' to factor.", call.=FALSE)
+    data[,station.col] <- as.factor(data[,station.col])
+  }
 
   # check for and set grouping variable
   if(is.null(aggregate.by)){
@@ -117,10 +120,10 @@ plotStationStats <- function(data,
   }
 
   # convert aggregation column to factor if not already
-  if(class(data[,aggregate.by])!="factor"){
-    warning("Converting aggregate.by to factor", call.=FALSE)
-    data[,aggregate.by] <- as.factor(data[,aggregate.by])}
-
+  if(!is.factor(data[,aggregate.by])){
+    warning("Converting 'aggregate.by' to factor.", call.=FALSE)
+    data[,aggregate.by] <- as.factor(data[,aggregate.by])
+  }
 
 
   ######################################################################################
@@ -135,7 +138,7 @@ plotStationStats <- function(data,
       data_list <- lapply(data_list, function(x) {x[,id.col] <- droplevels(x[,id.col]); return(x)})
     }else if(group.comparisons=="between"){
       group_comb <- t(combn(names(id.groups), 2))
-      group_comb_names <- apply(group_comb, 1, function(x) paste0(x, collapse="<->"))
+      group_comb_names <- apply(group_comb, 1, function(x) paste0(x, collapse=" <-> "))
       comb_ids <- apply(group_comb, 1, function(x) ids_table$ID[ids_table$group %in% x], simplify=F)
       data_list <- lapply(comb_ids, function(x) data[data[,id.col] %in% x,])
       data_list <- lapply(data_list, function(x) {x[,id.col] <- droplevels(x[,id.col]); return(x)})
@@ -144,7 +147,7 @@ plotStationStats <- function(data,
       data_list <- lapply(id.groups, function(x) data[data[,id.col] %in% x,])
       data_list <- lapply(data_list, function(x) {x[,id.col] <- droplevels(x[,id.col]); return(x)})
       group_comb <- t(combn(names(id.groups), 2))
-      group_comb_names <- apply(group_comb, 1, function(x) paste0(x, collapse="<->"))
+      group_comb_names <- apply(group_comb, 1, function(x) paste0(x, collapse=" <-> "))
       comb_ids <- apply(group_comb, 1, function(x) ids_table$ID[ids_table$group %in% x], simplify=F)
       data_group <- lapply(comb_ids, function(x) data[data[,id.col] %in% x,])
       data_group <- lapply(data_group, function(x) {x[,id.col] <- droplevels(x[,id.col]); return(x)})
@@ -411,14 +414,17 @@ plotStationStats <- function(data,
     box()
   }
 
-  # restore the original par settings
-  on.exit(par(original_par))
 }
 
 
 ################################################################################
-# Auxiliary function - count nº of co-occurring groups in each timebin #########
+# Auxiliary function ###########################################################
 ################################################################################
+
+#' Count nº of co-occurring groups in each timebin
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
 
 .countJointDetections <- function(row, comparison, groups) {
   row <- as.character(row)

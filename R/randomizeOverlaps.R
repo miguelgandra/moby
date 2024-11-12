@@ -86,7 +86,7 @@ randomizeOverlaps <- function(table,
 
   # validate parameters
   errors <- c()
-  if (!is.data.frame(table)) errors <- c(errors, "The 'table' argument must be a data frame")
+  if (!is.data.frame(table)) errors <- c(errors, "The 'table' argument must be a data frame.")
   if(!c("ids") %in% names(attributes(table))) errors <- c(errors, "The supplied table does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
   if (!is.data.frame(overlaps) || !c("ids") %in% names(attributes(overlaps))) errors <- c(errors, "'overlaps' format not recognized. Please make sure to use the output from the 'calculateOverlap' function.")
   if (!is.null(constraint.by) && !all(constraint.by %in% colnames(table))) errors <- c(errors,  "Constraint variable(s) not found in the supplied table.")
@@ -117,9 +117,6 @@ randomizeOverlaps <- function(table,
   metric <- attributes(overlaps)$metric
   subset <- attributes(overlaps)$subset
 
-  # initialize ID variable
-  selected_ids <- complete_ids
-
   # reorder ID levels if ID groups are defined
   if (!is.null(id.groups)) {
     if (any(duplicated(unlist(id.groups)))) stop("Repeated ID(s) in id.groups", call.=FALSE)
@@ -132,18 +129,14 @@ randomizeOverlaps <- function(table,
     discard_cols <- id_cols[!colnames(table)[id_cols] %in% selected_ids]
     if (length(discard_cols) > 0) {
       table <- table[, -discard_cols]
+      complete_ids <- complete_ids[-discard_indexes]
       start_dates <- start_dates[-discard_indexes]
       end_dates <- end_dates[-discard_indexes]
     }
-  }
-
-  # remove individuals with no detections
-  missing_individuals <- names(which(is.na(end_dates)))
-  if (length(missing_individuals) > 0) {
-    table <- table[,-which(colnames(table) %in% missing_individuals)]
-    selected_ids <- selected_ids[-which(selected_ids %in% missing_individuals)]
-    start_dates <- start_dates[-which(names(start_dates) %in% missing_individuals)]
-    end_dates <- end_dates[-which(names(end_dates) %in% missing_individuals)]
+    # generate all unique pairs including self-comparisons
+    group_names <- names(id.groups)
+    ordered_types <- sapply(1:length(group_names), function(t) paste(group_names[t], "<->", group_names[t:length(group_names)]))
+    ordered_types <- unlist(ordered_types)
   }
 
 
@@ -158,8 +151,8 @@ randomizeOverlaps <- function(table,
   if(!is.null(random.seed)) set.seed(random.seed)
 
   # retrieve number of animals
-  n_ids <- length(selected_ids)
-  animal_cols <- which(colnames(table) %in% selected_ids)
+  n_ids <- length(complete_ids)
+  animal_cols <- which(colnames(table) %in% complete_ids)
 
   # create constraint variable
   if(!is.null(constraint.by)){
@@ -215,11 +208,11 @@ randomizeOverlaps <- function(table,
       # start iterations
       for (i in 1:iterations) {
         # randomize data table
-        randomized_table <- randomize(table, id.cols=animal_cols, start_dates, end_dates)
+        randomized_table <- .randomize(subset_table, id.cols=animal_cols, timebin.col, start_dates, end_dates)
         # calculate overlap
         random_overlaps <- lapply(1:n_pairs, function(p){
-          pairwiseOverlapLite(p, table=randomized_table, pairwise_combinations, selected_ids,
-                              id.groups, group.comparisons, start_dates, end_dates, metric)})
+          .pairwiseOverlapLite(p, table=randomized_table, pairwise_combinations, complete_ids,
+                               id.groups, timebin.col, group.comparisons, start_dates, end_dates, metric)})
         # save results
         random_results[[i]] <- unlist(random_overlaps)
 
@@ -238,9 +231,10 @@ randomizeOverlaps <- function(table,
       if(s==1) cat(paste0("Starting parallel computation: ", cores, " cores\n"))
       if(!is.null(subset)) cat(paste0("Running permutations - ", names(subset_list$table)[s], "\n"))
 
-      # initialize cluster
+      # initialize cluster and ensure it's properly stopped when the function exits
       cl <- parallel::makeCluster(cores)
       doSNOW::registerDoSNOW(cl)
+      on.exit(parallel::stopCluster(cl))
 
       # set progress bar
       pb <- txtProgressBar(max=iterations, initial=0, style=3)
@@ -248,15 +242,14 @@ randomizeOverlaps <- function(table,
 
       # start iterations (using parallelization)
       random_results <- foreach::foreach(i=1:iterations, .options.snow=opts,
-                                         .export=c("randomize", "sampleCols", "pairwiseOverlapLite")) %dopar% {
-                                           randomized_table <- randomize(table, id.cols=animal_cols, start_dates, end_dates)
-                                           unlist(lapply(1:n_pairs, function(p){pairwiseOverlapLite(p, table=randomized_table, pairwise_combinations, selected_ids,
-                                                                                                    id.groups, group.comparisons, start_dates, end_dates, metric)}))
+                                         .export=c(".randomize", ".sampleCols", ".pairwiseOverlapLite")) %dopar% {
+                                           randomized_table <- .randomize(table, id.cols=animal_cols, timebin.col, start_dates, end_dates)
+                                           unlist(lapply(1:n_pairs, function(p){.pairwiseOverlapLite(p, table=randomized_table, pairwise_combinations, complete_ids,
+                                                                                                     id.groups, timebin.col, group.comparisons, start_dates, end_dates, metric)}))
                                          }
 
-      # close progress bar and stop cluster
+      # close progress bar
       close(pb)
-      on.exit(parallel::stopCluster(cl))
     }
 
 
@@ -264,16 +257,16 @@ randomizeOverlaps <- function(table,
     # Calculate pairwise p-values ################################################
 
     # pairwise overlap significance
-    unique_pairs <- apply(pairwise_combinations, 2, function(x) paste(selected_ids[x], collapse="-"))
+    unique_pairs <- apply(pairwise_combinations, 2, function(x) paste(complete_ids[x], collapse="-"))
     subset_overlaps$pair <- paste0(subset_overlaps$id1, "-", subset_overlaps$id2)
     pairwise_stats <- list()
-    alpha <- 1-conf.level
+    alpha <- 1 - conf.level
 
     # iterate over each dyad and calculate p-values
     for (i in 1:n_pairs) {
       null_dist <- unlist(lapply(random_results,  function(x) as.numeric(x)[i]))
       obs_overlap <- subset_overlaps$overlap[subset_overlaps$pair==unique_pairs[i]]
-      if(is.na(obs_overlap)) {pairwise_stats[[i]]<-NA; next}
+      if(is.na(obs_overlap) || length(obs_overlap)==0) {pairwise_stats[[i]]<-NA; next}
       if(all(is.na(null_dist))) {pairwise_stats[[i]]<-NA; next}
       # one-tailed test (greater than or equal to the observed value)
       if (alternative=="greater") {
@@ -297,11 +290,9 @@ randomizeOverlaps <- function(table,
       pairwise_stats[[i]] <- data.frame("pair"=unique_pairs[i], "mean_null"=mean(null_dist),
                                         "p_value"=sprintf("%.3f", pval), "association"=signif)
     }
-
     # summary stats
-    pairwise_stats <- pairwise_stats[unlist(lapply(pairwise_stats, length))>1]
     pairwise_stats <- do.call("rbind", pairwise_stats)
-    pairwise_stats <- plyr::join(subset_overlaps, pairwise_stats, by="pair", type="left")
+    pairwise_stats <- plyr::join(pairwise_stats, subset_overlaps, by="pair", type="left")
 
 
     ##############################################################################
@@ -309,33 +300,39 @@ randomizeOverlaps <- function(table,
 
     if(!is.null(id.groups)){
       pairwise_stats$type <- paste(pairwise_stats$group1, "<->", pairwise_stats$group2)
+      pairwise_stats$type <- factor(pairwise_stats$type, levels=ordered_types)
     }else{
-      pairwise_stats$type <- "All"
+      pairwise_stats$type <- factor("All")
     }
-    types <- unique(pairwise_stats$type)
+    types <- levels(pairwise_stats$type)
     type_indexes <- lapply(types, function(x) which(pairwise_stats$type==x))
     null_dist <- lapply(1:iterations, function(i) lapply(type_indexes, function(p) random_results[[i]][p]))
-    null_dist <- lapply(null_dist, function(x) lapply(x, mean, na.rm=T))
+    null_dist <- lapply(null_dist, function(x) lapply(x, mean, na.rm=TRUE))
     null_dist <- lapply(1:length(types), function(x) unlist(lapply(null_dist, function(y) y[[x]])))
     names(null_dist) <- types
     null_dist <- reshape2::melt(null_dist)
     colnames(null_dist) <- c("mean_overlap", "type")
-    mean_null <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), mean, na.rm=T)
+    null_dist$type <- factor(null_dist$type, levels=ordered_types)
+    mean_null <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), mean, na.rm=TRUE)
     colnames(mean_null) <- c("type", "mean_null")
+    mean_null <- mean_null[order(mean_null$type),]
     population_stats <- mean_null
-    population_stats$sd <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), sd, na.rm=T)$x
+    population_stats$sd <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), sd, na.rm=TRUE)$x
     population_stats$mean_null <-  paste(sprintf("%.2f", population_stats$mean_null), "\u00b1", sprintf("%.2f", population_stats$sd))
     population_stats <- population_stats[,-3]
     colnames(population_stats) <- c("Type", "Mean null distr (%)")
 
     # calculate p-values
-    obs_overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=T)$x
+    obs_overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=TRUE, drop=FALSE)$x
     null_dist <- lapply(types, function(x) null_dist$mean_overlap[null_dist$type==x])
     all_pvals <- numeric(length(types))
     all_signifs <- character(length(types))
     for (i in 1:length(types)) {
       null_dist_type <- null_dist[[i]]
-      if (alternative == "greater") {
+      if(is.na(obs_overlap[i]) || is.nan(obs_overlap[i]) || all(is.nan(null_dist[[i]]))){
+        pval <- NA
+        signif <- NA
+      } else if (alternative == "greater") {
         pval <- (sum(obs_overlap[i]>=null_dist_type)+1)/(length(null_dist_type)+1)
         signif <- if (pval < alpha) "positive" else "non-significant"
       } else if (alternative == "less") {
@@ -360,15 +357,17 @@ randomizeOverlaps <- function(table,
 
     # add nº dyads
     pairwise_stats <- pairwise_stats[!is.na(pairwise_stats$overlap),]
-    summary_table <- stats::aggregate(pairwise_stats$pair, by=list(pairwise_stats$type), function(x) length(unique(x)))
+    summary_table <- stats::aggregate(pairwise_stats$pair, by=list(pairwise_stats$type), function(x) length(unique(x)), drop=FALSE)
+    summary_table$x[is.na(summary_table$x)] <- 0
     colnames(summary_table) <- c("Type", "N dyads")
     # add mean shared period
-    summary_table$period <- round(stats::aggregate(pairwise_stats$shared_monit_days, by=list(pairwise_stats$type), mean, na.rm=T)$x)
+    summary_table$period <- round(stats::aggregate(pairwise_stats$shared_monit_days, by=list(pairwise_stats$type), mean, na.rm=TRUE, drop=FALSE)$x)
     colnames(summary_table)[3] <- "Mean interval (d)"
     # add mean overlap ± standard deviation
-    summary_table$overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=T)$x
+    summary_table$overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=TRUE, drop=FALSE)$x
     summary_table$overlap <- sprintf("%.2f", summary_table$overlap)
-    summary_table$sd <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), function(x) sd(x, na.rm=T))$x
+    summary_table$sd <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), function(x) sd(x, na.rm=TRUE), drop=FALSE)$x
+    summary_table$sd[is.na(summary_table$sd)] <- 0
     summary_table$sd <- sprintf("%.2f", summary_table$sd)
     summary_table$overlap <- paste(summary_table$overlap, "\u00b1", summary_table$sd)
     colnames(summary_table)[4] <- "Mean overlap (%)"
@@ -377,17 +376,23 @@ randomizeOverlaps <- function(table,
     summary_table <- plyr::join(summary_table, population_stats, by="Type", type="left")
     pairwise_signif <- as.data.frame.matrix(table(pairwise_stats$type, pairwise_stats$association))
     labels <- c("Pairs Non Sig","Pairs > Random","Pairs < Random")
-    colnames(pairwise_signif) <- gsub("non-significant", labels[1], colnames(pairwise_signif), fixed=T)
-    colnames(pairwise_signif) <- gsub("positive", labels[2], colnames(pairwise_signif), fixed=T)
-    colnames(pairwise_signif) <- gsub("negative", labels[3], colnames(pairwise_signif), fixed=T)
+    colnames(pairwise_signif) <- gsub("non-significant", labels[1], colnames(pairwise_signif), fixed=TRUE)
+    colnames(pairwise_signif) <- gsub("positive", labels[2], colnames(pairwise_signif), fixed=TRUE)
+    colnames(pairwise_signif) <- gsub("negative", labels[3], colnames(pairwise_signif), fixed=TRUE)
     pairwise_signif[labels[!(labels %in% colnames(pairwise_signif))]] <- 0
     pairwise_signif$Type <- rownames(pairwise_signif)
     rownames(pairwise_signif) <- NULL
     summary_table <- plyr::join(summary_table, pairwise_signif, by="Type", type="left")
+    summary_table <- summary_table[order(summary_table$Type),]
+    summary_table <- summary_table[summary_table$`N dyads`>0,]
+    summary_table$`Mean overlap (%)`[summary_table$`Mean interval (d)`==0] <- "-"
+    summary_table$`P-value`[summary_table$`Mean interval (d)`==0] <- "-"
+    summary_table$`Mean null distr (%)`[summary_table$`Mean interval (d)`==0] <- "-"
+    summary_table[is.na(summary_table)] <- "-"
 
     # clean up and format final results
     count_cols <- which(colnames(summary_table) %in% labels)
-    summary_table <- summary_table[rowSums(summary_table[,count_cols])>0,]
+    #summary_table <- summary_table[rowSums(summary_table[,count_cols])>0,]
     pairwise_stats <- pairwise_stats[,-which(colnames(pairwise_stats)=="pair")]
     if(is.null(id.groups)) {
       pairwise_stats <- pairwise_stats[,-which(colnames(pairwise_stats) %in% "type")]
@@ -460,13 +465,14 @@ randomizeOverlaps <- function(table,
   #' @keywords internal
   #' @noRd
 
-  randomize <- function(table, id.cols, start_dates, end_dates) {
+  .randomize <- function(table, id.cols, timebin.col, start_dates, end_dates) {
     # split the data by the constraint column
     data_subset <- split(table, table$constraint)
-    # apply sampleCols to each subset and combine them into one data frame
-    data_random <- do.call(rbind, lapply(data_subset, sampleCols, id.cols, start_dates, end_dates))
+    # apply .sampleCols to each subset and combine them into one data frame
+    data_random <- lapply(data_subset, .sampleCols, id.cols, start_dates, end_dates)
+    data_random <- dplyr::bind_rows(data_random)
     # order the result by timebin
-    data_random <- data_random[order(data_random$timebin), ]
+    data_random <- data_random[order(data_random[,timebin.col]), ]
     return(data_random)
   }
 
@@ -475,7 +481,7 @@ randomizeOverlaps <- function(table,
   #' within the monitoring periods of each animal, specified by start and end dates.
   #' @note This function is intended for internal use within the 'moby' package.
   #' @keywords internal
-  sampleCols <- function(x, id.cols, start_dates, end_dates) {
+  .sampleCols <- function(x, id.cols, start_dates, end_dates) {
     for (i in id.cols) {
       id <- colnames(x)[i]
       # filter rows within the monitoring period
@@ -499,14 +505,14 @@ randomizeOverlaps <- function(table,
   #' @keywords internal
   #' @noRd
 
-  pairwiseOverlapLite <- function(p, table, pairwise_combinations, selected_ids, id.groups,
-                                  group.comparisons, start_dates, end_dates, metric) {
+  .pairwiseOverlapLite <- function(p, table, pairwise_combinations, ids, id.groups,
+                                   timebin.col, group.comparisons, start_dates, end_dates, metric) {
 
     # get animal IDs
     a <- pairwise_combinations[1, p]
     b <- pairwise_combinations[2, p]
-    id1 <- selected_ids[a]
-    id2 <- selected_ids[b]
+    id1 <- ids[a]
+    id2 <- ids[b]
 
     # discard comparisons between individuals belonging to the same group or
     # skip comparisons between different groups, if required
@@ -527,8 +533,8 @@ randomizeOverlaps <- function(table,
     if (window_size <= 0) return(NA)
 
     # get pair detections
-    Ta <- table[, id1][table$timebin >= start & table$timebin <= end]
-    Tb <- table[, id2][table$timebin >= start & table$timebin <= end]
+    Ta <- table[, id1][table[,timebin.col] >= start & table[,timebin.col] <= end]
+    Tb <- table[, id2][table[,timebin.col] >= start & table[,timebin.col] <= end]
     if (length(Ta) == 0 || length(Tb) == 0) return(NA)
 
     # Number of matching detections

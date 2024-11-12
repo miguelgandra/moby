@@ -162,7 +162,7 @@ plotMaps <- function(data,
   # check the format of the kernel.densities input (if provided)
   if(!is.null(kernel.densities)){
     # validate the kernel density input format
-    if(any(grepl("kernel_density", names(kernel.densities), fixed=T))){
+    if(any(grepl("kernel_density", names(kernel.densities), fixed=TRUE))){
       kernel.densities <- kernel.densities$kernel_density
     }
     # check if the kernel density object has the correct class (second attempt)
@@ -203,7 +203,7 @@ plotMaps <- function(data,
   }
 
   # optionally discard individuals with fewer than 5 detections (as required for KUD estimation)
-  if(discard.missing==T) {
+  if(discard.missing) {
     missing_individuals <- names(table(data[,id.col])[table(data[,id.col])<=5])
     data <- data[!data[,id.col] %in% missing_individuals,]
     data[,id.col] <- droplevels(data[,id.col])
@@ -266,14 +266,14 @@ plotMaps <- function(data,
   }
 
   # handle space for a common legend, if applicable
-  if((!is.null(kernel.densities) && same.scale==T && kud.legend==T) || !is.null(background.layer)) add_legend_space <- TRUE
+  if((!is.null(kernel.densities) && same.scale && kud.legend) || !is.null(background.layer)) add_legend_space <- TRUE
   else add_legend_space <- FALSE
 
   # set layout grid
   layout_params <- .setLayout(cols, id.groups, plots.height=6, dividers.height=0.6,
                               legend=add_legend_space, min.legend.plots=1,
                               expand.legend=FALSE)
-  nplots <- max(layout_params$matrix, na.rm=T)
+  nplots <- max(layout_params$matrix, na.rm=TRUE)
   layout_params$matrix[is.na(layout_params$matrix)] <- nplots + 1
   layout(mat=layout_params$matrix, heights=layout_params$heights)
 
@@ -281,7 +281,7 @@ plotMaps <- function(data,
   oma <- c(0, 3, 0, 1)
   mar <- c(0.4, 0.4, 0.4, 0.4)
   # add additional space to the right inner margin to accommodate the legend (if needed)
-  if(kud.legend==T && same.scale==F) mar[4] <- 4.5
+  if(kud.legend && !same.scale) mar[4] <- 4.5
   # if only one group (id.groups) is being plotted, remove all outer margins
   else if(length(id.groups)==1) oma <- c(0,0,0,0)
   # apply the updated margin settings
@@ -344,11 +344,11 @@ plotMaps <- function(data,
           }
           # determine the KUD scale based on the same.scale option
           if(same.scale) kud_scale <- kud_range
-          else kud_scale <- range(kud_values, na.rm=T)
+          else kud_scale <- range(kud_values, na.rm=TRUE)
           # crop
           r <- raster::crop(r, raster::extent(bbox))
           # overlay KUD density on the plot
-          suppressWarnings(raster::image(r, zlim=kud_scale, axes=F, col=color.pal, asp=1, add=T))
+          suppressWarnings(raster::image(r, zlim=kud_scale, axes=FALSE, col=color.pal, asp=1, add=TRUE))
         }
       }
 
@@ -389,8 +389,8 @@ plotMaps <- function(data,
 
       ###########################################################
       # if same.scale is FALSE and kud.legend is TRUE, add a KUD density color legend
-      if(!is.null(kernel.densities) && same.scale==F && kud.legend && plot_kernel){
-        kud_ticks <- quantile(kud_scale, probs=seq(0, 1, by=0.2), na.rm=T)
+      if(!is.null(kernel.densities) && !same.scale && kud.legend && plot_kernel){
+        kud_ticks <- quantile(kud_scale, probs=seq(0, 1, by=0.2), na.rm=TRUE)
         kud_labels <- paste0(seq(0, 100, by=20), "%")
         # get relative plot area dimensions
         plt <- par("plt")
@@ -418,8 +418,8 @@ plotMaps <- function(data,
       first_legend <- FALSE
 
       # add color legend for uniformized KUD densities if applicable
-      if(!is.null(kernel.densities) && same.scale==T && kud.legend==T){
-        kud_ticks <- quantile(kud_range, probs=seq(0, 1, by=0.2), na.rm=T)
+      if(!is.null(kernel.densities) && same.scale && kud.legend){
+        kud_ticks <- quantile(kud_range, probs=seq(0, 1, by=0.2), na.rm=TRUE)
         kud_labels <- paste0(seq(0, 100, by=20), "%")
         first_legend <- TRUE
         .colorlegend(col=color.pal, zlim=kud_range, zval=kud_ticks, zlab=kud_labels,
@@ -430,7 +430,7 @@ plotMaps <- function(data,
 
       # add color legend for the background layer if available
       if(!is.null(background.layer)) {
-        layer_range <- range(raster::values(background.layer), na.rm=T)
+        layer_range <- range(raster::values(background.layer), na.rm=TRUE)
         layer_labs <- pretty(raster::values(background.layer), min.n=4)
         layer_labs <- layer_labs[layer_labs>=layer_range[1] & layer_labs<=layer_range[2]]
         display_digits <- max(.decimalPlaces(layer_labs))
@@ -467,7 +467,7 @@ plotMaps <- function(data,
   close(pb)
 
   # print a summary message to the console if individuals were discarded
-  if(discard.missing==T) warning(paste0(length(missing_individuals), " individual(s) with < 5 detections discarded."), call.=FALSE)
+  if(discard.missing) warning(paste0(length(missing_individuals), " individual(s) with < 5 detections discarded."), call.=FALSE)
 }
 
 

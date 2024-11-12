@@ -110,7 +110,7 @@ node sizes. Defaults to c(1, 2.2).}
 
 \item{overlap.line.lty}{Line type of the observed overlap line. Defaults to 1.}
 
-\item{hist.side}{Position of the null model histogram relative to the network plot, either "bottom" or "left". Defaults to "bottom".}
+\item{hist.side}{Position of the null model histogram relative to the network plot, either "bottom" or "right". Defaults to "bottom".}
 
 \item{standardize.freqs}{Logical. If TRUE, standardizes frequencies in the null model plot. Defaults to FALSE.}
 

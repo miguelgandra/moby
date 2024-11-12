@@ -93,7 +93,7 @@ plotRetention <- function(data,
   }
 
   # perform argument checks for von bertalanffy growth models
-  if(von.bertalanffy==TRUE){
+  if(von.bertalanffy){
     if (!requireNamespace("TropFishR", quietly=TRUE)) stop("The 'TropFishR' package is required for this function but is not installed. Please install 'TropFishR' using install.packages('TropFishR') and try again.", call.=FALSE)
     if(is.null(id.metadata) | !c("length") %in% colnames(id.metadata)) stop("'id.metadata' with a 'length' column required to apply the Von Bertalanffy Growth Model", call.=FALSE)
     if(!id.col %in% colnames(id.metadata)) stop(paste("'", id.col, "' column required in 'id.metadata'", sep=""), call.=FALSE)
@@ -108,12 +108,12 @@ plotRetention <- function(data,
   }
 
   # check von bertalanffy arguments
-  if(von.bertalanffy==T){
+  if(von.bertalanffy){
     if(is.null(VBGF.params)){
       stop("Please supply VBGF.params when von.bertalanffy is set to true")
     }
     cat(paste0("Applying Von Bertalanffy Growth curve to predict lengths at each time frame, based on the n\u00ba days passed since tagging. Assuming that the 'color.by' variable represents fish lengths\n"))
-    if(VBGF.params$Linf<max(id.metadata$length, na.rm=T)){
+    if(VBGF.params$Linf<max(id.metadata$length, na.rm=TRUE)){
       cat("Warning: Some individuals are larger than the supplied Linf (infinite length for investigated species in cm)\n")
     }
   }
@@ -127,14 +127,14 @@ plotRetention <- function(data,
   ##############################################################################
   # Prepare data ###############################################################
 
-  data_individual <- split(data, f=data[,id.col], drop=F)
-  data_individual <- mapply(getDaysAtLiberty, data=data_individual, tagdate=id.metadata[,tagdate.col], SIMPLIFY=F)
+  data_individual <- split(data, f=data[,id.col], drop=FALSE)
+  data_individual <- mapply(getDaysAtLiberty, data=data_individual, tagdate=id.metadata[,tagdate.col], SIMPLIFY=FALSE)
   data <- do.call("rbind", data_individual)
 
   ids_by_site <- split(id.metadata[,id.col], f=id.metadata[,tagsite.col])
   sample_by_site <- unlist(lapply(ids_by_site, length))
   data_attrition <- lapply(ids_by_site, function(x) data[data[,id.col] %in% x,])
-  data_attrition <- mapply(function(data,site){data[data[,spatial.col]==site,]}, data=data_attrition, site=names(data_attrition), SIMPLIFY=F)
+  data_attrition <- mapply(function(data,site){data[data[,spatial.col]==site,]}, data=data_attrition, site=names(data_attrition), SIMPLIFY=FALSE)
   data_attrition <- lapply(data_attrition, function(x) stats::aggregate(x$days_post_tag, by=list(x[,id.col]), max))
   data_attrition <- lapply(data_attrition, function(x) {colnames(x)<-c("ID", "days_post_tag"); return(x)})
   if(!is.null(color.by)){
@@ -158,32 +158,32 @@ plotRetention <- function(data,
     attrition$site <- names(data_attrition)[i]
     if(!is.null(color.by)){
       agg.fun <- match.fun(aggregate.fun)
-      if(von.bertalanffy==T){
+      if(von.bertalanffy){
         lengths_at_tagging <-  sapply(days_seq[[i]], function(d) data_attrition[[i]][,color.by][data_attrition[[i]]$days_post_tag>=d])
-        ages_at_tagging <- sapply(lengths_at_tagging, function(l) TropFishR::VBGF(param=VBGF.params, L=l, na.rm=F))
-        ages_at_period <- mapply(function(ages, days_after){ages+(days_after/365)}, ages=ages_at_tagging, days_after=days_seq[[i]], SIMPLIFY=F)
+        ages_at_tagging <- sapply(lengths_at_tagging, function(l) TropFishR::VBGF(param=VBGF.params, L=l, na.rm=FALSE))
+        ages_at_period <- mapply(function(ages, days_after){ages+(days_after/365)}, ages=ages_at_tagging, days_after=days_seq[[i]], SIMPLIFY=FALSE)
         ages_at_period <- lapply(ages_at_period, function(x) {x[is.nan(x)]<-100; return(x)})
-        lengths_at_period <- sapply(ages_at_period, function(a) TropFishR::VBGF(param=VBGF.params, t=a, na.rm=F))
-        attrition$aggr_stat <-  sapply(lengths_at_period, function(l) agg.fun(l, na.rm=T))
+        lengths_at_period <- sapply(ages_at_period, function(a) TropFishR::VBGF(param=VBGF.params, t=a, na.rm=FALSE))
+        attrition$aggr_stat <-  sapply(lengths_at_period, function(l) agg.fun(l, na.rm=TRUE))
       }else{
-        attrition$aggr_stat <-  sapply(days_seq[[i]], function(d) agg.fun(data_attrition[[i]][,color.by][data_attrition[[i]]$days_post_tag>=d], na.rm=T))
+        attrition$aggr_stat <-  sapply(days_seq[[i]], function(d) agg.fun(data_attrition[[i]][,color.by][data_attrition[[i]]$days_post_tag>=d], na.rm=TRUE))
       }
     }
     attritions[[i]] <- attrition
   }
 
   # retrieve min and max values for the color.by var to uniformize color scale
-  if(!is.null(color.by) & same.scale==T){
+  if(!is.null(color.by) & same.scale){
     var_range <- do.call("rbind", attritions)
-    var_range <- range(var_range$aggr_stat, na.rm=T)
+    var_range <- range(var_range$aggr_stat, na.rm=TRUE)
   }
 
   # assign colors
   for(i in 1:length(attritions)){
     if(!is.null(color.by)){
-      if(same.scale==T){breaks <- seq(var_range[1], var_range[2], length.out=100)
+      if(same.scale){breaks <- seq(var_range[1], var_range[2], length.out=100)
       }else{breaks <- 100}
-      attritions[[i]]$color <- color.pal[as.numeric(cut(attritions[[i]]$aggr_stat, breaks=breaks, include.lowest=T))]
+      attritions[[i]]$color <- color.pal[as.numeric(cut(attritions[[i]]$aggr_stat, breaks=breaks, include.lowest=TRUE))]
     }else{
       attritions[[i]]$color <- color.pal
     }
@@ -201,7 +201,7 @@ plotRetention <- function(data,
   # generate a plot per site
   for(i in 1:length(attritions)){
     attrition <- attritions[[i]]
-    plot(x=attrition$days_post_tag, y=attrition$percentage, type="n", axes=F, xlim=c(0,max_days), xlab="", ylab="", ylim=c(0, max_percent+2))
+    plot(x=attrition$days_post_tag, y=attrition$percentage, type="n", axes=FALSE, xlim=c(0,max_days), xlab="", ylab="", ylim=c(0, max_percent+2))
     rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col=background.col, border=NA)
     abline(h=seq(0,100, by=10), lwd=0.05, col="grey70")
     points(attrition$days_post_tag, y=attrition$percentage, type="l", lwd=0.6)
@@ -212,8 +212,8 @@ plotRetention <- function(data,
     axis(1, at=pretty(c(0, max_days)), labels=pretty(c(0, max_days)), cex.axis=0.9)
     axis(2, at=pretty(c(0, max_percent)), labels=pretty(c(0, max_percent)), cex.axis=0.9, las=1)
     box()
-    legend.title <- ifelse(von.bertalanffy==F, paste(aggregate.fun, color.by), paste("predicted", aggregate.fun, color.by))
-    if(same.scale==T){
+    legend.title <- ifelse(!von.bertalanffy, paste(aggregate.fun, color.by), paste("predicted", aggregate.fun, color.by))
+    if(same.scale){
       length_labs <- pretty(var_range, min.n=4)
       length_labs <- length_labs[length_labs>=min(var_range) & length_labs<=max(var_range)]
       .colorlegend(col=color.pal, zlim=var_range, zval=length_labs,
