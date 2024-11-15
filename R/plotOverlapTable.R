@@ -39,7 +39,7 @@ plotOverlapTable <- function(randomized.overlaps,
                              group.comparisons = "both",
                              color.pal = NULL,
                              discard.empty = TRUE,
-                             id.col = getDefaults("id"),
+                             id.col = getDefaults("ID"),
                              full.scale = FALSE,
                              sort.by = NULL) {
 

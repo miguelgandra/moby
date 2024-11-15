@@ -100,7 +100,7 @@
 #' @export
 
 plotMigrations <- function(data,
-                           id.col = getDefaults("id"),
+                           id.col = getDefaults("ID"),
                            lon.col = getDefaults("lon"),
                            lat.col = getDefaults("lat"),
                            datetime.col = getDefaults("datetime"),

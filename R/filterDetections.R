@@ -52,7 +52,7 @@
 filterDetections <- function(data,
                              tagging.dates = getDefaults("tagging.dates"),
                              cutoff.dates = NULL,
-                             id.col = getDefaults("id"),
+                             id.col = getDefaults("ID"),
                              datetime.col = getDefaults("datetime"),
                              lon.col = getDefaults("lon"),
                              lat.col = getDefaults("lat"),

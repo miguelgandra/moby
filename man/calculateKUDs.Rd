@@ -11,7 +11,7 @@ calculateKUDs(
   subset = NULL,
   id.groups = NULL,
   land.shape = NULL,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   epsg.code = getDefaults("epsg"),

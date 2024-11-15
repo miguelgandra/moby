@@ -104,9 +104,9 @@ calculateOverlap <- function(table,
   if (!metric %in% c("simple-ratio", "half-weight")) errors <- c(errors, "Metric must be one of 'simple-ratio' or 'half-weight'.")
   if (!group.comparisons %in% c("all", "within", "between")) errors <- c(errors, "Group comparisons must be one of 'all', 'within' or 'between'.")
   if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "The 'cores' parameter must be a positive integer.")
-  if (cores>1 && requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
-  if (cores>1 && requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
-  if (cores>1 && requireNamespace("parallel", quietly=TRUE)){
+  if (cores>1 && !requireNamespace("foreach", quietly=TRUE)) errors <- c(errors, "The 'foreach' package is required for parallel computing but is not installed. Please install 'foreach' using install.packages('foreach') and try again.")
+  if (cores>1 && !requireNamespace("doSNOW", quietly=TRUE)) errors <- c(errors, "The 'doSNOW' package is required for parallel computing but is not installed. Please install 'doSNOW' using install.packages('doSNOW') and try again.")
+  if (cores>1 && !requireNamespace("parallel", quietly=TRUE)){
     errors <- c(errors, "The 'parallel' package is required for parallel computing but is not installed. Please install 'parallel' using install.packages('parallel') and try again.")
   }else if(parallel::detectCores()<cores){
     errors <- c(errors, paste("Please choose a different number of cores for parallel computing (only", parallel::detectCores(), "available)."))
@@ -186,9 +186,11 @@ calculateOverlap <- function(table,
   # iterate over each data subset
   for (i in 1:length(data_list)) {
 
-    # set variables
-    data <- data_list[[i]]
+    # print message to console
     .printConsole(paste0("Calculating overlap - ", names(data_list)[i]))
+
+    # retrieve current data subset
+    data <- data_list[[i]]
 
     # create list of variables to export to each worker
     args <- list(pairwise_combinations=pairwise_combinations, complete_ids=complete_ids,
@@ -196,19 +198,16 @@ calculateOverlap <- function(table,
                  id.groups=id.groups, group.comparisons=group.comparisons,
                  timebin.col=timebin.col, data=data, metric=metric)
 
+    # set progress bar
+    pb <- txtProgressBar(max=ncol(pairwise_combinations), initial=0, style=3)
+
     ###################################################################
     # calculate pairwise results using the default method (single core)
     if (cores == 1) {
 
-      # Set progress bar
-      pb <- txtProgressBar(max=ncol(pairwise_combinations), initial=0, style=3)
-
-      # Calculate pairwise overlaps
-      results[[i]] <- lapply(1:ncol(pairwise_combinations), function(p) pairwiseOverlap(p, progressbar=pb, args=args))
+      # calculate pairwise overlaps
+      results[[i]] <- lapply(1:ncol(pairwise_combinations), function(p) .pairwiseOverlap(p, progressbar=pb, args=args))
       results[[i]] <- plyr::rbind.fill(results[[i]])
-
-      # Close progress bar
-      close(pb)
 
       #############################################################
       # else use parallel computing to speed up calculations
@@ -217,32 +216,34 @@ calculateOverlap <- function(table,
       # print to console
       cat(paste0("Starting parallel computation: ", cores, " cores\n"))
 
-      # initialize cluster
+      # initialize cluster and ensure it's properly stopped when the function exits
       cl <- parallel::makeCluster(cores)
+      on.exit(parallel::stopCluster(cl))
       doSNOW::registerDoSNOW(cl)
 
       # set progress bar
-      pb <- txtProgressBar(max=ncol(pairwise_combinations), initial=0, style=3)
       opts <- list(progress = function(n) setTxtProgressBar(pb, n))
 
-      # calculate pairwise overlaps (multi core)
+      # calculate pairwise overlaps (multi-core)
       results[[i]] <- foreach::foreach(
         p = 1:ncol(pairwise_combinations),
         .combine = rbind,
         .options.snow = opts,
-        .export = "pairwiseOverlap"
+        .export = ".pairwiseOverlap"
         ) %dopar% {
-        pairwiseOverlap(p, progressbar = NULL, args =args)
+        .pairwiseOverlap(p, progressbar=NULL, args=args)
         }
-
-
-      # close progress bar and stop cluster
-      close(pb)
-      on.exit(parallel::stopCluster(cl))
     }
+
+    # close progress bar and stop cluster
+    close(pb)
   }
 
-  # format final results
+  ##############################################################################
+  # Format result ##############################################################
+  ##############################################################################
+
+  # if a subset was specified, add a 'subset' column and bind all results into a single data frame
   if (!is.null(subset)){
     for(i in 1:length(data_list)) results[[i]]$subset <- names(data_list)[i]
     results <- do.call("rbind", results)
@@ -255,9 +256,19 @@ calculateOverlap <- function(table,
 
   # remove dyads containing individuals without detections
   if (length(missing_individuals) > 0){
-    results <- results[-which(results$id1 %in% missing_individuals),]
-    results <- results[-which(results$id2 %in% missing_individuals),]
+    #results <- results[-which(results$id1 %in% missing_individuals),]
+    #results <- results[-which(results$id2 %in% missing_individuals),]
     cat(paste0(length(missing_individuals), " individual(s) with no detections\n"))
+  }
+
+  # create a new group comparison 'type' column in results
+  if(!is.null(id.groups)){
+    group_names <- names(id.groups)
+    ordered_types <- sapply(1:length(group_names), function(t) paste(group_names[t], "<->", group_names[t:length(group_names)]))
+    ordered_types <- unlist(ordered_types)
+    results$type <-  paste(results$group1, "<->", results$group2)
+    results$type <- ifelse(results$type %in% ordered_types, results$type,  paste(results$group2, "<->", results$group1))
+    results$type <- factor(results$type, levels=ordered_types)
   }
 
   # create new attributes to save relevant variables
@@ -291,7 +302,7 @@ calculateOverlap <- function(table,
 #' @keywords internal
 #' @noRd
 
-pairwiseOverlap <- function(p, progressbar=NULL, args=NULL) {
+.pairwiseOverlap <- function(p, progressbar=NULL, args=NULL) {
 
   # update progress bar
   if (!is.null(progressbar)) setTxtProgressBar(progressbar, p)
@@ -319,7 +330,6 @@ pairwiseOverlap <- function(p, progressbar=NULL, args=NULL) {
     group2 <- which(unlist(lapply(id.groups, function(x) id2 %in% x)))
     result$group1 <- names(id.groups)[group1]
     result$group2 <- names(id.groups)[group2]
-    result$type <- paste(result$group1, "<->", result$group2)
     if (group.comparisons == "within" & group1 != group2) return()
     if (group.comparisons == "between" & group1 == group2) return()
   }

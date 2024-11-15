@@ -10,7 +10,7 @@ movementTable(
   land.shape,
   epsg.code = getDefaults("epsg"),
   id.groups = NULL,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   timebin.col = getDefaults("timebin"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),

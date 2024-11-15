@@ -142,7 +142,9 @@
   # validate station.col #######################################################
   if ("station.col" %in% names(args)) {
     station.col <- args$station.col
-    errors <- c(errors, checkColumn(station.col, "station column"))
+    if(!is.null(station.col)){
+      errors <- c(errors, checkColumn(station.col, "station column"))
+    }
   }
 
   ##############################################################################

@@ -51,7 +51,7 @@
 #' }
 
 createWideTable <- function(data,
-                            id.col = getDefaults("id"),
+                            id.col = getDefaults("ID"),
                             timebin.col = getDefaults("timebin"),
                             value.col,
                             start.dates = NULL,

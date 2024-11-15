@@ -29,7 +29,7 @@ plotOverlap(
   edge.curved = 0.5,
   edge.width = c(0.4, 3.5),
   edge.label.cex = 1.4,
-  edge.label.color = "black",
+  edge.label.color = edge.color,
   edge.label.font = 1,
   background.col = "grey96",
   overlap.line.color = "red2",
@@ -54,11 +54,15 @@ Alternatively, it can be set to 'group' (default) to assign different colors to 
 \item{remove.missing}{Logical. If TRUE, excludes individuals without detections and null pairwise comparisons from the network.
 Defaults to FALSE.}
 
-\item{min.val}{Minimum value for overlap threshold. Defaults to the 50\% quantile of the overlap values.}
+\item{min.val}{Minimum value for overlap threshold. Can be a single value (used for all networks)
+or a vector with one value per network. Defaults to the 50\% quantile of the overlap values.}
 
-\item{cut.val}{Cutoff value for overlap threshold. Defaults to the 90\% quantile of the overlap values.}
+\item{cut.val}{Cutoff value for overlap threshold. Can be a single value (used for all networks)
+or a vector with one value per network. Defaults to the 90\% quantile of the overlap values.}
 
-\item{group.order}{Order of groups for plotting. Defaults to NULL.}
+\item{group.order}{A vector specifying the order in which each group comparison type should be plotted.
+This parameter can also be used to select and plot only a subset of the available comparisons.
+When set to \code{NULL} (the default), all comparisons are plotted in their original order.}
 
 \item{plot.stats}{Logical. If TRUE, additional network metrics are plotted
 below each network. Defaults to TRUE.}
@@ -90,7 +94,8 @@ node sizes. Defaults to c(1, 2.2).}
 
 \item{nodes.label.color}{Color of the node labels. Defaults to white.}
 
-\item{edge.color}{Color(s) for the edges. Defaults to NULL, which averages node colors.}
+\item{edge.color}{Color(s) for the edges. Can be a single value (used for all networks)
+or a vector with one value per network. Defaults to NULL, which averages node colors.}
 
 \item{edge.curved}{Numeric value or logical indicating the curvature of the edges. Defaults to 0.5.}
 
@@ -98,7 +103,7 @@ node sizes. Defaults to c(1, 2.2).}
 
 \item{edge.label.cex}{Font size for edge labels. Defaults to 1.}
 
-\item{edge.label.color}{Color of the edge labels. Defaults to black.}
+\item{edge.label.color}{Color of the edge labels. Defaults to edge.color.}
 
 \item{edge.label.font}{Font type for edge labels (1 is plain, 2 is bold, 3 is italic, 4 is bold and italic, 5 is symbol font). Defaults to 1.}
 

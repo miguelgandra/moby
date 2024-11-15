@@ -39,7 +39,7 @@
 plotRetention <- function(data,
                           id.metadata,
                           spatial.col = "habitat",
-                          id.col = getDefaults("id"),
+                          id.col = getDefaults("ID"),
                           tagging.dates = getDefaults("tagging.dates"),
                           tagsite.col = "tagging_location",
                           color.by = NULL,

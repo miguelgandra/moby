@@ -8,7 +8,7 @@ plotCWTs(
   data,
   variable,
   plot.title = paste("Wavelet Power Spectrum -", tools::toTitleCase(variable)),
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   timebin.col = getDefaults("timebin"),
   id.groups = NULL,
   wavelet.type = "MORLET",

@@ -7,6 +7,7 @@
 plotStationsMap(
   data,
   split.by = NULL,
+  id.col = getDefaults("ID"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   pie.color = NULL,
@@ -25,11 +26,13 @@ plotStationsMap(
 
 \item{split.by}{If defined, detection frequencies on each receiver are calculated
 separately for each level of this variable. If NULL, frequencies are calculated
-for the entire study duration. Defaults to "timeofday".}
+for the entire study duration. Defaults to "timeofday"..}
 
-\item{lon.col}{Name of the column containing longitude values.}
+\item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lat.col}{Name of the column containing latitude values.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
 
 \item{pie.color}{Color of the pie charts. Single value if 'split.by' is not defined, otherwise
 a vector containing the same number of colors as the number of levels in the grouping variable.}

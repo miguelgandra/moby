@@ -6,7 +6,7 @@
 \usage{
 plotAbacus(
   data,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   datetime.col = getDefaults("datetime"),
   color.by = NULL,
   tagging.dates = getDefaults("tagging.dates"),

@@ -8,12 +8,11 @@
 #' average of detection frequencies per receiver are displayed above. Additionally,
 #' detection frequencies can be calculated separately by a grouping variable (e.g. diel phase).
 #'
+#' @inheritParams setDefaults
 #' @param data A data frame containing animal detections with corresponding time-bins.
 #' @param split.by If defined, detection frequencies on each receiver are calculated
 #' separately for each level of this variable. If NULL, frequencies are calculated
-#' for the entire study duration. Defaults to "timeofday".
-#' @param lon.col Name of the column containing longitude values.
-#' @param lat.col Name of the column containing latitude values.
+#' for the entire study duration. Defaults to "timeofday"..
 #' @param pie.color Color of the pie charts. Single value if 'split.by' is not defined, otherwise
 #' a vector containing the same number of colors as the number of levels in the grouping variable.
 #' @param land.shape A shape file containing coastlines.
@@ -35,6 +34,7 @@
 
 plotStationsMap <- function(data,
                             split.by = NULL,
+                            id.col = getDefaults("ID"),
                             lon.col = getDefaults("lon"),
                             lat.col = getDefaults("lat"),
                             pie.color = NULL,
@@ -66,14 +66,14 @@ plotStationsMap <- function(data,
   ## Calculate average proportion of detections per receiver #################
 
   # split COAs from different individuals
-  data_individual <- split(data, f=data$ID)
+  data_individual <- split(data, f=data[,id.col])
   data_plot <- list()
 
   # if split.by is not defined, calculate average of overall detection frequencies
   if(is.null(split.by)){
     for(f in 1:length(data_individual)) {
       detections <- data_individual[[f]]
-      data_stations <- stats::aggregate(detections$timebin, by=list(detections$ID, detections$station), length)
+      data_stations <- stats::aggregate(detections$timebin, by=list(detections[,id.col], detections$station), length)
       colnames(data_stations) <- c("ID", "station", "detections")
       data_stations$detections[is.na(data_stations$detections)] <- 0
       data_stations$freq <- data_stations$detections / sum(data_stations$detections)

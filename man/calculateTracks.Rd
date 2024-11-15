@@ -10,7 +10,7 @@ calculateTracks(
   epsg.code = getDefaults("epsg"),
   grid.resolution = 100,
   mov.directions = 16,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   cores = 1,

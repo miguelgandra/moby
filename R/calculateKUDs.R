@@ -127,7 +127,7 @@ calculateKUDs <- function(data,
                           subset = NULL,
                           id.groups = NULL,
                           land.shape = NULL,
-                          id.col = getDefaults("id"),
+                          id.col = getDefaults("ID"),
                           lon.col = getDefaults("lon"),
                           lat.col=getDefaults("lat"),
                           epsg.code = getDefaults("epsg"),
@@ -474,6 +474,7 @@ calculateKUDs <- function(data,
 
   # round the cell size to the nearest 50
   rounded_cell_size <- round(cell_size/50) * 50
+  if(rounded_cell_size==0) rounded_cell_size <- 5
 
   # create raster grid
   spatial.grid <- raster::raster(raster::extent(grid_bbox), res=rounded_cell_size, crs=epsg.code$proj4string)

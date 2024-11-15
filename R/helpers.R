@@ -1077,12 +1077,15 @@ if (!exists("rep_len")) {
   if(inherits(spatial.layer, "sf")) layer_epsg <- sf::st_crs(spatial.layer)
   else if(inherits(spatial.layer, "Raster")) layer_epsg <- sf::st_crs(raster::crs(spatial.layer)@projargs)
 
-  # check if epsg.code is a 'crs' object or an integer
+  # check if epsg.code is a projected 'crs' object or an integer
   if(epsg_supplied){
     if(inherits(epsg.code, "numeric")) {
       epsg.code <- sf::st_crs(epsg.code)
     }else if(!inherits(epsg.code, "crs")) {
       stop("Invalid EPSG code format. Must be either a numeric value or a valid 'crs' object.", call.=FALSE)
+    }
+    if(!is.na(epsg.code$epsg) && epsg.code$epsg==4326){
+      stop("Invalid EPSG code. The supplied code corresponds to WGS84 (EPSG:4326), a geographic coordinate system. Please provide a projected coordinate system instead.", call. = FALSE)
     }
   }
 

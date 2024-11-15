@@ -9,7 +9,7 @@ summaryTable(
   tagging.dates = getDefaults("tagdates"),
   tag.durations = NULL,
   id.metadata = NULL,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   datetime.col = getDefaults("datetime"),
   station.col = getDefaults("station"),
   residency.index = c("IR1", "IR2", "IWR"),

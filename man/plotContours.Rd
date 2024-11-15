@@ -11,7 +11,7 @@ plotContours(
   plot.title = NULL,
   split.by = NULL,
   aggregate.fun = function(x) mean(x, na.rm = TRUE),
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   datetime.col = getDefaults("datetime"),
   color.pal = NULL,
   diel.lines = 4,

@@ -117,28 +117,10 @@ randomizeOverlaps <- function(table,
   metric <- attributes(overlaps)$metric
   subset <- attributes(overlaps)$subset
 
-  # reorder ID levels if ID groups are defined
-  if (!is.null(id.groups)) {
-    if (any(duplicated(unlist(id.groups)))) stop("Repeated ID(s) in id.groups", call.=FALSE)
-    if (any(!unlist(id.groups) %in% complete_ids)) stop("Some of the ID(s) in id.groups were not found in the supplied table", call.=FALSE)
-
-    # remove individuals not present in ID groups
-    selected_ids <- unique(unlist(id.groups))
-    discard_indexes <- which(!complete_ids %in% selected_ids)
-    id_cols <- which(colnames(table) %in% complete_ids)
-    discard_cols <- id_cols[!colnames(table)[id_cols] %in% selected_ids]
-    if (length(discard_cols) > 0) {
-      table <- table[, -discard_cols]
-      complete_ids <- complete_ids[-discard_indexes]
-      start_dates <- start_dates[-discard_indexes]
-      end_dates <- end_dates[-discard_indexes]
-    }
-    # generate all unique pairs including self-comparisons
-    group_names <- names(id.groups)
-    ordered_types <- sapply(1:length(group_names), function(t) paste(group_names[t], "<->", group_names[t:length(group_names)]))
-    ordered_types <- unlist(ordered_types)
+  # get group interaction types
+  if(!is.null(id.groups)) {
+    ordered_types <- levels(overlaps$type)
   }
-
 
   ##############################################################################
   ## Prepare data ##############################################################
@@ -181,19 +163,28 @@ randomizeOverlaps <- function(table,
 
   # generate all pairwise combinations
   pairwise_combinations <- combn(1:n_ids, 2)
-  n_pairs <- ncol(pairwise_combinations)
+  unique_pairs <- apply(pairwise_combinations, 2, function(x) paste(complete_ids[x], collapse="-"))
+  n_pairs <- length(unique_pairs)
 
   # initialize final results list
   final_results <- vector("list", length(subset_list$table))
 
-  # iterate over each subset
+  # set alpha value
+  alpha <- 1 - conf.level
+
+  ##############################################################################
+  # iterate over each subset   #################################################
   for(s in 1:length(subset_list$table)){
 
     subset_table <- subset_list$table[[s]]
     subset_overlaps <- subset_list$overlaps[[s]]
 
+    # assign pair to current data
+    subset_overlaps$pair <- paste0(subset_overlaps$id1, "-", subset_overlaps$id2)
+
     # initiate results list for subset
     random_results <- vector("list", iterations)
+
 
     ###################################################################
     # randomize overlaps using the default method (single core)
@@ -220,7 +211,7 @@ randomizeOverlaps <- function(table,
         setTxtProgressBar(pb, i)
       }
 
-      # Close progress bar
+      # close progress bar
       close(pb)
 
    #############################################################
@@ -253,15 +244,11 @@ randomizeOverlaps <- function(table,
     }
 
 
-    ##############################################################################
-    # Calculate pairwise p-values ################################################
+    ############################################################################
+    # calculate pairwise p-values ##############################################
 
     # pairwise overlap significance
-    unique_pairs <- apply(pairwise_combinations, 2, function(x) paste(complete_ids[x], collapse="-"))
-    subset_overlaps$pair <- paste0(subset_overlaps$id1, "-", subset_overlaps$id2)
     pairwise_stats <- list()
-    alpha <- 1 - conf.level
-
     # iterate over each dyad and calculate p-values
     for (i in 1:n_pairs) {
       null_dist <- unlist(lapply(random_results,  function(x) as.numeric(x)[i]))
@@ -295,31 +282,40 @@ randomizeOverlaps <- function(table,
     pairwise_stats <- plyr::join(pairwise_stats, subset_overlaps, by="pair", type="left")
 
 
-    ##############################################################################
-    # Calculate population p-values ##############################################
+    ############################################################################
+    # calculate population p-values ############################################
 
-    if(!is.null(id.groups)){
-      pairwise_stats$type <- paste(pairwise_stats$group1, "<->", pairwise_stats$group2)
-      pairwise_stats$type <- factor(pairwise_stats$type, levels=ordered_types)
-    }else{
+    # if no specific group IDs are provided, set all pairwise comparisons to a single "All" group.
+    if(is.null(id.groups)){
       pairwise_stats$type <- factor("All")
     }
+
+    # extract unique types to iterate through for p-value calculations.
     types <- levels(pairwise_stats$type)
+    # get indexes in 'pairwise_stats' for each group comparison type
     type_indexes <- lapply(types, function(x) which(pairwise_stats$type==x))
+    # extract randomized overlaps for each group
     null_dist <- lapply(1:iterations, function(i) lapply(type_indexes, function(p) random_results[[i]][p]))
+    # calculate the mean of the null distribution values for each group, handling NA values.
     null_dist <- lapply(null_dist, function(x) lapply(x, mean, na.rm=TRUE))
     null_dist <- lapply(1:length(types), function(x) unlist(lapply(null_dist, function(y) y[[x]])))
     names(null_dist) <- types
+    # reshape the list into a data frame
     null_dist <- reshape2::melt(null_dist)
     colnames(null_dist) <- c("mean_overlap", "type")
+    # ensure 'type' is an ordered factor.
     null_dist$type <- factor(null_dist$type, levels=ordered_types)
+    # calculate the mean of the null distribution for each group comparison type
     mean_null <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), mean, na.rm=TRUE)
     colnames(mean_null) <- c("type", "mean_null")
     mean_null <- mean_null[order(mean_null$type),]
+    # start building the final population statistics table
     population_stats <- mean_null
+    # add standard deviations of the null distribution means to 'population_stats'
     population_stats$sd <- stats::aggregate(null_dist$mean_overlap, by=list(null_dist$type), sd, na.rm=TRUE)$x
     population_stats$mean_null <-  paste(sprintf("%.2f", population_stats$mean_null), "\u00b1", sprintf("%.2f", population_stats$sd))
     population_stats <- population_stats[,-3]
+    # set column names to make the output more interpretable
     colnames(population_stats) <- c("Type", "Mean null distr (%)")
 
     # calculate p-values
@@ -356,8 +352,8 @@ randomizeOverlaps <- function(table,
     # Generate summary table #####################################################
 
     # add nº dyads
-    pairwise_stats <- pairwise_stats[!is.na(pairwise_stats$overlap),]
-    summary_table <- stats::aggregate(pairwise_stats$pair, by=list(pairwise_stats$type), function(x) length(unique(x)), drop=FALSE)
+    valid_overlaps <- pairwise_stats[!is.na(pairwise_stats$overlap),]
+    summary_table <- stats::aggregate(valid_overlaps$pair, by=list(valid_overlaps$type), function(x) length(unique(x)), drop=FALSE)
     summary_table$x[is.na(summary_table$x)] <- 0
     colnames(summary_table) <- c("Type", "N dyads")
     # add mean shared period
@@ -383,7 +379,6 @@ randomizeOverlaps <- function(table,
     pairwise_signif$Type <- rownames(pairwise_signif)
     rownames(pairwise_signif) <- NULL
     summary_table <- plyr::join(summary_table, pairwise_signif, by="Type", type="left")
-    summary_table <- summary_table[order(summary_table$Type),]
     summary_table <- summary_table[summary_table$`N dyads`>0,]
     summary_table$`Mean overlap (%)`[summary_table$`Mean interval (d)`==0] <- "-"
     summary_table$`P-value`[summary_table$`Mean interval (d)`==0] <- "-"
@@ -392,12 +387,11 @@ randomizeOverlaps <- function(table,
 
     # clean up and format final results
     count_cols <- which(colnames(summary_table) %in% labels)
-    #summary_table <- summary_table[rowSums(summary_table[,count_cols])>0,]
     pairwise_stats <- pairwise_stats[,-which(colnames(pairwise_stats)=="pair")]
-    if(is.null(id.groups)) {
-      pairwise_stats <- pairwise_stats[,-which(colnames(pairwise_stats) %in% "type")]
-    }
     pairwise_stats$mean_null <- round(pairwise_stats$mean_null, 2)
+    original_cols <- match(colnames(all_overlaps), colnames(pairwise_stats))
+    new_cols <- setdiff(1:ncol(pairwise_stats), original_cols)
+    pairwise_stats <- pairwise_stats[,c(original_cols, new_cols)]
 
 
     ##############################################################################
@@ -550,6 +544,7 @@ randomizeOverlaps <- function(table,
     overlap <- (matching_rows / total) * 100
 
     # return results
+    names(overlap) <- paste0(id1, "-", id2)
     return(overlap)
   }
 

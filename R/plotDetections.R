@@ -48,7 +48,7 @@
 
 
 plotDetections <- function(data,
-                           id.col = getDefaults("id"),
+                           id.col = getDefaults("ID"),
                            datetime.col = getDefaults("datetime"),
                            tagging.dates = getDefaults("tagging.dates"),
                            tag.durations = NULL,

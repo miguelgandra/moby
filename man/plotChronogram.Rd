@@ -10,7 +10,7 @@ plotChronogram(
   variables = "detections",
   split.by = NULL,
   style = "points",
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   timebin.col = getDefaults("timebin"),
   station.col = getDefaults("station"),
   color.by = NULL,

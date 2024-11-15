@@ -6,7 +6,7 @@
 \usage{
 interpolateDistances(
   data,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   dist.col = "dist_m",
   keep.intermediate = FALSE
 )

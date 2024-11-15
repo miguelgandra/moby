@@ -9,7 +9,7 @@ plotMaps(
   kernel.densities = NULL,
   animal.tracks = NULL,
   id.groups = NULL,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   land.shape = NULL,

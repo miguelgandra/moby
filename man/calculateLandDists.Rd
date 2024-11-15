@@ -9,7 +9,7 @@ calculateLandDists(
   land.shape,
   epsg.code = getDefaults("epsg"),
   mov.threshold = 0.5,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   dist.col = NULL

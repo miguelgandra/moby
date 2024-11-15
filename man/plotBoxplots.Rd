@@ -10,7 +10,7 @@ plotBoxplots(
   subsetted.kuds = NULL,
   responses,
   by,
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   discard.incomplete = TRUE,
   display.n = FALSE,
   box.colors = NULL,

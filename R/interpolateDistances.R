@@ -22,7 +22,10 @@
 #' @export
 
 
-interpolateDistances <- function(data, id.col=getDefaults("id"), dist.col="dist_m", keep.intermediate=FALSE){
+interpolateDistances <- function(data,
+                                 id.col = getDefaults("ID"),
+                                 dist.col = "dist_m",
+                                 keep.intermediate = FALSE){
 
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()

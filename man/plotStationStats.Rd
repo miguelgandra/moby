@@ -9,7 +9,7 @@ plotStationStats(
   type = c("detections", "co-occurrences"),
   id.groups = NULL,
   group.comparisons = "all",
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   timebin.col = getDefaults("timebin"),
   station.col = getDefaults("station"),
   aggregate.by = NULL,

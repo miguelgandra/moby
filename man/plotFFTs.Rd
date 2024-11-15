@@ -7,7 +7,7 @@
 plotFFTs(
   data,
   tagging.dates = getDefaults("tagging.dates"),
-  id.col = getDefaults("id"),
+  id.col = getDefaults("ID"),
   timebin.col = getDefaults("timebin"),
   type = "detections",
   id.groups = NULL,

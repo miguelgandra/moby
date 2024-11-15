@@ -37,7 +37,7 @@
 
 
 migrationsTable <- function(data,
-                            id.col = getDefaults("id"),
+                            id.col = getDefaults("ID"),
                             datetime.col = getDefaults("datetime"),
                             spatial.col,
                             tagging.dates = getDefaults("tagdates"),
