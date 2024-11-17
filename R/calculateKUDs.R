@@ -129,7 +129,7 @@ calculateKUDs <- function(data,
                           land.shape = NULL,
                           id.col = getDefaults("ID"),
                           lon.col = getDefaults("lon"),
-                          lat.col=getDefaults("lat"),
+                          lat.col = getDefaults("lat"),
                           epsg.code = getDefaults("epsg"),
                           contour.percent = c(50,95),
                           verbose = FALSE) {

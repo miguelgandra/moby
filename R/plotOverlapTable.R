@@ -24,7 +24,7 @@
 #' @param id.col Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.
 #' @param full.scale Boolean. If type is set to 'mean overlap', sets the overlap scale from 0 to 100%.
 #' @param sort.by Optional. Sort IDs based on this variable (e.g., length).
-#' @seealso \code{\link{calculateOverlap}} and \code{\link{randomizeOverlaps}}
+#' @seealso \code{\link{calculateOverlap}} and \code{\link{randomizeOverlap}}
 #' @export
 
 

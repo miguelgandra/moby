@@ -22,7 +22,7 @@
 #' @param remove.missing Logical. If TRUE, excludes individuals without detections and null pairwise comparisons from the network.
 #' Defaults to FALSE.
 #' @param min.val Minimum value for overlap threshold. Can be a single value (used for all networks)
-#' or a vector with one value per network. Defaults to the 50% quantile of the overlap values.
+#' or a vector with one value per network. Defaults to 0.
 #' @param cut.val Cutoff value for overlap threshold. Can be a single value (used for all networks)
 #' or a vector with one value per network. Defaults to the 90% quantile of the overlap values.
 #' @param group.order A vector specifying the order in which each group comparison type should be plotted.
@@ -62,7 +62,7 @@
 #' @param cols Number of columns for the plot layout. Defaults to NULL.
 #' @param ... Further arguments passed to \code{\link[qgraph]{qgraph}}.
 #'
-#' @seealso `calculateOverlap`, `randomizeOverlaps`
+#' @seealso \code{\link{calculateOverlap}}, \code{\link{randomizeOverlap}}
 #' @export
 
 
@@ -116,7 +116,7 @@ plotOverlap <- function(overlaps = NULL,
     if(!requireNamespace("qgraph", quietly=TRUE)) errors <- c(errors, "The 'qgraph' package is required to plot the overlap network but is not installed. Please install 'qgraph' using install.packages('qgraph') and try again.")
     if(!is.data.frame(overlaps) || !"ids" %in% names(attributes(overlaps))) errors <- c(errors, "'overlaps' format not recognized. Please make sure to use the output from the 'calculateOverlap' function.")
     if(!is.null(scale.nodes.by) && length(scale.nodes.by) != length(attributes(overlaps)$ids)) errors <- c(errors, "scale.nodes.by variable must have the same length as the number of IDs in overlaps.")
-    if(!is.null(color.nodes.by) && color.nodes.by != "group" && length(color.nodes.by) != length(attributes(overlaps)$ids)) errors <- c(errors, "color.nodes.by variable must have the same length as the number of IDs in overlaps.")
+    if(!is.null(color.nodes.by) && any(color.nodes.by!="group") && length(color.nodes.by)!=length(attributes(overlaps)$ids)) errors <- c(errors, "color.nodes.by variable must have the same length as the number of IDs in overlaps.")
   }
   # validate 'random.results' if it is provided
   if(!is.null(random.results)) {
@@ -124,15 +124,7 @@ plotOverlap <- function(overlaps = NULL,
     if(!"metric" %in% names(attributes(random.results))) errors <- c(errors, "random.results format not recognized. Please make sure to use the output from the 'randomizeOverlaps' function.")
   }
   # validate 'group.order'
-  if(!is.null(group.order)){
-    if(!is.numeric(group.order)) errors <- c(errors, "'group.order' must be a numeric vector indicating the desired order of groups.")
-    else if(is.null(id.groups)) warning("'group.order' was set but will not be used as 'id.groups' is missing.", call.=FALSE)
-    else {
-      ntypes <- ifelse(!is.null(overlaps), length(unique(overlaps$type)), length(unique(random.results$pairwise_results$type)))
-      #if(length(group.order) != ntypes) errors <- c(errors, paste0("'group.order' must have the same length as the number of unique group comparisons (", ntypes, ")."))
-      #else if(any(group.order < 1 | group.order > ntypes)) errors <- c(errors, "'group.order' contains invalid indices. Each value must correspond to a valid group comparison index.")
-    }
-  }
+  if(!is.null(group.order) &&!is.numeric(group.order)) errors <- c(errors, "'group.order' must be a numeric vector indicating the desired order of groups.")
   # validate edge.color
   if(!is.null(edge.color)){
     if(!is.null(id.groups)){
@@ -183,6 +175,13 @@ plotOverlap <- function(overlaps = NULL,
     id_lookup <- reshape2::melt(id.groups)
     colnames(id_lookup) <- c("id", "group")
     id_lookup$group <- as.factor(id_lookup$group)
+    ordered_types <- levels(pairwise_overlaps$type)
+  }
+
+  # issue warning
+  if(!is.null(group.order) && is.null(id.groups)){
+    group.order <- NULL
+    warning("'group.order' was set but will not be used as 'id.groups' is missing.", call.=FALSE)
   }
 
   # print to console
@@ -214,27 +213,30 @@ plotOverlap <- function(overlaps = NULL,
 
   # split overlaps by type (if required)
   if(!any(colnames(pairwise_overlaps)=="type")) pairwise_overlaps$type <- factor("All")
-  #if(!is.null(group.order)) pairwise_overlaps$type <- factor(pairwise_overlaps$type, levels=unique(pairwise_overlaps$type)[group.order])
   if(is.null(group.order))  group.order <- 1:nlevels(pairwise_overlaps$type)
   types <- levels(pairwise_overlaps$type)
 
   # assign name to color.nodes.by elements
-  if(is.null(color.nodes.by)){
-    color.nodes.by <- as.factor(rep(1, length(complete_ids)))
+  if(all(color.nodes.by=="group")){
+    if(!is.null(id.groups)){
+      selected_ids <- reshape2::melt(id.groups)
+      color.nodes.by <- factor(selected_ids$L1, levels=unique(selected_ids$L1))
+      names(color.nodes.by) <- selected_ids$value
+    }else{
+      color.nodes.by <- as.factor(rep(1, length(complete_ids)))
+      names(color.nodes.by) <- complete_ids
+    }
+  }else if(!is.null(color.nodes.by)){
     names(color.nodes.by) <- complete_ids
-  }else if(color.nodes.by=="group"){
-    selected_ids <- reshape2::melt(id.groups)
-    color.nodes.by <- factor(selected_ids$L1, levels=unique(selected_ids$L1))
-    names(color.nodes.by) <- selected_ids$value
+    if(!inherits(color.nodes.by, "factor")){
+      color.nodes.by <- as.factor(color.nodes.by)
+      warning("'color.nodes.by' vector converted to factor.", call.=FALSE)
+    }
   }else{
+    color.nodes.by <- as.factor(rep(1, length(complete_ids)))
     names(color.nodes.by) <- complete_ids
   }
 
-  # convert color.nodes.by to factor if required
-  if(!inherits(color.nodes.by, "factor")){
-    color.nodes.by <- as.factor(color.nodes.by)
-    warning("'color.nodes.by' vector converted to factor.", call.=FALSE)
-  }
 
   # assign names to scale.nodes.by
   if (!is.null(scale.nodes.by) && is.null(names(scale.nodes.by))){
@@ -274,14 +276,11 @@ plotOverlap <- function(overlaps = NULL,
 
   # set color palette for nodes
   if(is.null(nodes.color)){
-    if(is.null(id.groups)){
-      nodes.color <- "#008177"
-    }else{
-      if(length(id.groups)==2)  nodes.color <- c("#643BA6", "darkorange2")
-      else if(length(id.groups)==3)  nodes.color <- c("#643BA6", "darkorange2", "#008177")
-      else if(length(id.groups)==4)  nodes.color <- c("#643BA6", "darkorange2", "#008177", "#AF5C60")
-      else nodes.color <- terrain.colors(length(id.groups))
-    }
+    if(nlevels(color.nodes.by)==1)  nodes.color <- "#008177"
+    else if(nlevels(color.nodes.by)==2)  nodes.color <- c("#643BA6", "darkorange2")
+    else if(nlevels(color.nodes.by)==3)  nodes.color <- c("#643BA6", "darkorange2", "#008177")
+    else if(nlevels(color.nodes.by)==4)  nodes.color <- c("#643BA6", "darkorange2", "#008177", "#AF5C60")
+    else nodes.color <- terrain.colors(nlevels(color.nodes.by))
   }
 
   # initialize holding lists
@@ -299,7 +298,7 @@ plotOverlap <- function(overlaps = NULL,
     vals <- as.numeric(network_matrices[[i]])
     vals <- vals[!is.na(vals)]
     vals <- vals[order(vals, decreasing=TRUE)]
-    min_val <- ifelse(!is.null(min.val[i]), min.val[i], quantile(vals, 0.5))
+    min_val <- ifelse(!is.null(min.val[i]), min.val[i], 0)
     cut_val <- ifelse(!is.null(cut.val[i]), cut.val[i], quantile(vals, 0.9))
     network.params[[i]] <- c(min_val, cut_val)
 
@@ -349,11 +348,10 @@ plotOverlap <- function(overlaps = NULL,
   freq_range <- NULL
   if (standardize.freqs && !is.null(random.results)) {
     max_freqs <- sapply(group_overlaps, function(x) {
-      type_indices <- which(as.character(pairwise_overlaps$type) == as.character(x$type[1]))
-      if (length(type_indices) == 0) stop(paste("No valid type indices found for type:", x$type[1]), call.=FALSE)
-      null_dist <- lapply(1:iterations, function(i) random.results$randomized_overlaps[[i]][type_indices])
+      # fetch null distribution
+      type_pairs <- pairwise_overlaps$pair[which(pairwise_overlaps$type==x$type[1])]
+      null_dist <- lapply(random.results$randomized_overlaps, function(x) {x$null_overlap[x$pair %in% type_pairs]})
       null_dist <- unlist(lapply(null_dist, mean, na.rm=TRUE))
-      if (length(null_dist) == 0) stop(paste("Null distribution is empty for type:", x$type[1]), call.=FALSE)
       hist(null_dist, breaks=60, plot=FALSE)$counts
     })
     freq_range <- range(max_freqs)
@@ -365,7 +363,7 @@ plotOverlap <- function(overlaps = NULL,
   ##############################################################################
 
   # count the number of plots to create
-  n_groups <- length(group.order)
+  n_groups <- length(network_matrices)
   plots_per_group <- sum(!is.null(overlaps), !is.null(random.results))
   cols_per_group <- ifelse(hist.side == "right" && plots_per_group == 2, 2, 1)
   total_plots <- n_groups * plots_per_group
@@ -466,7 +464,7 @@ plotOverlap <- function(overlaps = NULL,
 
     par(mar=c(1, 0, 1, 0))
     plot.new()
-    graphics::text(x=0.5, y=0.5, labels=names(network_matrices)[i], cex=cex.title, font=2)
+    if(length(group.order>1)) graphics::text(x=0.5, y=0.5, labels=names(network_matrices)[i], cex=cex.title, font=2)
 
     ############################################################################
     # overlap network(s) #######################################################
@@ -531,8 +529,8 @@ plotOverlap <- function(overlaps = NULL,
       p_val <- as.numeric(random.results$summary$`P-value`[random.results$summary$Type==types[i]])
 
       # fetch null distribution
-      type_indices <- which(pairwise_overlaps$type==types[i])
-      null_dist <- lapply(1:iterations, function(i) random.results$randomized_overlaps[[i]][type_indices])
+      type_pairs <- pairwise_overlaps$pair[which(pairwise_overlaps$type==types[i])]
+      null_dist <- lapply(random.results$randomized_overlaps, function(x) {x$null_overlap[x$pair %in% type_pairs]})
       null_dist <- unlist(lapply(null_dist, mean, na.rm=TRUE))
 
       # calculate barplot params

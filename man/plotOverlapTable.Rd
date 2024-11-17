@@ -50,5 +50,5 @@ Plots a contingency table illustrating the pairwise distribution of overlap
 scores/significance across individuals. IDs can be sorted by length or any other quantitative metric.
 }
 \seealso{
-\code{\link{calculateOverlap}} and \code{\link{randomizeOverlaps}}
+\code{\link{calculateOverlap}} and \code{\link{randomizeOverlap}}
 }

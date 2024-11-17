@@ -102,3 +102,6 @@ Useful references:
 \item Hoppitt, W. J., & Farine, D. R. (2018). Association indices for quantifying social relationships: how to deal with missing observations of individuals or groups. Animal Behaviour, 136, 227-238.
 }
 }
+\seealso{
+\code{\link{randomizeOverlap}}, \code{\link{plotOverlap}}
+}

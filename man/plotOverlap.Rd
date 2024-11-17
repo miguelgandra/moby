@@ -55,7 +55,7 @@ Alternatively, it can be set to 'group' (default) to assign different colors to 
 Defaults to FALSE.}
 
 \item{min.val}{Minimum value for overlap threshold. Can be a single value (used for all networks)
-or a vector with one value per network. Defaults to the 50\% quantile of the overlap values.}
+or a vector with one value per network. Defaults to 0.}
 
 \item{cut.val}{Cutoff value for overlap threshold. Can be a single value (used for all networks)
 or a vector with one value per network. Defaults to the 90\% quantile of the overlap values.}
@@ -135,5 +135,5 @@ what would be expected by chance. If both are provided, it plots both the networ
 and the histogram.
 }
 \seealso{
-\code{calculateOverlap}, \code{randomizeOverlaps}
+\code{\link{calculateOverlap}}, \code{\link{randomizeOverlap}}
 }

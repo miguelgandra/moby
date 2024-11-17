@@ -35,17 +35,32 @@
 #' @export
 
 
-getDielPhase <- function (datetimes, coordinates, phases=2, solar.depth=18) {
+getDielPhase <- function(datetimes,
+                         coordinates,
+                         phases = 2,
+                         solar.depth = 18) {
 
-  # validate arguments
-  if(!phases %in% c(2,3,4)) stop("Number of phases should be between 2, 3 and 4", call.=FALSE)
-  if (!inherits(coordinates, c("SpatialPoints", "matrix", "data.frame"))) stop("Coordinates must be a SpatialPoints, matrix, or data frame object", call.=FALSE)
+  ##############################################################################
+  ## Initial checks ############################################################
+  ##############################################################################
+
+  # validate parameters
+  errors <- c()
+  if(!inherits(datetimes, "POSIXct")) errors <- c(errors, "Datetimes must be provided in POSIXct format.")
+  if(!phases %in% c(2,3,4)) errors <- c(errors, "Number of phases should be between 2, 3 and 4")
+  if(!inherits(coordinates, c("SpatialPoints", "matrix", "data.frame"))) errors <- c(errors, "Coordinates must be a SpatialPoints, matrix, or data frame object")
+  if(is.data.frame(coordinates) && ncol(coordinates)!=2) errors <- c(errors, "Coordinates data.frame must contain 2 columns (longitude and latitude)")
+  # print errors if any
+  if(length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
+    stop(stop_message, call.=FALSE)
+  }
 
   # convert SpatialPoints or data frame to matrix if necessary
   if(inherits(coordinates, "SpatialPoints")) {
     coordinates <- coordinates@coords
   }else if (is.data.frame(coordinates)) {
-    if(ncol(coordinates)!=2) stop("Data frame must contain 2 columns (longitude and latitude)", call.=FALSE)
     coordinates <- as.matrix(coordinates)
   }
 

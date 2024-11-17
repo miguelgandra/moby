@@ -35,6 +35,7 @@ Suggests:
     parallel,
     foreach,
     doSNOW,
+    doRNG,
     adehabitatHR,
     qgraph,
     wavScalogram,

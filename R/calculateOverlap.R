@@ -83,6 +83,8 @@
 #' the maximum number of time-bins spent by each pair consecutively in the same receiver and
 #' the total number of co-occurrences, as well as the number of co-occurrences by location level.
 #' If id.groups or a subset variable is defined, these results are nested within each of the grouping levels.
+#'
+#' @seealso \code{\link{randomizeOverlap}}, \code{\link{plotOverlap}}
 #' @export
 
 calculateOverlap <- function(table,
@@ -256,8 +258,6 @@ calculateOverlap <- function(table,
 
   # remove dyads containing individuals without detections
   if (length(missing_individuals) > 0){
-    #results <- results[-which(results$id1 %in% missing_individuals),]
-    #results <- results[-which(results$id2 %in% missing_individuals),]
     cat(paste0(length(missing_individuals), " individual(s) with no detections\n"))
   }
 
