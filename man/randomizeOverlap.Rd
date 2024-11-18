@@ -71,8 +71,6 @@ The summary table includes the following columns:
 \item {Pairs > Random}: The number of pairs with observed overlap greater than the null distribution.
 \item {Pairs < Random}: The number of pairs with observed overlap less than the null distribution.
 }
-
-\code{\link{calculateOverlap}}, \code{\link{plotOverlap}}
 }
 \description{
 This function tests the null hypothesis of temporally independent space use
@@ -89,4 +87,7 @@ continuity correction is applied to avoid p-values of exactly 0 or 1).
 \references{
 Gotelli, N. J. (2000). Null model analysis of species co-occurrence patterns. Ecology, 81(9), 2606-2621.\cr\cr
 Farine, D. R. (2017). A guide to null models for animal social network analysis. Methods Ecol Evol 8: 1309–1320.
+}
+\seealso{
+\code{\link{calculateOverlap}}, \code{\link{plotOverlap}}
 }

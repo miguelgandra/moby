@@ -4,9 +4,12 @@
 
 #' Generate summary table for tagged animals
 #'
-#' @description This function generates a summary table with information about tagged animals,
-#' including tagging dates, last detection dates, and various monitoring and residency metrics. It allows for the
-#' inclusion of additional metadata and the calculation of overall means and error metrics.
+#' @description This function generates a comprehensive summary table for tagged animals,
+#' including tagging and last detection dates, along with various monitoring and residency metrics.
+#' It also allows the inclusion of additional sensor data (e.g., depth, temperature) and provides
+#' an option to summarize these readings by calculating the mean, minimum, and maximum values for each specified sensor column.
+#' Additionally, the function can incorporate additional metadata and automatically
+#' computes overall means and error metrics.
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing animal detections. Each row should represent an individual detection event,
@@ -17,6 +20,11 @@
 #' duration of the deployed tags (in days). The length of this vector should match the number of
 #' unique animal IDs, and the values must be in the same order as the ID levels.
 #' Alternatively, if a single value is provided, it will be applied to all IDs.
+#' @param sensor.cols Optional. A character vector specifying column names in `data` that contain
+#' additional sensor readings (e.g., depth, temperature). For each column specified, the mean,
+#' minimum, and maximum values will be calculated and incorporated into the summary.
+#' @param sensor.titles Optional. Titles for the sensor readings in `sensor.cols`.
+#' If not provided, defaults to the column names.
 #' @param residency.index A character string specifying the type of residency index to calculate.
 #' Options include:
 #'  - "IR1": Residency Index 1, calculated as the number of days the animal was detected (Dd) divided by the detection interval (Di), i.e., the number of days between release/first detection and last detection (days at liberty).
@@ -27,12 +35,11 @@
 #'  This accounts for the number of days detected and the spread of detections within the monitoring period, providing a measure of residency that balances the frequency of detections with their temporal distribution.
 #'
 #' The choice of index can affect the interpretation of residency patterns, so it's important to select the one(s) that best fits the study objectives.
-#' Defaults to "IR1". If `tag.durations` are provided, the default changes to "IR2".
 #' Further information on residency estimation methods can be found in Kraft et al. (2023) and Appert et al. (2023) - see below in the references section.
 #' @param start.point A character string specifying the starting point for calculating days at liberty.
 #' Options include:
 #' - `"release"`: The release day is used as the starting point for calculating days at liberty.
-#' - `"first.detection"`: The first detection after tagging is used as the starting point. This option can help account for potential post-release behavior effects.
+#' - `"first.detection"`: The first detection after tagging is used as the starting point.
 #'
 #' Defaults to `"release"`.
 #' @param residency.by Optional. Variable used to calculate partial residencies (e.g. array or habitat).
@@ -56,6 +63,8 @@
 #' - `N days detected`: Total number of days the animal was detected.
 #' - Additional columns for each residency index specified in the `residency.index` parameter.
 #' - If `residency.by` is specified, additional columns for partial residency metrics will be included.
+#' - Sensor data metrics: For each column in `sensor.cols`, the mean, minimum, and maximum values, using titles specified in `sensor.titles` (if provided).
+
 #'
 #' @references
 #' Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
@@ -79,6 +88,8 @@ summaryTable <- function(data,
                          id.col = getDefaults("ID"),
                          datetime.col = getDefaults("datetime"),
                          station.col = getDefaults("station"),
+                         sensor.cols = NULL,
+                         sensor.titles = NULL,
                          residency.index = c("IR1", "IR2", "IWR"),
                          start.point = "release",
                          residency.by = NULL,
@@ -106,7 +117,11 @@ summaryTable <- function(data,
   if(!error.stat %in% c("sd", "se")) errors <- c(errors, "Wrong error.stat argument, please choose between 'sd' and 'se'.")
   # check if id.metadata contains id.col
   if(!is.null(id.metadata) && !id.col %in% colnames(id.metadata))   errors <- c(errors, "The specified ID column ('id.col') does not exist in 'id.metadata'. Please ensure that the column name in 'id.metadata' matches the 'id.col' specified.")
-  # check residency index
+  # check if data contains sensor.cols
+  if(!is.null(sensor.cols) && !all(sensor.cols %in% colnames(data))) {
+    errors <- c(errors, "One or more specified sensor columns ('sensor.cols') were not found in the supplied data. Please check the column names and ensure they exist in the data.")
+  }
+   # check residency index
   if(!all(residency.index %in% c("IR1", "IR2", "IWR"))) errors <- c(errors, "Invalid 'residency.index' argument. Please select one of the following options: 'IR1' (detection interval), 'IR2' (study interval), or 'IWR' (weighted residency index).")
   if (!is.character(start.point) || length(start.point) !=1) errors <- c(errors, "Invalid 'start.point' parameter: it must be a single character string.")
   if (!start.point %in% c("first.detection", "release")) errors <- c(errors, "Invalid 'start.point' parameter: must be one of 'release' or 'first.detection'.")
@@ -223,6 +238,29 @@ summaryTable <- function(data,
     stats$`Tag duration (d)` <- round(tag.durations, 2)
     stats <- stats[, c("ID", "Tagging date", "Tag duration (d)", "Last detection", "N Detect",
                        "N Receiv", "Monitoring duration (d)", "Detection span (d)", "N days detected")]
+  }
+
+  # add sensor measurement summaries, if available
+  if(!is.null(sensor.cols)){
+    if(is.null(sensor.titles)) sensor.titles <- tools::toTitleCase(sensor.cols)
+    sensor_mean <- stats::aggregate(data[,sensor.cols], by=list(data[,id.col]), function(x){
+      if(all(is.na(x))) return(NA) else round(mean(x, na.rm=TRUE), 1)})
+    colnames(sensor_mean) <- c("ID", paste(sensor.titles, "- mean"))
+    sensor_min <- stats::aggregate(data[,sensor.cols], by=list(data[,id.col]), function(x){
+      if(all(is.na(x))) return(NA) else round(min(x, na.rm=TRUE), 1)})
+    colnames(sensor_min) <- c("ID", paste(sensor.titles, "- min"))
+    sensor_max <- stats::aggregate(data[,sensor.cols], by=list(data[,id.col]), function(x){
+      if(all(is.na(x))) return(NA) else round(max(x, na.rm=TRUE), 1)})
+    colnames(sensor_max) <- c("ID", paste(sensor.titles, "- max"))
+    sensor_stats <- Reduce(function(x, y) plyr::join(x, y, by="ID", type="left"), list(sensor_mean, sensor_min, sensor_max))
+    # merge and reorder columns
+    ordered_cols <- c("ID", unlist(lapply(sensor.titles, function(x) c(paste(x, "- mean"), paste(x, "- min"), paste(x, "- max")))))
+    sensor_stats <- sensor_stats[,ordered_cols]
+    col_index <- which(colnames(stats)=="Last detection")
+    first_cols <- names(stats)[1:col_index]
+    last_cols <- names(stats)[(col_index+1):ncol(stats)]
+    stats <- plyr::join(stats, sensor_stats, by="ID", type="left")
+    stats <- stats[,c(first_cols, ordered_cols[-1], last_cols)]
   }
 
   #  calculate the requested residency indexes

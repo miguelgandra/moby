@@ -60,16 +60,30 @@
 #' @param legend.cex Size of the legend text for KUD density and background layer values (if available).
 #' Defaults to 0.8.
 #' @param title.color Optional. The color of the title (animal ID) displayed on each map. Defaults to "black".
-#' @param title.pos Position of the title (animal ID) on the plot (by keyword). Defaults to "topleft".
-#' @param title.inset Inset distance of the title from the specified position, as a fraction of the
-#' plot region. Defaults to c(-0.08, 0).
+#' @param title.pos Position of the title (animal ID) on the plot. This can be one of the following
+#' predefined keywords: `"bottomright"`, `"bottomleft"`, `"topright"`, `"topleft"`, `"bottom"`,
+#' `"top"`,  `"left"`, `"right"`, or `"center"`. Defaults to `"bottomright"`. Defaults to `"topleft"`.
+#' @param title.inset Controls how far the title is placed from the plot edges.
+#' Can be specified as a single value (applied to both x and y directions) or as a two-element vector
+#' (with x and y inset values specified separately).
+#' - **Positive values** move the scale bar *inward*, towards the center of the plot.
+#' - **Negative values** move the scale bar *outward*, potentially placing it outside the visible plot area.
+#'
+#' Defaults to c(-0.08, 0).
 #' @param title.cex Determines the size of the plot title (animal ID). Defaults to 1.5.
 #' @param scale.meters The length of the scale bar in meters. If set to NULL (default), it is
 #' automatically set to 20% of the plot width.
 #' @param scale.color Optional. The color of the scale bar legend displayed on each map. Defaults to "black".
-#' @param scale.pos The position of the scale bar on the map (e.g., "bottomright").
-#' @param scale.inset Inset distance(s) from the margins as a fraction of the
-#' plot region, relatively to the scale bar position.
+#' @param scale.pos The position of the scale bar on the map. This can be one of the following
+#' predefined keywords: `"bottomright"`, `"bottomleft"`, `"topright"`, `"topleft"`, `"bottom"`,
+#' `"top"`,  `"left"`, `"right"`, or `"center"`. Defaults to `"bottomright"`.
+#' @param scale.inset Controls how far the scale bar is placed from the plot edges.
+#' Can be specified as a single value (applied to both x and y directions) or as a two-element vector
+#' (with x and y inset values specified separately).
+#' - **Positive values** move the scale bar *inward*, towards the center of the plot.
+#' - **Negative values** move the scale bar *outward*, potentially placing it outside the visible plot area.
+#'
+#' Defaults to `0.2`.
 #' @param extent.factor Numeric. Factor by which to adjust the extent of the plotting region,
 #' defined based on the bounding box around animal positions/detections. A value of 1 keeps
 #' the original bounding box, values greater than 1 increase the extent, and values less

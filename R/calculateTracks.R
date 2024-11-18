@@ -244,6 +244,9 @@ calculateTracks <- function(data,
     cl <- parallel::makeCluster(cores)
     doSNOW::registerDoSNOW(cl)
 
+    # ensure the cluster is properly stopped when the function exits
+    on.exit(parallel::stopCluster(cl))
+
     # define the `%dopar%` operator locally for parallel execution
     `%dopar%` <- foreach::`%dopar%`
 
@@ -255,9 +258,6 @@ calculateTracks <- function(data,
     results_list <- foreach::foreach(i=1:length(data_individual), .options.snow=opts, .packages=c("sf", "gdistance", "geosphere")) %dopar% {
       calculateLeastCost(data_individual[[i]], land.shape, trCost, grid.resolution, epsg.code)
     }
-
-    # stop the cluster
-    on.exit(parallel::stopCluster(cl))
 
     # aggregate results from parallel processing
     for (i in 1:length(results_list)) {

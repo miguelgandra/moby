@@ -58,9 +58,13 @@
 #' automatically defined as 20% of the plot region.
 #' @param scale.pos Position of the map scale, specified by keyword.
 #' See \code{\link[grDevices]{xy.coords}}. Defaults to "bottom".
-#' @param scale.inset Inset distance(s) of the map scale from the margins as a fraction
-#' of the plot region. If a single value is given, it is used for both margins; if two values
-#' are given, the first is used for x- distance, the second for y-distance. Defaults to c(0, 0.05).
+#' @param scale.inset Controls how far the scale bar is placed from the plot edges.
+#' Can be specified as a single value (applied to both x and y directions) or as a two-element vector
+#' (with x and y inset values specified separately).
+#' - **Positive values** move the scale bar *inward*, towards the center of the plot.
+#' - **Negative values** move the scale bar *outward*, potentially placing it outside the visible plot area.
+#'
+#' Defaults to c(0, 0.05).
 #' @param scale.height Controls the thickness of the scale bar. Defaults to 1.5.
 #' @param scale.cex Size of the scale bar values. Defaults to 0.6.
 #' @param extent.factor Numeric. Factor by which to adjust the extent of the plotting region,

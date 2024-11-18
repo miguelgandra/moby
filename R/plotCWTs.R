@@ -236,6 +236,9 @@ plotCWTs <- function(data,
     cl <- parallel::makeCluster(cores)
     doSNOW::registerDoSNOW(cl)
 
+    # ensure the cluster is properly stopped when the function exits
+    on.exit(parallel::stopCluster(cl))
+
     # define the `%dopar%` operator locally for parallel execution
     `%dopar%` <- foreach::`%dopar%`
 
@@ -247,9 +250,6 @@ plotCWTs <- function(data,
       wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range, 20), powerscales=TRUE, wname=wavelet.type,
                             border_effects="BE", makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
     }
-
-    # ensure the cluster is stopped after computation
-    on.exit(parallel::stopCluster(cl))
 
   ########################################################################
   # fallback to sequential processing if cores == 1   ####################

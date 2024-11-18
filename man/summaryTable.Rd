@@ -12,6 +12,8 @@ summaryTable(
   id.col = getDefaults("ID"),
   datetime.col = getDefaults("datetime"),
   station.col = getDefaults("station"),
+  sensor.cols = NULL,
+  sensor.titles = NULL,
   residency.index = c("IR1", "IR2", "IWR"),
   start.point = "release",
   residency.by = NULL,
@@ -41,6 +43,13 @@ sex, or transmitter type. If there are multiple rows per animal, variables will 
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
 
+\item{sensor.cols}{Optional. A character vector specifying column names in \code{data} that contain
+additional sensor readings (e.g., depth, temperature). For each column specified, the mean,
+minimum, and maximum values will be calculated and incorporated into the summary.}
+
+\item{sensor.titles}{Optional. Titles for the sensor readings in \code{sensor.cols}.
+If not provided, defaults to the column names.}
+
 \item{residency.index}{A character string specifying the type of residency index to calculate.
 Options include:
 \itemize{
@@ -53,14 +62,13 @@ This accounts for the number of days detected and the spread of detections withi
 }
 
 The choice of index can affect the interpretation of residency patterns, so it's important to select the one(s) that best fits the study objectives.
-Defaults to "IR1". If \code{tag.durations} are provided, the default changes to "IR2".
 Further information on residency estimation methods can be found in Kraft et al. (2023) and Appert et al. (2023) - see below in the references section.}
 
 \item{start.point}{A character string specifying the starting point for calculating days at liberty.
 Options include:
 \itemize{
 \item \code{"release"}: The release day is used as the starting point for calculating days at liberty.
-\item \code{"first.detection"}: The first detection after tagging is used as the starting point. This option can help account for potential post-release behavior effects.
+\item \code{"first.detection"}: The first detection after tagging is used as the starting point.
 }
 
 Defaults to \code{"release"}.}
@@ -90,12 +98,16 @@ A data frame summarizing information on tagged animals, with the following colum
 \item \verb{N days detected}: Total number of days the animal was detected.
 \item Additional columns for each residency index specified in the \code{residency.index} parameter.
 \item If \code{residency.by} is specified, additional columns for partial residency metrics will be included.
+\item Sensor data metrics: For each column in \code{sensor.cols}, the mean, minimum, and maximum values, using titles specified in \code{sensor.titles} (if provided).
 }
 }
 \description{
-This function generates a summary table with information about tagged animals,
-including tagging dates, last detection dates, and various monitoring and residency metrics. It allows for the
-inclusion of additional metadata and the calculation of overall means and error metrics.
+This function generates a comprehensive summary table for tagged animals,
+including tagging and last detection dates, along with various monitoring and residency metrics.
+It also allows the inclusion of additional sensor data (e.g., depth, temperature) and provides
+an option to summarize these readings by calculating the mean, minimum, and maximum values for each specified sensor column.
+Additionally, the function can incorporate additional metadata and automatically
+computes overall means and error metrics.
 }
 \references{
 Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).

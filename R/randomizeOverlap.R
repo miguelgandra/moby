@@ -64,7 +64,7 @@
 #'   \item {Pairs < Random}: The number of pairs with observed overlap less than the null distribution.
 #' }
 #'
-#' \code{\link{calculateOverlap}}, \code{\link{plotOverlap}}
+#' @seealso \code{\link{calculateOverlap}}, \code{\link{plotOverlap}}
 #'
 #' @references
 #' Gotelli, N. J. (2000). Null model analysis of species co-occurrence patterns. Ecology, 81(9), 2606-2621.\cr\cr

@@ -114,10 +114,19 @@ Defaults to 0.8.}
 
 \item{title.color}{Optional. The color of the title (animal ID) displayed on each map. Defaults to "black".}
 
-\item{title.pos}{Position of the title (animal ID) on the plot (by keyword). Defaults to "topleft".}
+\item{title.pos}{Position of the title (animal ID) on the plot. This can be one of the following
+predefined keywords: \code{"bottomright"}, \code{"bottomleft"}, \code{"topright"}, \code{"topleft"}, \code{"bottom"},
+\code{"top"},  \code{"left"}, \code{"right"}, or \code{"center"}. Defaults to \code{"bottomright"}. Defaults to \code{"topleft"}.}
 
-\item{title.inset}{Inset distance of the title from the specified position, as a fraction of the
-plot region. Defaults to c(-0.08, 0).}
+\item{title.inset}{Controls how far the title is placed from the plot edges.
+Can be specified as a single value (applied to both x and y directions) or as a two-element vector
+(with x and y inset values specified separately).
+\itemize{
+\item \strong{Positive values} move the scale bar \emph{inward}, towards the center of the plot.
+\item \strong{Negative values} move the scale bar \emph{outward}, potentially placing it outside the visible plot area.
+}
+
+Defaults to c(-0.08, 0).}
 
 \item{title.cex}{Determines the size of the plot title (animal ID). Defaults to 1.5.}
 
@@ -126,10 +135,19 @@ automatically set to 20\% of the plot width.}
 
 \item{scale.color}{Optional. The color of the scale bar legend displayed on each map. Defaults to "black".}
 
-\item{scale.pos}{The position of the scale bar on the map (e.g., "bottomright").}
+\item{scale.pos}{The position of the scale bar on the map. This can be one of the following
+predefined keywords: \code{"bottomright"}, \code{"bottomleft"}, \code{"topright"}, \code{"topleft"}, \code{"bottom"},
+\code{"top"},  \code{"left"}, \code{"right"}, or \code{"center"}. Defaults to \code{"bottomright"}.}
 
-\item{scale.inset}{Inset distance(s) from the margins as a fraction of the
-plot region, relatively to the scale bar position.}
+\item{scale.inset}{Controls how far the scale bar is placed from the plot edges.
+Can be specified as a single value (applied to both x and y directions) or as a two-element vector
+(with x and y inset values specified separately).
+\itemize{
+\item \strong{Positive values} move the scale bar \emph{inward}, towards the center of the plot.
+\item \strong{Negative values} move the scale bar \emph{outward}, potentially placing it outside the visible plot area.
+}
+
+Defaults to \code{0.2}.}
 
 \item{extent.factor}{Numeric. Factor by which to adjust the extent of the plotting region,
 defined based on the bounding box around animal positions/detections. A value of 1 keeps
