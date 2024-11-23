@@ -17,6 +17,7 @@ filterDetections(
   hours.threshold = 24,
   max.speed = NULL,
   speed.unit = "m/s",
+  max.iterations = Inf,
   acoustic.range = 600,
   land.shape = NULL,
   epsg.code = getDefaults("epsg"),
@@ -53,6 +54,11 @@ individuals with fewer days of detections will be discarded.}
 
 \item{speed.unit}{Units of supplied maximum speed. Either 'm/s' or 'km/h'.}
 
+\item{max.iterations}{An integer specifying the maximum number of iterations
+for the speed filtering process. The filtering loop will stop early if this number
+of iterations is reached, even if detections are still being removed. The default is
+\code{Inf} (unlimited iterations).}
+
 \item{acoustic.range}{Maximum assumed detection range of the acoustic receivers (in metres).
 Used in the speed filter to account for uncertainties in animal positions within the radius of the receivers,
 when estimating minimum consecutive distances.}
@@ -60,13 +66,18 @@ when estimating minimum consecutive distances.}
 \item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
 an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
 If the provided object is not of class 'sf', the function will attempt to
-convert it to an 'sf' object for compatibility with subsequent spatial operations.}
+convert it to an 'sf' object for compatibility with subsequent spatial operations.
+If not supplied, the function will calculate linear (great-circle) distances instead of shortest in-water
+distances. Linear distances are much faster to compute but may be less realistic or accurate in cases
+where positions are separated by landmasses or other spatial obstacles. This parameter
+is passed to the \code{\link{calculateTracks}} function and is only used when
+a \code{max.speed} is defined.}
 
 \item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
 If not supplied, CRS is assumed to be the same as in land.shape.}
 
 \item{...}{Further arguments passed to the \code{\link{calculateTracks}} function
-(e.g., grid.resolution and mov.directions).}
+(e.g., \code{grid.resolution}, \code{mov.directions} and \code{cores}).}
 }
 \value{
 A list containing both the filtered data and the rejected detections,
@@ -86,8 +97,14 @@ It implements six distinct criteria:
 \item the total number of logged days
 }
 
-Unlike other methods, \code{filterDetections} accounts for land topographies and
-complex coastlines when calculating animal speeds if a
-\code{land.shape} (shapefile containing coastlines or landmasses) is provided,
-leading to more accurate distance estimates.
+For speed filtering, the function iteratively removes detections that exceed the
+maximum speed threshold, recalculating distances until no violations remain or the
+maximum iteration limit is reached. When an unrealistic speed is detected, a hierarchical
+clustering approach is applied to the spatial coordinates of neighboring detections.
+This helps identify the outlier detection, likely responsible for triggering the overspeed
+threshold, by considering its context within surrounding detections.
+
+Additionally, \code{filterDetections} accounts for land topographies and complex
+coastlines when calculating animal speeds if a \code{land.shape} (shapefile containing
+coastlines or landmasses) is provided, leading to more accurate distance estimates.
 }

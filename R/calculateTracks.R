@@ -6,9 +6,12 @@
 #'
 #' @description This function calculates the shortest path in water between
 #' consecutive positions for multiple individuals. If no land shapefile is provided,
-#' the function defaults to calculating  linear (great-circle) distances. When a land
-#' shapefile is provided, the function can utilize parallel computing to expedite
-#' least-cost path estimation, depending on the number of CPU cores specified.
+#' the function defaults to calculating linear (great-circle) distances, which are
+#' faster to compute. When a land shapefile is provided, the function can utilize
+#' parallel computing to expedite least-cost path estimation, depending on the
+#' number of CPU cores specified. However, depending on the chosen grid resolution
+#' and the spatial extent of the provided positions, this process may take a long time
+#' to run, even with parallel computing enabled.
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame with animal positions, containing longitude and latitude values.
@@ -16,18 +19,26 @@
 #' an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
 #' If the provided object is not of class 'sf', the function will attempt to
 #' convert it to an 'sf' object for compatibility with subsequent spatial operations.
+#' If not supplied, the function will calculate linear (great-circle) distances instead of shortest in-water
+#' distances. Linear distances are much faster to compute but may be less realistic or accurate in cases
+#' where positions are separated by landmasses or other spatial obstacles.
 #' @param epsg.code The EPSG code (integer) representing the coordinate reference system (CRS) to be used
 #' for projecting the positions. If not specified, the function will attempt to use the CRS from the
 #' provided land.shape (if available).
 #' @param grid.resolution The grid cell size (in meters) used to estimate shortest paths. A higher
 #' resolution leads to more precise path calculations but may increase computation time.
 #' @param mov.directions Number of movement directions allowed for shortest path calculations, passed
-#' to the \link[gdistance]{transition} function from the **gdistance** package.
+#' to the \link[gdistance]{transition} function from the `gdistance` package.
 #' @param cores Number of CPU cores to use for the computations. Defaults to 1, which
 #' means no parallel computing (single core).  If set to a value greater than 1,
 #' the function will use parallel computing to speed up calculations. This parameter
 #' is only relevant for estimating least-cost paths, specifically when a \code{land.shape} is provided.
 #' Run \code{parallel::detectCores()} to check the number of available cores.
+#' @param transition.layer Optional. A pre-computed transition layer object, created using the
+#' \link[gdistance]{transition} function from the `gdistance` package. If provided, it can
+#' partially reduce computation time for repetitive function calls, as it avoids the need to
+#' generate a new transition layer for each iteration (as internally implemented in some `moby` functions).
+#' If not supplied, the function will create a transition layer based on the input \code{land.shape} and other relevant parameters.
 #' @param verbose Logical. Should the function output process information and display a progress bar?
 #' Defaults to TRUE.
 #'
@@ -51,6 +62,7 @@ calculateTracks <- function(data,
                             lon.col = getDefaults("lon"),
                             lat.col = getDefaults("lat"),
                             cores = 1,
+                            transition.layer = NULL,
                             verbose = TRUE){
 
   ##############################################################################
@@ -89,8 +101,6 @@ calculateTracks <- function(data,
   ##############################################################################
 
   if(is.null(land.shape)){
-
-    if(verbose) {cat("No land.shape provided\n")}
 
     # convert coordinates to geographic format (EPSG:4326)
     if(coords_crs=="projected"){
@@ -132,20 +142,36 @@ calculateTracks <- function(data,
     # check if any coordinates overlap land
     pts <- sf::st_multipoint(cbind(data$lon_m_tmp, data$lat_m_tmp))
     pts <- sf::st_sfc(pts, crs=sf::st_crs(epsg.code))
-    if(lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=TRUE))>0){
-      warning("Some coordinates overlap with the supplied land shape. Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell, and then rerun the current function with the updated positions.", call.=FALSE)
+    overlapping_pts <- lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=TRUE))
+    if(overlapping_pts > 0){
+      num_overlapping <- sum(overlapping_pts > 0)  # count of points overlapping land
+      warning_str <- paste0("Some coordinates (n=", num_overlapping,") overlap with the supplied land shape. ",
+      "Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell,",
+      "and then rerun the current function with the updated positions.")
+      warning(paste(strwrap(warning_str, width=getOption("width")), collapse="\n"), call. = FALSE)
     }
 
-    # create transition layer
-    if(verbose) {cat(paste0("Creating transition layer (", grid.resolution, "m grid | ", mov.directions, " directions)\n"))}
-    template_raster <- raster::raster(raster::extent(sf::st_bbox(coords))*1.2, res=grid.resolution, crs=epsg.code)
-    template_raster[] <- 0
-    land.shape.sp <- sf::as_Spatial(land.shape)
-    land_raster <- raster::rasterize(land.shape.sp, template_raster, update=TRUE)
-    raster::values(land_raster)[raster::values(land_raster)==1] <- 10^8
-    raster::values(land_raster)[raster::values(land_raster)==0] <- 1
-    trCost <- gdistance::transition(1/land_raster, transitionFunction=mean, directions=mov.directions)
-    trCost <- gdistance::geoCorrection(trCost, type="c")
+    # validate transition.layer (if supplied)
+    if(!is.null(transition.layer)) {
+      if(!inherits(transition.layer, "TransitionLayer")) {
+        stop("'transition.layer' must be a valid 'TransitionLayer' object from the gdistance package.", call.=FALSE)
+      }
+      if(verbose) cat("Using user-supplied transition layer.\n")
+      trCost <- transition.layer
+      grid.resolution <- raster::res(trCost)[1]
+    # generate transition layer
+    } else {
+      if(verbose) {cat(paste0("Creating transition layer (", grid.resolution, "m grid | ", mov.directions, " directions)\n"))}
+      template_raster <- raster::raster(raster::extent(sf::st_bbox(coords))*1.2, res=grid.resolution, crs=epsg.code)
+      template_raster[] <- 0
+      land.shape.sp <- sf::as_Spatial(land.shape)
+      land_raster <- raster::rasterize(land.shape.sp, template_raster, update=TRUE)
+      raster::values(land_raster)[raster::values(land_raster)==1] <- 10^8
+      raster::values(land_raster)[raster::values(land_raster)==0] <- 1
+      trCost <- gdistance::transition(1/land_raster, transitionFunction=mean, directions=mov.directions)
+      trCost <- gdistance::geoCorrection(trCost, type="c")
+    }
+
   }
 
 
@@ -281,8 +307,8 @@ calculateTracks <- function(data,
 
   # issue a warning if any track segments overlapped land and were skipped
   if(verbose & lines_skipped>0) {
-    warning(paste0("Warning: ", lines_skipped,
-                   " track segment(s) were found overlapping land but had a length less than or equal to the defined grid resolution. ",
+    warning(paste0(lines_skipped,
+                   " track segment(s) were found overlapping land but had a length <= to the defined grid resolution. ",
                    "These segments were retained as straight lines in the final output."), call. = FALSE)
   }
 

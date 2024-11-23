@@ -14,6 +14,7 @@ calculateTracks(
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
   cores = 1,
+  transition.layer = NULL,
   verbose = TRUE
 )
 }
@@ -23,7 +24,10 @@ calculateTracks(
 \item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
 an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
 If the provided object is not of class 'sf', the function will attempt to
-convert it to an 'sf' object for compatibility with subsequent spatial operations.}
+convert it to an 'sf' object for compatibility with subsequent spatial operations.
+If not supplied, the function will calculate linear (great-circle) distances instead of shortest in-water
+distances. Linear distances are much faster to compute but may be less realistic or accurate in cases
+where positions are separated by landmasses or other spatial obstacles.}
 
 \item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
 for projecting the positions. If not specified, the function will attempt to use the CRS from the
@@ -33,7 +37,7 @@ provided land.shape (if available).}
 resolution leads to more precise path calculations but may increase computation time.}
 
 \item{mov.directions}{Number of movement directions allowed for shortest path calculations, passed
-to the \link[gdistance]{transition} function from the \strong{gdistance} package.}
+to the \link[gdistance]{transition} function from the \code{gdistance} package.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
@@ -47,6 +51,12 @@ the function will use parallel computing to speed up calculations. This paramete
 is only relevant for estimating least-cost paths, specifically when a \code{land.shape} is provided.
 Run \code{parallel::detectCores()} to check the number of available cores.}
 
+\item{transition.layer}{Optional. A pre-computed transition layer object, created using the
+\link[gdistance]{transition} function from the \code{gdistance} package. If provided, it can
+partially reduce computation time for repetitive function calls, as it avoids the need to
+generate a new transition layer for each iteration (as internally implemented in some \code{moby} functions).
+If not supplied, the function will create a transition layer based on the input \code{land.shape} and other relevant parameters.}
+
 \item{verbose}{Logical. Should the function output process information and display a progress bar?
 Defaults to TRUE.}
 }
@@ -59,9 +69,12 @@ A list with the following components:
 \description{
 This function calculates the shortest path in water between
 consecutive positions for multiple individuals. If no land shapefile is provided,
-the function defaults to calculating  linear (great-circle) distances. When a land
-shapefile is provided, the function can utilize parallel computing to expedite
-least-cost path estimation, depending on the number of CPU cores specified.
+the function defaults to calculating linear (great-circle) distances, which are
+faster to compute. When a land shapefile is provided, the function can utilize
+parallel computing to expedite least-cost path estimation, depending on the
+number of CPU cores specified. However, depending on the chosen grid resolution
+and the spatial extent of the provided positions, this process may take a long time
+to run, even with parallel computing enabled.
 }
 \note{
 This function relies on the \strong{gdistance} and \strong{geosphere} packages for calculating
