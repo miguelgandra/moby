@@ -30,8 +30,10 @@
 #' @inheritParams setDefaults
 #' @param data A data frame containing raw animal detections.
 #' @param cutoff.dates Optional. A POSIXct vector containing the estimated expiration dates of the tags
-#' or any other cut-off date beyond which detections should be discarded. The length of this vector
-#' should match the number of unique animal IDs. Alternatively, if a single value is provided, it will be applied to all IDs.
+#' or any other cut-off date beyond which detections should be discarded This parameter must be either:
+#' - A single POSIXct value, which will be applied to all unique animal IDs; or
+#' - A named POSIXct vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple cut-off dates are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
 #' @param min.detections Optional. Discard individuals with fewer than this number of detections.
 #' @param min.days Optional. Minimum number of days an individual must be detected for it to be included;
 #' individuals with fewer days of detections will be discarded.
@@ -98,14 +100,10 @@ filterDetections <- function(data,
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
   land.shape <- reviewed_params$land.shape
+  cutoff.dates <- reviewed_params$cutoff.dates
 
   # check if speed.unit is valid
   if(!speed.unit %in% c("m/s", "km/h")) stop("Wrong speed unit. Please select either 'm/s' or 'km/h'", call.=FALSE)
-
-  # check and replicate cutoff.dates if it is a single value
-  if(!is.null(cutoff.dates) && length(cutoff.dates)==1){
-    cutoff.dates <- rep(cutoff.dates, nlevels(data[,id.col]))
-  }
 
   # capture the name of the 'land.shape' object
   if(!is.null(land.shape)){
@@ -347,7 +345,7 @@ filterDetections <- function(data,
 
     # issue a warning about overspeed detections with small time differences
     if(small_time_diff>0) {
-      warning_str <- paste0("A total of ", small_time_diff, " discarded overspeed detections had small datetime differences (< 1 min). ",
+      warning_str <- paste0("- A total of ", small_time_diff, " discarded overspeed detections had small datetime differences (< 1 min). ",
                             "These may represent valid detections that were flagged due to an underestimated acoustic range or receiver clock drifts. ",
                             "Please review the flagged detections in the 'data_discarded' data frame included in the results.")
       warning(paste(strwrap(warning_str, width=getOption("width")), collapse="\n"), call. = FALSE)

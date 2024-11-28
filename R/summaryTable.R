@@ -15,11 +15,14 @@
 #' @param data A data frame containing animal detections. Each row should represent an individual detection event,
 #' unless a 'detections' column is included to indicate the number of detections for each row.
 #' @param id.metadata A data frame containing metadata about the tagged animals, such as their length,
-#' sex, or transmitter type. If there are multiple rows per animal, variables will be collapsed before merging with other statistics.
+#' sex, or transmitter type. All columns in this data frame will be summarized and included
+#' in the final table. If there are multiple rows per animal, variables will be collapsed
+#' before merging with other statistics.
 #' @param tag.durations Optional. A numeric vector containing the estimated battery
-#' duration of the deployed tags (in days). The length of this vector should match the number of
-#' unique animal IDs, and the values must be in the same order as the ID levels.
-#' Alternatively, if a single value is provided, it will be applied to all IDs.
+#' duration of the deployed tags (in days). This parameter must be either:
+#' - A single numeric value, which will be applied to all unique animal IDs; or
+#' - A named numeric vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
 #' @param sensor.cols Optional. A character vector specifying column names in `data` that contain
 #' additional sensor readings (e.g., depth, temperature). For each column specified, the mean,
 #' minimum, and maximum values will be calculated and incorporated into the summary.
@@ -42,6 +45,13 @@
 #' - `"first.detection"`: The first detection after tagging is used as the starting point.
 #'
 #' Defaults to `"release"`.
+#' @param last.monitoring.date Optional. A POSIXct object or a named vector of POSIXct objects specifying
+#' the last timestamp when data could be retrieved, typically corresponding to the last data download date
+#' or the final day receivers were operational. If a single value is provided, it will be applied to all
+#' individuals. If a named vector is provided, the names should correspond to individual IDs, allowing
+#' for unique timestamps per individual. When `tag.durations` are also supplied, the total monitoring
+#' duration for each individual will be estimated based on the shortest of the two values: the tag expiration
+#' date or the last monitoring day.
 #' @param residency.by Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 #' Defaults to NULL.
 #' @param id.groups Optional. A list where each element is a group of IDs, used for visually aggregating
@@ -54,17 +64,18 @@
 #' - `ID`: Unique identifier for each tagged animal.
 #' - Any additional metadata columns from `id.metadata` if provided.
 #' - `Tagging date`: The date when the animal was tagged.
-#' - `Tag duration (d)`: Duration of the tag in days (if provided).
 #' - `Last detection`: The date of the last detection.
 #' - `N Detect`: Total number of detections for the animal.
 #' - `N Receiv`: Number of unique receivers that detected the animal.
-#' - `Monitoring duration (d)`: Total duration of monitoring in days.
+#' - `Monitoring duration (d)`: Total duration of monitoring in days. This is determined
+#' by the tag duration, if provided, or alternatively calculated as the time
+#' between release and the last detection in the dataset (assumed to represent the
+#' final data download).
 #' - `Detection span (d)`: Number of days between release/first detection and last detection (days at liberty)
 #' - `N days detected`: Total number of days the animal was detected.
 #' - Additional columns for each residency index specified in the `residency.index` parameter.
 #' - If `residency.by` is specified, additional columns for partial residency metrics will be included.
 #' - Sensor data metrics: For each column in `sensor.cols`, the mean, minimum, and maximum values, using titles specified in `sensor.titles` (if provided).
-
 #'
 #' @references
 #' Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
@@ -92,6 +103,7 @@ summaryTable <- function(data,
                          sensor.titles = NULL,
                          residency.index = c("IR1", "IR2", "IWR"),
                          start.point = "release",
+                         last.monitoring.date = NULL,
                          residency.by = NULL,
                          id.groups = NULL,
                          error.stat = "sd") {
@@ -106,35 +118,48 @@ summaryTable <- function(data,
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
   tag.durations <- reviewed_params$tag.durations
-
+  last.monitoring.date <- reviewed_params$last.monitoring.date
 
   # validate additional parameters
   errors <- c()
   # check if data contains residency.by
-  if(!is.null(residency.by) && !residency.by %in% colnames(data)) errors <- c(errors, "Variable used to calculate partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'.")
+  if(!is.null(residency.by) && !residency.by %in% colnames(data)) {
+    errors <- c(errors, "Variable used to calculate partial residencies not found in the supplied data. Please specify the correct column using 'residency.by'.")
+  }
   # check error function
   error.stat <- tolower(error.stat)
-  if(!error.stat %in% c("sd", "se")) errors <- c(errors, "Wrong error.stat argument, please choose between 'sd' and 'se'.")
+  if(!error.stat %in% c("sd", "se")) {
+    errors <- c(errors, "Wrong error.stat argument, please choose between 'sd' and 'se'.")
+  }
   # check if id.metadata contains id.col
-  if(!is.null(id.metadata) && !id.col %in% colnames(id.metadata))   errors <- c(errors, "The specified ID column ('id.col') does not exist in 'id.metadata'. Please ensure that the column name in 'id.metadata' matches the 'id.col' specified.")
+  if(!is.null(id.metadata) && !id.col %in% colnames(id.metadata)) {
+    errors <- c(errors, "The specified ID column ('id.col') does not exist in 'id.metadata'. Please ensure that the column name in 'id.metadata' matches the 'id.col' specified.")
+  }
   # check if data contains sensor.cols
   if(!is.null(sensor.cols) && !all(sensor.cols %in% colnames(data))) {
     errors <- c(errors, "One or more specified sensor columns ('sensor.cols') were not found in the supplied data. Please check the column names and ensure they exist in the data.")
   }
-   # check residency index
-  if(!all(residency.index %in% c("IR1", "IR2", "IWR"))) errors <- c(errors, "Invalid 'residency.index' argument. Please select one of the following options: 'IR1' (detection interval), 'IR2' (study interval), or 'IWR' (weighted residency index).")
-  if (!is.character(start.point) || length(start.point) !=1) errors <- c(errors, "Invalid 'start.point' parameter: it must be a single character string.")
-  if (!start.point %in% c("first.detection", "release")) errors <- c(errors, "Invalid 'start.point' parameter: must be one of 'release' or 'first.detection'.")
+  # check residency index
+  if(!all(residency.index %in% c("IR1", "IR2", "IWR"))) {
+    errors <- c(errors, "Invalid 'residency.index' argument. Please select one of the following options: 'IR1' (detection interval), 'IR2' (study interval), or 'IWR' (weighted residency index).")
+  }
+  # check start.point
+  if(!is.character(start.point) || length(start.point) !=1) {
+    errors <- c(errors, "Invalid 'start.point' parameter: it must be a single character string.")
+  }
+  if(!start.point %in% c("first.detection", "release")) {
+    errors <- c(errors, "Invalid 'start.point' parameter: must be one of 'release' or 'first.detection'.")
+  }
+  # ensure required durations are provided for IR2 and IWR indices
+  if (any(residency.index %in% c("IR2", "IWR")) && is.null(tag.durations) && is.null(last.monitoring.date)) {
+    errors <- c(errors, "The residency index includes 'IR2' or 'IWR', but no tag durations or last monitoring dates have been provided")
+  }
   # print all errors
   if(length(errors)>0){
     stop_message <- c("\n", paste0("- ", errors, collapse="\n"))
     stop(stop_message, call.=FALSE)
   }
 
-  # print warning in case residency.index included 'IR2' or 'IWR' and no tag.durations were provided
-  if (any(residency.index %in% c("IR2", "IWR")) && is.null(tag.durations)) {
-    warning("The residency index includes 'IR2' or 'IWR', but no tag durations have been supplied. The function will default to assuming the last detection date in the dataset as the end of the monitoring period. This may lead to spurious index values, particularly if the estimated expiration date of a tag is earlier than the last detection in the dataset.", call.=FALSE)
-  }
 
   # prompt the user for multiple residency.by levels and residency.index combinations
   if(!is.null(residency.by)) {
@@ -147,14 +172,6 @@ summaryTable <- function(data,
         message("Operation cancelled. No summary table was generated.")
         return(NULL)
       }
-    }
-  }
-
-  # estimate tag lifetime dates
-  if(!is.null(tag.durations)){
-    end_dates <- as.POSIXct(rep(NA, length(tagging.dates)), tz="UTC")
-    for(e in 1:length(tagging.dates)){
-      end_dates[e] <- tagging.dates[e] + tag.durations[e]*60*60*24
     }
   }
 
@@ -186,14 +203,13 @@ summaryTable <- function(data,
   if("detections" %in% colnames(data)){
     detections <- as.integer(stats::aggregate(as.formula(paste0("detections~", id.col)), data=data, FUN=sum, drop=FALSE)$detections)
   }else{
-    warning("No 'detections' column found, assuming one detection per row.", call.=FALSE)
+    warning("- No 'detections' column found, assuming one detection per row.", call.=FALSE)
     detections <- as.integer(table(data[,id.col]))
   }
   detections[detections==0] <- NA
 
   # calculate number of receivers
   receivers <- stats::aggregate(data[,station.col], by=list(data[,id.col]), function(x) length(unique(x)), drop=FALSE)$x
-
 
   # determine start dates based on the 'start.point' parameter
   if (start.point=="first.detection") {
@@ -203,9 +219,26 @@ summaryTable <- function(data,
     start_dates <- tagging.dates
   }
 
-  # determine end dates (if tag.duration are not available, use the last dataset detection)
-  if (is.null(tag.durations)) {
-    end_dates <- rep(max(data[,datetime.col], na.rm=TRUE), length(tagging.dates))
+  # determine end dates (using the shortest duration between tag expiration and last monitoring date)
+  if (!is.null(tag.durations)) {
+    # calculate tag expiration dates based on tagging dates and durations
+    end_dates <- as.POSIXct(rep(NA, length(tagging.dates)), tz = "UTC")
+    tag_expiration_dates <- tagging.dates + tag.durations * 60 * 60 * 24
+    # use the shortest value: tag expiration date or last monitoring date (if available)
+    for (e in 1:length(tagging.dates)) {
+      if (!is.null(last.monitoring.date)) end_dates[e] <- min(tag_expiration_dates[e], last.monitoring.date[e], na.rm = TRUE)
+      else end_dates[e] <- tag_expiration_dates[e]
+    }
+  } else if (!is.null(last.monitoring.date)) {
+    # use last monitoring dates if no tag durations are provided
+    end_dates <- last.monitoring.date
+  } else {
+    # fallback to the maximum detection time in the dataset
+    end_dates <- rep(max(data[, datetime.col], na.rm = TRUE), length(tagging.dates))
+    warning_msg <- paste("- Neither `tag.durations` nor `last.monitoring.date` were provided.",
+                  "The function will default to assuming the last detection date",
+                  "in the dataset as the end of the monitoring period for all individuals.")
+    warning(paste(strwrap(warning_msg, width=getOption("width")), collapse="\n"), call.=FALSE)
   }
 
   # days with detections (Dd)
@@ -217,8 +250,8 @@ summaryTable <- function(data,
   Di <- as.integer(difftime(last_detections, start_dates, units="days")) + 1
   Di[Di<0] <- NA
 
-  # study interval (Dt) - time between first and last monitoring day
-  Dt <- as.integer(difftime(end_dates, start_dates, units="days"))
+  # study interval (Dt) - time between release and last monitoring day
+  Dt <- as.integer(difftime(end_dates, tagging.dates, units="days"))
   Dt[Dt==0] <- NA
 
   # helper function to estimate residency metrics
@@ -229,16 +262,16 @@ summaryTable <- function(data,
   }
 
   # aggregate stats
-  stats <- data.frame("ID"=levels(data[,id.col]), "Tagging date"=tag_dates, "Last detection"=last_dates,
-                      "N Detect"=detections, "N Receiv"=receivers, "Monitoring duration (d)"=Dt, "Detection span (d)"=Di,
-                      "N days detected"=Dd, row.names=NULL, check.names=FALSE)
-
-  # add tag durations if available
-  if(!is.null(tag.durations)){
-    stats$`Tag duration (d)` <- round(tag.durations, 2)
-    stats <- stats[, c("ID", "Tagging date", "Tag duration (d)", "Last detection", "N Detect",
-                       "N Receiv", "Monitoring duration (d)", "Detection span (d)", "N days detected")]
-  }
+  stats <- data.frame("ID" = levels(data[,id.col]),
+                      "Tagging date" = tag_dates,
+                      "Last detection" = last_dates,
+                      "N Detect" = detections,
+                      "N Receiv" = receivers,
+                      "Monitoring duration (d)" = Dt,
+                      "Detection span (d)" = Di,
+                      "N days detected" = Dd,
+                      row.names = NULL,
+                      check.names = FALSE)
 
   # add sensor measurement summaries, if available
   if(!is.null(sensor.cols)){
@@ -306,13 +339,13 @@ summaryTable <- function(data,
     group[nrow(group)+1,] <- NA
     group$ID[nrow(group)] <- "mean"
     # format numeric columns
-    group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols], na.rm=TRUE))
-    errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols], 2, getErrorFun)))
+    group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols, drop=FALSE], na.rm=TRUE))
+    errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols, drop=FALSE], 2, getErrorFun)))
     group[nrow(group), numeric_cols] <- paste(group[nrow(group), numeric_cols], "\u00b1", errors)
     for(c in numeric_cols) group[-nrow(group), c] <- sprintf(paste0("%.", decimal_digits[which(numeric_cols==c)], "f"),  as.numeric(group[-nrow(group), c]))
     # format residency columns
-    group[nrow(group), IR_cols] <- sprintf("%.2f", colMeans(group[,IR_cols], na.rm=TRUE))
-    errors <- sprintf("%.2f", unlist(apply(group[,IR_cols], 2, getErrorFun)))
+    group[nrow(group), IR_cols] <- sprintf("%.2f", colMeans(group[,IR_cols, drop=FALSE], na.rm=TRUE))
+    errors <- sprintf("%.2f", unlist(apply(group[,IR_cols, drop=FALSE], 2, getErrorFun)))
     group[nrow(group), IR_cols] <- paste(group[nrow(group), IR_cols], "\u00b1", errors)
     for(c in IR_cols) group[-nrow(group), c] <- sprintf("%.2f", as.numeric(group[-nrow(group), c]))
     group[group=="NA"] <- "-"

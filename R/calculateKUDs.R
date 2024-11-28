@@ -185,7 +185,7 @@ calculateKUDs <- function(data,
   if(!is.null(subset)){
      if(!inherits(subset, "factor")){
        coords[[subset]] <- as.factor(coords[[subset]])
-       warning(paste0("The subset variable (", subset, ") has been converted to a factor."), call.=FALSE)
+       warning(paste0("- The subset variable (", subset, ") has been converted to a factor."), call.=FALSE)
      }
   }
 

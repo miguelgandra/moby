@@ -45,14 +45,21 @@ plotAbacus(
 This parameter can be used for example to differentiate detections by station,
 animal trait, or temporal category. If NULL, all detections will be plotted in a single color.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+\item{tagging.dates}{A POSIXct vector specifying the tagging or release dates for each animal.
+This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tagging dates are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{tag.durations}{Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). The length of this vector should match the number of
-unique animal IDs, and the values must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+duration of the deployed tags (in days). This parameter must be either:
+\itemize{
+\item A single numeric value, which will be applied to all unique animal IDs; or
+\item A named numeric vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{id.groups}{Optional. A named list containing ID groups used to visually aggregate
 animals belonging to the same class (e.g., different species, sexes or ages). Each element of

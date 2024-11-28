@@ -51,12 +51,18 @@ any portions of the estimated areas that overlap with landmasses.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
-for projecting positions/layers.}
+\item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
+serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
+(2) to define the target projection system when coordinates are supplied in geographic format. Note that
+this must always refer to a \strong{projected CRS}}
 
 \item{contour.percent}{Numeric vector. The percentages for which isopleths (contour areas)
 are calculated. Defaults to 50\% and 95\%, representing core and total areas of utilization.}

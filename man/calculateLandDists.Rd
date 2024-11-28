@@ -23,8 +23,10 @@ an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPo
 If the provided object is not of class 'sf', the function will attempt to
 convert it to an 'sf' object for compatibility with subsequent spatial operations.}
 
-\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
-for projecting positions/layers.}
+\item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
+serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
+(2) to define the target projection system when coordinates are supplied in geographic format. Note that
+this must always refer to a \strong{projected CRS}}
 
 \item{mov.threshold}{Movement threshold (0 - 1). It establishes the proportion of a step length that must be
 perpendicular to shore (away or approaching) in order for a movement to be classified as inshore or offshore
@@ -34,9 +36,13 @@ is classified either as inshore or offshore, according to its direction).}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
 \item{dist.col}{Name of the column containing step lengths in meters (distance between consecutive positions).
 This column can be generated using the \code{calculateTracks} function. If left NULL,

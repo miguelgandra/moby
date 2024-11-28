@@ -29,12 +29,22 @@ such column exists in the dataset, the function will assume one detection per ro
 and create a corresponding column.}
 
 \item{start.dates}{Optional. A POSIXct vector containing the start date of the monitoring period of each
-animal (e.g., tag/release date of each individual). If left null, defaults to each individual's first detection.
-If a single value is provided, it will be used for all IDs.}
+animal (e.g., tag/release date of each individual). This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+If left null, defaults to each individual's first detection.
+}}
 
 \item{end.dates}{Optional. A POSIXct vector containing a cut-off date for each animal.
+This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
 If left null, defaults to the individual's last detection.
-If a single value is provided, it will be used for all IDs.}
+}}
 
 \item{agg.fun}{A function to determine how values within each time bin are aggregated.
 If left NULL, the aggregation method is automatically chosen based on the type of \code{value.col}:

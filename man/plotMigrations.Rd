@@ -72,8 +72,10 @@ Used to indicate the number of tagged individuals at each site.}
 
 \item{land.color}{Optional. Color of land areas. Defaults to "gray50".}
 
-\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
-for projecting positions/layers.}
+\item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
+serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
+(2) to define the target projection system when coordinates are supplied in geographic format. Note that
+this must always refer to a \strong{projected CRS}}
 
 \item{background.layer}{Optional. A projected raster containing a variable to be displayed in the background
 (e.g. bathymetry, temperature, etc.).}

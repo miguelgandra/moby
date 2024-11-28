@@ -42,9 +42,13 @@ plotChronogram(
 \arguments{
 \item{data}{A data frame containing binned animal detections.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+\item{tagging.dates}{A POSIXct vector specifying the tagging or release dates for each animal.
+This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tagging dates are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{variables}{The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".}
 

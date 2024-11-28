@@ -55,9 +55,13 @@ visually aggregate animals belonging to the same class (e.g. different species).
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
-\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
 \item{land.shape}{Optional. A shapefile containing the coastlines or landmasses to be plotted.}
 

@@ -16,6 +16,7 @@ summaryTable(
   sensor.titles = NULL,
   residency.index = c("IR1", "IR2", "IWR"),
   start.point = "release",
+  last.monitoring.date = NULL,
   residency.by = NULL,
   id.groups = NULL,
   error.stat = "sd"
@@ -25,17 +26,26 @@ summaryTable(
 \item{data}{A data frame containing animal detections. Each row should represent an individual detection event,
 unless a 'detections' column is included to indicate the number of detections for each row.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+\item{tagging.dates}{A POSIXct vector specifying the tagging or release dates for each animal.
+This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tagging dates are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{tag.durations}{Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). The length of this vector should match the number of
-unique animal IDs, and the values must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+duration of the deployed tags (in days). This parameter must be either:
+\itemize{
+\item A single numeric value, which will be applied to all unique animal IDs; or
+\item A named numeric vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{id.metadata}{A data frame containing metadata about the tagged animals, such as their length,
-sex, or transmitter type. If there are multiple rows per animal, variables will be collapsed before merging with other statistics.}
+sex, or transmitter type. All columns in this data frame will be summarized and included
+in the final table. If there are multiple rows per animal, variables will be collapsed
+before merging with other statistics.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
@@ -73,6 +83,14 @@ Options include:
 
 Defaults to \code{"release"}.}
 
+\item{last.monitoring.date}{Optional. A POSIXct object or a named vector of POSIXct objects specifying
+the last timestamp when data could be retrieved, typically corresponding to the last data download date
+or the final day receivers were operational. If a single value is provided, it will be applied to all
+individuals. If a named vector is provided, the names should correspond to individual IDs, allowing
+for unique timestamps per individual. When \code{tag.durations} are also supplied, the total monitoring
+duration for each individual will be estimated based on the shortest of the two values: the tag expiration
+date or the last monitoring day.}
+
 \item{residency.by}{Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 Defaults to NULL.}
 
@@ -89,11 +107,13 @@ A data frame summarizing information on tagged animals, with the following colum
 \item \code{ID}: Unique identifier for each tagged animal.
 \item Any additional metadata columns from \code{id.metadata} if provided.
 \item \verb{Tagging date}: The date when the animal was tagged.
-\item \verb{Tag duration (d)}: Duration of the tag in days (if provided).
 \item \verb{Last detection}: The date of the last detection.
 \item \verb{N Detect}: Total number of detections for the animal.
 \item \verb{N Receiv}: Number of unique receivers that detected the animal.
-\item \verb{Monitoring duration (d)}: Total duration of monitoring in days.
+\item \verb{Monitoring duration (d)}: Total duration of monitoring in days. This is determined
+by the tag duration, if provided, or alternatively calculated as the time
+between release and the last detection in the dataset (assumed to represent the
+final data download).
 \item \verb{Detection span (d)}: Number of days between release/first detection and last detection (days at liberty)
 \item \verb{N days detected}: Total number of days the animal was detected.
 \item Additional columns for each residency index specified in the \code{residency.index} parameter.

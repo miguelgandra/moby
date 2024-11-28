@@ -15,9 +15,10 @@
 #' This parameter can be used for example to differentiate detections by station,
 #' animal trait, or temporal category. If NULL, all detections will be plotted in a single color.
 #' @param tag.durations Optional. A numeric vector containing the estimated battery
-#' duration of the deployed tags (in days). The length of this vector should match the number of
-#' unique animal IDs, and the values must be in the same order as the ID levels.
-#' Alternatively, if a single value is provided, it will be applied to all IDs.
+#' duration of the deployed tags (in days). This parameter must be either:
+#' - A single numeric value, which will be applied to all unique animal IDs; or
+#' - A named numeric vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
 #' @param id.groups Optional. A named list containing ID groups used to visually aggregate
 #' animals belonging to the same class (e.g., different species, sexes or ages). Each element of
 #' the list should be a vector of IDs that belong to the same group.
@@ -103,7 +104,7 @@ plotAbacus <- function(data,
   # check color.by variable
   if(!is.null(color.by) && !is.null(color.pal)) {
     if (length(color.pal) < nlevels(data[, color.by])) stop("The number of supplied colors needs to be greater than or equal to the number of color.by levels", call.=FALSE)
-    if (length(color.pal) > nlevels(data[, color.by])) warning("The number of specified colors exceeds the number of levels in color.by", call.=FALSE)
+    if (length(color.pal) > nlevels(data[, color.by])) warning("- The number of specified colors exceeds the number of levels in color.by", call.=FALSE)
   }
 
   # save the current par settings and ensure they are restored upon function exit

@@ -9,9 +9,10 @@
 #' @inheritParams setDefaults
 #' @param data  A data frame containing animal detections.
 #' @param tag.durations Optional. A numeric vector containing the estimated battery
-#' duration of the deployed tags (in days). The length of this vector should match the number of
-#' unique animal IDs, and the values must be in the same order as the ID levels.
-#' Alternatively, if a single value is provided, it will be applied to all IDs.
+#' duration of the deployed tags (in days). This parameter must be either:
+#' - A single numeric value, which will be applied to all unique animal IDs; or
+#' - A named numeric vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
 #' @param id.groups Optional. A list containing ID groups, used to
 #' visually aggregate animals belonging to the same class (e.g. different species).
 #' @param color.by Optional. Variable defining the color group of individual detections.
@@ -91,7 +92,7 @@ plotDetections <- function(data,
 
   # check nº of colors in supplied color palette
   if(!is.null(color.pal) & length(color.pal)<nlevels(data[,color.by])){
-    warning("The number of supplied colors doesn't match number of group levels", call.=FALSE)
+    warning("- The number of supplied colors doesn't match number of group levels", call.=FALSE)
   }
 
   # print to console
@@ -154,8 +155,8 @@ plotDetections <- function(data,
   unique_dates <- unique(consec_dates)
   indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
   detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=TRUE), max(data[,datetime.col], na.rm=TRUE), "day"), date.format)
-  start <- min(which(sub("\\_.*", "", unique_dates)==detec_dates[1]))
-  end <- max(which(sub("\\_.*", "", unique_dates)==detec_dates[length(detec_dates)]))
+  start <- min(which(sub("\\_.*", "", unique_dates)==detec_dates[1]), na.rm=TRUE)
+  end <- max(which(sub("\\_.*", "", unique_dates)==detec_dates[length(detec_dates)]), na.rm=TRUE)
   indexes <- indexes[start:end]
   unique_dates <- unique_dates[start:end]
   disp_dates <- unique_dates[seq(date.start, length(unique_dates), by=date.interval)]

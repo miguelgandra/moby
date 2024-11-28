@@ -27,21 +27,33 @@ filterDetections(
 \arguments{
 \item{data}{A data frame containing raw animal detections.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+\item{tagging.dates}{A POSIXct vector specifying the tagging or release dates for each animal.
+This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tagging dates are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{cutoff.dates}{Optional. A POSIXct vector containing the estimated expiration dates of the tags
-or any other cut-off date beyond which detections should be discarded. The length of this vector
-should match the number of unique animal IDs. Alternatively, if a single value is provided, it will be applied to all IDs.}
+or any other cut-off date beyond which detections should be discarded This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple cut-off dates are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
-\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
 \item{min.detections}{Optional. Discard individuals with fewer than this number of detections.}
 

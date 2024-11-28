@@ -16,11 +16,17 @@
 #'  such column exists in the dataset, the function will assume one detection per row
 #'  and create a corresponding column.
 #' @param start.dates Optional. A POSIXct vector containing the start date of the monitoring period of each
-#' animal (e.g., tag/release date of each individual). If left null, defaults to each individual's first detection.
-#' If a single value is provided, it will be used for all IDs.
+#' animal (e.g., tag/release date of each individual). This parameter must be either:
+#' - A single POSIXct value, which will be applied to all unique animal IDs; or
+#' - A named POSIXct vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
+#' If left null, defaults to each individual's first detection.
 #' @param end.dates Optional. A POSIXct vector containing a cut-off date for each animal.
+#' This parameter must be either:
+#' - A single POSIXct value, which will be applied to all unique animal IDs; or
+#' - A named POSIXct vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
 #' If left null, defaults to the individual's last detection.
-#' If a single value is provided, it will be used for all IDs.
 #' @param agg.fun A function to determine how values within each time bin are aggregated.
 #' If left NULL, the aggregation method is automatically chosen based on the type of `value.col`:
 #' for character or factor columns (e.g., 'station'), the most frequent value (mode) is used;
@@ -68,26 +74,20 @@ createWideTable <- function(data,
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
+  start.dates <- reviewed_params$start.dates
+  end.dates <- reviewed_params$end.dates
+
 
   # check if data contains value.col
   if(!value.col %in% colnames(data)) {
     if(value.col=="detections"){
-      warning("No 'detections' column found, assuming one detection per row", call.=FALSE)
+      warning("- No 'detections' column found, assuming one detection per row", call.=FALSE)
       data$detections <- 1
     }else{
       stop("Value column not found. Please specify the correct column using 'value.col'", call.=FALSE)
     }
   }
 
-  # check and replicate start.dates if it is a single value
-  if(!is.null(start.dates) && length(start.dates)==1){
-      start.dates <- rep(start.dates, nlevels(data[,id.col]))
-  }
-
-  # check and replicate end.dates if it is a single value
-  if(!is.null(end.dates) && length(end.dates)==1){
-      end.dates <- rep(end.dates, nlevels(data[,id.col]))
-  }
 
   ##############################################################################
   # Declare function to check ties #############################################
@@ -126,7 +126,7 @@ createWideTable <- function(data,
         ties <- reshape2::melt(ties[,-ncol(ties)], id.vars=timebin.col)
         colnames(ties) <- c("timebin", "ID", "ties")
         ties <- ties[!is.na(ties$ties),]
-        warning(paste0(nrow(ties), " instances with value ties\n"), call.=FALSE)
+        warning(paste0("- ", nrow(ties), " instances with value ties\n"), call.=FALSE)
         if(verbose){
           cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
           cat("First value assigned:\n")

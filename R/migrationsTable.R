@@ -4,9 +4,12 @@
 
 #' Create migrations table
 #'
-#' @description Generates a table containing migration metrics such as the number of movements between sites,
-#' the number of migrating individuals, and other related statistics. Optionally, visualizations of the
-#' distribution of some of these metrics can also be produced (e.g., departure and arrival hour, departure and arrival month).
+#' @description Generates a table containing migration metrics such as the number of
+#' movements between sites, the number of migrating individuals, and other
+#' related statistics. Optionally, visualizations of the distribution of some of these
+#' metrics can also be produced (e.g., departure and arrival hour, departure and
+#' arrival month). Additionally, the Von Bertalanffy Growth model can be applied to predict
+#' the length of individuals at the moment of departure, based on available metadata.
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing animal detections.
@@ -14,25 +17,45 @@
 #' used to calculate transitions. It can include receiver IDs in case all movements/transitions
 #' are of interest, or contain (for example) location/habitat classes for broader-scale analyses.
 #' @param id.metadata A data frame containing additional information about the tagged animals,
-#' such as length, sex or transmitter type. It should contain a column indicating animal IDs,
-#' as specified by the id.col argument. If the `von.bertalanffy` argument is set to TRUE, this data frame
-#' must also include a "length" column, which specifies the length of each individual at the time of tagging.
-#' @param id.groups Optional. A list specifying groups of animal IDs. This parameter allows for the estimation of metrics
-#' independently for subsets of animals and facilitates visual aggregation of individuals belonging to the same category
+#' such as length, sex, or transmitter type. It must include a column identifying the animal IDs,
+#' as specified by the `id.col` argument. If the `von.bertalanffy` argument is set to TRUE,
+#' this data frame must also include a "length" column, representing the length of each individual
+#' at the time of tagging. All columns in this data frame will be summarized and aggregated by
+#' migration transition type, and the resulting summary statistics will be included in the final table.
+#' @param id.groups Optional. A list specifying groups of animal IDs. This parameter
+#' allows for the estimation of metrics independently for subsets of animals and
+#' facilitates visual aggregation of individuals belonging to the same category
 #' (e.g., different species or life stages).
-#' @param plot Boolean. If true a plot is generated containing all the stats together with temporal metrics.
-#' If false, a summary data frame is returned.
+#' @param plot Boolean. If true a plot is generated containing all the stats together
+#' with temporal metrics. If false, a summary data frame is returned.
 #' @param plot.stats Indicates which variables to plot. Available options: "all", "depart.hour",
 #' "arrival.hour", "depart.month", "arrival.month", "duration". Defaults to "all".
 #' @param same.scale Standardizes scales across plots and id groups.
-#' @param von.bertalanffy Optional. Predict lengths at the moment of departure using a Von Bertalanffy Growth model.
-#' @param VBGF.params A list containing the required parameters to fit von Bertalanffy growth curves (VBGF), including parameters such as 'Linf', 'K', and 't0'.
-#' See the \code{\link[TropFishR]{VBGF}} function for detailed information on these parameters. If the data includes multiple species,
-#' provide separate parameter sets for each, corresponding to the order of `id.groups` (a list of lists, where each inner list
+#' @param von.bertalanffy Optional. Predict lengths at the moment of departure
+#' using a Von Bertalanffy Growth model.
+#' @param VBGF.params A list containing the required parameters to fit von Bertalanffy
+#' growth curves (VBGF), including parameters such as 'Linf', 'K', and 't0'.
+#' See the \code{\link[TropFishR]{VBGF}} function for detailed information on
+#' these parameters. If the data includes multiple species, provide separate parameter
+#' sets for each, corresponding to the order of `id.groups` (a list of lists, where each inner list
 #' contains the parameters specific to each group or species).
-#' @param cex.main Numeric. Determines the size of main titles (used only if `plot` is set to TRUE). Defaults to 1.1.
-#' @param cex.axis Numeric. Determines the size of axis labels (used only if `plot` is set to TRUE). Defaults to 0.7.
-#' @param cex.table Numeric. Determines the size of text in the summary table (used only if `plot` is set to TRUE). Defaults to 0.95.
+#' @param cex.main Numeric. Determines the size of main titles
+#' (used only if `plot` is set to TRUE). Defaults to 1.1.
+#' @param cex.axis Numeric. Determines the size of axis labels
+#' (used only if `plot` is set to TRUE). Defaults to 0.7.
+#' @param cex.table Numeric. Determines the size of text in the summary table
+#' (used only if `plot` is set to TRUE). Defaults to 0.95.
+#'
+#' @return
+#' A data frame (if `plot` is set to FALSE) summarizing the migration movements.
+#' Each row represents a unique movement type/transition, with columns showing the
+#' number of movements, the number of individuals associated with each migration type,
+#' and additional calculated statistics (e.g., mean values and standard errors
+#' for numeric metadata, if available). If `plot` is TRUE, the function generates a
+#' plot containing a table summarizing the transition movements, along with additional graphics
+#' illustrating the temporal distribution of selected migration metrics (such as
+#' departure and arrival hours, departure and arrival months, and migration duration).
+#'
 #' @export
 
 
@@ -63,29 +86,38 @@ migrationsTable <- function(data,
   tagging.dates <- reviewed_params$tagging.dates
 
 
-  # perform argument checks for von bertalanffy growth models
-  if(von.bertalanffy){
-    if (!requireNamespace("TropFishR", quietly=TRUE)) stop("The 'TropFishR' package is required for this function but is not installed. Please install 'TropFishR' using install.packages('TropFishR') and try again.", call.=FALSE)
-    if(is.null(id.metadata) | !c("length") %in% colnames(id.metadata)) stop("'id.metadata' with a 'length' column required to apply the Von Bertalanffy Growth Model", call.=FALSE)
-    if(!id.col %in% colnames(id.metadata)) stop(paste("'", id.col, "' column required in 'id.metadata'", sep=""), call.=FALSE)
-    if(is.null(VBGF.params)) stop("Please supply VBGF.params when von.bertalanffy is set to true", call.=FALSE)
-    if(!inherits(VBGF.params[[1]], "list")) VBGF.params<-list(VBGF.params)
-    if(is.null(id.groups) && length(VBGF.params)>1) stop("Multiple 'VBGF.params' supplied, but no 'id.groups' were defined. Please provide 'id.groups' or reduce 'VBGF.params' to a single element.", call.=FALSE)
-    if(!is.null(id.groups) && length(id.groups)!=length(VBGF.params)){
-      warning("The length of 'VBGF.params' does not match the length of 'id.groups'. The same parameters will be applied to all IDs", call.=FALSE)
-      VBGF.params <- rep(VBGF.params, length(id.groups))
-    }
-    cat("Applying Von Bertalanffy Growth curve to predict lengths at departure times\n")
-  }
-
+  # validate additional arguments
+  errors <- c()
   # check temporal stats
   available_stats <- c("depart.hour", "arrival.hour", "depart.month", "arrival.month", "duration")
   if(any(plot.stats=="all")) plot.stats <- available_stats
-  if(any(!plot.stats %in% available_stats)) stop(paste("Invalid plot.stats argument. Please select one or more variables from the possible options:", paste(available_stats, collapse=", ")), call.=FALSE)
+  if(any(!plot.stats %in% available_stats)) errors <- c(errors, paste("Invalid plot.stats argument. Please select one or more variables from the possible options:", paste(available_stats, collapse=", ")))
+  # check parameters for von bertalanffy growth models
+  if(von.bertalanffy){
+    if (!requireNamespace("TropFishR", quietly=TRUE)) errors <- c(errors, "The 'TropFishR' package is required for this function but is not installed. Please install 'TropFishR' using install.packages('TropFishR') and try again.")
+    if(is.null(id.metadata) | !c("length") %in% colnames(id.metadata)) errors <- c(errors, "'id.metadata' with a 'length' column required to apply the Von Bertalanffy Growth Model")
+    if(!id.col %in% colnames(id.metadata)) errors <- c(errors, paste("'", id.col, "' column required in 'id.metadata'", sep=""))
+    if(is.null(VBGF.params)) errors <- c(errors, "Please supply VBGF.params when von.bertalanffy is set to true")
+    if(!inherits(VBGF.params[[1]], "list")) VBGF.params<-list(VBGF.params)
+    if(is.null(id.groups) && length(VBGF.params)>1) errors <- c(errors, "Multiple 'VBGF.params' supplied, but no 'id.groups' were defined. Please provide 'id.groups' or reduce 'VBGF.params' to a single element.")
+    if(!is.null(id.groups) && length(id.groups)!=length(VBGF.params)){
+      warning("- The length of 'VBGF.params' does not match the length of 'id.groups'. The same parameters will be applied to all IDs", call.=FALSE)
+      VBGF.params <- rep(VBGF.params, length(id.groups))
+    }
+  }
+  if(length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
+    stop(stop_message, call.=FALSE)
+  }
 
-  # convert sites var to factor
+
+  # print message to console
+  if(von.bertalanffy) cat("Applying Von Bertalanffy Growth curve to predict lengths at departure times\n")
+
+  # convert sites varianle to factor
   if(!inherits(data[,spatial.col], "factor")){
-    warning(paste("Converting", spatial.col, "column to factor"), call.=FALSE)
+    warning(paste("- Converting", spatial.col, "column to factor"), call.=FALSE)
     data[,spatial.col] <- as.factor(data[,spatial.col])
   }
   ordered_sites <- levels(data[,spatial.col])

@@ -17,8 +17,8 @@
 #'  • solar.depth=18: astronomical twilight\cr
 #'
 #' @param datetimes A POSIXct object containing the respective datetimes or time-bins.
-#' @param coordinates A SpatialPoints, matrix, or data frame object containing longitude and
-#' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
+#' @param coordinates A SpatialPoints, matrix, or data frame object containing geographic (unprojected)
+#' longitude and latitude coordinates (in that order) for which to estimate sunrise and sunset times.
 #' If a single point or a matrix/data frame with one row is provided, the same coordinates
 #' will be used for all calculations.
 #' @param phases Integer indicating the number of diel phases to return (2, 3, or 4).

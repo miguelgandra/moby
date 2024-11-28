@@ -13,13 +13,21 @@
 #' @param datetime.col Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.
 #' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.
 #' @param station.col Name of the column containing station/receiver IDs. Defaults to 'station'.
-#' @param lon.col Name of the column containing longitude values. Defaults to 'lon'.
-#' @param lat.col Name of the column containing latitude values. Defaults to 'lat'.
-#' @param epsg.code The EPSG code (integer) representing the coordinate reference system (CRS) to be used
-#' for projecting positions/layers.
-#' @param tagging.dates A POSIXct vector containing the tag/release date of each animal.
-#' The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
-#' Alternatively, if a single value is provided, it will be applied to all IDs.
+#' @param lon.col Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+#' either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+#' should be provided via the `epsg.code` argument.
+#' @param lat.col Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+#' either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+#' should be provided via the `epsg.code` argument.
+#' @param epsg.code An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
+#' serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
+#' (2) to define the target projection system when coordinates are supplied in geographic format. Note that
+#' this must always refer to a **projected CRS**
+#' @param tagging.dates A POSIXct vector specifying the tagging or release dates for each animal.
+#' This parameter must be either:
+#' - A single POSIXct value, which will be applied to all unique animal IDs; or
+#' - A named POSIXct vector, where the names correspond to the animal IDs in the `id.col` column.
+#' If multiple tagging dates are provided, the vector must include all IDs and will be reordered to align with the levels of `id.col`.
 #'
 #' @examples
 #' # Setting default parameters using setDefaults
@@ -27,7 +35,7 @@
 #'   id.col = "animal_id",
 #'   datetime.col = "timestamp",
 #'   timebin.col = "time_bin",
-#'   tagging.dates = c("2020-01-01", "2020-06-01"),
+#'   tagging.dates = c("2020-01-01"),
 #' )
 #'
 #' # Retrieving default parameters using getDefaults

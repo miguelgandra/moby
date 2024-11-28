@@ -21,9 +21,13 @@ calculateCOAs(
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to 'timebin'.}
 
-\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
 

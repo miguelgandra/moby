@@ -9,8 +9,8 @@ getDielPhase(datetimes, coordinates, phases = 2, solar.depth = 18)
 \arguments{
 \item{datetimes}{A POSIXct object containing the respective datetimes or time-bins.}
 
-\item{coordinates}{A SpatialPoints, matrix, or data frame object containing longitude and
-latitude coordinates (in that order) at which to estimate sunrise and sunset times.
+\item{coordinates}{A SpatialPoints, matrix, or data frame object containing geographic (unprojected)
+longitude and latitude coordinates (in that order) for which to estimate sunrise and sunset times.
 If a single point or a matrix/data frame with one row is provided, the same coordinates
 will be used for all calculations.}
 

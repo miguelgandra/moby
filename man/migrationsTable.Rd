@@ -33,42 +33,68 @@ migrationsTable(
 used to calculate transitions. It can include receiver IDs in case all movements/transitions
 are of interest, or contain (for example) location/habitat classes for broader-scale analyses.}
 
-\item{tagging.dates}{A POSIXct vector containing the tag/release date of each animal.
-The length of this vector should match the number of unique animal IDs, and the dates must be in the same order as the ID levels.
-Alternatively, if a single value is provided, it will be applied to all IDs.}
+\item{tagging.dates}{A POSIXct vector specifying the tagging or release dates for each animal.
+This parameter must be either:
+\itemize{
+\item A single POSIXct value, which will be applied to all unique animal IDs; or
+\item A named POSIXct vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tagging dates are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{id.metadata}{A data frame containing additional information about the tagged animals,
-such as length, sex or transmitter type. It should contain a column indicating animal IDs,
-as specified by the id.col argument. If the \code{von.bertalanffy} argument is set to TRUE, this data frame
-must also include a "length" column, which specifies the length of each individual at the time of tagging.}
+such as length, sex, or transmitter type. It must include a column identifying the animal IDs,
+as specified by the \code{id.col} argument. If the \code{von.bertalanffy} argument is set to TRUE,
+this data frame must also include a "length" column, representing the length of each individual
+at the time of tagging. All columns in this data frame will be summarized and aggregated by
+migration transition type, and the resulting summary statistics will be included in the final table.}
 
-\item{id.groups}{Optional. A list specifying groups of animal IDs. This parameter allows for the estimation of metrics
-independently for subsets of animals and facilitates visual aggregation of individuals belonging to the same category
+\item{id.groups}{Optional. A list specifying groups of animal IDs. This parameter
+allows for the estimation of metrics independently for subsets of animals and
+facilitates visual aggregation of individuals belonging to the same category
 (e.g., different species or life stages).}
 
-\item{plot}{Boolean. If true a plot is generated containing all the stats together with temporal metrics.
-If false, a summary data frame is returned.}
+\item{plot}{Boolean. If true a plot is generated containing all the stats together
+with temporal metrics. If false, a summary data frame is returned.}
 
 \item{plot.stats}{Indicates which variables to plot. Available options: "all", "depart.hour",
 "arrival.hour", "depart.month", "arrival.month", "duration". Defaults to "all".}
 
 \item{same.scale}{Standardizes scales across plots and id groups.}
 
-\item{von.bertalanffy}{Optional. Predict lengths at the moment of departure using a Von Bertalanffy Growth model.}
+\item{von.bertalanffy}{Optional. Predict lengths at the moment of departure
+using a Von Bertalanffy Growth model.}
 
-\item{VBGF.params}{A list containing the required parameters to fit von Bertalanffy growth curves (VBGF), including parameters such as 'Linf', 'K', and 't0'.
-See the \code{\link[TropFishR]{VBGF}} function for detailed information on these parameters. If the data includes multiple species,
-provide separate parameter sets for each, corresponding to the order of \code{id.groups} (a list of lists, where each inner list
+\item{VBGF.params}{A list containing the required parameters to fit von Bertalanffy
+growth curves (VBGF), including parameters such as 'Linf', 'K', and 't0'.
+See the \code{\link[TropFishR]{VBGF}} function for detailed information on
+these parameters. If the data includes multiple species, provide separate parameter
+sets for each, corresponding to the order of \code{id.groups} (a list of lists, where each inner list
 contains the parameters specific to each group or species).}
 
-\item{cex.main}{Numeric. Determines the size of main titles (used only if \code{plot} is set to TRUE). Defaults to 1.1.}
+\item{cex.main}{Numeric. Determines the size of main titles
+(used only if \code{plot} is set to TRUE). Defaults to 1.1.}
 
-\item{cex.axis}{Numeric. Determines the size of axis labels (used only if \code{plot} is set to TRUE). Defaults to 0.7.}
+\item{cex.axis}{Numeric. Determines the size of axis labels
+(used only if \code{plot} is set to TRUE). Defaults to 0.7.}
 
-\item{cex.table}{Numeric. Determines the size of text in the summary table (used only if \code{plot} is set to TRUE). Defaults to 0.95.}
+\item{cex.table}{Numeric. Determines the size of text in the summary table
+(used only if \code{plot} is set to TRUE). Defaults to 0.95.}
+}
+\value{
+A data frame (if \code{plot} is set to FALSE) summarizing the migration movements.
+Each row represents a unique movement type/transition, with columns showing the
+number of movements, the number of individuals associated with each migration type,
+and additional calculated statistics (e.g., mean values and standard errors
+for numeric metadata, if available). If \code{plot} is TRUE, the function generates a
+plot containing a table summarizing the transition movements, along with additional graphics
+illustrating the temporal distribution of selected migration metrics (such as
+departure and arrival hours, departure and arrival months, and migration duration).
 }
 \description{
-Generates a table containing migration metrics such as the number of movements between sites,
-the number of migrating individuals, and other related statistics. Optionally, visualizations of the
-distribution of some of these metrics can also be produced (e.g., departure and arrival hour, departure and arrival month).
+Generates a table containing migration metrics such as the number of
+movements between sites, the number of migrating individuals, and other
+related statistics. Optionally, visualizations of the distribution of some of these
+metrics can also be produced (e.g., departure and arrival hour, departure and
+arrival month). Additionally, the Von Bertalanffy Growth model can be applied to predict
+the length of individuals at the moment of departure, based on available metadata.
 }

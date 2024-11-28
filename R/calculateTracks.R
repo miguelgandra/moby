@@ -145,8 +145,8 @@ calculateTracks <- function(data,
     overlapping_pts <- lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=TRUE))
     if(overlapping_pts > 0){
       num_overlapping <- sum(overlapping_pts > 0)  # count of points overlapping land
-      warning_str <- paste0("Some coordinates (n=", num_overlapping,") overlap with the supplied land shape. ",
-      "Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell,",
+      warning_str <- paste0("- Some coordinates (n=", num_overlapping,") overlap with the supplied land shape. ",
+      "Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell, ",
       "and then rerun the current function with the updated positions.")
       warning(paste(strwrap(warning_str, width=getOption("width")), collapse="\n"), call. = FALSE)
     }
@@ -307,7 +307,7 @@ calculateTracks <- function(data,
 
   # issue a warning if any track segments overlapped land and were skipped
   if(verbose & lines_skipped>0) {
-    warning(paste0(lines_skipped,
+    warning(paste0("- ", lines_skipped,
                    " track segment(s) were found overlapping land but had a length <= to the defined grid resolution. ",
                    "These segments were retained as straight lines in the final output."), call. = FALSE)
   }

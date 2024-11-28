@@ -34,12 +34,18 @@ This parameter can be either 'land', 'ocean', or 'bathy'.
 \item If 'bathy', the raster is assumed to range between 0 (land) to maximum depth (positive or negative values).
 }}
 
-\item{epsg.code}{The EPSG code (integer) representing the coordinate reference system (CRS) to be used
-for projecting positions/layers.}
+\item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
+serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
+(2) to define the target projection system when coordinates are supplied in geographic format. Note that
+this must always refer to a \strong{projected CRS}}
 
-\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'.}
+\item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
-\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'.}
+\item{lat.col}{Name of the column containing latitude values. Defaults to 'lat'. Coordinates can be supplied
+either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS
+should be provided via the \code{epsg.code} argument.}
 
 \item{depth.threshold}{A numeric value. If set, shortest in-water paths will be calculated only
 for cells with depths >= this threshold. Only takes effect when raster
