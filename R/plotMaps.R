@@ -146,7 +146,7 @@ plotMaps <- function(data,
                      scale.meters = NULL,
                      scale.color = "black",
                      scale.pos = "bottomright",
-                     scale.inset = 0.1,
+                     scale.inset = 0.05,
                      extent.factor = 1.1,
                      cols = 3) {
 
@@ -202,7 +202,7 @@ plotMaps <- function(data,
       animal.tracks <- animal.tracks$trajectories
     }else{
       animal.tracks <- animal.tracks
-      warning("A 'trajectories' list was not found in the supplied animal.tracks. Function will assume that animal.tracks already contains all linestring objects", call.=FALSE)
+      warning("- A 'trajectories' list was not found in the supplied animal.tracks. Function will assume that animal.tracks already contains all linestring objects", call.=FALSE)
     }
   }
 
@@ -381,7 +381,7 @@ plotMaps <- function(data,
       ###########################################################
       # overlay animal positions  ###############################
       if(plot.detections && nrow(data_individual[[i]])>0) {
-        id_coords <- coords[coords$ID==id,]
+        id_coords <- coords[coords[[id.col]]==id,]
         points(sf::st_coordinates(id_coords), pch=21, bg=pts.color[2], cex=pts.cex[2], col="gray15", lwd=0.25)
         points(sf::st_coordinates(id_coords[1,]), pch=21, bg=pts.color[1], cex=pts.cex[1], lwd=0.25)
         points(sf::st_coordinates(id_coords[nrow(id_coords),]), pch=21, bg=pts.color[3], cex=pts.cex[3], lwd=0.25)
@@ -393,7 +393,7 @@ plotMaps <- function(data,
 
       ###########################################################
       # position the scale bar based on the specified scale position and inset
-      scale_xy <- .getPosition(scale.pos, inset=scale.inset)
+      scale_xy <- .getPosition(scale.pos, inset=scale.inset, bar.width = scale.meters)
       .scalebar(d=scale.meters, xy=scale_xy, type="bar", divs=2, below="km", lwd=0.2,
                 label=c(0, scale_km/2, scale_km), label.color=scale.color, cex=0.7)
 
@@ -481,7 +481,7 @@ plotMaps <- function(data,
   close(pb)
 
   # print a summary message to the console if individuals were discarded
-  if(discard.missing) warning(paste0(length(missing_individuals), " individual(s) with < 5 detections discarded."), call.=FALSE)
+  if(discard.missing) warning(paste0("- ", length(missing_individuals), " individual(s) with < 5 detections discarded."), call.=FALSE)
 }
 
 

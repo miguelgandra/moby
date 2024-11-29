@@ -40,7 +40,8 @@ plotChronogram(
 )
 }
 \arguments{
-\item{data}{A data frame containing binned animal detections.}
+\item{data}{A data frame containing animal detections and including a time bin column
+(as specified by the \code{timebin.col} argument).}
 
 \item{tagging.dates}{A POSIXct vector specifying the tagging or release dates for each animal.
 This parameter must be either:

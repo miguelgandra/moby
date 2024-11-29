@@ -343,7 +343,7 @@ NULL
 #' @keywords internal
 #' @noRd
 
-.getPosition <- function(keyword, inset) {
+.getPosition <- function(keyword, inset, bar.width = 0) {
   usr <- par("usr")
 
   # Ensure `inset` has exactly two values
@@ -355,15 +355,15 @@ NULL
 
   # Determine left and top positions based on keyword
   left <- switch(keyword,
-                 bottomright = usr[2] - insetx,
-                 topright = usr[2] - insetx,
-                 right = usr[2] - insetx,
+                 bottomright = usr[2] - insetx - bar.width,
+                 topright = usr[2] - insetx - bar.width,
+                 right = usr[2] - insetx - bar.width,
                  bottomleft = usr[1] + insetx,
                  left = usr[1] + insetx,
                  topleft = usr[1] + insetx,
-                 bottom = (usr[1] + usr[2]) / 2,
-                 top = (usr[1] + usr[2]) / 2,
-                 center = (usr[1] + usr[2]) / 2,
+                 bottom = (usr[1] + usr[2]) / 2 - bar.width / 2,
+                 top = (usr[1] + usr[2]) / 2 - bar.width / 2,
+                 center = (usr[1] + usr[2]) / 2 - bar.width / 2,
                  stop("Invalid keyword for position: ", keyword)
   )
 
@@ -382,6 +382,7 @@ NULL
 
   return(c(left, top))
 }
+
 
 
 ##################################################################################################

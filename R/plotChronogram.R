@@ -10,14 +10,15 @@
 #' variation in diel phases' hours across the study duration (annual variation of daylight time).
 #'
 #' @inheritParams setDefaults
-#' @param data A data frame containing binned animal detections.
+#' @param data A data frame containing animal detections and including a time bin column
+#' (as specified by the `timebin.col` argument).
 #' @param split.by Optional. If defined, plots are generated individually for each level
 #' of this variable (e.g. species, ontogeny or habitat).
 #' @param variables The type(s) of metric to plot. Accepted types: "detections", "individuals" and "co-occurrences".
 #' @param style Style of the plot. Either "raster" (nº represented by color) or "points" (nº represented by size).
 #' @param color.by Variable defining the color group of the plotted metric, when style = "points".
 #' Can be used for example to display detections by receiver, animal trait or temporal category.
-#' @param color.pal Color palette for the level plot.
+#' @param color.pal A vector of colors or a color palette function to be used for the plot.
 #' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
 #' defining the x-axis labels. Defaults to month ("%b").
 #' @param date.interval Number defining the interval between each
@@ -116,24 +117,15 @@ plotChronogram <- function(data,
   #####################################################################################
 
   #######################################################
-  # set color palette if a color.by variable was supplied (style=="points")
+  # 1 - set color palette if a color.by variable was supplied (style=="points")
   if(!is.null(color.by) && style=="points"){
-
-    # check if data contains the color.by variable
-    if(!color.by %in% colnames(data)) stop("'color.by' variable not found in the supplied data", call.=FALSE)
-    if(any(is.na(data[,color.by]))) stop("Missing values in 'color.by' variable",  call.=FALSE)
-
-    # if class character, convert to factor
-    if(inherits(data[,color.by], "character")) {
-      data[,color.by] <- as.factor(data[,color.by])
-      warning("'color.by' variable converted to factor", call.=FALSE)}
 
     # set color palette for categorical levels (style = "points")
     if(inherits(data[,color.by], "factor")){
       ngroups <- nlevels(data[,color.by])
       if(!is.null(color.pal)){
         if(style=="points" && inherits(color.pal, "function")) color.pal <- color.pal(ngroups)
-        if(length(color.pal)!=ngroups)  warning("The number of colors doesn't match the number of levels in 'color.by' variable", call.=FALSE)
+        if(length(color.pal)!=ngroups)  warning("- The number of colors doesn't match the number of levels in 'color.by' variable", call.=FALSE)
       }else{
         if(ngroups==3) color.pal <- c("#326FA5","#D73134","#1C8E43")
         else if (ngroups>3 & ngroups<10) color.pal <- .economist_pal(ngroups)
@@ -146,25 +138,30 @@ plotChronogram <- function(data,
           color.pal <- color.pal(100)
         }else{
           color.pal <- colorRampPalette(color.pal)(100)
-          warning("The color palette was generated using the provided colors", call.=FALSE)
+          warning("- The color palette was generated using the provided colors", call.=FALSE)
         }
       }else{
         color.pal <- .viridis_pal(100)
       }
     }
+
   #######################################################
-  # set color palette if no color.by variable was supplied (style=="points")
+  # 2 - set color palette if no color.by variable was supplied (style=="points")
   }else if(is.null(color.by) && style=="points"){
-    if(!is.null(color.pal)) color.pal <- color.pal(1)
-    else color.pal <- "grey25"
+    if(!is.null(color.pal)){
+      if(inherits(color.pal, "function")) color.pal <- color.pal(1)
+      else color.pal <- color.pal[1]
+    } else {
+      color.pal <- "grey25"
+    }
   }
 
   #######################################################
-  # set color palette for style=="raster"
+  # 3 - set color palette for style=="raster"
   if(style=="raster"){
+    if(!is.null(color.by)) warning("- 'color.by' argument is discarded when plot if of type raster", call.=FALSE)
     if(!is.null(color.pal) && !inherits(color.pal, "function")) color.pal <- colorRampPalette(color.pal)
-    if(is.null(color.pal)) color.pal <- .viridis_pal
-    if(!is.null(color.by)) warning("'color.by' argument is discarded when plot if of type raster", call.=FALSE)
+    else if(is.null(color.pal)) color.pal <- .viridis_pal
   }
 
 
@@ -500,9 +497,12 @@ plotChronogram <- function(data,
     ##########################################################
     # if style is set to raster use "image"   ################
     if(style=="raster"){
+      # set the color palette based on the 'color.pal' parameter
       if(is.null(color.pal)){raster_pal <- .viridis_pal(max(var_range))}
       if(!is.null(color.pal)){raster_pal <- color.pal(max(var_range))}
+      # reshape the data into a matrix format (day x hour) suitable for raster plotting
       plot_matrix <- reshape2::dcast(plot_data, formula="day~hour", value.var="var", fill=0, fun.aggregate=max, drop=FALSE)
+      # identify and handle missing hours and days
       missing_hours <- base::setdiff(colnames(plot_template[[i]]), colnames(plot_matrix))
       missing_days <- base::setdiff(rownames(plot_template[[i]]), plot_matrix$day)
       if(length(missing_hours)>0) {
@@ -513,24 +513,44 @@ plotChronogram <- function(data,
         missing_days <- data.frame("day"=missing_days)
         plot_matrix <- dplyr::bind_rows(plot_matrix, missing_days)
       }
+      # finalize the plot matrix (remove day column and ensure proper row ordering)
       rownames(plot_matrix) <- plot_matrix$day
       plot_matrix <- plot_matrix[,-which(colnames(plot_matrix)=="day")]
       plot_matrix <- plot_matrix[order(rownames(plot_matrix)),]
       plot_matrix <- as.matrix(plot_matrix)
-      image(y=1:length(bins), x=1:length(days), z=plot_matrix,
-            zlim=var_range, xlab="", main="", ylab="",
-            col=raster_pal, axes=FALSE, cex.lab=0.9, ...)
+
+      # plot the raster depending on whether a grid is enabled
+      if(!grid){
+        # plot raster directly if grid lines are not required
+        image(y=1:length(bins), x=1:length(days), z=plot_matrix,
+              zlim=var_range, xlab="", main="", ylab="",
+              col=raster_pal, axes=FALSE, cex.lab=0.9, ...)
+      }else{
+        # create an empty plot to render the grid first
+        plot(1, type="n", xlim=c(1, length(days)), ylim=c(1, length(bins)),
+             xlab="", ylab="", axes=FALSE)
+        # add grid lines
+        segments(x0=par("usr")[1], x1=par("usr")[2], y0=hour_indexes, lty="solid", lwd=0.05, col=grid.color)
+        segments(x0=indexes, y0=par("usr")[3], y1=par("usr")[4], lty="solid", lwd=0.05, col=grid.color)
+        # overlay raster using image()
+        image(y=1:length(bins), x=1:length(days), z=plot_matrix,
+              zlim=var_range, col=raster_pal, add=TRUE)
+      }
+
     }
 
     ##########################################################
     # else, if style is set to points use "plot" ############
     if(style=="points"){
 
-      # create empty plot and fill background
+      # initialize an empty plot with the specified dimensions
       plot(0,0, type="n", xlim=c(1, nrow(plot_template[[i]])), ylim=c(1, ncol(plot_template[[i]])),
            pch=16, xlab="", ylab="", axes=FALSE, xaxs="i")
+      # initialize an empty list to store coordinates for legends or annotations
       coords_list <- list()
-      if(polygons=="season"){
+      # add polygons to represent seasons if the 'polygons' argument is set to "season"
+       if(polygons=="season"){
+         # create a table of seasons
         seasons_table <- shadeSeasons(min(days), max(days), interval)
         seasons_table$start <- strftime(seasons_table$start, "%Y-%m-%d", tz="UTC")
         seasons_table$end <- strftime(seasons_table$end, "%Y-%m-%d", tz="UTC")
@@ -538,14 +558,19 @@ plotChronogram <- function(data,
         seasons_table$end <- sapply(seasons_table$end, function(x) min(which(as.character(days)==x)))
         seasons_table$start[1] <- as.numeric(par("usr")[1])
         seasons_table$end[nrow(seasons_table)] <- par("usr")[2]
+        # draw season polygons with their respective colors
         rect(xleft=seasons_table$start, xright=seasons_table$end, ybottom=par("usr")[3], ytop=par("usr")[4], col=seasons_table$color, border=NA)
+        # prepare a legend for the seasons
         seasons_legend <- seasons_table[!duplicated(seasons_table$season), c("season","color")]
         seasons_legend <- seasons_legend[order(match(seasons_legend$season, c("spring", "summer", "autumn", "winter"))),]
         coords <- .legend(x=par("usr")[2], y=par("usr")[4], legend=seasons_legend$season, fill=seasons_legend$color, bty="n", border="black",
                                  xpd=TRUE, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=FALSE)
         coords_list <- c(coords_list, list(coords))
+      # add polygons for diel periods (e.g., day and night) if 'polygons' is "diel"
       } else if(polygons=="diel"){
+        # draw a light background for the entire plot
         rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col="grey98", border=NULL)
+        # add diel period polygons based on sunrise and sunset times
         x <- 1:length(daytimes_table$sunrises)
         if(diel.lines==2){
           polygon(c(x, rev(x)), c(daytimes_table$sunrises, rep(par("usr")[3], length(x))), col=adjustcolor("#CAD9EA", alpha.f=0.8), border=FALSE)
@@ -564,8 +589,15 @@ plotChronogram <- function(data,
                              bty="n", xpd=TRUE, y.intersp=legend.intersp+0.2, box.cex=c(1.6, 1.2), cex=cex.legend, horiz=FALSE)
          }
         coords_list <- c(coords_list, list(coords))
+      # fill the plot with a uniform background color for other cases
       } else {
         rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col=background.col, border=NULL)
+      }
+
+      # draw grid lines if the 'grid' argument is TRUE
+      if(grid) {
+        segments(x0=par("usr")[1], x1=par("usr")[2], y0=hour_indexes, lty="solid", lwd=0.05, col=grid.color)
+        segments(x0=indexes, y0=par("usr")[3], y1=par("usr")[4], lty="solid", lwd=0.05, col=grid.color)
       }
 
       # draw points
@@ -630,12 +662,6 @@ plotChronogram <- function(data,
       title(ylab="Hour", cex.lab=1, line=3)
       axis(2, at=hour_indexes[c(FALSE,TRUE)], labels=FALSE, tck=-0.015, lwd.ticks=0.5)
       axis(2, at=hour_indexes[c(TRUE,FALSE)], labels=disp_hours[c(TRUE,FALSE)], cex.axis=cex.axis, las=1)
-    }
-
-    # draw grid
-    if(grid) {
-      segments(x0=par("usr")[1], x1=par("usr")[2], y0=hour_indexes, lty="solid", lwd=0.05, col=grid.color)
-      segments(x0=indexes, y0=par("usr")[3], y1=par("usr")[4], lty="solid", lwd=0.05, col=grid.color)
     }
 
     # draw diel lines

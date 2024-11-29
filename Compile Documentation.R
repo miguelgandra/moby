@@ -26,6 +26,10 @@ stringi::stri_escape_unicode("º")
 stringi::stri_escape_unicode("±")
 
 
+# documentation
+docs <- list.files(path = './man', all.files = T, recursive = T, full.names = T)
+lapply(X=docs, FUN = tools::showNonASCIIfile)
+
 #usethis::use_build_ignore("Commands")
 #usethis::use_build_ignore("Compile Documentation.R")
 #usethis::use_build_ignore("moby-tutorial.R")
