@@ -67,7 +67,7 @@ of this variable (e.g. species, ontogeny or habitat).}
 \item{color.by}{Variable defining the color group of the plotted metric, when style = "points".
 Can be used for example to display detections by receiver, animal trait or temporal category.}
 
-\item{color.pal}{Color palette for the level plot.}
+\item{color.pal}{A vector of colors or a color palette function to be used for the plot.}
 
 \item{date.format}{Date-time format (as used in \code{\link[base]{strptime}}),
 defining the x-axis labels. Defaults to month ("\%b").}

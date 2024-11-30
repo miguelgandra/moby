@@ -37,7 +37,7 @@ plotMaps(
   scale.meters = NULL,
   scale.color = "black",
   scale.pos = "bottomright",
-  scale.inset = 0.1,
+  scale.inset = 0.05,
   extent.factor = 1.1,
   cols = 3
 )
