@@ -10,11 +10,13 @@
 #' registered within that time frame or the number of detections.
 #'
 #' @inheritParams setDefaults
-#' @param data A data frame containing animal detections with corresponding time-bins.
+#' @param data A data frame containing animal detections and including a time bin column
+#' (as specified by the `timebin.col` argument). Time bins can be created using the
+#' \code{\link{getTimeBins}} function.
 #' @param value.col The column name in the data frame whose values will be assigned
-#'  to each entry in the resulting wide-format table. If set to "detections" and no
-#'  such column exists in the dataset, the function will assume one detection per row
-#'  and create a corresponding column.
+#' to each entry in the resulting wide-format table. If set to "detections" and no
+#' such column exists in the dataset, the function will assume one detection per row
+#' and create a corresponding column.
 #' @param start.dates Optional. A POSIXct vector containing the start date of the monitoring period of each
 #' animal (e.g., tag/release date of each individual). This parameter must be either:
 #' - A single POSIXct value, which will be applied to all unique animal IDs; or

@@ -406,7 +406,7 @@ filterDetections <- function(data,
   ## Format and return results #################################################
   ##############################################################################
 
-  data_filtered <- data_filtered[,-which(colnames(data_filtered) %in% c("tmp_lon", "tmp_lat", "hour_diff", "dist_m", "dist_min", "speed", "row_id"))]
+  data_filtered <- data_filtered[,-which(colnames(data_filtered) %in% c("tmp_lon", "tmp_lat", "hour_diff", "dist_m", "dist_min", "speed", "row_index", "row_id"))]
   rownames(data_filtered) <- NULL
   n_removed_start <- unlist(lapply(rejected_start, function(x) ifelse(!is.null(x), nrow(x), 0)))
   n_removed_cutoff <- unlist(lapply(rejected_cutoff, function(x) ifelse(!is.null(x), nrow(x), 0)))

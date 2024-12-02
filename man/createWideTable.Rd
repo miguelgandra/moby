@@ -17,7 +17,9 @@ createWideTable(
 )
 }
 \arguments{
-\item{data}{A data frame containing animal detections with corresponding time-bins.}
+\item{data}{A data frame containing animal detections and including a time bin column
+(as specified by the \code{timebin.col} argument). Time bins can be created using the
+\code{\link{getTimeBins}} function.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 

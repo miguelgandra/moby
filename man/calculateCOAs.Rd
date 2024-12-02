@@ -10,12 +10,13 @@ calculateCOAs(
   timebin.col = getDefaults("timebin"),
   lon.col = getDefaults("lon"),
   lat.col = getDefaults("lat"),
-  station.col = NULL,
-  sensor.cols = NULL
+  station.col = NULL
 )
 }
 \arguments{
-\item{data}{A data frame containing the detections data.}
+\item{data}{A data frame containing animal detections and including a time bin column
+(as specified by the \code{timebin.col} argument). Time bins can be created using the
+\code{\link{getTimeBins}} function.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to 'ID'.}
 
@@ -30,9 +31,6 @@ either in geographic (unprojected) or projected format. In both cases, the appro
 should be provided via the \code{epsg.code} argument.}
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to 'station'.}
-
-\item{sensor.cols}{Character vector (optional). Names of additional sensor columns
-to include in the COA calculation. Default is \code{NULL}.}
 }
 \value{
 A data frame containing the following columns:
@@ -41,12 +39,15 @@ A data frame containing the following columns:
 \item The time bin (\code{timebin.col}) for which the COA was calculated.
 \item Mean longitude and latitude (\code{lon.col} and \code{lat.col}) for each ID and time bin.
 \item The number of detections (\code{detections}) for each ID and time bin.
-\item The number of unique stations visited (\code{station.col}) for each ID and time bin.
-\item Mean values for any additional sensor columns (if \code{sensor.cols} is provided).
+\item The number of unique stations visited (\code{stations}) for each ID and time bin.
+\item For numeric columns: Mean values for each ID and time bin.
+\item For character or factor columns: Concatenated unique values (separated by "|") for each ID and time bin.
 }
 }
 \description{
 This function calculates position estimates (Centers of Activity, COAs)
 from presence data collected at multiple receivers. It uses weighted means of longitude
-and latitude based on detection counts during specified time bins.
+and latitude based on detection counts during specified time bins. Additionally, it aggregates
+all remaining columns dynamically. For numeric columns, the mean is calculated, while for
+character or factor columns, unique values are concatenated and separated by "|".
 }
