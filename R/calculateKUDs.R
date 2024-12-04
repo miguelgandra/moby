@@ -274,9 +274,9 @@ calculateKUDs <- function(data,
       summary_table <- lapply(kud_results, function(x) x$summary_table)
       summary_table <- mapply(function(table, group){colnames(table)[-1] <- paste(group, "-", colnames(table)[-1]); return(table)},
                               table=summary_table, group=names(kud_results), SIMPLIFY=FALSE)
-      summary_table <- Reduce(function(x,y) merge(x, y, all=TRUE, by="ID"), summary_table)
-      summary_table <- summary_table[match(levels(data[[id.col]]), summary_table$ID), ]
-      summary_table <- summary_table[!is.na(summary_table$ID),]
+      summary_table <- Reduce(function(x,y) merge(x, y, all=TRUE, by=id.col), summary_table)
+      summary_table <- summary_table[match(levels(data[[id.col]]), summary_table[[id.col]]), ]
+      summary_table <- summary_table[!is.na(summary_table[[id.col]]),]
       coa_cols <- grepl("COAs", colnames(summary_table), fixed=TRUE)
       summary_table[coa_cols][is.na(summary_table[coa_cols])] <- 0
       summary_table[is.na(summary_table)] <- "-"
