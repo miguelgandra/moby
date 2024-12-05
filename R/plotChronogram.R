@@ -20,7 +20,7 @@
 #' Can be used for example to display detections by receiver, animal trait or temporal category.
 #' @param color.pal A vector of colors or a color palette function to be used for the plot.
 #' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
-#' defining the x-axis labels. Defaults to month ("%b").
+#' defining the x-axis labels. Defaults to day/month ("%d/%b").
 #' @param date.interval Number defining the interval between each
 #' displayed date (x-axis label). Defaults to 4.
 #' @param date.start Integer defining the first displayed date (can be used in combination

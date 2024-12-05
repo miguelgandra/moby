@@ -84,8 +84,8 @@ plotFFTs <- function(data,
   time_fraction <- 60/interval
 
   # create data frame with number of detections
-  fft_table <- createWideTable(data, id.col=id.col, timebin.col=timebin.col,
-                               value.col="detections", start.dates=tagging.dates)
+  fft_table <- suppressWarnings(createWideTable(data, id.col=id.col, timebin.col=timebin.col,
+                                                value.col="detections", start.dates=tagging.dates))
 
   # if type = presences, convert detections to binary (0-1)
   if(type=="presences"){

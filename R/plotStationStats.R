@@ -31,7 +31,7 @@
 #' @param title.cex Numeric. Font size for the plot title. Defaults to 1.1.
 #' @param title.pos Position of the title on the plot (by keyword). Defaults to "top".
 #' @param title.inset Inset distance of the title from the specified position, as a fraction of the
-#' plot region. Defaults to
+#' plot region. Defaults to c(0, 0.02)
 #' @param label.cex Numeric. Font size for axis labels. Defaults to 1.
 #' @param axis.cex Numeric. Font size for axis text. Defaults to 0.9.
 #' @param legend.pos Legend position.
@@ -85,6 +85,7 @@ plotStationStats <- function(data,
   # check type argument
   if(length(type)>4) errors <- c(errors, "Currently only a maximum of four 'types' can be defined.")
   if(any(!type %in% c("detections", "average detections", "individuals", "co-occurrences"))) errors <- c(errors, "Wrong 'type' argument. Please choose up to two of: 'detections', 'average detections', 'individuals' or 'co-occurrences'.")
+  if(length(group.comparisons) > 1) errors <- c(errors, "The 'group.comparisons' argument must be a single value.")
   if(!is.null(id.groups) && !group.comparisons %in% c("within", "between", "all")) errors <- c(errors, "Wrong 'group.comparisons' argument. Please choose one of: 'within', 'between' or 'all'.")
   if(length(errors)>0){
     stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
@@ -98,7 +99,7 @@ plotStationStats <- function(data,
 
   # convert station column to a factor if not already
   if(!is.factor(data[,station.col])){
-    warning("Converting 'station.col' to factor.", call.=FALSE)
+    warning("- Converting 'station.col' to factor.", call.=FALSE)
     data[,station.col] <- as.factor(data[,station.col])
   }
 
@@ -156,6 +157,7 @@ plotStationStats <- function(data,
     }
   }else{
     data_list <- list(data)
+    names(data_list) <- "All"
     ids_table <- data.frame("ID"=levels(data[,id.col]), "group"=1)
   }
 
@@ -217,9 +219,9 @@ plotStationStats <- function(data,
       # replace IDs by group ID
       colnames(group_table) <- plyr::mapvalues(colnames(group_table), ids_table$ID, ids_table$group, warn_missing=FALSE)
       # calculate co-occurring group sizes for each timebin
-      if(group.comparisons=="within" | (group.comparisons=="all" & !grepl("<->", names(data_list)[i], fixed=T))){
+      if(group.comparisons=="within" || (group.comparisons=="all" && !grepl("<->", names(data_list)[i], fixed=T))){
         co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="within", groups=colnames(group_table)))
-      }else if(group.comparisons=="between" | (group.comparisons=="all" & grepl("<->", names(data_list)[i], fixed=T))){
+      }else if(group.comparisons=="between" || (group.comparisons=="all" && grepl("<->", names(data_list)[i], fixed=T))){
         co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="between", groups=colnames(group_table)))
       }
       co_occurrence_events <- data.frame("station"=co_occurrence_events)
@@ -261,21 +263,24 @@ plotStationStats <- function(data,
   ######################################################################################
 
   # reorder rows if needed to match the supplied type order
-  group_results <- lapply(group_results, function(x) lapply(x, function(y) y[match(type, rownames(y)),]))
+  group_results <- lapply(group_results, function(x) lapply(x, function(y) {
+    y <- as.data.frame(y)
+    y[match(type, rownames(y)), , drop = FALSE]
+    colnames(y) <- NULL
+    return(y)
+  }))
 
   # format decimal places
-  formatVals <- function(x) {if(all(x%%1==0)){as.character(x)}else{sprintf("%.2f", x)}}
+  formatVals <- function(x) {if(all(x%%1==0)){as.numeric(x)}else{as.numeric(sprintf("%.2f", x))}}
   group_results <- lapply(group_results, function(x) lapply(x, function(y){y[is.na(y)]<-0; return(y)}))
   group_results <- lapply(group_results, function(x) lapply(x, function(y) t(apply(y, 1, formatVals))))
-  group_results <- lapply(group_results, function(x) lapply(x, function(y) t(apply(y, 1, as.numeric))))
+
 
   # assign variable display names
   var_names <- data.frame(type=c("detections", "average detections", "individuals", "co-occurrences"),
                           display=c("Detections", "Average Detection Frequency", "N\u00ba Individuals", "Co-Occurrence Events"))
-
   group_results <- lapply(group_results, function(x) lapply(x, function(y){
     rownames(y) <- plyr::mapvalues(rownames(y), var_names$type, var_names$display, warn_missing=F); return(y)}))
-
 
   # convert to matrix
   group_results <- lapply(group_results, function(x) lapply(x, as.matrix))

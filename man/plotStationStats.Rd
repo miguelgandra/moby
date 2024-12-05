@@ -70,7 +70,7 @@ Useful for reducing visual clutter in plots with many bars.}
 \item{title.pos}{Position of the title on the plot (by keyword). Defaults to "top".}
 
 \item{title.inset}{Inset distance of the title from the specified position, as a fraction of the
-plot region. Defaults to}
+plot region. Defaults to c(0, 0.02)}
 
 \item{title.cex}{Numeric. Font size for the plot title. Defaults to 1.1.}
 

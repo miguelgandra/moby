@@ -58,9 +58,10 @@ plotMigrations(
 
 \item{datetime.col}{Name of the column containing datetimes in POSIXct format. Defaults to 'datetime'.}
 
-\item{spatial.col}{Name of the variable/column containing the spatial information used to calculate transitions.
-It can include receiver IDs in case all movements/transitions are of interest,
-or contain (for example) location/habitat classes for broader-scale analyses.}
+\item{spatial.col}{Name of the column in both \code{data} and \code{id.metadata} (if supplied)
+that contains spatial information for calculating transitions. This can include receiver IDs
+in case all movements/transitions are of interest, or contain (for example) location/habitat
+classes for broader-scale analyses.}
 
 \item{id.groups}{Optional. A list containing ID groups (e.g. different species or size-classes).
 If supplied, a separate map will be plotted for each group.}

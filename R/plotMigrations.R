@@ -12,9 +12,10 @@
 #' @param data A data frame containing animal detections.
 #' @param lon.col Name of the column containing longitude values (either projected or unprojected). Defaults to 'lon'.
 #' @param lat.col Name of the column containing latitude values (either projected or unprojected). Defaults to 'lat'.
-#' @param spatial.col Name of the variable/column containing the spatial information used to calculate transitions.
-#' It can include receiver IDs in case all movements/transitions are of interest,
-#' or contain (for example) location/habitat classes for broader-scale analyses.
+#' @param spatial.col Name of the column in both `data` and `id.metadata` (if supplied)
+#' that contains spatial information for calculating transitions. This can include receiver IDs
+#' in case all movements/transitions are of interest, or contain (for example) location/habitat
+#' classes for broader-scale analyses.
 #' @param id.groups Optional. A list containing ID groups (e.g. different species or size-classes).
 #' If supplied, a separate map will be plotted for each group.
 #' @param id.metadata Optional. A data frame containing information on the tagging location of each animal.

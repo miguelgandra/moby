@@ -309,7 +309,7 @@ plotMaps <- function(data,
   data_individual <- split(data, f=data[,id.col], drop=FALSE)
 
   # set progress bar
-  pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)
+  pb <- txtProgressBar(min=0, max=length(data_individual), initial=0, style=3)
 
 
   # iterate through each plot index
