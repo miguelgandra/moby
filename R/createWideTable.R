@@ -121,18 +121,18 @@ createWideTable <- function(data,
                                     fill=NA_character_, fun.aggregate=assignVal, drop=FALSE)
       ties <- reshape2::dcast(data, formula=paste0(timebin.col, "~", id.col), value.var=value.col,
                               fill=NA_character_, fun.aggregate=checkTies, drop=FALSE)
-      ties$count <- apply(ties[,-1], 1, function(x) length(which(!is.na(x))))
-      ties <- ties[ties$count>0,]
-
+      ties$count <- rowSums(!is.na(as.matrix(ties[, -1])))
       if(nrow(ties)>0){
         ties <- reshape2::melt(ties[,-ncol(ties)], id.vars=timebin.col)
         colnames(ties) <- c("timebin", "ID", "ties")
         ties <- ties[!is.na(ties$ties),]
-        warning(paste0("- ", nrow(ties), " instances with value ties\n"), call.=FALSE)
-        if(verbose){
-          cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
-          cat("First value assigned:\n")
-          if(nrow(ties)<=10){print(ties)}else{print(head(ties))}
+        if(nrow(ties)>0){
+          warning(paste0("- ", nrow(ties), " instances with value ties\n"), call.=FALSE)
+          if(verbose){
+            cat(paste0("Warning: ", nrow(ties), " instances with value ties\n"))
+            cat("First value assigned:\n")
+            if(nrow(ties)<=10){print(ties)}else{print(head(ties))}
+          }
         }
       }
     }

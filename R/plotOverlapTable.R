@@ -7,7 +7,7 @@
 #' @description Plots a contingency table illustrating the pairwise distribution of overlap
 #' scores/significance across individuals. IDs can be sorted by length or any other quantitative metric.
 #'
-#' @param randomized.overlaps Similarity matrix containing pairwise overlaps, as returned by \code{\link{calculateOverlap}}.
+#' @param randomized.overlaps Similarity matrix containing pairwise overlaps, as returned by \code{\link{randomizeOverlap}}.
 #' @param id.metadata Optional. A data frame containing individual's metadata. It should contain
 #' at least animal IDs  and a numeric variable (e.g. length), defined by
 #' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
@@ -23,7 +23,9 @@
 #' @param discard.empty Boolean. Discard IDs with missing interactions.
 #' @param id.col Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.
 #' @param full.scale Boolean. If type is set to 'mean overlap', sets the overlap scale from 0 to 100%.
-#' @param sort.by Optional. Sort IDs based on this variable (e.g., length).
+#' @param sort.by Optional. A character string specifying the name of the column in `id.metadata`
+#' to sort IDs by (e.g. "length"). The column must contain sortable values
+#' (e.g., numeric or factor levels, but not character class).
 #' @seealso \code{\link{calculateOverlap}} and \code{\link{randomizeOverlap}}
 #' @export
 
@@ -46,38 +48,30 @@ plotOverlapTable <- function(randomized.overlaps,
 
   ##############################################################################
   # initial checks #############################################################
+  ##############################################################################
 
-  if(!type %in% c("mean overlap", "significance")){
-    stop("Wrong type argument, please select either 'mean overlap', or 'significance'")
+  # validate parameters
+  errors <- c()
+  if(!type %in% c("mean overlap", "significance")) errors <- c(errors, "Wrong type argument, please select either 'mean overlap', or 'significance'")
+  if(!is.null(sort.by)){
+    if(length(sort.by)>1) errors <- c(errors, "'sort.by' must be a single variable containing the name of the column to sort by")
+    if(is.null(id.metadata)) errors <- c(errors, paste("Please supply an 'id.metadata' data frame containing a", sort.by, "column"))
+    else if(!sort.by %in% colnames(id.metadata)) errors <- c(errors, "'sort.by' variable not found within the supplied 'id.metadata'")
+    else if(!inherits(id.metadata[[sort.by]], c("numeric", "integer", "factor", "POSIXct"))) errors <- c(errors, "'sort.by' must reference a column with sortable values (e.g., numeric, integer, factor, or POSIXct).")
   }
-
-  if(!is.null(sort.by) & is.null(id.metadata)){
-    stop(paste("Please supply an id.metadata data frame containing a", sort.by, "column"))
-  }
-
-  if(!is.null(sort.by) & !is.null(id.metadata)){
-    if(!sort.by %in% colnames(id.metadata)){
-      stop("sort.by variable not found within the supplied id.metadata")
-    }
-  }
-
-  # reorder ID levels if ID groups are defined
   if(!is.null(id.groups)){
-
     # check for duplicated IDs
-    if(any(duplicated(unlist(id.groups)))) {
-      stop("Repeated ID(s) in id.groups")
-    }
-
+    if(any(duplicated(unlist(id.groups)))) errors <- c(errors, "Repeated ID(s) in id.groups")
     # check if any ID is missing from the supplied metadata
-    if(any(!unlist(id.groups) %in% levels(id.metadata[,id.col]))){
-      stop("Some of the ID(s) in id.groups were not found in the supplied metadata")
-    }
-
-    if(!group.comparisons %in% c("both", "within", "between")){
-      stop("Wrong group.comparisons argument, please select one of: 'within', 'between' or 'both'")
-    }
+    if(any(!unlist(id.groups) %in% levels(id.metadata[,id.col]))) errors <- c(errors, "Some of the ID(s) in id.groups were not found in the supplied metadata")
+    if(!group.comparisons %in% c("both", "within", "between")) errors <- c(errors, "Wrong group.comparisons argument, please select one of: 'within', 'between' or 'both'")
   }
+  if(length(errors)>0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
+    stop(stop_message, call.=FALSE)
+  }
+
 
   # check color palette
   if(!is.null(color.pal)){
@@ -95,6 +89,7 @@ plotOverlapTable <- function(randomized.overlaps,
       color.pal <- c(adjustcolor(color.pal[1], alpha.f=0.65), adjustcolor(color.pal[2:100], alpha.f=0.7))
     }
   }
+
 
   ##############################################################################
   # create contigency table ####################################################

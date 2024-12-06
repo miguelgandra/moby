@@ -62,7 +62,7 @@ Only relevant to estimate co-occurrences. One of "within" (intra-group), "betwee
 \item{show.counts}{Logical. If \code{TRUE}, shows the count above each bar.}
 
 \item{annot.threshold}{Numeric (optional). Minimum count required to display
-labels on bars (e.g., \code{1} only labels bars with counts greater than 1).
+labels on bars (e.g., \code{1} only labels bars with counts equal to or greater than 1).
 Useful for reducing visual clutter in plots with many bars.}
 
 \item{annot.cex}{Numeric. Font size for bar annotation text. Defaults to 0.7.}

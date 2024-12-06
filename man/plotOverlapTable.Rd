@@ -18,7 +18,7 @@ plotOverlapTable(
 )
 }
 \arguments{
-\item{randomized.overlaps}{Similarity matrix containing pairwise overlaps, as returned by \code{\link{calculateOverlap}}.}
+\item{randomized.overlaps}{Similarity matrix containing pairwise overlaps, as returned by \code{\link{randomizeOverlap}}.}
 
 \item{id.metadata}{Optional. A data frame containing individual's metadata. It should contain
 at least animal IDs  and a numeric variable (e.g. length), defined by}
@@ -43,7 +43,9 @@ belonging to the same id.group or to only compare individuals in different id.gr
 
 \item{full.scale}{Boolean. If type is set to 'mean overlap', sets the overlap scale from 0 to 100\%.}
 
-\item{sort.by}{Optional. Sort IDs based on this variable (e.g., length).}
+\item{sort.by}{Optional. A character string specifying the name of the column in \code{id.metadata}
+to sort IDs by (e.g. "length"). The column must contain sortable values
+(e.g., numeric or factor levels, but not character class).}
 }
 \description{
 Plots a contingency table illustrating the pairwise distribution of overlap

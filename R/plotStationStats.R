@@ -25,7 +25,7 @@
 #' @param show.percentage Logical. If `TRUE`, percentages are displayed above each bar.
 #' @param show.counts Logical. If `TRUE`, shows the count above each bar.
 #' @param annot.threshold Numeric (optional). Minimum count required to display
-#' labels on bars (e.g., `1` only labels bars with counts greater than 1).
+#' labels on bars (e.g., `1` only labels bars with counts equal to or greater than 1).
 #' Useful for reducing visual clutter in plots with many bars.
 #' @param annot.cex Numeric. Font size for bar annotation text. Defaults to 0.7.
 #' @param title.cex Numeric. Font size for the plot title. Defaults to 1.1.
@@ -213,6 +213,13 @@ plotStationStats <- function(data,
 
     # calculate nº co-occurrences per location
     if(any(type=="co-occurrences")) {
+
+      # if a single indivdual is present in group data, move to next
+      if(nlevels(group_data[[id.col]])==1){
+        group_results[[i]] <- list("Counts"=rep(0, nlevels(data[[aggregate.by]])), "Freqs"=rep(0, nlevels(data[[aggregate.by]])))
+        next
+      }
+
       # convert subsetted data to wide format
       group_table <- suppressWarnings(createWideTable(group_data, id.col=id.col, timebin.col=timebin.col, value.col=station.col, verbose=FALSE))
       group_table <- group_table[,-1]
@@ -224,15 +231,23 @@ plotStationStats <- function(data,
       }else if(group.comparisons=="between" || (group.comparisons=="all" && grepl("<->", names(data_list)[i], fixed=T))){
         co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="between", groups=colnames(group_table)))
       }
-      co_occurrence_events <- data.frame("station"=co_occurrence_events)
-      # join co-occurrence data with grouping information
-      if(aggregate.by!=station.col){
-        co_occurrence_events <- merge(co_occurrence_events, station_groups, by.x="station", by.y=station.col)
-        co_occurrence_events[,2] <- as.character(co_occurrence_events[,2])
+      # check if co_occurrence_events is NULL or empty
+      if(is.null(co_occurrence_events) || length(co_occurrence_events) == 0) {
+        # create an empty data frame with the expected structure
+        co_occurrence_events <- data.frame("station"=character(0), stringsAsFactors=FALSE)
+        co_occurrences <- data.frame("X1"=levels(data[[aggregate.by]]), count=rep(0, length(levels(data[[aggregate.by]]))))
+        colnames(co_occurrences)[1] <- aggregate.by
+      } else {
+        co_occurrence_events <- data.frame("station"=co_occurrence_events)
+        # join co-occurrence data with grouping information
+        if(aggregate.by!=station.col){
+          co_occurrence_events <- merge(co_occurrence_events, station_groups, by.x="station", by.y=station.col)
+          co_occurrence_events[,2] <- as.character(co_occurrence_events[,2])
+        }
+        co_occurrences <- table(co_occurrence_events[,aggregate.by])
+        co_occurrences <- as.data.frame(co_occurrences)
+        colnames(co_occurrences) <- c(aggregate.by, "count")
       }
-      co_occurrences <- table(co_occurrence_events[,aggregate.by])
-      co_occurrences <- as.data.frame(co_occurrences)
-      colnames(co_occurrences) <- c(aggregate.by, "count")
       # add stations/groups with zero co-occurrences to the results
       missing_levels <- as.character(levels(group_data[,aggregate.by])[!levels(group_data[,aggregate.by]) %in% co_occurrences[,aggregate.by]])
       if(length(missing_levels)>0) {
