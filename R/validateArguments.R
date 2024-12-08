@@ -111,11 +111,18 @@
     if(!is.null(id.groups)){
       if(!inherits(id.groups, "list") || is.null(names(id.groups)) ) errors <- c(errors, "id.groups should be supplied as a named list.")
       else{
-        if(any(duplicated(unlist(id.groups)))) errors <- c(errors, "Repeated ID(s) in id.groups.")
-        if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {warnings <- c(warnings, "Some of the ID(s) in id.groups don't match the IDs in the data.")}
-        data <- data[data[,id.col] %in% unlist(id.groups),]
+        empty_groups <- sapply(id.groups, function(group) length(group) == 0 || is.null(group))
+        if(any(empty_groups)) {
+          empty_ids <- names(id.groups)[empty_groups]
+          errors <- c(errors, paste("The following ID groups are empty or NULL:", paste(empty_ids, collapse = ", ")))
+        }else if(any(duplicated(unlist(id.groups)))){
+          errors <- c(errors, "Repeated ID(s) in id.groups.")
+        }else{
+          if(any(!unlist(id.groups) %in% levels(data[,id.col]))) {warnings <- c(warnings, "Some of the ID(s) in id.groups don't match the IDs in the data.")}
+          data <- data[data[,id.col] %in% unlist(id.groups),]
+          data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
+        }
       }
-      data[,id.col] <- factor(data[,id.col], levels=unlist(id.groups))
     }
   }
 
@@ -243,7 +250,6 @@
       check_result <- .checkAnimalParams(tagging.dates, "Tagging dates", expected_class="POSIXct", data, id.col)
       tagging.dates <- check_result$vector
       errors <- c(errors, check_result$errors)
-      warnings <- c(warnings, check_result$warnings)
     }
   }
 
@@ -255,7 +261,6 @@
       check_result <- .checkAnimalParams(tag.durations, "Tag durations", expected_class="numeric", data, id.col)
       tag.durations <- check_result$vector
       errors <- c(errors, check_result$errors)
-      warnings <- c(warnings, check_result$warnings)
     }
   }
 
@@ -267,7 +272,6 @@
       check_result <- .checkAnimalParams(start.dates, "Start dates", expected_class="POSIXct", data, id.col)
       start.dates <- check_result$vector
       errors <- c(errors, check_result$errors)
-      warnings <- c(warnings, check_result$warnings)
     }
   }
 
@@ -279,7 +283,6 @@
       check_result <- .checkAnimalParams(end.dates, "Start dates", expected_class="POSIXct", data, id.col)
       end.dates <- check_result$vector
       errors <- c(errors, check_result$errors)
-      warnings <- c(warnings, check_result$warnings)
     }
   }
 
@@ -291,7 +294,6 @@
       check_result <- .checkAnimalParams(cutoff.dates, "Cut-off dates", expected_class="POSIXct", data, id.col)
       cutoff.dates <- check_result$vector
       errors <- c(errors, check_result$errors)
-      warnings <- c(warnings, check_result$warnings)
     }
   }
 
@@ -304,7 +306,6 @@
       check_result <- .checkAnimalParams(last.monitoring.date, "Last monitoring date", expected_class="POSIXct", data, id.col)
       last.monitoring.date <- check_result$vector
       errors <- c(errors, check_result$errors)
-      warnings <- c(warnings, check_result$warnings)
     }
   }
 
@@ -459,6 +460,36 @@
 }
 
 
+################################################################################
+# Helper function to display a warning only once per session ###################
+################################################################################
+
+#' Display a warning only once per session
+#'
+#' This function checks if a warning has already been shown in the current session.
+#' If not, it displays the warning message and ensures that the warning will not
+#' be shown again during the same session.
+#'
+#' @param message A character string containing the warning message to be displayed.
+#' @note This function is intended for internal use within the `moby` package.
+#' @keywords internal
+
+# Function to display the warning once per session
+.showWarningOnce <- function(arg_name, message) {
+
+  # create a unique identifier for the warning message
+  warning_id <- paste0("warn_", arg_name)
+
+  # check if the warning flag for this specific message is set in mobyEnv
+  if (!exists(warning_id, envir = mobyEnv) || !mobyEnv[[warning_id]]) {
+    # set the flag to TRUE to prevent future warnings for this message
+    assign(warning_id, TRUE, envir=mobyEnv)
+    # display the warning
+    message <- paste(strwrap(message, width=getOption("width")), collapse="\n")
+    warning(message, call.=FALSE)
+  }
+}
+
 
 ################################################################################
 # Helper function for animal-specific parameters checks ########################
@@ -490,11 +521,9 @@
   # match the expected class to ensure it is either "POSIXct" or "numeric"
   expected_class <- match.arg(expected_class)
 
-  # initialize empty lists for errors and warnings
+  # initialize empty lists for errors
   errors <- NULL
-  warnings <- NULL
   processed_argument <- NULL
-
 
   # validate the class of the argument
   if (expected_class == "POSIXct" && !inherits(argument, "POSIXct")) {
@@ -516,8 +545,9 @@
     if (is.null(names(argument))) {
       # issue a warning for unnamed vector and keep the original order
       processed_argument <- argument
-      warnings <- paste("The vector for",  arg_name, "is unnamed and couldn't be auto-matched to specific individuals.",
-                        "Please double-check that the supplied values match the order of the animal ID levels")
+      .showWarningOnce(arg_name, paste("- The vector for",  arg_name, "is unnamed and couldn't be auto-matched to specific individuals.",
+                                       "Please double-check that the supplied values match the order of the animal ID levels.",
+                                       "This warning will be displayed only once during this session."))
     } else {
       # identify IDs in the data that are missing from the argument
       missing_ids <- setdiff(levels(data[[id_col]]), names(argument))
@@ -531,8 +561,8 @@
     }
   }
 
-  # return the result: a list with the processed argument, errors, and warnings
-  return(list(vector=processed_argument, errors=errors, warnings=warnings))
+  # return the result: a list with the processed argument and errors
+  return(list(vector=processed_argument, errors=errors))
 }
 
 

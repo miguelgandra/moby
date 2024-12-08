@@ -272,7 +272,7 @@ calculateKUDs <- function(data,
     # combine the summary tables
     if(repeated_ids){
       summary_table <- lapply(kud_results, function(x) x$summary_table)
-      summary_table <- mapply(function(table, group){colnames(table)[-1] <- paste(group, "-", colnames(table)[-1]); return(table)},
+      summary_table <- mapply(function(table, group){colnames(table)[-1] <- paste0(colnames(table)[-1], " [", group, "]"); return(table)},
                               table=summary_table, group=names(kud_results), SIMPLIFY=FALSE)
       summary_table <- Reduce(function(x,y) merge(x, y, all=TRUE, by=id.col), summary_table)
       summary_table <- summary_table[match(levels(data[[id.col]]), summary_table[[id.col]]), ]
@@ -283,8 +283,10 @@ calculateKUDs <- function(data,
     }else{
       summary_table <- lapply(kud_results, function(x) x$summary_table)
       summary_table <- do.call("rbind", summary_table)
-      rownames(summary_table) <- sub("(.*)\\.[^\\.]*$", "\\1", rownames(summary_table))
-      summary_table[,2][is.na(summary_table[,2])] <- 0
+      summary_table$group <- sub("(.*)\\.[^\\.]*$", "\\1", rownames(summary_table))
+      rownames(summary_table) <- NULL
+      summary_table <- summary_table[,c(ncol(summary_table), 1, 2:(ncol(summary_table)-1))]
+      summary_table[["N COAs"]][is.na(summary_table[["N COAs"]])] <- 0
       summary_table[is.na(summary_table)] <- "-"
     }
 

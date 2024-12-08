@@ -49,8 +49,9 @@ should be provided via the \code{epsg.code} argument.}
 
 \item{discard.missing}{If true, only individuals with detections are included.}
 
-\item{...}{Further arguments passed to \code{\link{calculateTracks}} function,
-in order to calculate distances between the first and last recorded detection, for each individual.}
+\item{...}{Additional arguments passed to \code{\link{calculateTracks}},
+used to calculate distances between the first and last recorded detections for each individual.
+(e.g., \code{grid.resolution}, \code{mov.directions} and \code{cores}).}
 }
 \description{
 Creates a table containing  movement metrics for each animal
