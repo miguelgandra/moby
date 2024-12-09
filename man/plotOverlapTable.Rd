@@ -2,55 +2,56 @@
 % Please edit documentation in R/plotOverlapTable.R
 \name{plotOverlapTable}
 \alias{plotOverlapTable}
-\title{Plots pairwise stats in a contingency table}
+\title{Generate a visual representation of pairwise overlap statistics.}
 \usage{
 plotOverlapTable(
-  randomized.overlaps,
-  id.metadata = NULL,
-  id.groups = NULL,
+  random.results,
   type = "significance",
-  group.comparisons = "both",
   color.pal = NULL,
-  discard.empty = TRUE,
-  id.col = getDefaults("ID"),
+  sort.by = NULL,
+  sort.by.title = NULL,
   full.scale = FALSE,
-  sort.by = NULL
+  discard.missing = TRUE,
+  table.cex = 0.8,
+  legend.cex = 0.7
 )
 }
 \arguments{
-\item{randomized.overlaps}{Similarity matrix containing pairwise overlaps, as returned by \code{\link{randomizeOverlap}}.}
+\item{random.results}{A list containing null model permutation results. Should be the output from the \code{\link{randomizeOverlap}} function.}
 
-\item{id.metadata}{Optional. A data frame containing individual's metadata. It should contain
-at least animal IDs  and a numeric variable (e.g. length), defined by}
+\item{type}{The type of metric to be plotted. Must be one of "significance" (default) or "mean overlap".}
 
-\item{id.groups}{Optional. A list containing ID groups, used to calculate stats independently
-within each group and/or to compare relationships between ids of different groups.}
+\item{color.pal}{A vector of colors defining the palette for the table.
+\itemize{
+\item If \code{type = "significance"}, the palette should include three colors
+corresponding to positive ("+"), negative ("-"), and non-significant ("ns") results.
+\item For \code{type = "mean overlap"}, a gradient of at least 10 colors is recommended.
+}}
 
-\item{type}{Type of metric to be plotted, one of "significance" or "mean overlap".
-Defaults to "significance".}
+\item{sort.by}{An optional vector to reorder IDs (e.g., based on their size or
+another quantitative metric). Must have the same length as the IDs in \code{random.results}.}
 
-\item{group.comparisons}{Controls the type of comparisons to be run, when id.groups are defined.
-One of "within", "between" or "both". Useful to visualize comparisons between individuals
-belonging to the same id.group or to only compare individuals in different id.groups
-(e.g. intraspecific vs interspecific). Defaults to "both".}
+\item{sort.by.title}{A string providing a title for the \code{sort.by} metric
+(e.g., "Size (cm)"). If not supplied, the function attempts to extract the name
+of the variable passed to \code{sort.by}.}
 
-\item{color.pal}{Color palette. If type is set to significance, it should contain 3 colors
-("+", "-", "ns").}
+\item{full.scale}{Logical. If \code{TRUE} and \code{type = "mean overlap"},
+scales overlap values from 0\% to 100\%. Defaults to \code{FALSE}.}
 
-\item{discard.empty}{Boolean. Discard IDs with missing interactions.}
+\item{discard.missing}{Logical. If \code{TRUE}, removes rows and columns with
+no valid pairwise interactions. Defaults to \code{TRUE}.}
 
-\item{id.col}{Name of the column in id.metadata containing animal IDs. Defaults to 'ID'.}
+\item{table.cex}{Numeric. Character expansion factor for the table text.
+Defaults to \code{0.7}.}
 
-\item{full.scale}{Boolean. If type is set to 'mean overlap', sets the overlap scale from 0 to 100\%.}
-
-\item{sort.by}{Optional. A character string specifying the name of the column in \code{id.metadata}
-to sort IDs by (e.g. "length"). The column must contain sortable values
-(e.g., numeric or factor levels, but not character class).}
+\item{legend.cex}{Numeric. Character expansion factor for the legend text.
+Defaults to \code{0.7}.}
 }
 \description{
 Plots a contingency table illustrating the pairwise distribution of overlap
 scores/significance across individuals. IDs can be sorted by length or any other quantitative metric.
 }
 \seealso{
-\code{\link{calculateOverlap}} and \code{\link{randomizeOverlap}}
+\code{\link{calculateOverlap}} for overlap computation and
+\code{\link{randomizeOverlap}} for generating \code{random.results}.
 }

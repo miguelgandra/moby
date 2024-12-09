@@ -409,6 +409,7 @@ randomizeOverlap <- function(table,
     original_cols <- match(colnames(overlaps), colnames(pairwise_stats))
     new_cols <- setdiff(1:ncol(pairwise_stats), original_cols)
     pairwise_stats <- pairwise_stats[,c(original_cols, new_cols)]
+    pairwise_stats <- pairwise_stats[!is.na(pairwise_stats$id1) & !is.na(pairwise_stats$id2),]
 
 
     ##############################################################################
@@ -531,6 +532,7 @@ randomizeOverlap <- function(table,
     if (!is.null(id.groups)) {
       group1 <- which(unlist(lapply(id.groups, function(x) id1 %in% x)))
       group2 <- which(unlist(lapply(id.groups, function(x) id2 %in% x)))
+      if(length(group1)==0 || length(group2)==0) return(NA)
       if (group.comparisons == "within" & group1 != group2) return(NA)
       if (group.comparisons == "between" & group1 == group2) return(NA)
     }

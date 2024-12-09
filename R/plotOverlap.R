@@ -152,6 +152,7 @@ plotOverlap <- function(overlaps = NULL,
 
   # define min.val, cut.val and edge.color (repeat if necessary)
   ntypes <- ifelse(!is.null(overlaps), nlevels(overlaps$type), nlevels(random.results$pairwise_results$type))
+  if(ntypes==0 || is.na(ntypes)) ntypes <- 1
   min.val <- if(!is.null(min.val) && length(min.val) == 1) rep(min.val, ntypes) else min.val
   cut.val <- if(!is.null(cut.val) && length(cut.val) == 1) rep(cut.val, ntypes) else cut.val
   edge.color <- if(!is.null(edge.color) && length(edge.color) == 1) rep(edge.color, ntypes) else edge.color
