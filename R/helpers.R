@@ -1087,9 +1087,8 @@ if (!exists("rep_len")) {
     }
     if(!is.na(epsg.code$epsg) && epsg.code$epsg==4326){
       stop("Invalid EPSG code. The supplied code corresponds to WGS84 (EPSG:4326), a geographic coordinate system. Please provide a projected coordinate system instead.", call. = FALSE)
-    }
-    if(!is.na(epsg.code$epsg) && !tolower(epsg.code$units) %in% c("meter", "m")){
-      stop("Invalid EPSG code. The supplied code uses non-meter units. Please provide a projected coordinate in meters.", call = FALSE)
+    }else if(sf::st_is_longlat(epsg.code)){
+      stop("Invalid EPSG code. The supplied code is a geographic coordinate system. Please provide a projected coordinate system with meter units.", call. = FALSE)
     }
   }
 
