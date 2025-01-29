@@ -88,7 +88,8 @@
 #' defined based on the bounding box around animal positions/detections. A value of 1 keeps
 #' the original bounding box, values greater than 1 increase the extent, and values less
 #' than 1 decrease it. Defaults to 1.1 (10% increase).
-#' @param cols Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 3.
+#' @param cols Number of columns in the plot panel layout. If NULL, is dynamically
+#' set based on the number of individuals.
 #' @export
 #'
 #' @details This function is designed to create multi-panel plots of animal movement and home ranges.
@@ -148,7 +149,7 @@ plotMaps <- function(data,
                      scale.pos = "bottomright",
                      scale.inset = 0.05,
                      extent.factor = 1.1,
-                     cols = 3) {
+                     cols = NULL) {
 
 
 
@@ -257,6 +258,20 @@ plotMaps <- function(data,
   # define the plot boundaries (bounding box) based on the animal positions
   bbox <- sf::st_bbox(coords)
 
+  # check if kernel density estimates (KDE) are available to update the bounding box
+  if(!is.null(kernel.densities)){
+    # convert the kernel density object into a raster
+    kde_raster <- raster::raster(kernel.densities[[1]])
+    # get the extent of the kernel density raster
+    kde_extent <- raster::extent(kde_raster)
+    kde_extent <- sf::st_bbox(kde_extent)  # Convert it to sf bbox format for consistency
+    # calculate the minimum and maximum extents along each axis
+    bbox <- c(xmin = min(bbox[1], kde_extent[1]),
+              ymin = min(bbox[2], kde_extent[2]),
+              xmax = max(bbox[3], kde_extent[3]),
+              ymax = max(bbox[4], kde_extent[4]))
+  }
+
   # expand bounding box by a given % in all directions
   dx <- bbox["xmax"]-bbox["xmin"]
   dy <- bbox["ymax"]-bbox["ymin"]
@@ -282,6 +297,12 @@ plotMaps <- function(data,
   # handle space for a common legend, if applicable
   if((!is.null(kernel.densities) && same.scale && kud.legend) || !is.null(background.layer)) add_legend_space <- TRUE
   else add_legend_space <- FALSE
+
+  # set number of cols, if not specified
+  if(is.null(cols)){
+    total_individuals <- sum(sapply(id.groups, length))
+    cols <- ifelse(total_individuals == 1, 1, ifelse(total_individuals == 2, 2, 3))
+  }
 
   # set layout grid
   layout_params <- .setLayout(cols, id.groups, plots.height=6, dividers.height=0.6,

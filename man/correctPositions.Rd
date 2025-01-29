@@ -37,7 +37,7 @@ This parameter can be either 'land', 'ocean', or 'bathy'.
 \item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
 serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
 (2) to define the target projection system when coordinates are supplied in geographic format. Note that
-this must always refer to a \strong{projected CRS}}
+this must always refer to a \strong{projected CRS} (in meters).}
 
 \item{lon.col}{Name of the column containing longitude values. Defaults to 'lon'. Coordinates can be supplied
 either in geographic (unprojected) or projected format. In both cases, the appropriate projected CRS

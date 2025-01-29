@@ -62,7 +62,7 @@ should be provided via the \code{epsg.code} argument.}
 \item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
 serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
 (2) to define the target projection system when coordinates are supplied in geographic format. Note that
-this must always refer to a \strong{projected CRS}}
+this must always refer to a \strong{projected CRS} (in meters).}
 
 \item{contour.percent}{Numeric vector. The percentages for which isopleths (contour areas)
 are calculated. Defaults to 50\% and 95\%, representing core and total areas of utilization.}

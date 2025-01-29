@@ -43,7 +43,8 @@
 #' @param cex.lab Determines the size of the axes titles. Defaults to 1.8.
 #' @param cex.axis Determines the size of the tick mark labels on the axes. Defaults to 1.4.
 #' @param cex.legend Determines the size of the color legend. Defaults to 1.6.
-#' @param cols Number of columns in the final panel. Defaults to 2.
+#' @param cols Number of columns in the final panel. If NULL, is dynamically
+#' set based on the number of individuals.
 #' @param legend.cols Number of columns in the legend (when 'color.by' is defined).  Defaults to 3.
 #' @export
 
@@ -71,7 +72,7 @@ plotDetections <- function(data,
                            cex.lab = 1.8,
                            cex.axis = 1.4,
                            cex.legend = 1.6,
-                           cols = 2,
+                           cols = NULL,
                            legend.cols = 3){
 
   ##############################################################################
@@ -168,6 +169,12 @@ plotDetections <- function(data,
 
   # set color palette if required
   if(is.null(color.pal)){color.pal <- rainbow(nlevels(data[,color.by]))}
+
+  # set number of cols, if not specified
+  if(is.null(cols)){
+    total_individuals <- sum(sapply(id.groups, length))
+    cols <- ifelse(total_individuals == 1, 1, 2)
+  }
 
   # set layout grid
   layout_params <- .setLayout(cols, id.groups, plots.height=6, dividers.height=1, legend=TRUE)

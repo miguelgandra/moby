@@ -26,7 +26,7 @@ convert it to an 'sf' object for compatibility with subsequent spatial operation
 \item{epsg.code}{An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
 serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
 (2) to define the target projection system when coordinates are supplied in geographic format. Note that
-this must always refer to a \strong{projected CRS}}
+this must always refer to a \strong{projected CRS} (in meters).}
 
 \item{mov.threshold}{Movement threshold (0 - 1). It establishes the proportion of a step length that must be
 perpendicular to shore (away or approaching) in order for a movement to be classified as inshore or offshore

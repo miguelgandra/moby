@@ -22,7 +22,7 @@
 #' @param epsg.code An integer representing the EPSG code of the coordinate reference system (CRS). This parameter
 #' serves two purposes: (1) to specify the projection system used when coordinates are already projected, or
 #' (2) to define the target projection system when coordinates are supplied in geographic format. Note that
-#' this must always refer to a **projected CRS**
+#' this must always refer to a **projected CRS** (in meters).
 #' @param tagging.dates A POSIXct vector specifying the tagging or release dates for each animal.
 #' This parameter must be either:
 #' - A single POSIXct value, which will be applied to all unique animal IDs; or

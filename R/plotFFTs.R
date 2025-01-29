@@ -26,7 +26,8 @@
 #' @param cex.title Determines the size of the plot title (animal ID). Defaults to 2.
 #' @param cex.lab Determines the size of the axes titles. Defaults to 1.8.
 #' @param cex.axis Determines the size of the tick mark labels on the axes. Defaults to 1.4.
-#' @param cols Number of columns in the final panel.
+#' @param cols Number of columns in the final panel. If NULL, is dynamically
+#' set based on the number of individuals.
 #' @export
 
 
@@ -44,7 +45,7 @@ plotFFTs <- function(data,
                      cex.title = 2,
                      cex.lab = 1.8,
                      cex.axis = 1.4,
-                     cols = 2) {
+                     cols = NULL) {
 
 
   ##############################################################################
@@ -120,6 +121,11 @@ plotFFTs <- function(data,
   ##############################################################################
   # Set layout variables #######################################################
   ##############################################################################
+
+  # set number of cols, if not specified
+  if(is.null(cols)){
+    cols <- ifelse(nfish == 1, 1, 2)
+  }
 
   # set layout grid
   layout_params <- .setLayout(cols, id.groups, plots.height=6, dividers.height=2, legend=FALSE)

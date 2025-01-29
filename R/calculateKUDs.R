@@ -468,8 +468,12 @@ calculateKUDs <- function(data,
   dy <- coords.bbox["ymax"]-coords.bbox["ymin"]
   grid_bbox <- coords.bbox + c(dx, dy, dx, dy) * expand.factor
 
+  # get extent dimensions
+  bbox_width <- grid_bbox["xmax"] - grid_bbox["xmin"]
+  bbox_height <- grid_bbox["ymax"] - grid_bbox["ymin"]
+
   # calculate the total area of the bounding box
-  grid_area <- (grid_bbox["xmax"]-grid_bbox["xmin"]) * (grid_bbox["ymax"]-grid_bbox["ymin"])
+  grid_area <- bbox_width * bbox_height
 
   # calculate the approximate size of each cell (in square units)
   cell_size <- sqrt(grid_area/1000000)
@@ -477,6 +481,11 @@ calculateKUDs <- function(data,
   # round the cell size to the nearest 50
   rounded_cell_size <- round(cell_size/50) * 50
   if(rounded_cell_size==0) rounded_cell_size <- 5
+
+  # check if rounded_cell_size results in at least 250 x 250 cells
+  ncol <- ceiling(bbox_width / rounded_cell_size)
+  nrow <- ceiling(bbox_height / rounded_cell_size)
+  if (ncol < 250 | nrow < 250) { rounded_cell_size <- 1}
 
   # create raster grid
   spatial.grid <- raster::raster(raster::extent(grid_bbox), res=rounded_cell_size, crs=epsg.code$proj4string)
@@ -523,7 +532,7 @@ calculateKUDs <- function(data,
 
     # increase the grid extent incrementally by a factor of 0.05 (5%)
     expand_factor <- expand_factor + 0.05
-    if(verbose && expand_factor>0.1) cat(paste0("Expanding grid bounding box by: ",expand_factor*100,  "%\n"))
+    if(verbose && expand_factor>0.1) cat(paste0("Expanding grid bounding box by: ",round(expand_factor*100),  "%\n"))
 
     # expand bounding box by a given % in all directions
     # create a custom spatial grid based on the coordinate extent, if not supplied by the user

@@ -19,7 +19,7 @@ plotFFTs(
   cex.title = 2,
   cex.lab = 1.8,
   cex.axis = 1.4,
-  cols = 2
+  cols = NULL
 )
 }
 \arguments{
@@ -62,7 +62,8 @@ Otherwise they are only displayed in the left-most plots to save space.}
 
 \item{cex.axis}{Determines the size of the tick mark labels on the axes. Defaults to 1.4.}
 
-\item{cols}{Number of columns in the final panel.}
+\item{cols}{Number of columns in the final panel. If NULL, is dynamically
+set based on the number of individuals.}
 }
 \description{
 Function that analyzes and plots periodic patterns in detections using a

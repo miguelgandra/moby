@@ -39,7 +39,7 @@ plotMaps(
   scale.pos = "bottomright",
   scale.inset = 0.05,
   extent.factor = 1.1,
-  cols = 3
+  cols = NULL
 )
 }
 \arguments{
@@ -158,7 +158,8 @@ defined based on the bounding box around animal positions/detections. A value of
 the original bounding box, values greater than 1 increase the extent, and values less
 than 1 decrease it. Defaults to 1.1 (10\% increase).}
 
-\item{cols}{Number of columns in the plot panel layout (used in the 'mfrow' argument). Defaults to 3.}
+\item{cols}{Number of columns in the plot panel layout. If NULL, is dynamically
+set based on the number of individuals.}
 }
 \description{
 This function generates maps that display inferred animal movement trajectories

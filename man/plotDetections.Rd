@@ -28,7 +28,7 @@ plotDetections(
   cex.lab = 1.8,
   cex.axis = 1.4,
   cex.legend = 1.6,
-  cols = 2,
+  cols = NULL,
   legend.cols = 3
 )
 }
@@ -102,7 +102,8 @@ to prevent them from being hidden behind points' clouds. Defaults to True.}
 
 \item{cex.legend}{Determines the size of the color legend. Defaults to 1.6.}
 
-\item{cols}{Number of columns in the final panel. Defaults to 2.}
+\item{cols}{Number of columns in the final panel. If NULL, is dynamically
+set based on the number of individuals.}
 
 \item{legend.cols}{Number of columns in the legend (when 'color.by' is defined).  Defaults to 3.}
 }
