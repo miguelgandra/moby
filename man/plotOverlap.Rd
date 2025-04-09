@@ -20,6 +20,7 @@ plotOverlap(
   cex.legend = 1,
   legend.inset = c(-0.02, 0),
   network.layout = "spring",
+  network.repulsion = 0.1,
   nodes.color = NULL,
   nodes.size = c(1.2, 2.2),
   nodes.label.cex = 1,
@@ -27,7 +28,7 @@ plotOverlap(
   nodes.label.color = "white",
   edge.color = NULL,
   edge.curved = 0.5,
-  edge.width = c(0.4, 3.5),
+  edge.width = 1,
   edge.label.cex = 1.4,
   edge.label.color = edge.color,
   edge.label.font = 1,
@@ -36,6 +37,7 @@ plotOverlap(
   overlap.line.lwd = 3,
   overlap.line.lty = 1,
   hist.side = "bottom",
+  standardize.edge.weights = TRUE,
   standardize.freqs = FALSE,
   cols = NULL,
   ...
@@ -83,6 +85,12 @@ Defaults to c(-0.02, 0).}
 \item{network.layout}{Layout algorithm for the network (see \code{\link[qgraph]{qgraph}}).
 Defaults to "spring".}
 
+\item{network.repulsion}{A scalar controlling the repulsion radius in the spring layout
+of the network visualization. This value is passed to the \code{repulsion} argument
+of \code{qgraph::qgraph}. Lower values (e.g., 0.05) reduce node separation, while higher
+values (e.g., 0.5) increase spacing to avoid clustering. Useful for generating
+alternative spatial arrangements. Defaults to 0.1.}
+
 \item{nodes.color}{Color(s) for the nodes.}
 
 \item{nodes.size}{Numeric vector of length 2, indicating the minimum and maximum
@@ -99,7 +107,8 @@ or a vector with one value per network. Defaults to NULL, which averages node co
 
 \item{edge.curved}{Numeric value or logical indicating the curvature of the edges. Defaults to 0.5.}
 
-\item{edge.width}{Numeric vector of length 2, indicating the minimum and maximum edge widths. Defaults to c(0.4, 3.5).}
+\item{edge.width}{Numeric value scaling all edge widths uniformly (default = 1).
+Larger values make all edges thicker, smaller values make them thinner.}
 
 \item{edge.label.cex}{Font size for edge labels. Defaults to 1.}
 
@@ -116,6 +125,8 @@ or a vector with one value per network. Defaults to NULL, which averages node co
 \item{overlap.line.lty}{Line type of the observed overlap line. Defaults to 1.}
 
 \item{hist.side}{Position of the null model histogram relative to the network plot, either "bottom" or "right". Defaults to "bottom".}
+
+\item{standardize.edge.weights}{Logical. If TRUE, edge widths are standardized across all networks so they are directly comparable. Defaults to TRUE.}
 
 \item{standardize.freqs}{Logical. If TRUE, standardizes frequencies in the null model plot. Defaults to FALSE.}
 
@@ -135,5 +146,5 @@ what would be expected by chance. If both are provided, it plots both the networ
 and the histogram.
 }
 \seealso{
-\code{\link{calculateOverlap}}, \code{\link{randomizeOverlap}}
+\code{\link{calculateOverlap}}, \code{\link{randomizeOverlap}}, \code{\link[qgraph]{qgraph}}
 }

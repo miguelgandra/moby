@@ -14,6 +14,8 @@ plotContours(
   id.col = getDefaults("ID"),
   datetime.col = getDefaults("datetime"),
   color.pal = NULL,
+  time.interval = "hour",
+  date.interval = "month",
   diel.lines = 4,
   diel.lines.col = "black",
   sunriset.coords = NULL,
@@ -21,7 +23,9 @@ plotContours(
   cex.main = 1.1,
   cex.lab = 1,
   cex.axis = 0.8,
+  cex.legend = 0.7,
   grid = TRUE,
+  zlim = NULL,
   invert.scale = FALSE,
   uniformize.scale = FALSE,
   legend.xpos = c(0.89, 0.92),
@@ -53,6 +57,16 @@ of this variable(s) (e.g. species, ontogeny, sex, habitat, etc).}
 
 \item{color.pal}{Color palette for the contour plot. If NULL, defaults to the viridis color palette.}
 
+\item{time.interval}{Time interval for binning data along the y-axis. Can be specified as a
+lubridate-style period string (e.g., "30 mins", "1 hour", "2 hours"). Defaults to "hour".}
+
+\item{date.interval}{Date interval for binning data along the x-axis. Can be specified as:
+\itemize{
+\item A lubridate-style period string (e.g., "1 day", "15 days", "1 week", "1 month")
+\item "month/year" or "month-year" for month-year combinations (e.g., "Jan-2023", "Feb-2023")
+}
+Defaults to "month".}
+
 \item{diel.lines}{Number indicating the number of diel phase lines (boundaries)
 to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
 (depicting dawn, sunrise, sunset, dusk). Defaults to 4.}
@@ -72,7 +86,13 @@ latitude coordinates (in that order) at which to estimate sunrise and sunset tim
 
 \item{cex.axis}{Determines the size of the text labels on the axes. Defaults to 0.8.}
 
+\item{cex.legend}{Determines the size of the text labels on the color legend. Defaults to 0.7.}
+
 \item{grid}{Add horizontal and vertical guiding lines? Defaults to True.}
+
+\item{zlim}{Optional. A numeric vector of length 2 specifying the range for the color scale (e.g., \code{c(-10, 10)}).
+If provided, this overrides the default range calculated from the data.
+Useful, for example, for ensuring symmetric color scales centered on zero. Defaults to NULL.}
 
 \item{invert.scale}{Invert color scale legend? Defaults to False.}
 
@@ -96,7 +116,7 @@ generated if required. If set to True, 'cols' argument will have no effect in th
 }
 \description{
 Function to generate a contour plot (color-coded 2-dimensional plots)
-of a given variable, by hour and month, either for all individuals combined (average) or
-independently for each ID. It also plots lines illustrating the variation in
-diel phases' hours across the study duration (annual variation of daylight time).
+of a given variable, by customizable time and date intervals, either for all individuals
+combined or independently for each ID. It also plots lines illustrating the
+variation in diel phases' hours across the study duration (annual variation of daylight time).
 }

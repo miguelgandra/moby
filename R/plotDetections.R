@@ -18,12 +18,16 @@
 #' @param color.by Optional. Variable defining the color group of individual detections.
 #' Can be used for example to depict detections of different receivers or in different habitats.
 #' @param color.pal Color palette for the points.
-#' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
+#' @param date.label.format Date format (as used in \code{\link[base]{strptime}}),
 #' defining the x-axis labels. Defaults to month-year ("%b/%y").
-#' @param date.interval Number defining the interval between each
-#' displayed date (x-axis label). Defaults to 4.
-#' @param date.start Integer defining the first displayed date (can be used in combination
-#'  with 'date.interval" to better control the x-axis labels). Defaults to 1.
+#' @param date.label.interval Number defining the interval between each
+#' displayed date (x-axis label). Defaults to 6.
+#' @param date.tick.format Date format (as used in \code{\link[base]{strptime}}),
+#' defining the x-axis minor tick positions. Defaults to same as `date.label.format`.
+#' @param date.tick.interval Number defining the interval between each minor tick mark
+#' on the x-axis. Defaults to 1.
+#' @param date.label.start Integer defining the first displayed date (can be used in combination
+#' with 'date.label.interval" to better control the x-axis labels). Defaults to 1.
 #' @param sunriset.coords A SpatialPoints or matrix object containing longitude and
 #' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
 #' @param id.col Name of the column containing animal IDs. Defaults to 'ID'.
@@ -58,9 +62,11 @@ plotDetections <- function(data,
                            discard.missing = TRUE,
                            color.by = NULL,
                            color.pal = NULL,
-                           date.format = "%b/%y",
-                           date.interval = 4,
-                           date.start = 1,
+                           date.label.format = "%b/%y",
+                           date.label.interval = 6,
+                           date.label.start = 1,
+                           date.tick.format = date.label.format,
+                           date.tick.interval = 1,
                            sunriset.coords,
                            diel.lines = 2,
                            background.color = "gray96",
@@ -148,21 +154,34 @@ plotDetections <- function(data,
   daytimes_table <- getSunTimes(sunriset.coords, start, end, by="%Y-%m-%d")
   daytimes_table$interval <- as.POSIXct(daytimes_table$interval, "%Y-%m-%d", tz="UTC")
 
-  # prepare date variables
+  # generate complete sequence of dates at finest resolution
   complete_dates <- seq.POSIXt(start, end, by="day", tz="UTC")
-  all_dates <- strftime(complete_dates, date.format)
+
+  # display dates - use label format
+  all_dates <- strftime(complete_dates, date.label.format)
   consec_dates <- rle(all_dates)
   consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
   unique_dates <- unique(consec_dates)
-  indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
-  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=TRUE), max(data[,datetime.col], na.rm=TRUE), "day"), date.format)
+  label_indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
+  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=TRUE), max(data[,datetime.col], na.rm=TRUE), "day"), date.label.format)
   start <- min(which(sub("\\_.*", "", unique_dates)==detec_dates[1]), na.rm=TRUE)
   end <- max(which(sub("\\_.*", "", unique_dates)==detec_dates[length(detec_dates)]), na.rm=TRUE)
-  indexes <- indexes[start:end]
+  label_indexes <- label_indexes[start:end]
   unique_dates <- unique_dates[start:end]
-  disp_dates <- unique_dates[seq(date.start, length(unique_dates), by=date.interval)]
-  disp_indexes <- unlist(lapply(disp_dates, function(x) min(which(consec_dates==x))))
+  disp_dates <- unique_dates[seq(date.label.start, length(unique_dates), by=date.label.interval)]
+  label_indexes <- unlist(lapply(disp_dates, function(x) min(which(consec_dates==x))))
   disp_dates <- sub("\\_.*", "", disp_dates)
+
+  # minor ticks - use tick format for positioning
+  all_dates <- strftime(complete_dates, date.tick.format)
+  consec_dates <- rle(all_dates)
+  consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
+  unique_dates <- unique(consec_dates)
+  tick_indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
+  detec_dates <- strftime(seq.POSIXt(min(tagging.dates, na.rm=TRUE), max(data[,datetime.col], na.rm=TRUE), "day"), date.tick.format)
+  start <- min(which(sub("\\_.*", "", unique_dates)==detec_dates[1]), na.rm=TRUE)
+  end <- max(which(sub("\\_.*", "", unique_dates)==detec_dates[length(detec_dates)]), na.rm=TRUE)
+  tick_indexes <- tick_indexes[start:end]
 
   # define hour labels
   hour_labels <- paste0(formatC(0:24, 1, flag=0),"h")[c(TRUE, FALSE)]
@@ -206,16 +225,19 @@ plotDetections <- function(data,
     # add background
     rect(par("usr")[1],par("usr")[3],par("usr")[2],par("usr")[4], col=background.color)
     # add grid
-    if(grid==TRUE) abline(h=0:24, v=complete_dates[disp_indexes], lwd=0.05, col=grid.color)
+    if(grid==TRUE) {
+      vertical_indexes <- tick_indexes[seq(2, length(tick_indexes), by=3)]
+      abline(h=0:24, v=complete_dates[vertical_indexes], lwd=0.05, col=grid.color)
+    }
     # add horizontal x-axis
-    axis(side=1, labels=disp_dates, at=complete_dates[disp_indexes], cex.axis=cex.axis)
-    axis(side=1, labels=FALSE, at=complete_dates[indexes], tck=-0.015, lwd.ticks=0.5)
+    axis(side=1, labels=disp_dates, at=complete_dates[label_indexes], cex.axis=cex.axis, tck = -0.04)
+    axis(side=1, labels=FALSE, at=complete_dates[tick_indexes], tck=-0.02, lwd.ticks=0.5)
     # add vertical y-axis
     if(i %in% layout_params$matrix[,1]){
       #mtext(text="Hour", side=2, line=4.5, cex=cex.lab)
       title(ylab="Hour", cex.lab=cex.lab, line=4, xpd=NA)
-      axis(2, labels=hour_labels, at=seq(0, 24, by=2), tck=-0.03, cex.axis=cex.axis, las=1)
-      axis(2, labels=FALSE, at=0:24, tck=-0.015, lwd.ticks=0.5)
+      axis(2, labels=hour_labels, at=seq(0, 24, by=2), tck=-0.04, cex.axis=cex.axis, las=1)
+      axis(2, labels=FALSE, at=0:24, tck=-0.02, lwd.ticks=0.5)
     }
     # draw points
     if(nrow(data_plot)>0){

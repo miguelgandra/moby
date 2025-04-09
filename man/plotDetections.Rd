@@ -14,9 +14,11 @@ plotDetections(
   discard.missing = TRUE,
   color.by = NULL,
   color.pal = NULL,
-  date.format = "\%b/\%y",
-  date.interval = 4,
-  date.start = 1,
+  date.label.format = "\%b/\%y",
+  date.label.interval = 6,
+  date.label.start = 1,
+  date.tick.format = date.label.format,
+  date.tick.interval = 1,
   sunriset.coords,
   diel.lines = 2,
   background.color = "gray96",
@@ -66,14 +68,20 @@ Can be used for example to depict detections of different receivers or in differ
 
 \item{color.pal}{Color palette for the points.}
 
-\item{date.format}{Date-time format (as used in \code{\link[base]{strptime}}),
+\item{date.label.format}{Date format (as used in \code{\link[base]{strptime}}),
 defining the x-axis labels. Defaults to month-year ("\%b/\%y").}
 
-\item{date.interval}{Number defining the interval between each
-displayed date (x-axis label). Defaults to 4.}
+\item{date.label.interval}{Number defining the interval between each
+displayed date (x-axis label). Defaults to 6.}
 
-\item{date.start}{Integer defining the first displayed date (can be used in combination
-with 'date.interval" to better control the x-axis labels). Defaults to 1.}
+\item{date.label.start}{Integer defining the first displayed date (can be used in combination
+with 'date.label.interval" to better control the x-axis labels). Defaults to 1.}
+
+\item{date.tick.format}{Date format (as used in \code{\link[base]{strptime}}),
+defining the x-axis minor tick positions. Defaults to same as \code{date.label.format}.}
+
+\item{date.tick.interval}{Number defining the interval between each minor tick mark
+on the x-axis. Defaults to 1.}
 
 \item{sunriset.coords}{A SpatialPoints or matrix object containing longitude and
 latitude coordinates (in that order) at which to estimate sunrise and sunset times.}
