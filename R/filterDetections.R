@@ -126,16 +126,18 @@ filterDetections <- function(data,
   ##############################################################################
 
   # manage spatial objects
-  coords <- sf::st_as_sf(data, coords=c(lon.col, lat.col))
-  coords_crs <- .checkProjection(coords)
-  spatial_data <- .processSpatial(coords, land.shape, epsg.code)
-  coords <- spatial_data$coords
-  land.shape <- spatial_data$spatial.layer
-  epsg.code <- spatial_data$epsg.code
+  if (!is.null(max.speed)) {
+    coords <- sf::st_as_sf(data, coords=c(lon.col, lat.col))
+    coords_crs <- .checkProjection(coords)
+    spatial_data <- .processSpatial(coords, land.shape, epsg.code)
+    coords <- spatial_data$coords
+    land.shape <- spatial_data$spatial.layer
+    epsg.code <- spatial_data$epsg.code
 
-  # extract processed longitude and latitude into temporary columns
-  data$tmp_lon <- sf::st_coordinates(coords)[,1]
-  data$tmp_lat <- sf::st_coordinates(coords)[,2]
+    # extract processed longitude and latitude into temporary columns
+    data$tmp_lon <- sf::st_coordinates(coords)[,1]
+    data$tmp_lat <- sf::st_coordinates(coords)[,2]
+  }
 
   # add a unique identifier for each row
   data$row_index <- 1:nrow(data)

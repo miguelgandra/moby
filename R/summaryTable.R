@@ -36,6 +36,7 @@
 #'  This approach provides a minimum residency value, assuming the animal was alive and detectable throughout the study period.
 #'  - "IWR": Weighted Residency Index, which corresponds to the IR2 index weighted by the ratio between the detection interval (Di, the number of days between the first and last detection) and the study interval (Dt, the total monitoring period).
 #'  This accounts for the number of days detected and the spread of detections within the monitoring period, providing a measure of residency that balances the frequency of detections with their temporal distribution.
+#'  - "IR2/IR1": The ratio of IR2 to IR1, providing a measure of the gap between the last detection and the end of the monitoring period.
 #'
 #' The choice of index can affect the interpretation of residency patterns, so it's important to select the one(s) that best fits the study objectives.
 #' Further information on residency estimation methods can be found in Kraft et al. (2023) and Appert et al. (2023) - see below in the references section.
@@ -101,7 +102,7 @@ summaryTable <- function(data,
                          station.col = getDefaults("station"),
                          sensor.cols = NULL,
                          sensor.titles = NULL,
-                         residency.index = c("IR1", "IR2", "IWR"),
+                         residency.index = c("IR1", "IR2", "IR2/IR1"),
                          start.point = "release",
                          last.monitoring.date = NULL,
                          residency.by = NULL,
@@ -140,8 +141,8 @@ summaryTable <- function(data,
     errors <- c(errors, "One or more specified sensor columns ('sensor.cols') were not found in the supplied data. Please check the column names and ensure they exist in the data.")
   }
   # check residency index
-  if(!all(residency.index %in% c("IR1", "IR2", "IWR"))) {
-    errors <- c(errors, "Invalid 'residency.index' argument. Please select one of the following options: 'IR1' (detection interval), 'IR2' (study interval), or 'IWR' (weighted residency index).")
+  if(!all(residency.index %in% c("IR1", "IR2", "IWR", "IR2/IR1"))) {
+    errors <- c(errors, "Invalid 'residency.index' argument. Please select one of the following options: 'IR1' (detection interval), 'IR2' (study interval), 'IWR' (weighted residency index) or 'IR2/IR1' (quotient).")
   }
   # check start.point
   if(!is.character(start.point) || length(start.point) !=1) {
@@ -181,6 +182,11 @@ summaryTable <- function(data,
     if(error.stat=="se"){return(plotrix::std.error(x))}
   }
 
+  # check for NA values in the datetime column
+  if (any(is.na(data[, datetime.col]))) {
+    warning(paste("- NA values detected in the", datetime.col, "column."), call. = FALSE)
+  }
+
 
   ##############################################################################
   ## Generate table ############################################################
@@ -195,7 +201,7 @@ summaryTable <- function(data,
   tag_dates <- strftime(tagging.dates, format="%d/%m/%Y", tz="UTC")
 
   # retrieve last detections dates
-  last_detections <- tapply(X=data[,datetime.col], INDEX=data[,id.col], FUN=max)
+  last_detections <- tapply(X=data[,datetime.col], INDEX=data[,id.col], FUN=max, na.rm=TRUE)
   last_detections <- as.POSIXct(last_detections, origin='1970-01-01', tz="UTC")
   last_dates <- strftime(last_detections, format="%d/%m/%Y", tz="UTC")
 
@@ -255,10 +261,13 @@ summaryTable <- function(data,
   Dt[Dt==0] <- NA
 
   # helper function to estimate residency metrics
-  calculateResidencyIndex <- function(Dd, Di, Dt, index) {
-    if (index=="IR1") return(round(Dd/Di, 2))
-    if (index=="IR2") return(round(Dd/Dt, 2))
-    if (index=="IWR") return(round(Dd/Dt*Di/Dt, 2))
+  calculateResidencyIndex <- function(Dd, Di, Dt, metric) {
+    formulas <- list(IR1 = Dd / Di,
+                     IR2 = Dd / Dt,
+                     IWR = (Dd / Dt) * (Di / Dt),
+                     `IR2/IR1` = (Dd / Dt) / (Dd / Di))
+    result <- formulas[[metric]]
+    return(pmin(round(result, 2), 1, na.rm = FALSE))
   }
 
   # aggregate stats

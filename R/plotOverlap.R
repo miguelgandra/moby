@@ -40,6 +40,11 @@
 #' Defaults to c(-0.02, 0).
 #' @param network.layout Layout algorithm for the network (see \code{\link[qgraph]{qgraph}}).
 #' Defaults to "spring".
+#' @param network.repulsion A scalar controlling the repulsion radius in the spring layout
+#' of the network visualization. This value is passed to the `repulsion` argument
+#' of `qgraph::qgraph`. Lower values (e.g., 0.05) reduce node separation, while higher
+#' values (e.g., 0.5) increase spacing to avoid clustering. Useful for generating
+#' alternative spatial arrangements. Defaults to 0.1.
 #' @param nodes.color Color(s) for the nodes.
 #' @param nodes.size Numeric vector of length 2, indicating the minimum and maximum
 #' node sizes. Defaults to c(1, 2.2).
@@ -49,7 +54,8 @@
 #' @param edge.color Color(s) for the edges. Can be a single value (used for all networks)
 #' or a vector with one value per network. Defaults to NULL, which averages node colors.
 #' @param edge.curved Numeric value or logical indicating the curvature of the edges. Defaults to 0.5.
-#' @param edge.width Numeric vector of length 2, indicating the minimum and maximum edge widths. Defaults to c(0.4, 3.5).
+#' @param edge.width Numeric value scaling all edge widths uniformly (default = 1).
+#' Larger values make all edges thicker, smaller values make them thinner.
 #' @param edge.label.cex Font size for edge labels. Defaults to 1.
 #' @param edge.label.color Color of the edge labels. Defaults to edge.color.
 #' @param edge.label.font Font type for edge labels (1 is plain, 2 is bold, 3 is italic, 4 is bold and italic, 5 is symbol font). Defaults to 1.
@@ -58,11 +64,12 @@
 #' @param overlap.line.lwd Line width of the observed overlap line. Defaults to 3.
 #' @param overlap.line.lty Line type of the observed overlap line. Defaults to 1.
 #' @param hist.side Position of the null model histogram relative to the network plot, either "bottom" or "right". Defaults to "bottom".
+#' @param standardize.edge.weights Logical. If TRUE, edge widths are standardized across all networks so they are directly comparable. Defaults to TRUE.
 #' @param standardize.freqs Logical. If TRUE, standardizes frequencies in the null model plot. Defaults to FALSE.
 #' @param cols Number of columns for the plot layout. Defaults to NULL.
 #' @param ... Further arguments passed to \code{\link[qgraph]{qgraph}}.
 #'
-#' @seealso \code{\link{calculateOverlap}}, \code{\link{randomizeOverlap}}
+#' @seealso \code{\link{calculateOverlap}}, \code{\link{randomizeOverlap}}, \code{\link[qgraph]{qgraph}}
 #' @export
 
 
@@ -81,6 +88,7 @@ plotOverlap <- function(overlaps = NULL,
                         cex.legend = 1.0,
                         legend.inset = c(-0.02, 0),
                         network.layout = "spring",
+                        network.repulsion = 0.1,
                         nodes.color = NULL,
                         nodes.size = c(1.2, 2.2),
                         nodes.label.cex = 1,
@@ -88,7 +96,7 @@ plotOverlap <- function(overlaps = NULL,
                         nodes.label.color = "white",
                         edge.color = NULL,
                         edge.curved = 0.5,
-                        edge.width = c(0.4, 3.5),
+                        edge.width = 1,
                         edge.label.cex = 1.4,
                         edge.label.color = edge.color,
                         edge.label.font = 1,
@@ -97,6 +105,7 @@ plotOverlap <- function(overlaps = NULL,
                         overlap.line.lwd = 3,
                         overlap.line.lty = 1,
                         hist.side = "bottom",
+                        standardize.edge.weights = TRUE,
                         standardize.freqs = FALSE,
                         cols=NULL,
                         ...){
@@ -284,6 +293,10 @@ plotOverlap <- function(overlaps = NULL,
     else nodes.color <- terrain.colors(nlevels(color.nodes.by))
   }
 
+  # get global overlap min and max
+  global_max <- lapply(network_matrices, max, na.rm=TRUE)
+  global_max <- max(unlist(global_max))
+
   # initialize holding lists
   network.params <- vector("list", length(network_matrices))
   node.sizes.list <- vector("list", length(network_matrices))
@@ -291,6 +304,7 @@ plotOverlap <- function(overlaps = NULL,
   edge.labels.list <- vector("list", length(network_matrices))
   edge.colors.list <- vector("list", length(network_matrices))
   edge.label.colors.list <- vector("list", length(network_matrices))
+
 
   # set network properties for each matrix
   for(i in 1:length(network_matrices)){
@@ -301,7 +315,8 @@ plotOverlap <- function(overlaps = NULL,
     vals <- vals[order(vals, decreasing=TRUE)]
     min_val <- ifelse(!is.null(min.val[i]), min.val[i], 0)
     cut_val <- ifelse(!is.null(cut.val[i]), cut.val[i], quantile(vals, 0.9))
-    network.params[[i]] <- c(min_val, cut_val)
+    max_val <- ifelse(standardize.edge.weights, global_max, max(vals))
+    network.params[[i]] <- c(min_val, cut_val, max_val)
 
     # set node properties
     network_ids <- colnames(network_matrices[[i]])
@@ -336,7 +351,6 @@ plotOverlap <- function(overlaps = NULL,
       edge.label.colors.list[[i]] <- rep(edge.label.color[[i]], length(edge_colors))
     }
   }
-
 
   # convert NA values to 0 for the plots
   network_matrices <- lapply(network_matrices, function(x) {x[is.na(x)] <- 0; return(x)})
@@ -476,8 +490,10 @@ plotOverlap <- function(overlaps = NULL,
       qgraph::qgraph(network_matrices[[i]],
                      mar = margins_network,
                      layout = network.layout,
+                     repulsion = network.repulsion,
                      directed = FALSE,
                      minimum = network.params[[i]][1],
+                     maximum = network.params[[i]][3],
                      cut = network.params[[i]][2],
                      color = node.colors.list[[i]],
                      node.width = node.sizes.list[[i]],
@@ -486,7 +502,7 @@ plotOverlap <- function(overlaps = NULL,
                      label.scale = nodes.label.scale,
                      edge.labels = edge.labels.list[[i]],
                      edge.color = edge.colors.list[[i]],
-                     edge.width = 1,
+                     edge.width = edge.width,
                      edge.label.cex = edge.label.cex,
                      edge.label.color =  edge.label.colors.list[[i]],
                      edge.label.font = edge.label.font,
@@ -497,7 +513,6 @@ plotOverlap <- function(overlaps = NULL,
                      curveShape = -1,
                      curveScale = TRUE,
                      curveScaleNodeCorrection = TRUE,
-                     repulsion = 0.1,
                      trans = TRUE,
                      fade = TRUE,
                      usePCH = TRUE,

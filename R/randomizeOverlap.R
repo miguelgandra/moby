@@ -375,7 +375,7 @@ randomizeOverlap <- function(table,
     summary_table$x[is.na(summary_table$x)] <- 0
     colnames(summary_table) <- c("Type", "N dyads")
     # add mean shared period
-    summary_table$period <- round(stats::aggregate(pairwise_stats$shared_monit_days, by=list(pairwise_stats$type), mean, na.rm=TRUE, drop=FALSE)$x)
+    summary_table$period <- round(stats::aggregate(valid_overlaps$shared_monit_days, by=list(valid_overlaps$type), mean, na.rm=TRUE, drop=FALSE)$x)
     colnames(summary_table)[3] <- "Mean interval (d)"
     # add mean overlap ± standard deviation
     summary_table$overlap <- stats::aggregate(pairwise_stats$overlap, by=list(pairwise_stats$type), mean, na.rm=TRUE, drop=FALSE)$x

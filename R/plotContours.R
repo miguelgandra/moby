@@ -5,9 +5,9 @@
 #' Generate contour plot
 #'
 #' @description Function to generate a contour plot (color-coded 2-dimensional plots)
-#' of a given variable, by hour and month, either for all individuals combined (average) or
-#' independently for each ID. It also plots lines illustrating the variation in
-#' diel phases' hours across the study duration (annual variation of daylight time).
+#' of a given variable, by customizable time and date intervals, either for all individuals
+#' combined or independently for each ID. It also plots lines illustrating the
+#' variation in diel phases' hours across the study duration (annual variation of daylight time).
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing the variable(s) to plot.
@@ -20,6 +20,14 @@
 #' of this variable(s) (e.g. species, ontogeny, sex, habitat, etc).
 #' @param aggregate.fun Function used to aggregate values by hour and month. Defaults to mean.
 #' @param color.pal Color palette for the contour plot. If NULL, defaults to the viridis color palette.
+#' @param time.interval Time interval for binning data along the y-axis. Can be specified as a
+#' lubridate-style period string (e.g., "30 mins", "1 hour", "2 hours"). Defaults to "hour".
+#' @param date.interval Date interval for binning data along the x-axis. Can be specified as:
+#' \itemize{
+#'   \item A lubridate-style period string (e.g., "1 day", "15 days", "1 week", "1 month")
+#'   \item "month/year" or "month-year" for month-year combinations (e.g., "Jan-2023", "Feb-2023")
+#' }
+#' Defaults to "month".
 #' @param diel.lines Number indicating the number of diel phase lines (boundaries)
 #' to display. Either 0 (no lines), 2 (corresponding to sunrise and sunset) or 4
 #' (depicting dawn, sunrise, sunset, dusk). Defaults to 4.
@@ -32,7 +40,11 @@
 #' @param cex.main Determines the size of the title(s). Defaults to 1.1.
 #' @param cex.lab Determines the size of the y-axis and y-axis labels. Defaults to 1.
 #' @param cex.axis Determines the size of the text labels on the axes. Defaults to 0.8.
+#' @param cex.legend Determines the size of the text labels on the color legend. Defaults to 0.7.
 #' @param grid Add horizontal and vertical guiding lines? Defaults to True.
+#' @param zlim Optional. A numeric vector of length 2 specifying the range for the color scale (e.g., `c(-10, 10)`).
+#' If provided, this overrides the default range calculated from the data.
+#' Useful, for example, for ensuring symmetric color scales centered on zero. Defaults to NULL.
 #' @param invert.scale Invert color scale legend? Defaults to False.
 #' @param uniformize.scale Use the same color scale for all plots when 'split.by' is defined.
 #' @param legend.xpos Relative position of left and right edge of color bar on first axis (0-1).
@@ -57,6 +69,8 @@ plotContours <- function(data,
                          id.col = getDefaults("ID"),
                          datetime.col = getDefaults("datetime"),
                          color.pal = NULL,
+                         time.interval = "hour",
+                         date.interval = "month",
                          diel.lines = 4,
                          diel.lines.col = "black",
                          sunriset.coords = NULL,
@@ -64,7 +78,9 @@ plotContours <- function(data,
                          cex.main = 1.1,
                          cex.lab = 1,
                          cex.axis = 0.8,
+                         cex.legend = 0.7,
                          grid = TRUE,
+                         zlim = NULL,
                          invert.scale = FALSE,
                          uniformize.scale = FALSE,
                          legend.xpos = c(0.89, 0.92),
@@ -87,6 +103,20 @@ plotContours <- function(data,
   errors <- c()
   if(!is.null(var.titles) & length(variables)!=length(var.titles)) errors <- c(errors, "Number of variables and variables' titles do not match.")
   if(diel.lines>0 && is.null(sunriset.coords))  errors <- c(errors, "Sunrise/sunset coordinates must be provided if 'diel.lines' is greater than 0.")
+
+  # validate time.interval and date.interval
+  time_interval_valid <- tryCatch({
+    lubridate::as.period(lubridate::period(time.interval))
+    TRUE
+  }, error = function(e) FALSE)
+  date_interval_valid <- tryCatch({
+    lubridate::as.period(lubridate::period(date.interval))
+    TRUE
+  }, error = function(e) FALSE)
+  if(!time_interval_valid) errors <- c(errors, "time.interval must be a valid lubridate period string (e.g., '30 mins', '1 hour')")
+  if(!date_interval_valid) errors <- c(errors, "date.interval must be a valid lubridate period string (e.g., '1 day', '15 days', '1 month')")
+
+  # return errors (if any)
   if(length(errors)>0){
     stop_message <- sapply(errors, function(x) paste(strwrap(x), collapse="\n"))
     stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
@@ -134,14 +164,42 @@ plotContours <- function(data,
   # Aggregate data and calculate stats ################################################
   #####################################################################################
 
-  # extract month and hour from datetime column
-  data$month_tmp <- strftime(data[,datetime.col], "%m", tz=tz)
-  data$hour_tmp <- strftime(data[,datetime.col], "%H", tz=tz)
-  all_months <- sprintf("%02d", 1:12)
+  # define start and end of the day
+  start_time <- as.POSIXct("00:00", format = "%H:%M", tz = tz)
+  end_time <- as.POSIXct("23:59", format = "%H:%M", tz = tz)
+  # generate sequence of time breaks at specified interval
+  time_breaks <- seq(start_time, end_time, by = time.interval)
+  time_breaks <- format(time_breaks, "%H:%M")
+  # assign time bins using lubridate
+  data$time_bin <- lubridate::floor_date(data[[datetime.col]], unit = time.interval)
+  data$time_bin <- format(data$time_bin, "%H:%M")
+  data$time_bin <- factor(data$time_bin, levels=time_breaks)
 
-  # aggregate data by ID, month, hour, and group
-  aggregated_data <- stats::aggregate(data[,variables], by=list(data[,id.col], data$month_tmp, data$hour_tmp, data[,split.by]), aggregate.fun, simplify=TRUE, drop=TRUE)
-  colnames(aggregated_data)[1:4] <- c("id", "month", "hour", "group")
+  # generate custom date intervals
+  if (grepl("month[/-]year", date.interval, ignore.case = TRUE)) {
+    # for month-year grouping
+    data$date_bin <- format(data[[datetime.col]], "%b-%Y")
+    # create all possible month-year levels for proper ordering
+    date_range <- range(data[[datetime.col]], na.rm = TRUE)
+    all_months <- seq(floor_date(date_range[1], "month"), floor_date(date_range[2], "month"),  by = "1 month")
+    date_breaks <- format(all_months, "%b-%Y")
+    data$date_bin <- factor(data$date_bin, levels = date_breaks)
+  } else {
+    # original date binning logic for other interval types
+    start_date <- as.Date("2023-01-01")
+    end_date <- as.Date("2023-12-31")
+    date_breaks <- seq.Date(from = start_date, to = end_date, by = date.interval)
+    date_breaks <- unique(lubridate::floor_date(date_breaks, unit = date.interval))
+    date_breaks <- format(date_breaks, "%d/%b")
+    data$date_bin <- lubridate::floor_date(data[[datetime.col]], unit = date.interval)
+    data$date_bin <- format(data$date_bin, "%d/%b")
+    data$date_bin <- factor(data$date_bin, levels=date_breaks)
+  }
+
+  # aggregate data by ID, date interval, time interval, and group
+  aggregated_data <- stats::aggregate(data[, variables],  by = list(data[, id.col], data$date_bin, data$time_bin, data[, split.by]),
+                                      aggregate.fun, simplify = TRUE, drop = FALSE)
+  colnames(aggregated_data)[1:4] <- c("id", "date", "time", "group")
   colnames(aggregated_data)[5:ncol(aggregated_data)] <- variables
 
   # calculate number of individuals with data per variable and group
@@ -157,18 +215,11 @@ plotContours <- function(data,
   nids <- do.call("rbind", nids)
 
   # calculate monthly and hourly averages for each group
-  aggregated_data <- stats::aggregate(aggregated_data[,variables], by=list(aggregated_data$group, aggregated_data$month, aggregated_data$hour), mean, na.rm=TRUE)
-  colnames(aggregated_data)[1:3] <- c("group", "month", "hour")
+  aggregated_data <- stats::aggregate(aggregated_data[,variables], by=list(aggregated_data$group, aggregated_data$date, aggregated_data$time),
+                                      mean, na.rm=TRUE, drop = FALSE)
+  colnames(aggregated_data)[1:3] <- c("group", "date", "time")
   colnames(aggregated_data)[4:ncol(aggregated_data)] <- variables
-
-  # fill in missing month/hour combinations for all groups
-  complete_seqs <- expand.grid("group"=unique(data[,split.by]), "hour"=formatC(0:23, 1, flag=0), "month"=all_months)
-  missing_seqs <- dplyr::anti_join(complete_seqs, aggregated_data, by=c("group", "hour","month"))
-  if(nrow(missing_seqs)>0){
-    aggregated_data <- plyr::rbind.fill(aggregated_data, missing_seqs)
-  }
-  aggregated_data$month <- factor(aggregated_data$month, levels=all_months)
-  aggregated_data <- aggregated_data[order(aggregated_data$group, aggregated_data$month, aggregated_data$hour),]
+  aggregated_data <- aggregated_data[order(aggregated_data$group, aggregated_data$date, aggregated_data$time),]
   aggregated_data <- split(aggregated_data, f=aggregated_data$group, drop=TRUE)
 
 
@@ -184,20 +235,39 @@ plotContours <- function(data,
   if(diel.lines>0){
     sunriset_start <- min(data[,datetime.col])
     sunriset_end <- max(data[,datetime.col])
-    daytimes_table <- getSunTimes(sunriset.coords, sunriset_start, sunriset_end, solar.depth, by="%m")
+    # determine the appropriate time interval for sunrise/sunset calculations
+    date_format <- ifelse(grepl("month[/-]year", date.interval, ignore.case = TRUE), "%b-%Y", "%d/%b")
+    # calculate diel phase boundary times
+    daytimes_table <- getSunTimes(sunriset.coords, sunriset_start, sunriset_end, solar.depth, by=date_format)
+    # convert interval to numeric position matching the plot's x-axis
+    daytimes_table$interval <- match(daytimes_table$interval, date_breaks)
+    daytimes_table <- daytimes_table[!is.na(daytimes_table$interval),]
     daytimes_table <- daytimes_table[order(daytimes_table$interval),]
-    daytimes_table$interval <- as.numeric(daytimes_table$interval)
+    # convert sunrise/sunset times to match time.interval bins
+    time_bin_size <- as.numeric(lubridate::duration(time.interval)) / 3600
+    # Convert decimal hours to binned time positions
+    time_cols <- c("dawns", "sunrises", "sunsets", "dusks")
+    daytimes_table[time_cols] <- lapply(daytimes_table[time_cols], function(x) {x / time_bin_size})
+}
+
+  # precompute x-axis parameters based on date interval type
+  axis_params <- if (grepl("month[/-]year", date.interval, ignore.case = TRUE)) {
+    list(at = seq_along(date_breaks), labels = date_breaks, xlab = "Month-Year")
+  } else if (date.interval %in% c("1 month", "month")) {
+    list(at = seq_along(date_breaks), labels = substr(date_breaks, 4, 6), xlab = "Month")
+  } else {
+    date_breaks_dates <- as.Date(date_breaks, format = "%d/%b")
+    month_numbers <- as.numeric(format(date_breaks_dates, "%m"))
+    month_centers <- sapply(1:12, function(m) which(month_numbers == m)[1])
+    list(at = month_centers, labels = month.abb, xlab = "Month")
   }
 
-  # define hour labels to mark every two hours on the x-axis
-  hour_labels <- paste0(formatC(0:23, 1, flag=0),"h")[c(TRUE, FALSE)]
-
-  # set a default color palette if none is provided
-  if(is.null(color.pal)){
-    blues <- colorRampPalette(colors=c("#06405C", "#00537B", "#0985C2", "white"))(60)
-    reds <- colorRampPalette(colors=c("white", "#B23E42", "#5C1315"))(40)
-    color.pal <- colorRampPalette(colors=c(blues, reds))
-  }
+  # precompute y-axis parameters based on time interval type
+  time_hours <- as.numeric(substr(time_breaks, 1, 2)) + as.numeric(substr(time_breaks, 4, 5))/60
+  even_hours <- seq(0, 22, by = 2)
+  display_hour_pos <- time_hours[sapply(even_hours, function(h) {which.min(abs(time_hours - h))})]
+  hour_labels <- sprintf("%02dh", even_hours)
+  hour_pos <- time_hours[sapply(0:23, function(h) which.min(abs(time_hours - h)))]
 
   # set up the graphical layout for multi-panel plots if necessary
   if(!disable.par){
@@ -224,9 +294,9 @@ plotContours <- function(data,
 
       # generate a 2D matrix for the current variable across hours and months
       var <- variables[v]
-      contour_matrix <- matrix(aggregated_data[[i]][,var], nrow=24, ncol=12)
-      colnames(contour_matrix) <- month.abb
-      rownames(contour_matrix) <- formatC(0:23, 1, flag=0)
+      contour_matrix <- matrix(aggregated_data[[i]][,var], nrow=length(time_breaks), ncol=length(date_breaks))
+      colnames(contour_matrix) <- date_breaks
+      rownames(contour_matrix) <- time_breaks
       contour_matrix <- rbind(contour_matrix, contour_matrix[1,])
 
       # set variable scale
@@ -236,6 +306,11 @@ plotContours <- function(data,
         scale <- c(min(var_min), max(var_max))
       } else {
         scale <- range(contour_matrix, na.rm=TRUE)
+      }
+
+      # override scale if zlim is provided
+      if(!is.null(zlim)){
+        scale <- zlim
       }
 
       # define the plot title based on group name and variable title if available
@@ -254,13 +329,14 @@ plotContours <- function(data,
 
       ##########################################################################
       # generate the contour plot ##############################################
-      .filled.contour(x=1:12, y=0:24, z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
-                      xlab="Months", ylab="Hours", nlevels=100, color.palette=color.pal, cex.lab=cex.lab, zlim=scale,
+      .filled.contour(x=1:length(date_breaks), y=0:length(time_breaks), z=t(contour_matrix), main=plot_title, cex.main=cex.main, invert.scale=invert.scale,
+                      xlab="Month", ylab="Hour", nlevels=100, color.palette=color.pal, cex.lab=cex.lab, zlim=scale,
                       plot.axes = {
-                        # configure x-axis for months and y-axis for hours
-                        axis(1, labels=month.abb, at=1:12, cex.axis=cex.axis, pos=0)
-                        axis(2, labels=hour_labels, at=seq(0, 23, by=2), cex.axis=cex.axis, las=1, pos=1)
-                        axis(2, labels=FALSE, at=seq(0, 23, by=1), tck=-0.015, lwd.ticks=0.5, pos=1)
+                        # configure x-axis - month labels
+                        axis(1, at = axis_params$at, labels = axis_params$labels, pos = 0, cex.axis = cex.axis)
+                        # configure y-axis - hour labels
+                        axis(2, at=display_hour_pos, labels=hour_labels, pos=1, cex.axis=cex.axis, las=1)
+                        axis(2, at = hour_pos,  labels=FALSE, tck=-0.015, lwd.ticks=0.5, pos=1)
                         # plot lines for different daylight periods (dawn, sunrise, sunset, dusk)
                         if(diel.lines>0){
                           lines(daytimes_table$interval, daytimes_table$sunrises, lty=2, col=diel.lines.col)
@@ -272,11 +348,11 @@ plotContours <- function(data,
                         }
                         # add grid lines if enabled
                         if(grid){
-                          abline(v=1:12, lwd=0.03)
-                          abline(h=seq(0, 23, by=1), lwd=0.03)
+                          abline(v=axis_params$at, lwd=0.03)
+                          abline(h=hour_pos, lwd=0.03)
                         }}, ...)
       # add the sample size as a title below the main title
-      title(main=plot_sub, line=0.7, font.main=2, cex.main=0.9)
+      legend("topright", legend=plot_sub, bty="n", cex=cex.legend)
       # set up the color scale legend
       scale_labs <- pretty(scale, min.n=4)
       scale_labs <- scale_labs[scale_labs>=min(scale) & scale_labs<=max(scale)]
@@ -284,7 +360,7 @@ plotContours <- function(data,
       if(invert.scale){scale<-rev(scale); color_scale<-rev(color_scale)}
       digits <- max(.decimalPlaces(scale_labs))
       .colorlegend(col=color_scale, zlim=scale, zval=scale_labs, digit=digits, xpd=TRUE,
-                         posx=legend.xpos, posy=legend.ypos, main="", main.cex=0.8, cex=cex.axis)
+                         posx=legend.xpos, posy=legend.ypos, main="", main.cex=cex.axis, cex=cex.legend)
     }
   }
 

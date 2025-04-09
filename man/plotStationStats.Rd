@@ -2,7 +2,7 @@
 % Please edit documentation in R/plotStationStats.R
 \name{plotStationStats}
 \alias{plotStationStats}
-\title{Calculate and plot receivers' statistics}
+\title{#' Calculate and plot receiver-based statistics}
 \usage{
 plotStationStats(
   data,
@@ -34,8 +34,18 @@ plotStationStats(
 \arguments{
 \item{data}{A data frame containing animal detections with corresponding time-bins.}
 
-\item{type}{Type of statistic to calculate/plot. If more than one type is supplied a grouped barplot
-is generated. Possible values are "detections", "average detections", "individuals" and "co-occurrences".}
+\item{type}{Type of statistic to calculate and plot. If multiple types are supplied, a grouped bar plot
+is generated. Possible values are:
+\itemize{
+\item \code{"detections"}: Total number of detections at each station.
+\item \code{"average detections"}: For each individual, the proportion of detections at each station
+is calculated relative to the total detections for that individual across all stations. These proportions
+are then averaged across all individuals to produce a station-specific value. This metric provides insight
+into the average relative importance of each station across all individuals.
+\item \code{"individuals"}: Number of unique individuals detected at each station.
+\item \code{"co-occurrences"}: Number of co-occurrence events at each station, where two or more individuals
+are detected within the same time-bin.
+}}
 
 \item{id.groups}{Optional. A list containing ID groups, used to generate different
 plots to each class (e.g. different species).}
@@ -87,9 +97,9 @@ plot region. Defaults to c(0, 0.02)}
 \item{cols}{Number of columns in the final panel (passed to the mfrow argument).}
 }
 \description{
-Calculates and plots receiver-based statistics, such as total and average detections,
-the number of unique individuals detected, and co-occurrence events. This function generates grouped bar plots,
-enabling side-by-side comparisons of specified statistics across stations or other broader spatial categories.
-Additionally, users can compute and plot statistics separately for animal groups (e.g., different species or sexes)
-and adjust a range of plot aesthetic options.
+This function calculates and visualizes receiver-based statistics from passive acoustic telemetry data.
+It generates grouped bar plots to compare specified statistics across stations or other spatial categories.
+Users can analyze metrics such as total detections, average detection proportions, the number of unique
+individuals detected, and co-occurrence events. The function supports grouping by animal categories
+(e.g., species or sexes) and offers extensive customization options for plot aesthetics.
 }

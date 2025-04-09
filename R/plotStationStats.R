@@ -2,18 +2,27 @@
 ## Plot receiver statistics ###########################################################################
 #######################################################################################################
 
-#' Calculate and plot receivers' statistics
-
-#' @description Calculates and plots receiver-based statistics, such as total and average detections,
-#' the number of unique individuals detected, and co-occurrence events. This function generates grouped bar plots,
-#' enabling side-by-side comparisons of specified statistics across stations or other broader spatial categories.
-#' Additionally, users can compute and plot statistics separately for animal groups (e.g., different species or sexes)
-#' and adjust a range of plot aesthetic options.
+#'#' Calculate and plot receiver-based statistics
+#'
+#' @description
+#' This function calculates and visualizes receiver-based statistics from passive acoustic telemetry data.
+#' It generates grouped bar plots to compare specified statistics across stations or other spatial categories.
+#' Users can analyze metrics such as total detections, average detection proportions, the number of unique
+#' individuals detected, and co-occurrence events. The function supports grouping by animal categories
+#' (e.g., species or sexes) and offers extensive customization options for plot aesthetics.
 #'
 #' @inheritParams setDefaults
 #' @param data A data frame containing animal detections with corresponding time-bins.
-#' @param type Type of statistic to calculate/plot. If more than one type is supplied a grouped barplot
-#' is generated. Possible values are "detections", "average detections", "individuals" and "co-occurrences".
+#' @param type Type of statistic to calculate and plot. If multiple types are supplied, a grouped bar plot
+#' is generated. Possible values are:
+#'   - `"detections"`: Total number of detections at each station.
+#'   - `"average detections"`: For each individual, the proportion of detections at each station
+#'     is calculated relative to the total detections for that individual across all stations. These proportions
+#'     are then averaged across all individuals to produce a station-specific value. This metric provides insight
+#'     into the average relative importance of each station across all individuals.
+#'   - `"individuals"`: Number of unique individuals detected at each station.
+#'   - `"co-occurrences"`: Number of co-occurrence events at each station, where two or more individuals
+#'     are detected within the same time-bin.
 #' @param id.groups Optional. A list containing ID groups, used to generate different
 #' plots to each class (e.g. different species).
 #' @param group.comparisons Controls the type of comparisons to be run, when id.groups are defined.
@@ -214,53 +223,59 @@ plotStationStats <- function(data,
     # calculate nº co-occurrences per location
     if(any(type=="co-occurrences")) {
 
-      # if a single indivdual is present in group data, move to next
+      # if a single individual is present in group data, move to next
       if(nlevels(group_data[[id.col]])==1){
-        group_results[[i]] <- list("Counts"=rep(0, nlevels(data[[aggregate.by]])), "Freqs"=rep(0, nlevels(data[[aggregate.by]])))
-        next
-      }
+        counts_list <- append(counts_list, list("co-occurrences"=rep(0, nlevels(data[[aggregate.by]]))))
+        freqs_list <- append(freqs_list, list("co-occurrences"=rep(0, nlevels(data[[aggregate.by]]))))
 
-      # convert subsetted data to wide format
-      group_table <- suppressWarnings(createWideTable(group_data, id.col=id.col, timebin.col=timebin.col, value.col=station.col, verbose=FALSE))
-      group_table <- group_table[,-1]
-      # replace IDs by group ID
-      colnames(group_table) <- plyr::mapvalues(colnames(group_table), ids_table$ID, ids_table$group, warn_missing=FALSE)
-      # calculate co-occurring group sizes for each timebin
-      if(group.comparisons=="within" || (group.comparisons=="all" && !grepl("<->", names(data_list)[i], fixed=T))){
-        co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="within", groups=colnames(group_table)))
-      }else if(group.comparisons=="between" || (group.comparisons=="all" && grepl("<->", names(data_list)[i], fixed=T))){
-        co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="between", groups=colnames(group_table)))
-      }
-      # check if co_occurrence_events is NULL or empty
-      if(is.null(co_occurrence_events) || length(co_occurrence_events) == 0) {
-        # create an empty data frame with the expected structure
-        co_occurrence_events <- data.frame("station"=character(0), stringsAsFactors=FALSE)
-        co_occurrences <- data.frame("X1"=levels(data[[aggregate.by]]), count=rep(0, length(levels(data[[aggregate.by]]))))
-        colnames(co_occurrences)[1] <- aggregate.by
-      } else {
-        co_occurrence_events <- data.frame("station"=co_occurrence_events)
-        # join co-occurrence data with grouping information
-        if(aggregate.by!=station.col){
-          co_occurrence_events <- merge(co_occurrence_events, station_groups, by.x="station", by.y=station.col)
-          co_occurrence_events[,2] <- as.character(co_occurrence_events[,2])
+      }else{
+
+        # convert subsetted data to wide format
+        group_table <- suppressWarnings(createWideTable(group_data, id.col=id.col, timebin.col=timebin.col, value.col=station.col, verbose=FALSE))
+        group_table <- group_table[,-1]
+        # replace IDs by group ID
+        colnames(group_table) <- plyr::mapvalues(colnames(group_table), ids_table$ID, ids_table$group, warn_missing=FALSE)
+        # calculate co-occurring group sizes for each timebin
+        if(group.comparisons=="within" || (group.comparisons=="all" && !grepl("<->", names(data_list)[i], fixed=T))){
+          co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="within", groups=colnames(group_table)))
+        }else if(group.comparisons=="between" || (group.comparisons=="all" && grepl("<->", names(data_list)[i], fixed=T))){
+          co_occurrence_events <- unlist(apply(group_table, 1, .countJointDetections, comparison="between", groups=colnames(group_table)))
         }
-        co_occurrences <- table(co_occurrence_events[,aggregate.by])
-        co_occurrences <- as.data.frame(co_occurrences)
-        colnames(co_occurrences) <- c(aggregate.by, "count")
+        # check if co_occurrence_events is NULL or empty
+        if(is.null(co_occurrence_events) || length(co_occurrence_events) == 0) {
+          # create an empty data frame with the expected structure
+          co_occurrence_events <- data.frame("station"=character(0), stringsAsFactors=FALSE)
+          co_occurrences <- data.frame("X1"=levels(data[[aggregate.by]]), count=rep(0, length(levels(data[[aggregate.by]]))))
+          colnames(co_occurrences)[1] <- aggregate.by
+        } else {
+          co_occurrence_events <- data.frame("station"=co_occurrence_events)
+          # join co-occurrence data with grouping information
+          if(aggregate.by!=station.col){
+            co_occurrence_events <- merge(co_occurrence_events, station_groups, by.x="station", by.y=station.col)
+            co_occurrence_events[,2] <- as.character(co_occurrence_events[,2])
+          }
+          co_occurrences <- table(co_occurrence_events[,aggregate.by])
+          co_occurrences <- as.data.frame(co_occurrences)
+          colnames(co_occurrences) <- c(aggregate.by, "count")
+        }
+        # add stations/groups with zero co-occurrences to the results
+        missing_levels <- as.character(levels(group_data[,aggregate.by])[!levels(group_data[,aggregate.by]) %in% co_occurrences[,aggregate.by]])
+        if(length(missing_levels)>0) {
+          missing_rows <- data.frame("levels"=missing_levels, "count"=rep(0, length(missing_levels)))
+          colnames(missing_rows)[1] <- aggregate.by
+          co_occurrences <- rbind(co_occurrences, missing_rows)
+        }
+        # reorder co_occurrences to match original levels in group_data for consistency
+        co_occurrences <- co_occurrences[match(levels(group_data[,aggregate.by]), co_occurrences[,aggregate.by]),]
+        # append final counts and frequencies to lists
+        counts_list <- append(counts_list, list("co-occurrences"=co_occurrences$count))
+        freqs_list <- append(freqs_list, list("co-occurrences"=co_occurrences$count/sum(co_occurrences$count)))
       }
-      # add stations/groups with zero co-occurrences to the results
-      missing_levels <- as.character(levels(group_data[,aggregate.by])[!levels(group_data[,aggregate.by]) %in% co_occurrences[,aggregate.by]])
-      if(length(missing_levels)>0) {
-        missing_rows <- data.frame("levels"=missing_levels, "count"=rep(0, length(missing_levels)))
-        colnames(missing_rows)[1] <- aggregate.by
-        co_occurrences <- rbind(co_occurrences, missing_rows)
-      }
-      # reorder co_occurrences to match original levels in group_data for consistency
-      co_occurrences <- co_occurrences[match(levels(group_data[,aggregate.by]), co_occurrences[,aggregate.by]),]
-      # append final counts and frequencies to lists
-      counts_list <- append(counts_list, list("co-occurrences"=co_occurrences$count))
-      freqs_list <- append(freqs_list, list("co-occurrences"=co_occurrences$count/sum(co_occurrences$count)))
     }
+
+    # reorder counts_list and freqs_list based on the order of `type`
+    counts_list <- counts_list[type]
+    freqs_list <- freqs_list[type]
 
     # consolidate results
     counts_list <- do.call("rbind", counts_list)
@@ -277,7 +292,6 @@ plotStationStats <- function(data,
   # Prepare plot matrices ##############################################################
   ######################################################################################
 
-  # reorder rows if needed to match the supplied type order
   group_results <- lapply(group_results, function(x) lapply(x, function(y) {
     y <- as.data.frame(y)
     y[match(type, rownames(y)), , drop = FALSE]
@@ -293,7 +307,7 @@ plotStationStats <- function(data,
 
   # assign variable display names
   var_names <- data.frame(type=c("detections", "average detections", "individuals", "co-occurrences"),
-                          display=c("Detections", "Average Detection Frequency", "N\u00ba Individuals", "Co-Occurrence Events"))
+                          display=c("Detections", "Average Detection Proportion", "N\u00ba Individuals", "Co-occurrences"))
   group_results <- lapply(group_results, function(x) lapply(x, function(y){
     rownames(y) <- plyr::mapvalues(rownames(y), var_names$type, var_names$display, warn_missing=F); return(y)}))
 
@@ -322,7 +336,7 @@ plotStationStats <- function(data,
   nplots <- length(group_results)
   rows <- ceiling(nplots/cols)
   par(mfrow=c(rows, cols))
-  mat <- matrix(1:nplots, nrow=rows)
+  mat <- matrix(1:nplots, nrow=rows, byrow=TRUE)
   topright <- mat[1, ncol(mat)]
   bottom <- mat[nrow(mat),]
 
@@ -404,12 +418,41 @@ plotStationStats <- function(data,
       if(rotate.names==F) {mtext(side=1, text=tools::toTitleCase(aggregate.by), line=2.5, cex=label.cex)}
     }
 
-    # prepare and format location frequencies and counts for display:
-    display_counts <- paste0("n=", station_counts)
-    display_freqs <- paste0("(", round(station_freqs*100), "%)")
-    if(!is.null(annot.threshold)){
-      display_counts[station_counts<annot.threshold] <- ""
-      display_freqs[station_counts<annot.threshold] <- ""
+    # prepare and format location frequencies and counts for display
+    display_counts <- matrix(paste0("n=", station_counts), nrow = nrow(station_counts), ncol = ncol(station_counts))
+    display_freqs <- matrix(paste0("(", round(station_freqs * 100), "%)"), nrow = nrow(station_freqs), ncol = ncol(station_freqs))
+
+    # format "average detections" values as percentages
+    if ("average detections" %in% type) {
+      avg_detections_idx <- which(rownames(station_counts) == "Average Detection Proportion")
+      display_counts[avg_detections_idx, ] <- paste0(round(station_freqs[avg_detections_idx, ] * 100, 1), "%")
+      display_counts[-avg_detections_idx, ] <-  paste0("n=", station_counts[-avg_detections_idx,])
+    } else {
+      display_counts <- paste0("n=", station_counts)
+    }
+
+    # handle redundancy when both display.counts and show.percentage are TRUE
+    if (show.percentage && show.counts && "average detections" %in% type) {
+      # for "average detections", only show the percentage value once
+      display_counts[avg_detections_idx, ] <- ""
+    }
+
+
+    # apply annotation threshold (if provided)
+    if (!is.null(annot.threshold)) {
+      if ("average detections" %in% type) {
+        avg_detections_idx <- which(rownames(station_counts) == "Average Detection Proportion")
+        # apply threshold to "average detections" based on percentage values
+        display_counts[avg_detections_idx, ][station_freqs[avg_detections_idx, ] * 100 < annot.threshold] <- ""
+        display_freqs[avg_detections_idx, ][station_freqs[avg_detections_idx, ] * 100 < annot.threshold] <- ""
+        # apply threshold to other types based on raw counts
+        display_counts[-avg_detections_idx, ][station_counts[-avg_detections_idx, ] < annot.threshold] <- ""
+        display_freqs[-avg_detections_idx, ][station_counts[-avg_detections_idx, ] < annot.threshold] <- ""
+      } else {
+        # apply threshold to all types based on raw counts
+        display_counts[station_counts < annot.threshold] <- ""
+        display_freqs[station_counts < annot.threshold] <- ""
+      }
     }
 
     # add frequency and count labels

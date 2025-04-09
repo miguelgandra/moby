@@ -14,7 +14,7 @@ summaryTable(
   station.col = getDefaults("station"),
   sensor.cols = NULL,
   sensor.titles = NULL,
-  residency.index = c("IR1", "IR2", "IWR"),
+  residency.index = c("IR1", "IR2", "IR2/IR1"),
   start.point = "release",
   last.monitoring.date = NULL,
   residency.by = NULL,
@@ -69,6 +69,7 @@ This represents a maximum residency value, considering only the period for which
 This approach provides a minimum residency value, assuming the animal was alive and detectable throughout the study period.
 \item "IWR": Weighted Residency Index, which corresponds to the IR2 index weighted by the ratio between the detection interval (Di, the number of days between the first and last detection) and the study interval (Dt, the total monitoring period).
 This accounts for the number of days detected and the spread of detections within the monitoring period, providing a measure of residency that balances the frequency of detections with their temporal distribution.
+\item "IR2/IR1": The ratio of IR2 to IR1, providing a measure of the gap between the last detection and the end of the monitoring period.
 }
 
 The choice of index can affect the interpretation of residency patterns, so it's important to select the one(s) that best fits the study objectives.
