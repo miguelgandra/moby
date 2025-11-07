@@ -50,7 +50,21 @@
 #' Defaults to c(0.90, 0.915).
 #' @param legend.ypos Relative position of left and right edge of color bar on second axis (0-1).
 #' Defaults to c(0.15, 0.85).
-#' @param cols Number of columns in the final panel (passed to the mfrow argument).
+#' @param cols Number of columns to arrange plots in when multiple individuals are displayed.
+#' Ignored if \code{par.args$mfrow} is provided, in which case the layout is controlled
+#' entirely by the user via \code{par.args}.
+#' @param par.args Optional named list of graphical parameters to pass to [graphics::par()].
+#' This allows fine control over the multi-panel layout and plot spacing.
+#' Any arguments supplied here will override the internal defaults used by the function
+#' (such as \code{mfrow}, \code{mar}, \code{oma}, or \code{mgp}).
+#' For example, to reduce margins and adjust outer spacing:
+#' \preformatted{
+#' par.args = list(
+#'   mar = c(3, 4, 2, 1),
+#'   oma = c(1, 1, 2, 1)
+#' )
+#' }
+#' By default, an empty list (\code{list()}) is used, which applies the function’s built-in layout settings.
 #' @param cores Number of CPU cores to use for the computations. Defaults to 1, which
 #' means no parallel computing (single core).  If set to a value greater than 1,
 #' the function will use parallel computing to speed up calculations.
@@ -88,6 +102,7 @@ plotCWTs <- function(data,
                      legend.xpos = c(0.895, 0.91),
                      legend.ypos = c(0.15, 0.85),
                      cols = 1,
+                     par.args = list(),
                      cores = 1,
                      ...) {
 
@@ -103,7 +118,7 @@ plotCWTs <- function(data,
   # validate additional parameters
   errors <- c()
   if(!requireNamespace("wavScalogram", quietly=TRUE)) errors <- c(errors, "The 'wavScalogram' package is required for this function but is not installed. Please install 'wavScalogram' using install.packages('wavScalogram') and try again.")
-  if(!class(data[,variable]) %in% c("numeric", "integer")) errors <- c(errors, "Please convert signal to class numeric")
+  if(!class(data[[variable]]) %in% c("numeric", "integer")) errors <- c(errors, "Please convert signal to class numeric")
   if (!is.numeric(period.range) || length(period.range) != 2) errors <- c(errors, "`period.range` must be a numeric vector of length 2 (min and max).")
   if(!time.unit %in% c("mins", "hours", "days")) errors <- c(errors, "Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
   if(length(errors)>0){
@@ -114,10 +129,10 @@ plotCWTs <- function(data,
 
   # save the current par settings and ensure they are restored upon function exit
   original_par <- par(no.readonly=TRUE)
-  on.exit(par(original_par))
+  on.exit(par(original_par), add = TRUE)
 
   # drop missing ID levels
-  data[,id.col] <- droplevels( data[,id.col])
+  data[[id.col]] <- droplevels( data[[id.col]])
 
   # convert time.unit periods
   if (time.unit=="mins") {
@@ -148,26 +163,26 @@ plotCWTs <- function(data,
 
   # subset individuals based on minimum number of days with data
   if(!is.null(min.days)){
-    data$day <- strftime(data[,timebin.col], "%Y-%m-%d", tz="UTC")
-    days_detected <- by(data$day, data[,id.col], function(x) length(unique(x)))
+    data$day <- strftime(data[[timebin.col]], "%Y-%m-%d", tz="UTC")
+    days_detected <- by(data$day, data[[id.col]], function(x) length(unique(x)))
     selected_individuals <- which(as.numeric(days_detected) >= min.days)
     nindividuals <- length(selected_individuals)
     cat(paste(nindividuals, "individuals with >", min.days, "logged days\n"))
-    cat(paste(nlevels(data[,id.col])-nindividuals, "individual(s) excluded\n"))
+    cat(paste(nlevels(data[[id.col]])-nindividuals, "individual(s) excluded\n"))
   }else{
-    selected_individuals <- 1:nlevels(data[,id.col])
+    selected_individuals <- 1:nlevels(data[[id.col]])
     nindividuals <- length(selected_individuals)
   }
 
   # split data by individual
   data_individual <- lapply(selected_individuals, function(i) cwt_table[,i+1])
   data_individual <- lapply(data_individual, function(x) x[!is.na(x)])
-  names(data_individual) <- levels(data[,id.col])[selected_individuals]
+  names(data_individual) <- levels(data[[id.col]])[selected_individuals]
   data_ts <- lapply(data_individual, ts)
 
 
   # get time bins interval (in minutes)
-  interval <- difftime(data[,timebin.col], dplyr::lag(data[,timebin.col]), units="min")
+  interval <- difftime(data[[timebin.col]], dplyr::lag(data[[timebin.col]]), units="min")
   interval <- as.numeric(min(interval[interval>0], na.rm=TRUE))
 
 
@@ -177,7 +192,7 @@ plotCWTs <- function(data,
 
   # set layout variables
   if(!is.null(id.groups)){
-    group_ids_selected <- lapply(id.groups, function(x) x[x %in% levels(data[,id.col])[selected_individuals]])
+    group_ids_selected <- lapply(id.groups, function(x) x[x %in% levels(data[[id.col]])[selected_individuals]])
     group_numbers <- lapply(group_ids_selected,  length)
     group_rows <- lapply(group_numbers, function(x) ceiling(x/cols))
     rows <- do.call("sum", group_rows)
@@ -201,9 +216,18 @@ plotCWTs <- function(data,
   plot_layout <- matrix(animal_indexes, nrow=rows, ncol=cols, byrow=TRUE)
   bottom_plots <- apply(plot_layout, 2, max, na.rm=TRUE)
   plot_ids <- as.integer(apply(plot_layout, 1, function(x) x))
+  plot_ids <- plot_ids[!is.na(plot_ids)]
 
-  # set par
-  par(mfrow=c(rows,cols), mar=c(4,5,4,6), oma=c(2,2,3,2), mgp=c(3, 0.8, 0))
+  # set par layout with user-overridable graphical parameters
+  par.defaults <- list(mfrow = c(rows, cols),
+                       mar   = c(4, 5, 4, 6),
+                       oma   = c(2, 2, 3, 2),
+                       mgp   = c(3, 0.8, 0))
+
+  # allow user to override any of these
+  par.defaults[names(par.args)] <- par.args
+  # apply combined settings
+  par(par.defaults)
 
   # set color pallete
   if(is.null(color.pal)){
@@ -237,7 +261,7 @@ plotCWTs <- function(data,
     doSNOW::registerDoSNOW(cl)
 
     # ensure the cluster is properly stopped when the function exits
-    on.exit(parallel::stopCluster(cl))
+    on.exit(parallel::stopCluster(cl), add = TRUE)
 
     # define the `%dopar%` operator locally for parallel execution
     `%dopar%` <- foreach::`%dopar%`
@@ -272,8 +296,9 @@ plotCWTs <- function(data,
   close(pb)
 
   # calculate the range of the absolute squared coefficients across all individuals
-  density_range <- lapply(cwts, function(x) range(abs(x$coefs)^2))
+  density_range <- lapply(cwts, function(x) t(t(abs(x$coefs) ^ 2) / x$scales))
   density_range <- range(unlist(density_range))
+
 
 
   ##############################################################################
@@ -307,7 +332,7 @@ plotCWTs <- function(data,
                     frame.plot = TRUE, cex.lab = cex.lab, xaxs = "i", yaxs = "i")
 
     # add the individual ID as a title
-    title(main=levels(data[,id.col])[id], cex.main=cex.main, line=1)
+    title(main=levels(data[[id.col]])[id], cex.main=cex.main, line=1)
 
     # add date axis
     all_dates <- cwt_table[,timebin.col][!is.na(cwt_table[,id+1])]
@@ -329,24 +354,52 @@ plotCWTs <- function(data,
     # add guide lines for each period
     abline(h=period_indexes, lty=5, col="grey70", lwd=0.7)
 
+    ############################################################################
     # plot the cone of influence (COI) to indicate regions with reduced reliability
     x <- 1:nrow(cwt$coefs)
-    coi_values <- .rescale(log2(cwt$coi_maxscale*cwt$fourierfactor+1e-20), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    coi_values <- .rescale(log2(cwt$coi_maxscale*cwt$fourierfactor+1e-20),
+                           from=log2(range(cwt$scales*cwt$fourierfactor)),
+                           to=c(1, length(cwt$scales)))
+    # find valid COI indices (within plot bounds)
     coi_indices <- which(coi_values>=1 & coi_values<=par("usr")[4])
-    coi_values <- coi_values[coi_indices]
-    x <- x[coi_indices]
-    polygon(c(x, rev(x)), c(coi_values, rep(par("usr")[4], length(x))), col=adjustcolor("white", alpha.f=0.5), border=TRUE)
+    coi_values_filtered <- coi_values[coi_indices]
+    x_filtered <- x[coi_indices]
 
-    # add a color legend to the plot
-    density_labs <- pretty(zlim)
-    density_labs <- density_labs[density_labs>=min(zlim) & density_labs<=max(zlim)]
-    digits <- max(.decimalPlaces(density_labs))
-    .colorlegend(col=color.pal, zlim=zlim, zval=density_labs, posx=legend.xpos,
-                 posy=legend.ypos, main="", main.cex=1, digit=digits, cex=cex.legend)
+    # extend polygon to plot boundaries
+    if(length(x_filtered) > 0) {
+      # add left boundary point
+      x_polygon <- c(par("usr")[1], x_filtered, par("usr")[2])
+      # extend COI values to boundaries (use edge values)
+      coi_polygon <- c(coi_values_filtered[1], coi_values_filtered, coi_values_filtered[length(coi_values_filtered)])
+      # create polygon from COI line to top of plot
+      polygon(c(x_polygon, rev(x_polygon)),
+              c(coi_polygon, rep(par("usr")[4], length(x_polygon))),
+              col=adjustcolor("white", alpha.f=0.5),
+              border=TRUE)
+    }
+
+    ############################################################################
+    # add a color legend to the plot (only once if same.scale = TRUE)
+    if (!same.scale) {
+      # current behaviour: draw one legend per plot
+      density_labs <- pretty(zlim)
+      density_labs <- density_labs[density_labs >= min(zlim) & density_labs <= max(zlim)]
+      digits <- max(.decimalPlaces(density_labs))
+      .colorlegend(col=color.pal, zlim=zlim, zval=density_labs, posx=legend.xpos,
+                   posy=legend.ypos, main="", main.cex=1, digit=digits, cex=cex.legend, xpd = NA)
+    } else if (same.scale && i == max(plot_ids)) {
+      # only draw the legend once (after the last plot)
+      # current behaviour: draw one legend per plot
+      density_labs <- pretty(zlim)
+      density_labs <- density_labs[density_labs >= min(zlim) & density_labs <= max(zlim)]
+      digits <- max(.decimalPlaces(density_labs))
+      .colorlegend(col=color.pal, zlim=zlim, zval=density_labs, posx=legend.xpos,
+                   posy=legend.ypos, main="", main.cex=1, digit=digits, cex=cex.legend, xpd = NA)
+    }
   }
 
   # add a top title for the whole plot
-  mtext(text=plot.title, side=3, line=1, outer=T, cex=cex.main, font=2)
+  mtext(text=plot.title, side=3, line=1.6, outer=T, cex=cex.main, font=2)
 
   # if groupings are defined, add a legend for the groups
   if(!is.null(id.groups)){

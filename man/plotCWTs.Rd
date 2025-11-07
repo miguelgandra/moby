@@ -29,6 +29,7 @@ plotCWTs(
   legend.xpos = c(0.895, 0.91),
   legend.ypos = c(0.15, 0.85),
   cols = 1,
+  par.args = list(),
   cores = 1,
   ...
 )
@@ -97,7 +98,22 @@ Defaults to c(0.90, 0.915).}
 \item{legend.ypos}{Relative position of left and right edge of color bar on second axis (0-1).
 Defaults to c(0.15, 0.85).}
 
-\item{cols}{Number of columns in the final panel (passed to the mfrow argument).}
+\item{cols}{Number of columns to arrange plots in when multiple individuals are displayed.
+Ignored if \code{par.args$mfrow} is provided, in which case the layout is controlled
+entirely by the user via \code{par.args}.}
+
+\item{par.args}{Optional named list of graphical parameters to pass to \code{\link[graphics:par]{graphics::par()}}.
+This allows fine control over the multi-panel layout and plot spacing.
+Any arguments supplied here will override the internal defaults used by the function
+(such as \code{mfrow}, \code{mar}, \code{oma}, or \code{mgp}).
+For example, to reduce margins and adjust outer spacing:
+\preformatted{
+par.args = list(
+  mar = c(3, 4, 2, 1),
+  oma = c(1, 1, 2, 1)
+)
+}
+By default, an empty list (\code{list()}) is used, which applies the function’s built-in layout settings.}
 
 \item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
 means no parallel computing (single core).  If set to a value greater than 1,
