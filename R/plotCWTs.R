@@ -253,7 +253,7 @@ plotCWTs <- function(data,
   if(detrend) data_ts <- lapply(data_ts, diff)
 
   # initialize progress bar
-  pb <- txtProgressBar(min=1, max=length(data_individual), initial=0, style=3)
+  pb <- txtProgressBar(min=0, max=length(data_individual), initial=0, style=3)
 
 
   ########################################################################
