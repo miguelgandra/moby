@@ -129,6 +129,13 @@ plotCWTs <- function(data,
 
   # save the current par settings and ensure they are restored upon function exit
   original_par <- par(no.readonly=TRUE)
+  original_par$pin <- NULL
+  original_par$cin <- NULL
+  original_par$cra <- NULL
+  original_par$csi <- NULL
+  original_par$cxy <- NULL
+  original_par$din <- NULL
+  original_par$page <- NULL
   on.exit(par(original_par), add = TRUE)
 
   # drop missing ID levels
