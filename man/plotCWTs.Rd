@@ -12,7 +12,9 @@ plotCWTs(
   timebin.col = getDefaults("timebin"),
   id.groups = NULL,
   wavelet.type = "MORLET",
+  gap.handling = "zero",
   same.scale = FALSE,
+  mask.coi = FALSE,
   period.range = c(3, 48),
   axis.periods = c(6, 12, 16, 24, 48),
   time.unit = "hours",
@@ -37,8 +39,8 @@ plotCWTs(
 \arguments{
 \item{data}{A data frame containing binned animal detections or other time-based measurements.
 The time series does not need to be regular; gaps between time bins are allowed.
-If there are gaps between measurements (i.e., missing time bins), the function will
-automatically assume a value of zero for those missing time steps.}
+If there are gaps between measurements (i.e., missing time bins), the handling method is
+controlled by the \code{gap.handling} parameter.}
 
 \item{variable}{Name of the column containing the numeric variable to be analyzed.}
 
@@ -56,8 +58,20 @@ visually aggregate animals belonging to the same class (e.g. different species).
 This is passed to the \code{wname} argument in the \code{\link[wavScalogram]{cwt_wst}} function.
 Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is "MORLET".}
 
+\item{gap.handling}{Method for handling missing time bins in the time series. Options are:
+\itemize{
+\item "zero" (default): Fill gaps with zeros (appropriate for detection/count data)
+\item "mean": Fill gaps with the mean of the non-missing values for that individual
+\item "locf": Last observation carried forward (use the last valid observation)
+\item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
+}}
+
 \item{same.scale}{Forces same spectral scale (zlims) across all plots,
 allowing for density comparison between individuals.}
+
+\item{mask.coi}{Logical. If TRUE, regions outside the cone of influence (COI)
+are excluded from color scale calculations and plotted in black. This prevents
+edge effects from dominating the color scale. Defaults to FALSE.}
 
 \item{period.range}{The range of period scales (y-axis limits) to be considered,
 specified in the units defined by \code{time.unit}. Defaults to c(3, 48) in hours.}
@@ -113,7 +127,7 @@ par.args = list(
   oma = c(1, 1, 2, 1)
 )
 }
-By default, an empty list (\code{list()}) is used, which applies the function’s built-in layout settings.}
+By default, an empty list (\code{list()}) is used, which applies the function's built-in layout settings.}
 
 \item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
 means no parallel computing (single core).  If set to a value greater than 1,

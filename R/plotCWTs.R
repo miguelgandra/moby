@@ -14,8 +14,8 @@
 #' @inheritParams setDefaults
 #' @param data A data frame containing binned animal detections or other time-based measurements.
 #' The time series does not need to be regular; gaps between time bins are allowed.
-#' If there are gaps between measurements (i.e., missing time bins), the function will
-#' automatically assume a value of zero for those missing time steps.
+#' If there are gaps between measurements (i.e., missing time bins), the handling method is
+#' controlled by the \code{gap.handling} parameter.
 #' @param variable Name of the column containing the numeric variable to be analyzed.
 #' @param plot.title A string specifying the title of the plot. By default, this title is
 #' automatically generated as "Wavelet Power Spectrum" followed by the `variable` name.
@@ -24,8 +24,18 @@
 #' @param wavelet.type A character string specifying the wavelet type to be used in the continuous wavelet transform.
 #' This is passed to the `wname` argument in the \code{\link[wavScalogram]{cwt_wst}} function.
 #' Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is "MORLET".
+#' @param gap.handling Method for handling missing time bins in the time series. Options are:
+#' \itemize{
+#'   \item "zero" (default): Fill gaps with zeros (appropriate for detection/count data)
+#'   \item "mean": Fill gaps with the mean of the non-missing values for that individual
+#'   \item "locf": Last observation carried forward (use the last valid observation)
+#'   \item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
+#' }
 #' @param same.scale Forces same spectral scale (zlims) across all plots,
 #' allowing for density comparison between individuals.
+#' @param mask.coi Logical. If TRUE, regions outside the cone of influence (COI)
+#' are excluded from color scale calculations and plotted in black. This prevents
+#' edge effects from dominating the color scale. Defaults to FALSE.
 #' @param period.range The range of period scales (y-axis limits) to be considered,
 #' specified in the units defined by \code{time.unit}. Defaults to c(3, 48) in hours.
 #' @param axis.periods Periods to include/highlight on the y-axis, specified in the units
@@ -64,7 +74,7 @@
 #'   oma = c(1, 1, 2, 1)
 #' )
 #' }
-#' By default, an empty list (\code{list()}) is used, which applies the function’s built-in layout settings.
+#' By default, an empty list (\code{list()}) is used, which applies the function's built-in layout settings.
 #' @param cores Number of CPU cores to use for the computations. Defaults to 1, which
 #' means no parallel computing (single core).  If set to a value greater than 1,
 #' the function will use parallel computing to speed up calculations.
@@ -85,7 +95,9 @@ plotCWTs <- function(data,
                      timebin.col = getDefaults("timebin"),
                      id.groups = NULL,
                      wavelet.type = "MORLET",
+                     gap.handling = "zero",
                      same.scale = FALSE,
+                     mask.coi = FALSE,
                      period.range = c(3, 48),
                      axis.periods = c(6, 12, 16, 24, 48),
                      time.unit = "hours",
@@ -121,6 +133,10 @@ plotCWTs <- function(data,
   if(!class(data[[variable]]) %in% c("numeric", "integer")) errors <- c(errors, "Please convert signal to class numeric")
   if (!is.numeric(period.range) || length(period.range) != 2) errors <- c(errors, "`period.range` must be a numeric vector of length 2 (min and max).")
   if(!time.unit %in% c("mins", "hours", "days")) errors <- c(errors, "Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
+  if(!gap.handling %in% c("zero", "mean", "locf", "interpolate")) errors <- c(errors, "Invalid gap.handling method. Use 'zero', 'mean', 'locf', or 'interpolate'.")
+  if(gap.handling %in% c("locf", "interpolate") && !requireNamespace("zoo", quietly=TRUE)) {
+    errors <- c(errors, paste0("The 'zoo' package is required for gap.handling='", gap.handling, "' but is not installed. Please install 'zoo' using install.packages('zoo') and try again."))
+  }
   if(length(errors)>0){
     stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
     stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
@@ -161,9 +177,26 @@ plotCWTs <- function(data,
   ## Prepare data ##############################################################
   ##############################################################################
 
-  # create data frame with signal value
-  cwt_table <- createWideTable(data, id.col=id.col, timebin.col=timebin.col,
-                               value.col=variable,  agg.fun=mean)
+  # create data frame with signal value in wide format
+  # create complete sequence of time bins across all individuals
+  all_timebins <- sort(unique(data[[timebin.col]]))
+
+  # initialize wide table with timebin column
+  cwt_table <- data.frame(timebin = all_timebins)
+
+  # add column for each individual, keeping NAs for missing values
+  for(id in levels(data[[id.col]])) {
+    id_data <- data[data[[id.col]] == id, c(timebin.col, variable)]
+    # aggregate if multiple values per timebin
+    if(any(duplicated(id_data[[timebin.col]]))) {
+      id_data <- aggregate(id_data[[variable]],
+                           by = list(id_data[[timebin.col]]),
+                           FUN = mean, na.rm = TRUE)
+      colnames(id_data) <- c(timebin.col, variable)
+    }
+    # merge with complete timebin sequence (keeps NAs for missing timebins)
+    cwt_table[[id]] <- id_data[[variable]][match(all_timebins, id_data[[timebin.col]])]
+  }
 
   # offset min period by 30 mins to avoid truncation after CWT
   period.range[1] <-  period.range[1] - 30
@@ -183,10 +216,33 @@ plotCWTs <- function(data,
 
   # split data by individual
   data_individual <- lapply(selected_individuals, function(i) cwt_table[,i+1])
+
+  # handle gaps according to user specification
+  cat(paste0("Handling gaps using method: '", gap.handling, "'\n"))
+
+  data_individual <- lapply(data_individual, function(x) {
+    if(gap.handling == "zero") {
+      # Fill NAs with zeros (original behavior for detection data)
+      x[is.na(x)] <- 0
+    } else if(gap.handling == "mean") {
+      # Fill with mean of non-missing values
+      x[is.na(x)] <- mean(x, na.rm=TRUE)
+    } else if(gap.handling == "locf") {
+      # Last observation carried forward
+      x <- zoo::na.locf(x, na.rm=FALSE)
+    } else if(gap.handling == "interpolate") {
+      # Linear interpolation between valid observations
+      x <- zoo::na.approx(x, na.rm=FALSE)
+    }
+    return(x)
+  })
+
+  # remove any remaining NAs at the edges (before first/after last valid observation)
   data_individual <- lapply(data_individual, function(x) x[!is.na(x)])
   names(data_individual) <- levels(data[[id.col]])[selected_individuals]
-  data_ts <- lapply(data_individual, ts)
 
+  # convert to time-series
+  data_ts <- lapply(data_individual, ts)
 
   # get time bins interval (in minutes)
   interval <- difftime(data[[timebin.col]], dplyr::lag(data[[timebin.col]]), units="min")
@@ -282,8 +338,8 @@ plotCWTs <- function(data,
                             border_effects="BE", makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
     }
 
-  ########################################################################
-  # fallback to sequential processing if cores == 1   ####################
+    ########################################################################
+    # fallback to sequential processing if cores == 1   ####################
   } else {
 
     # initialize list to store the results
@@ -303,8 +359,28 @@ plotCWTs <- function(data,
   close(pb)
 
   # calculate the range of the absolute squared coefficients across all individuals
-  density_range <- lapply(cwts, function(x) t(t(abs(x$coefs) ^ 2) / x$scales))
-  density_range <- range(unlist(density_range))
+  # optionally masking regions outside the cone of influence
+  if(mask.coi) {
+    density_range <- lapply(1:length(cwts), function(i) {
+      cwt <- cwts[[i]]
+      Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
+
+      # create COI mask
+      coi_mask <- matrix(TRUE, nrow = nrow(Z), ncol = ncol(Z))
+      for(j in 1:nrow(Z)) {
+        coi_scale <- cwt$coi_maxscale[j] * cwt$fourierfactor
+        # mark scales larger than COI as outside (to be masked)
+        coi_mask[j, cwt$scales * cwt$fourierfactor > coi_scale] <- FALSE
+      }
+
+      # return only values inside COI
+      Z[coi_mask]
+    })
+    density_range <- range(unlist(density_range))
+  } else {
+    density_range <- lapply(cwts, function(x) t(t(abs(x$coefs) ^ 2) / x$scales))
+    density_range <- range(unlist(density_range))
+  }
 
 
 
@@ -329,8 +405,23 @@ plotCWTs <- function(data,
     Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
 
     # set density limits for the plot
-    if(same.scale) zlim <- density_range
-    else zlim <- range(Z)
+    if(same.scale) {
+      zlim <- density_range
+    } else {
+      # calculate zlim from valid (inside COI) regions only if mask.coi is TRUE
+      if(mask.coi) {
+        # create COI mask
+        coi_mask <- matrix(TRUE, nrow = nrow(Z), ncol = ncol(Z))
+        for(j in 1:nrow(Z)) {
+          coi_scale <- cwt$coi_maxscale[j] * cwt$fourierfactor
+          # mark scales larger than COI as outside (to be masked)
+          coi_mask[j, cwt$scales * cwt$fourierfactor > coi_scale] <- FALSE
+        }
+        zlim <- range(Z[coi_mask])
+      } else {
+        zlim <- range(Z)
+      }
+    }
 
     # plot CWT spectrum
     graphics::image(x=1:nrow(cwt$coefs), y=1:ncol(cwt$coefs), z=Z, zlim = zlim,
@@ -379,10 +470,19 @@ plotCWTs <- function(data,
       # extend COI values to boundaries (use edge values)
       coi_polygon <- c(coi_values_filtered[1], coi_values_filtered, coi_values_filtered[length(coi_values_filtered)])
       # create polygon from COI line to top of plot
-      polygon(c(x_polygon, rev(x_polygon)),
-              c(coi_polygon, rep(par("usr")[4], length(x_polygon))),
-              col=adjustcolor("white", alpha.f=0.5),
-              border=TRUE)
+      if(mask.coi) {
+        # solid black to mask unreliable regions
+        polygon(c(x_polygon, rev(x_polygon)),
+                c(coi_polygon, rep(par("usr")[4], length(x_polygon))),
+                col="black",
+                border=TRUE)
+      } else {
+        # semi-transparent white to indicate unreliable regions
+        polygon(c(x_polygon, rev(x_polygon)),
+                c(coi_polygon, rep(par("usr")[4], length(x_polygon))),
+                col=adjustcolor("white", alpha.f=0.5),
+                border=TRUE)
+      }
     }
 
     ############################################################################
@@ -418,8 +518,3 @@ plotCWTs <- function(data,
   }
 
 }
-
-
-#######################################################################################################
-#######################################################################################################
-#######################################################################################################
