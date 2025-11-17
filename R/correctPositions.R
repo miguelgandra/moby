@@ -177,9 +177,9 @@ correctPositions <- function(data,
   }else if(inherits(spatial.layer, "sf")){
     spatial.layer <- sf::st_union(spatial.layer)
     pointsOnLand_indexes <- which(sf::st_intersects(coords, spatial.layer, sparse=FALSE))
-    boundary <- sf::st_as_sfc(sf::st_bbox(spatial.layer))
-    boundary <- sf::st_set_crs(boundary, epsg.code)
-    land_mask <- sf::st_difference(boundary, spatial.layer)
+    # get the boundary (coastline) of the land polygon
+    land_mask <- sf::st_boundary(spatial.layer)
+    # cast from the resulting MULTILINESTRING to LINESTRING
     land_mask <- sf::st_cast(land_mask, "LINESTRING")
   }
 
@@ -373,7 +373,7 @@ correctPositions <- function(data,
   min_distance <- suppressWarnings(round(min(unlist(distances), na.rm=TRUE)))
   max_distance <- suppressWarnings(round(max(unlist(distances), na.rm=TRUE)))
   if(!is.infinite(mean_distance) && !is.na(mean_distance)){
-    cat(paste0("Mean relocation distance: ", mean_distance, " m (from ", min_distance," m to ", max_distance," m)\n"))
+    cat(paste0("Mean relocation distance: ", mean_distance, " m (", min_distance," m \u2014 ", max_distance," m)\n"))
   }
 
   # print time taken
