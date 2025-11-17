@@ -1,5 +1,5 @@
 #######################################################################################################
-# Check for detections periodicity through CWT (Continuous wavelet transform) #########################
+# Check for signal periodicity through CWT (Continuous wavelet transform) #############################
 #######################################################################################################
 
 #' Continuous wavelet transform (CWT)
@@ -175,6 +175,9 @@ plotCWTs <- function(data,
   original_par$page <- NULL
   on.exit(par(original_par), add = TRUE)
 
+  # print message to console
+  .printConsole("Calculating Wavelet Periodograms")
+
   # drop missing ID levels
   data[[id.col]] <- droplevels( data[[id.col]])
 
@@ -198,16 +201,35 @@ plotCWTs <- function(data,
   ## Prepare data ##############################################################
   ##############################################################################
 
-  # create data frame with signal value in wide format
-  # create complete sequence of time bins across all individuals
-  all_timebins <- sort(unique(data[[timebin.col]]))
+  # get time bins interval (in minutes) - THIS IS A ROBUST WAY
+  sorted_times <- sort(unique(data[[timebin.col]]))
+  if (length(sorted_times) < 2) {
+    stop("Need at least two unique time bins to determine interval.", call. = FALSE)
+  }
+  interval <- difftime(sorted_times, dplyr::lag(sorted_times), units = "min")
+  interval <- as.numeric(min(interval[interval > 0], na.rm = TRUE))
+
+  if (!is.finite(interval) || interval == 0) {
+    stop(paste("Could not determine a valid time interval (dt > 0) from 'timebin.col'."), call. = FALSE)
+  }
+  # print info to console
+  cat(paste0("Inferred sampling interval (dt): ", interval, " minutes\n"))
+
+
+  # create complete sequence of time bins
+  min_time <- min(data[[timebin.col]])
+  max_time <- max(data[[timebin.col]])
+  all_timebins <- seq(min_time, max_time, by = paste(interval, "min"))
 
   # initialize wide table with timebin column
   cwt_table <- data.frame(timebin = all_timebins)
 
-  # add column for each individual, keeping NAs for missing values
+  # loop over individuals
   for(id in levels(data[[id.col]])) {
+
+    # extract individual data
     id_data <- data[data[[id.col]] == id, c(timebin.col, variable)]
+
     # aggregate if multiple values per timebin
     if(any(duplicated(id_data[[timebin.col]]))) {
       id_data <- aggregate(id_data[[variable]],
@@ -215,8 +237,30 @@ plotCWTs <- function(data,
                            FUN = mean, na.rm = TRUE)
       colnames(id_data) <- c(timebin.col, variable)
     }
-    # merge with complete timebin sequence (keeps NAs for missing timebins)
-    cwt_table[[id]] <- id_data[[variable]][match(all_timebins, id_data[[timebin.col]])]
+
+    # initialize full-length vector with NAs
+    values <- rep(NA_real_, length(all_timebins))
+
+    # fill available data
+    matched_idx <- match(id_data[[timebin.col]], all_timebins)
+    values[matched_idx] <- id_data[[variable]]
+
+    # identify first and last non-NA positions
+    non_na_idx <- which(!is.na(values))
+    if(length(non_na_idx) > 0) {
+      first_idx <- non_na_idx[1]
+      last_idx  <- non_na_idx[length(non_na_idx)]
+
+      # replace leading/trailing NAs with NaN
+      if(first_idx > 1) values[1:(first_idx-1)] <- NaN
+      if(last_idx < length(values)) values[(last_idx+1):length(values)] <- NaN
+    } else {
+      # all values NA → mark all as NaN
+      values[] <- NaN
+    }
+
+    # add to wide table
+    cwt_table[[id]] <- values
   }
 
   # offset min period by 30 mins to avoid truncation after CWT
@@ -238,6 +282,10 @@ plotCWTs <- function(data,
   # split data by individual
   data_individual <- lapply(selected_individuals, function(i) cwt_table[,i+1])
 
+  # remove any remaining NAs at the edges (before first/after last valid observation)
+  data_individual <- lapply(data_individual, function(x) x[!is.nan(x)])
+  names(data_individual) <- levels(data[[id.col]])[selected_individuals]
+
   # handle gaps according to user specification
   cat(paste0("Handling gaps using method: '", gap.handling, "'\n"))
 
@@ -257,10 +305,6 @@ plotCWTs <- function(data,
     }
     return(x)
   })
-
-  # remove any remaining NAs at the edges (before first/after last valid observation)
-  data_individual <- lapply(data_individual, function(x) x[!is.na(x)])
-  names(data_individual) <- levels(data[[id.col]])[selected_individuals]
 
   # convert to time-series
   data_ts <- lapply(data_individual, ts)
@@ -323,10 +367,7 @@ plotCWTs <- function(data,
   ## Calculate CWTs - Morlet wavelet spectrum ##################################
   ##############################################################################
 
-  # print message to console
-  cat("Calculating wavelet periodograms...\n")
-
-  # Apply detrending based on the chosen method
+  # apply detrending based on the chosen method
   if (detrend.method == "diff") {
     cat("Detrending time series using first-differencing (diff)\n")
     data_ts <- lapply(data_ts, diff)
@@ -350,12 +391,12 @@ plotCWTs <- function(data,
       data_ts[[id_name]] <- stats::residuals(loess_fit) # Replace with residuals
     }
   } else {
-    cat("Proceeding without detrending.\n")
+    cat("Proceeding without detrending\n")
   }
 
-  # Standardize the time series (Z-score) if requested
+  # standardize the time series (Z-score) if requested
   if(standardize) {
-    cat("Standardizing (Z-scoring) time series.\n")
+    cat("Standardizing (Z-scoring) time series\n")
     data_ts <- lapply(data_ts, scale)
   }
 
@@ -484,7 +525,7 @@ plotCWTs <- function(data,
     title(main=levels(data[[id.col]])[id], cex.main=cex.main, line=1)
 
     # add date axis
-    all_dates <- cwt_table[,timebin.col][!is.na(cwt_table[,id+1])]
+    all_dates <- cwt_table[,timebin.col][!is.nan(cwt_table[,id+1])]
     all_dates <- strftime(all_dates, date.format)
     consec_dates <- rle(all_dates)
     consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
@@ -504,36 +545,49 @@ plotCWTs <- function(data,
     abline(h=period_indexes, lty=5, col="grey70", lwd=0.7)
 
     ############################################################################
-    # plot the cone of influence (COI) to indicate regions with reduced reliability
-    x <- 1:nrow(cwt$coefs)
-    coi_values <- .rescale(log2(cwt$coi_maxscale*cwt$fourierfactor+1e-20),
-                           from=log2(range(cwt$scales*cwt$fourierfactor)),
-                           to=c(1, length(cwt$scales)))
-    # find valid COI indices (within plot bounds)
-    coi_indices <- which(coi_values>=1 & coi_values<=par("usr")[4])
-    coi_values_filtered <- coi_values[coi_indices]
-    x_filtered <- x[coi_indices]
+    # 1 - plot the cone of influence (COI) to indicate regions with reduced reliability (edge effects)
 
-    # extend polygon to plot boundaries
-    if(length(x_filtered) > 0) {
-      # add left boundary point
-      x_polygon <- c(par("usr")[1], x_filtered, par("usr")[2])
-      # extend COI values to boundaries (use edge values)
-      coi_polygon <- c(coi_values_filtered[1], coi_values_filtered, coi_values_filtered[length(coi_values_filtered)])
-      # create polygon from COI line to top of plot
-      if(mask.coi) {
-        # solid black to mask unreliable regions
-        polygon(c(x_polygon, rev(x_polygon)),
-                c(coi_polygon, rep(par("usr")[4], length(x_polygon))),
-                col="black",
-                border=TRUE)
-      } else {
-        # semi-transparent white to indicate unreliable regions
-        polygon(c(x_polygon, rev(x_polygon)),
-                c(coi_polygon, rep(par("usr")[4], length(x_polygon))),
-                col=adjustcolor("white", alpha.f=0.5),
-                border=TRUE)
-      }
+    # use ALL x-points
+    x_polygon <- 1:nrow(cwt$coefs)
+
+    # get the rescaled y-values for the COI line
+    coi_y_values <- .rescale(log2(cwt$coi_maxscale * cwt$fourierfactor + 1e-20),
+                             from = log2(range(cwt$scales * cwt$fourierfactor)),
+                             to = c(1, length(cwt$scales)))
+
+    # get plot boundaries from 'par'
+    y_bottom <- par("usr")[3] # This is 1
+    y_top    <- par("usr")[4] # This is length(cwt$scales)
+
+    # "clamp" the COI y-values to be *within* the plot's y-boundaries
+    coi_y_clamped <- pmin(pmax(coi_y_values, y_bottom), y_top)
+
+    # define the mask color based on user parameter
+    mask_col <- if(mask.coi) "black" else adjustcolor("white", alpha.f = 0.5)
+
+    # create polygon from the clamped COI line to the top of the plot
+    polygon(c(x_polygon, rev(x_polygon)),
+            c(coi_y_clamped, rep(y_top, length(x_polygon))),
+            col = mask_col, border = TRUE)
+
+
+    ############################################################################
+    # 2 - plot the cone of influence (COI) to indicate regions with reduced reliability (minimum resolvable period)
+
+    # get the minimum COI scale log-value
+    min_coi_log_value <- log2(cwt$coi_minscale * cwt$fourierfactor + 1e-20)
+
+    # rescale it to the plot's y-axis coordinates
+    min_coi_y_coord <- .rescale(min_coi_log_value,
+                                from = log2(range(cwt$scales * cwt$fourierfactor)),
+                                to = c(1, length(cwt$scales)))
+
+    # draw the masking polygon at the bottom
+    if (length(min_coi_y_coord) == 1 && is.numeric(min_coi_y_coord) && min_coi_y_coord > y_bottom) {
+      x_min <- par("usr")[1]
+      x_max <- par("usr")[2]
+      # draw a rectangle from the bottom (y_bottom) up to the min_coi_y_coord
+      rect(x_min, y_bottom, x_max, min_coi_y_coord, col = mask_col, border = TRUE)
     }
 
     ############################################################################
