@@ -20,7 +20,9 @@ plotCWTs(
   time.unit = "hours",
   color.pal = NULL,
   min.days = NULL,
-  detrend = FALSE,
+  detrend.method = "none",
+  loess.span = 0.75,
+  standardize = FALSE,
   date.format = "\%d/\%b",
   date.interval = 4,
   date.start = 1,
@@ -86,8 +88,26 @@ Options are "mins", "hours" and "days". Defaults to "hours".}
 
 \item{min.days}{Discard individuals that were detected in less than x days.}
 
-\item{detrend}{Detrend time series using differences (\code{\link[base]{diff}})
-rather than the actual values. Defaults to False.}
+\item{detrend.method}{Method for detrending the time series prior to CWT analysis.
+Options are:
+\itemize{
+\item "none" (default): No detrending is applied.
+\item "diff": Applies first-order differencing (\code{\link[base]{diff}}) to remove
+linear trends. Note that this analyzes the \emph{rate of change} of the signal.
+\item "loess": Fits a LOESS regression (using \code{\link[stats]{loess}}) and
+performs the CWT on the residuals. This is effective for removing complex,
+non-linear trends. The smoothness is controlled by \code{loess.span}.
+}}
+
+\item{loess.span}{The span (alpha) parameter for LOESS detrending, used only if
+\code{detrend.method = "loess"}. Controls the degree of smoothing; larger values
+fit a smoother, less "wiggly" trend line. Defaults to 0.75.}
+
+\item{standardize}{Logical. If TRUE, the time series for each individual is
+standardized to have a mean of 0 and a standard deviation of 1 (i.e.,
+Z-scored using \code{\link[base]{scale}}) prior to CWT analysis.
+This is applied \emph{after} detrending. This can help reveal periodicities
+in signals with low amplitude relative to their mean. Defaults to FALSE.}
 
 \item{date.format}{Date-time format (as used in \code{\link[base]{strptime}}),
 defining the x-axis labels. Defaults to month ("\%d/\%b").}
@@ -123,8 +143,8 @@ Any arguments supplied here will override the internal defaults used by the func
 For example, to reduce margins and adjust outer spacing:
 \preformatted{
 par.args = list(
-  mar = c(3, 4, 2, 1),
-  oma = c(1, 1, 2, 1)
+   mar = c(3, 4, 2, 1),
+   oma = c(1, 1, 2, 1)
 )
 }
 By default, an empty list (\code{list()}) is used, which applies the function's built-in layout settings.}

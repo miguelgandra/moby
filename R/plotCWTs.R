@@ -26,10 +26,10 @@
 #' Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is "MORLET".
 #' @param gap.handling Method for handling missing time bins in the time series. Options are:
 #' \itemize{
-#'   \item "zero" (default): Fill gaps with zeros (appropriate for detection/count data)
-#'   \item "mean": Fill gaps with the mean of the non-missing values for that individual
-#'   \item "locf": Last observation carried forward (use the last valid observation)
-#'   \item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
+#'     \item "zero" (default): Fill gaps with zeros (appropriate for detection/count data)
+#'     \item "mean": Fill gaps with the mean of the non-missing values for that individual
+#'     \item "locf": Last observation carried forward (use the last valid observation)
+#'     \item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
 #' }
 #' @param same.scale Forces same spectral scale (zlims) across all plots,
 #' allowing for density comparison between individuals.
@@ -44,8 +44,24 @@
 #' Options are "mins", "hours" and "days". Defaults to "hours".
 #' @param color.pal Color palette. Defaults to the Jet colormap.
 #' @param min.days Discard individuals that were detected in less than x days.
-#' @param detrend Detrend time series using differences (\code{\link[base]{diff}})
-#' rather than the actual values. Defaults to False.
+#' @param detrend.method Method for detrending the time series prior to CWT analysis.
+#' Options are:
+#' \itemize{
+#'   \item "none" (default): No detrending is applied.
+#'   \item "diff": Applies first-order differencing (\code{\link[base]{diff}}) to remove
+#'   linear trends. Note that this analyzes the *rate of change* of the signal.
+#'   \item "loess": Fits a LOESS regression (using \code{\link[stats]{loess}}) and
+#'   performs the CWT on the residuals. This is effective for removing complex,
+#'   non-linear trends. The smoothness is controlled by \code{loess.span}.
+#' }
+#' @param loess.span The span (alpha) parameter for LOESS detrending, used only if
+#' \code{detrend.method = "loess"}. Controls the degree of smoothing; larger values
+#' fit a smoother, less "wiggly" trend line. Defaults to 0.75.
+#' @param standardize Logical. If TRUE, the time series for each individual is
+#' standardized to have a mean of 0 and a standard deviation of 1 (i.e.,
+#' Z-scored using \code{\link[base]{scale}}) prior to CWT analysis.
+#' This is applied *after* detrending. This can help reveal periodicities
+#' in signals with low amplitude relative to their mean. Defaults to FALSE.
 #' @param date.format Date-time format (as used in \code{\link[base]{strptime}}),
 #' defining the x-axis labels. Defaults to month ("%d/%b").
 #' @param date.interval Number defining the interval between each
@@ -70,8 +86,8 @@
 #' For example, to reduce margins and adjust outer spacing:
 #' \preformatted{
 #' par.args = list(
-#'   mar = c(3, 4, 2, 1),
-#'   oma = c(1, 1, 2, 1)
+#'    mar = c(3, 4, 2, 1),
+#'    oma = c(1, 1, 2, 1)
 #' )
 #' }
 #' By default, an empty list (\code{list()}) is used, which applies the function's built-in layout settings.
@@ -103,7 +119,9 @@ plotCWTs <- function(data,
                      time.unit = "hours",
                      color.pal = NULL,
                      min.days = NULL,
-                     detrend = FALSE,
+                     detrend.method = "none",
+                     loess.span = 0.75,
+                     standardize = FALSE,
                      date.format = "%d/%b",
                      date.interval = 4,
                      date.start = 1,
@@ -134,6 +152,9 @@ plotCWTs <- function(data,
   if (!is.numeric(period.range) || length(period.range) != 2) errors <- c(errors, "`period.range` must be a numeric vector of length 2 (min and max).")
   if(!time.unit %in% c("mins", "hours", "days")) errors <- c(errors, "Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
   if(!gap.handling %in% c("zero", "mean", "locf", "interpolate")) errors <- c(errors, "Invalid gap.handling method. Use 'zero', 'mean', 'locf', or 'interpolate'.")
+  if(!detrend.method %in% c("none", "diff", "loess")) errors <- c(errors, "Invalid detrend.method. Use 'none', 'diff', or 'loess'.")
+  if(detrend.method == "loess" && (!is.numeric(loess.span) || loess.span <= 0)) errors <- c(errors, "`loess.span` must be a positive numeric value.")
+  if(!is.logical(standardize)) errors <- c(errors, "`standardize` must be logical (TRUE or FALSE).")
   if(gap.handling %in% c("locf", "interpolate") && !requireNamespace("zoo", quietly=TRUE)) {
     errors <- c(errors, paste0("The 'zoo' package is required for gap.handling='", gap.handling, "' but is not installed. Please install 'zoo' using install.packages('zoo') and try again."))
   }
@@ -283,9 +304,9 @@ plotCWTs <- function(data,
 
   # set par layout with user-overridable graphical parameters
   par.defaults <- list(mfrow = c(rows, cols),
-                       mar   = c(4, 5, 4, 6),
-                       oma   = c(2, 2, 3, 2),
-                       mgp   = c(3, 0.8, 0))
+                       mar    = c(4, 5, 4, 6),
+                       oma    = c(2, 2, 3, 2),
+                       mgp    = c(3, 0.8, 0))
 
   # allow user to override any of these
   par.defaults[names(par.args)] <- par.args
@@ -305,8 +326,38 @@ plotCWTs <- function(data,
   # print message to console
   cat("Calculating wavelet periodograms...\n")
 
-  # if detrending is requested, apply a difference operation to the time series
-  if(detrend) data_ts <- lapply(data_ts, diff)
+  # Apply detrending based on the chosen method
+  if (detrend.method == "diff") {
+    cat("Detrending time series using first-differencing (diff)\n")
+    data_ts <- lapply(data_ts, diff)
+  } else if (detrend.method == "loess") {
+    cat(paste0("Detrending time series using loess (span = ", loess.span, ")\n"))
+    # Iterate over names to provide better warnings
+    for (id_name in names(data_ts)) {
+      ts_data <- data_ts[[id_name]]
+      # Loess needs a minimum number of points (e.g., > 3)
+      if (length(ts_data) < 4) {
+        warning(paste("Time series for", id_name, "is too short (< 4) for loess detrending, skipping."), call. = FALSE)
+        next # Keep original data in data_ts
+      }
+      time_index <- 1:length(ts_data)
+      # Use tryCatch for robustness, as loess can fail
+      loess_fit <- try(stats::loess(ts_data ~ time_index, span = loess.span), silent = TRUE)
+      if (inherits(loess_fit, "try-error")) {
+        warning(paste("Loess detrending failed for", id_name, ", proceeding with original data."), call. = FALSE)
+        next # Keep original data
+      }
+      data_ts[[id_name]] <- stats::residuals(loess_fit) # Replace with residuals
+    }
+  } else {
+    cat("Proceeding without detrending.\n")
+  }
+
+  # Standardize the time series (Z-score) if requested
+  if(standardize) {
+    cat("Standardizing (Z-scoring) time series.\n")
+    data_ts <- lapply(data_ts, scale)
+  }
 
   # initialize progress bar
   pb <- txtProgressBar(min=0, max=length(data_individual), initial=0, style=3)
@@ -339,7 +390,7 @@ plotCWTs <- function(data,
     }
 
     ########################################################################
-    # fallback to sequential processing if cores == 1   ####################
+    # fallback to sequential processing if cores == 1    ####################
   } else {
 
     # initialize list to store the results
