@@ -222,7 +222,8 @@ plotCWTs <- function(data,
   all_timebins <- seq(min_time, max_time, by = paste(interval, "min"))
 
   # initialize wide table with timebin column
-  cwt_table <- data.frame(timebin = all_timebins)
+  cwt_table <- data.frame(all_timebins)
+  colnames(cwt_table) <- timebin.col
 
   # loop over individuals
   for(id in levels(data[[id.col]])) {
