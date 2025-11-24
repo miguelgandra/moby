@@ -13,6 +13,7 @@ plotCWTs(
   id.groups = NULL,
   wavelet.type = "MORLET",
   gap.handling = "zero",
+  power.scaling = "linear",
   same.scale = FALSE,
   mask.coi = FALSE,
   period.range = c(3, 48),
@@ -66,6 +67,12 @@ Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is
 \item "mean": Fill gaps with the mean of the non-missing values for that individual
 \item "locf": Last observation carried forward (use the last valid observation)
 \item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
+}}
+
+\item{power.scaling}{Controls how the signal power (Z-axis color) is scaled. Options are:
+\itemize{
+\item "linear" (default): Raw power values. Large peaks may obscure smaller signals.
+\item "quantile": Quantile-based breaks. Maximizes contrast by distributing colors evenly across the \emph{positive} signal distribution, ignoring zeros to prevent color-scale skewing.
 }}
 
 \item{same.scale}{Forces same spectral scale (zlims) across all plots,

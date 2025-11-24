@@ -1,6 +1,6 @@
-#######################################################################################################
-# Check for signal periodicity through CWT (Continuous wavelet transform) #############################
-#######################################################################################################
+################################################################################
+## Continuous Wavelet Transform (CWT) Analysis & Plotting                     ##
+################################################################################
 
 #' Continuous wavelet transform (CWT)
 #'
@@ -26,10 +26,15 @@
 #' Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is "MORLET".
 #' @param gap.handling Method for handling missing time bins in the time series. Options are:
 #' \itemize{
-#'     \item "zero" (default): Fill gaps with zeros (appropriate for detection/count data)
-#'     \item "mean": Fill gaps with the mean of the non-missing values for that individual
-#'     \item "locf": Last observation carried forward (use the last valid observation)
-#'     \item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
+#'      \item "zero" (default): Fill gaps with zeros (appropriate for detection/count data)
+#'      \item "mean": Fill gaps with the mean of the non-missing values for that individual
+#'      \item "locf": Last observation carried forward (use the last valid observation)
+#'      \item "interpolate": Linear interpolation between valid observations (recommended for environmental data)
+#' }
+#' @param power.scaling Controls how the signal power (Z-axis color) is scaled. Options are:
+#' \itemize{
+#'      \item "linear" (default): Raw power values. Large peaks may obscure smaller signals.
+#'      \item "quantile": Quantile-based breaks. Maximizes contrast by distributing colors evenly across the *positive* signal distribution, ignoring zeros to prevent color-scale skewing.
 #' }
 #' @param same.scale Forces same spectral scale (zlims) across all plots,
 #' allowing for density comparison between individuals.
@@ -103,7 +108,6 @@
 #'
 #' @export
 
-
 plotCWTs <- function(data,
                      variable,
                      plot.title = paste("Wavelet Power Spectrum -", tools::toTitleCase(variable)),
@@ -112,6 +116,7 @@ plotCWTs <- function(data,
                      id.groups = NULL,
                      wavelet.type = "MORLET",
                      gap.handling = "zero",
+                     power.scaling = "linear",
                      same.scale = FALSE,
                      mask.coi = FALSE,
                      period.range = c(3, 48),
@@ -137,487 +142,502 @@ plotCWTs <- function(data,
                      ...) {
 
 
-  ##############################################################################
-  ## Initial checks ############################################################
-  ##############################################################################
+  # ============================================================================
+  # 1. Parameter Validation and Initial Checks
+  # ============================================================================
 
-  # perform argument checks and return reviewed parameters
+  # Perform internal argument checks
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-  # validate additional parameters
+  # Validate dependencies and input types
   errors <- c()
-  if(!requireNamespace("wavScalogram", quietly=TRUE)) errors <- c(errors, "The 'wavScalogram' package is required for this function but is not installed. Please install 'wavScalogram' using install.packages('wavScalogram') and try again.")
-  if(!class(data[[variable]]) %in% c("numeric", "integer")) errors <- c(errors, "Please convert signal to class numeric")
-  if (!is.numeric(period.range) || length(period.range) != 2) errors <- c(errors, "`period.range` must be a numeric vector of length 2 (min and max).")
-  if(!time.unit %in% c("mins", "hours", "days")) errors <- c(errors, "Invalid time unit specified. Use 'mins', 'hours', or 'days'.")
-  if(!gap.handling %in% c("zero", "mean", "locf", "interpolate")) errors <- c(errors, "Invalid gap.handling method. Use 'zero', 'mean', 'locf', or 'interpolate'.")
-  if(!detrend.method %in% c("none", "diff", "loess")) errors <- c(errors, "Invalid detrend.method. Use 'none', 'diff', or 'loess'.")
+  if(!requireNamespace("wavScalogram", quietly=TRUE)) errors <- c(errors, "The 'wavScalogram' package is required but is not installed. Please install it using install.packages('wavScalogram').")
+  if(!inherits(data[[variable]], c("numeric", "integer"))) errors <- c(errors, "The signal variable must be of class numeric or integer.")
+  if (!is.numeric(period.range) || length(period.range) != 2) errors <- c(errors, "`period.range` must be a numeric vector of length 2 (min, max).")
+  if(!time.unit %in% c("mins", "hours", "days")) errors <- c(errors, "Invalid time.unit. Use 'mins', 'hours', or 'days'.")
+  if(!gap.handling %in% c("zero", "mean", "locf", "interpolate")) errors <- c(errors, "Invalid gap.handling method.")
+  if(!detrend.method %in% c("none", "diff", "loess")) errors <- c(errors, "Invalid detrend.method.")
   if(detrend.method == "loess" && (!is.numeric(loess.span) || loess.span <= 0)) errors <- c(errors, "`loess.span` must be a positive numeric value.")
-  if(!is.logical(standardize)) errors <- c(errors, "`standardize` must be logical (TRUE or FALSE).")
+  if(!is.logical(standardize)) errors <- c(errors, "`standardize` must be TRUE or FALSE.")
+  if(!power.scaling %in% c("linear", "quantile")) errors <- c(errors, "Invalid power.scaling. Use 'linear' or 'quantile'.")
+
+  # Check for zoo package if interpolation is required
   if(gap.handling %in% c("locf", "interpolate") && !requireNamespace("zoo", quietly=TRUE)) {
-    errors <- c(errors, paste0("The 'zoo' package is required for gap.handling='", gap.handling, "' but is not installed. Please install 'zoo' using install.packages('zoo') and try again."))
-  }
-  if(length(errors)>0){
-    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
-    stop_message <- c("\n", paste0("- ", stop_message, collapse="\n"))
-    stop(stop_message, call.=FALSE)
+    errors <- c(errors, paste0("The 'zoo' package is required for gap.handling='", gap.handling, "'. Please install it."))
   }
 
-  # save the current par settings and ensure they are restored upon function exit
+  if(length(errors) > 0){
+    stop_message <- sapply(errors, function(x) paste(strwrap(x, width=getOption("width")), collapse="\n"))
+    stop(paste0("\n", paste0("- ", stop_message, collapse="\n")), call.=FALSE)
+  }
+
+  # Save current par settings to restore them on exit
   original_par <- par(no.readonly=TRUE)
-  original_par$pin <- NULL
-  original_par$cin <- NULL
-  original_par$cra <- NULL
-  original_par$csi <- NULL
-  original_par$cxy <- NULL
-  original_par$din <- NULL
-  original_par$page <- NULL
+  # Remove read-only parameters to prevent warnings on restoration
+  original_par[c("pin", "cin", "cra", "csi", "cxy", "din", "page")] <- NULL
   on.exit(par(original_par), add = TRUE)
 
-  # print message to console
   .printConsole("Calculating Wavelet Periodograms")
+  data[[id.col]] <- droplevels(data[[id.col]])
 
-  # drop missing ID levels
-  data[[id.col]] <- droplevels( data[[id.col]])
-
-  # convert time.unit periods
-  if (time.unit=="mins") {
-    period.range <- period.range
+  # Convert period ranges to the base unit (minutes) for calculation
+  if (time.unit == "mins") {
+    period.range_calc <- period.range
     time_factor <- 1
     unit_abbrev <- "mins"
-  } else if (time.unit=="hours") {
-    period.range <- period.range * 60
+  } else if (time.unit == "hours") {
+    period.range_calc <- period.range * 60
     time_factor <- 60
     unit_abbrev <- "h"
-  } else if (time.unit=="days") {
-    period.range <- period.range * 1440
+  } else if (time.unit == "days") {
+    period.range_calc <- period.range * 1440
     time_factor <- 1440
     unit_abbrev <- "days"
   }
 
+  # ============================================================================
+  # 2. Data Preparation and Time Series Construction
+  # ============================================================================
 
-  ##############################################################################
-  ## Prepare data ##############################################################
-  ##############################################################################
-
-  # get time bins interval (in minutes) - THIS IS A ROBUST WAY
+  # Robustly infer sampling interval (dt) from the smallest non-zero difference between timebins
   sorted_times <- sort(unique(data[[timebin.col]]))
   if (length(sorted_times) < 2) {
-    stop("Need at least two unique time bins to determine interval.", call. = FALSE)
+    stop("At least two unique time bins are required to determine the sampling interval.", call. = FALSE)
   }
   interval <- difftime(sorted_times, dplyr::lag(sorted_times), units = "min")
   interval <- as.numeric(min(interval[interval > 0], na.rm = TRUE))
 
   if (!is.finite(interval) || interval == 0) {
-    stop(paste("Could not determine a valid time interval (dt > 0) from 'timebin.col'."), call. = FALSE)
+    stop("Could not determine a valid sampling interval (dt > 0). Check 'timebin.col'.", call. = FALSE)
   }
-  # print info to console
   cat(paste0("Inferred sampling interval (dt): ", interval, " minutes\n"))
 
-
-  # create complete sequence of time bins
+  # Create a complete sequence of time bins to handle irregularities/gaps
   min_time <- min(data[[timebin.col]])
   max_time <- max(data[[timebin.col]])
   all_timebins <- seq(min_time, max_time, by = paste(interval, "min"))
 
-  # initialize wide table with timebin column
+  # Initialize synchronization table
   cwt_table <- data.frame(all_timebins)
   colnames(cwt_table) <- timebin.col
 
-  # loop over individuals
+  # Pivot data: populate the table for each individual
   for(id in levels(data[[id.col]])) {
 
-    # extract individual data
+    # Extract data for current ID
     id_data <- data[data[[id.col]] == id, c(timebin.col, variable)]
 
-    # aggregate if multiple values per timebin
+    # Handle duplicates by averaging
     if(any(duplicated(id_data[[timebin.col]]))) {
-      id_data <- aggregate(id_data[[variable]],
-                           by = list(id_data[[timebin.col]]),
-                           FUN = mean, na.rm = TRUE)
+      id_data <- aggregate(id_data[[variable]], by = list(id_data[[timebin.col]]), FUN = mean, na.rm = TRUE)
       colnames(id_data) <- c(timebin.col, variable)
     }
 
-    # initialize full-length vector with NAs
+    # Align data to the complete time sequence
     values <- rep(NA_real_, length(all_timebins))
-
-    # fill available data
     matched_idx <- match(id_data[[timebin.col]], all_timebins)
     values[matched_idx] <- id_data[[variable]]
 
-    # identify first and last non-NA positions
+    # Mark pre-detection and post-detection periods as NaN (distinct from missing internal gaps)
     non_na_idx <- which(!is.na(values))
     if(length(non_na_idx) > 0) {
       first_idx <- non_na_idx[1]
       last_idx  <- non_na_idx[length(non_na_idx)]
 
-      # replace leading/trailing NAs with NaN
       if(first_idx > 1) values[1:(first_idx-1)] <- NaN
       if(last_idx < length(values)) values[(last_idx+1):length(values)] <- NaN
     } else {
-      # all values NA → mark all as NaN
       values[] <- NaN
     }
 
-    # add to wide table
     cwt_table[[id]] <- values
   }
 
-  # offset min period by 30 mins to avoid truncation after CWT
-  period.range[1] <-  period.range[1] - 30
+  # Expand period range slightly to prevent edge truncation during CWT
+  period.range_calc[1] <- period.range_calc[1] - 30
 
-  # subset individuals based on minimum number of days with data
+  # Filter individuals based on minimum data requirements (min.days)
   if(!is.null(min.days)){
     data$day <- strftime(data[[timebin.col]], "%Y-%m-%d", tz="UTC")
     days_detected <- by(data$day, data[[id.col]], function(x) length(unique(x)))
     selected_individuals <- which(as.numeric(days_detected) >= min.days)
     nindividuals <- length(selected_individuals)
     cat(paste(nindividuals, "individuals with >", min.days, "logged days\n"))
-    cat(paste(nlevels(data[[id.col]])-nindividuals, "individual(s) excluded\n"))
-  }else{
+    cat(paste(nlevels(data[[id.col]]) - nindividuals, "individual(s) excluded\n"))
+  } else {
     selected_individuals <- 1:nlevels(data[[id.col]])
     nindividuals <- length(selected_individuals)
   }
 
-  # split data by individual
-  data_individual <- lapply(selected_individuals, function(i) cwt_table[,i+1])
-
-  # remove any remaining NAs at the edges (before first/after last valid observation)
-  data_individual <- lapply(data_individual, function(x) x[!is.nan(x)])
+  # Extract time series for selected individuals and trim outer NaNs
+  data_individual <- lapply(selected_individuals, function(i) {
+    x <- cwt_table[, i+1]
+    return(x[!is.nan(x)])
+  })
   names(data_individual) <- levels(data[[id.col]])[selected_individuals]
 
-  # handle gaps according to user specification
+  # Apply Gap Handling (crucial for valid CWT)
   cat(paste0("Handling gaps using method: '", gap.handling, "'\n"))
-
   data_individual <- lapply(data_individual, function(x) {
     if(gap.handling == "zero") {
-      # Fill NAs with zeros (original behavior for detection data)
       x[is.na(x)] <- 0
     } else if(gap.handling == "mean") {
-      # Fill with mean of non-missing values
       x[is.na(x)] <- mean(x, na.rm=TRUE)
     } else if(gap.handling == "locf") {
-      # Last observation carried forward
       x <- zoo::na.locf(x, na.rm=FALSE)
     } else if(gap.handling == "interpolate") {
-      # Linear interpolation between valid observations
       x <- zoo::na.approx(x, na.rm=FALSE)
     }
     return(x)
   })
 
-  # convert to time-series
+  # Convert to ts objects
   data_ts <- lapply(data_individual, ts)
 
-  # get time bins interval (in minutes)
-  interval <- difftime(data[[timebin.col]], dplyr::lag(data[[timebin.col]]), units="min")
-  interval <- as.numeric(min(interval[interval>0], na.rm=TRUE))
 
+  # ============================================================================
+  # 3. Layout Configuration
+  # ============================================================================
 
-  ##############################################################################
-  ## Set layout variables ######################################################
-  ##############################################################################
-
-  # set layout variables
+  # Calculate grid layout based on groups or simple count
   if(!is.null(id.groups)){
     group_ids_selected <- lapply(id.groups, function(x) x[x %in% levels(data[[id.col]])[selected_individuals]])
-    group_numbers <- lapply(group_ids_selected,  length)
+    group_numbers <- lapply(group_ids_selected, length)
     group_rows <- lapply(group_numbers, function(x) ceiling(x/cols))
     rows <- do.call("sum", group_rows)
     group_plots <- lapply(group_rows, function(x) x*cols)
-    animal_indexes <- mapply(function(nids, nplots) {if(nids<nplots){c(1:nids, rep(NA, nplots-nids))}else{1:nids}},
-                             nids=group_numbers, nplots=group_plots, SIMPLIFY=FALSE)
-    for(i in 2:length(animal_indexes)){animal_indexes[[i]]<-animal_indexes[[i]]+max(animal_indexes[[i-1]], na.rm=TRUE)}
+
+    # Map animals to plot indices
+    animal_indexes <- mapply(function(nids, nplots) {
+      if(nids < nplots) c(1:nids, rep(NA, nplots-nids)) else 1:nids
+    }, nids=group_numbers, nplots=group_plots, SIMPLIFY=FALSE)
+
+    for(i in 2:length(animal_indexes)){
+      animal_indexes[[i]] <- animal_indexes[[i]] + max(animal_indexes[[i-1]], na.rm=TRUE)
+    }
     animal_indexes <- unlist(animal_indexes, use.names=FALSE)
     background_pal <- grey.colors(length(id.groups), start=0.97, end=0.93)
-  } else{
+  } else {
     rows <- ceiling(nindividuals/cols)
-    nplots <- rows*cols
-    if(nindividuals<nplots){
-      animal_indexes <- c(1:nindividuals, rep(NA, nplots-nindividuals))
-    }else{
-      animal_indexes <- 1:nindividuals
-    }
+    nplots <- rows * cols
+    animal_indexes <- if(nindividuals < nplots) c(1:nindividuals, rep(NA, nplots-nindividuals)) else 1:nindividuals
     background_col <- "gray96"
   }
 
   plot_layout <- matrix(animal_indexes, nrow=rows, ncol=cols, byrow=TRUE)
-  bottom_plots <- apply(plot_layout, 2, max, na.rm=TRUE)
   plot_ids <- as.integer(apply(plot_layout, 1, function(x) x))
   plot_ids <- plot_ids[!is.na(plot_ids)]
 
-  # set par layout with user-overridable graphical parameters
-  par.defaults <- list(mfrow = c(rows, cols),
-                       mar    = c(4, 5, 4, 6),
-                       oma    = c(2, 2, 3, 2),
-                       mgp    = c(3, 0.8, 0))
-
-  # allow user to override any of these
+  # Apply graphical parameters
+  par.defaults <- list(mfrow = c(rows, cols), mar = c(4, 5, 4, 6), oma = c(2, 2, 3, 2), mgp = c(3, 0.8, 0))
   par.defaults[names(par.args)] <- par.args
-  # apply combined settings
   par(par.defaults)
 
-  # set color pallete
+  # Set default color palette if not provided
   if(is.null(color.pal)){
     color.pal <- .jet_pal(100)
     color.pal <- colorRampPalette(color.pal[5:100])(100)
   }
 
-  ##############################################################################
-  ## Calculate CWTs - Morlet wavelet spectrum ##################################
-  ##############################################################################
 
-  # apply detrending based on the chosen method
+  # ============================================================================
+  # 4. CWT Calculation
+  # ============================================================================
+
+  # Pre-processing: Detrending
   if (detrend.method == "diff") {
-    cat("Detrending time series using first-differencing (diff)\n")
+    cat("Detrending: Applying first-order differencing\n")
     data_ts <- lapply(data_ts, diff)
   } else if (detrend.method == "loess") {
-    cat(paste0("Detrending time series using loess (span = ", loess.span, ")\n"))
-    # Iterate over names to provide better warnings
+    cat(paste0("Detrending: Applying LOESS smoothing (span = ", loess.span, ")\n"))
     for (id_name in names(data_ts)) {
       ts_data <- data_ts[[id_name]]
-      # Loess needs a minimum number of points (e.g., > 3)
       if (length(ts_data) < 4) {
-        warning(paste("Time series for", id_name, "is too short (< 4) for loess detrending, skipping."), call. = FALSE)
-        next # Keep original data in data_ts
+        warning(paste("Series", id_name, "too short for LOESS, skipping."), call. = FALSE)
+        next
       }
-      time_index <- 1:length(ts_data)
-      # Use tryCatch for robustness, as loess can fail
-      loess_fit <- try(stats::loess(ts_data ~ time_index, span = loess.span), silent = TRUE)
-      if (inherits(loess_fit, "try-error")) {
-        warning(paste("Loess detrending failed for", id_name, ", proceeding with original data."), call. = FALSE)
-        next # Keep original data
+      time_idx <- 1:length(ts_data)
+      loess_fit <- try(stats::loess(ts_data ~ time_idx, span = loess.span), silent = TRUE)
+      if (!inherits(loess_fit, "try-error")) {
+        data_ts[[id_name]] <- stats::residuals(loess_fit)
+      } else {
+        warning(paste("LOESS failed for", id_name, "- using raw data."), call. = FALSE)
       }
-      data_ts[[id_name]] <- stats::residuals(loess_fit) # Replace with residuals
     }
-  } else {
-    cat("Proceeding without detrending\n")
   }
 
-  # standardize the time series (Z-score) if requested
+  # Pre-processing: Standardization
   if(standardize) {
-    cat("Standardizing (Z-scoring) time series\n")
+    cat("Standardizing: Applying Z-score scaling\n")
     data_ts <- lapply(data_ts, scale)
   }
 
-  # initialize progress bar
+  # Execute CWT (Parallel or Sequential)
   pb <- txtProgressBar(min=0, max=length(data_individual), initial=0, style=3)
 
-
-  ########################################################################
-  # use parallel computing ###############################################
-  if(cores>1) {
-
-    # print information to console
-    cat(paste0("Starting parallel computation: ", cores, " cores\n"))
-
-    # register parallel backend with the specified number of cores
+  if(cores > 1) {
+    cat(paste0("Starting parallel computation on ", cores, " cores\n"))
     cl <- parallel::makeCluster(cores)
     doSNOW::registerDoSNOW(cl)
-
-    # ensure the cluster is properly stopped when the function exits
     on.exit(parallel::stopCluster(cl), add = TRUE)
 
-    # define the `%dopar%` operator locally for parallel execution
     `%dopar%` <- foreach::`%dopar%`
-
-    # set progress bar option
     opts <- list(progress = function(n) setTxtProgressBar(pb, n))
 
-    # perform parallel computation over each individual's data using foreach
     cwts <- foreach::foreach(i=1:length(data_ts), .options.snow=opts, .packages="wavScalogram") %dopar% {
-      wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range, 20), powerscales=TRUE, wname=wavelet.type,
-                            border_effects="BE", makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
+      wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range_calc, 20),
+                            powerscales=TRUE, wname=wavelet.type, border_effects="BE",
+                            makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
     }
-
-    ########################################################################
-    # fallback to sequential processing if cores == 1    ####################
   } else {
-
-    # initialize list to store the results
     cwts <- vector("list", length(data_ts))
-
-    # loop through each individual
     for(i in 1:length(data_ts)){
-      # calculate wavelet periodograms
-      cwts[[i]] <- wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range, 20), powerscales=TRUE, wname=wavelet.type,
-                                         border_effects="BE", makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
-      # update progress bar
+      cwts[[i]] <- wavScalogram::cwt_wst(data_ts[[i]], dt=interval, scales=c(period.range_calc, 20),
+                                         powerscales=TRUE, wname=wavelet.type, border_effects="BE",
+                                         makefigure=FALSE, energy_density=TRUE, figureperiod=TRUE, ...)
       setTxtProgressBar(pb, i)
     }
   }
-
-  # close the progress bar
   close(pb)
 
-  # calculate the range of the absolute squared coefficients across all individuals
-  # optionally masking regions outside the cone of influence
-  if(mask.coi) {
-    density_range <- lapply(1:length(cwts), function(i) {
-      cwt <- cwts[[i]]
-      Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
 
-      # create COI mask
+  # ============================================================================
+  # 5. Density and Scale Calculation
+  # ============================================================================
+
+  # Calculate power density values (Coefficient^2 / Scale)
+  density_values <- vector("list", length(cwts))
+
+  for(i in 1:length(cwts)) {
+    cwt <- cwts[[i]]
+    Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
+
+    # Optionally mask values outside the Cone of Influence (COI) for scale calculation
+    if(mask.coi) {
       coi_mask <- matrix(TRUE, nrow = nrow(Z), ncol = ncol(Z))
       for(j in 1:nrow(Z)) {
         coi_scale <- cwt$coi_maxscale[j] * cwt$fourierfactor
-        # mark scales larger than COI as outside (to be masked)
         coi_mask[j, cwt$scales * cwt$fourierfactor > coi_scale] <- FALSE
       }
+      density_values[[i]] <- Z[coi_mask]
+    } else {
+      density_values[[i]] <- as.vector(Z)
+    }
+  }
 
-      # return only values inside COI
-      Z[coi_mask]
-    })
-    density_range <- range(unlist(density_range))
-  } else {
-    density_range <- lapply(cwts, function(x) t(t(abs(x$coefs) ^ 2) / x$scales))
-    density_range <- range(unlist(density_range))
+  # Determine global scale limits if same.scale is requested
+  density_range <- range(unlist(density_values), na.rm=TRUE)
+  global_breaks <- NULL
+
+  if(same.scale && power.scaling == "quantile") {
+    all_valid_z <- unlist(density_values)
+    all_valid_z <- all_valid_z[is.finite(all_valid_z)]
+
+    # Compute quantiles based strictly on positive signal to avoid background zero-inflation
+    positive_z <- all_valid_z[all_valid_z > 0]
+
+    if(length(positive_z) > 0) {
+      global_breaks <- unique(quantile(positive_z, probs = seq(0, 1, length.out = length(color.pal) + 1)))
+      global_breaks[1] <- min(all_valid_z, na.rm=TRUE) # Ensure coverage of 0
+      global_breaks <- sort(unique(global_breaks))
+
+      # Fallback if quantiles are degenerate
+      if(length(global_breaks) != length(color.pal) + 1) {
+        global_breaks <- seq(min(all_valid_z), max(all_valid_z), length.out = length(color.pal) + 1)
+      }
+    }
   }
 
 
+  # ============================================================================
+  # 6. Plot Generation
+  # ============================================================================
 
-  ##############################################################################
-  # Plot CWTs ##################################################################
-  ##############################################################################
-
-  # loop through each selected individual to plot the CWTs
   for (i in plot_ids) {
 
-    # if the ID is NA, skip this iteration and create an empty plot
     if(is.na(i)) {
       plot.new()
       next
     }
 
-    # otherwise, generate the CWT plot for the current individual
     id <- selected_individuals[i]
     cwt <- cwts[[i]]
-
-    # compute the wavelet power spectrum (Z), scaling the coefficients by the scales (energy density)
     Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
 
-    # set density limits for the plot
+    # --- Determine Z-limits and Breaks ---
     if(same.scale) {
       zlim <- density_range
+      current_breaks <- global_breaks
     } else {
-      # calculate zlim from valid (inside COI) regions only if mask.coi is TRUE
+      # Local scale calculation
       if(mask.coi) {
-        # create COI mask
         coi_mask <- matrix(TRUE, nrow = nrow(Z), ncol = ncol(Z))
         for(j in 1:nrow(Z)) {
           coi_scale <- cwt$coi_maxscale[j] * cwt$fourierfactor
-          # mark scales larger than COI as outside (to be masked)
           coi_mask[j, cwt$scales * cwt$fourierfactor > coi_scale] <- FALSE
         }
-        zlim <- range(Z[coi_mask])
+        valid_Z <- Z[coi_mask]
       } else {
-        zlim <- range(Z)
+        valid_Z <- as.vector(Z)
+      }
+
+      zlim <- range(valid_Z, na.rm=TRUE)
+      current_breaks <- NULL
+
+      if(power.scaling == "quantile") {
+        valid_Z <- valid_Z[is.finite(valid_Z)]
+        positive_Z <- valid_Z[valid_Z > 0]
+
+        if(length(positive_Z) > 0) {
+          current_breaks <- unique(quantile(positive_Z, probs = seq(0, 1, length.out = length(color.pal) + 1)))
+          current_breaks[1] <- min(zlim)
+          current_breaks <- sort(unique(current_breaks))
+        }
+        # Fallback to linear if breaks are malformed
+        if(!is.null(current_breaks) && length(current_breaks) != length(color.pal) + 1) {
+          current_breaks <- seq(min(valid_Z), max(valid_Z), length.out = length(color.pal) + 1)
+        }
       }
     }
 
-    # plot CWT spectrum
-    graphics::image(x=1:nrow(cwt$coefs), y=1:ncol(cwt$coefs), z=Z, zlim = zlim,
+    if(is.null(current_breaks)) {
+      current_breaks <- seq(min(zlim), max(zlim), length.out = length(color.pal) + 1)
+    }
+
+    # --- Main Plot ---
+    graphics::image(x=1:nrow(cwt$coefs), y=1:ncol(cwt$coefs), z=Z,
+                    zlim = zlim,
+                    breaks = current_breaks,
                     col=color.pal, axes=FALSE, useRaster=TRUE, main="", xlab="Date",
                     ylab = paste0("Period (", unit_abbrev, ")"),
                     frame.plot = TRUE, cex.lab = cex.lab, xaxs = "i", yaxs = "i")
 
-    # add the individual ID as a title
     title(main=levels(data[[id.col]])[id], cex.main=cex.main, line=1)
 
-    # add date axis
+    # --- X-Axis (Dates) ---
     all_dates <- cwt_table[,timebin.col][!is.nan(cwt_table[,id+1])]
     all_dates <- strftime(all_dates, date.format)
+
+    # Identify unique date blocks for labeling
     consec_dates <- rle(all_dates)
     consec_dates <- paste0(all_dates, "_", rep(1:length(consec_dates$lengths), consec_dates$lengths))
     unique_dates <- unique(consec_dates)
     disp_dates <- unique_dates[seq(date.start, length(unique_dates), by=date.interval)]
+
     indexes <- unlist(lapply(unique_dates, function(x) min(which(consec_dates==x))))
     disp_indexes <- unlist(lapply(disp_dates, function(x) min(which(consec_dates==x))))
     disp_dates <- sub("\\_.*", "", disp_dates)
+
     axis(1, labels=disp_dates, at=disp_indexes, cex.axis=cex.axis)
     axis(1, labels=FALSE, at=indexes, tck=-0.02, lwd.ticks=0.5)
 
-    # add scale (period) axis
-    period_indexes <- .rescale(log2(axis.periods*time_factor), from=log2(range(cwt$scales*cwt$fourierfactor)), to=c(1, length(cwt$scales)))
+    # --- Y-Axis (Period) ---
+    # Map log-scale periods to plot coordinates
+    period_indexes <- .rescale(log2(axis.periods*time_factor),
+                               from=log2(range(cwt$scales*cwt$fourierfactor)),
+                               to=c(1, length(cwt$scales)))
     axis(2, at=period_indexes, labels=axis.periods, cex.axis=cex.axis, las=1)
-
-    # add guide lines for each period
     abline(h=period_indexes, lty=5, col="grey70", lwd=0.7)
 
-    ############################################################################
-    # 1 - plot the cone of influence (COI) to indicate regions with reduced reliability (edge effects)
-
-    # use ALL x-points
+    # --- Cone of Influence (COI) Masking ---
+    # 1. Edge Effects COI (U-shaped)
     x_polygon <- 1:nrow(cwt$coefs)
-
-    # get the rescaled y-values for the COI line
     coi_y_values <- .rescale(log2(cwt$coi_maxscale * cwt$fourierfactor + 1e-20),
                              from = log2(range(cwt$scales * cwt$fourierfactor)),
                              to = c(1, length(cwt$scales)))
 
-    # get plot boundaries from 'par'
-    y_bottom <- par("usr")[3] # This is 1
-    y_top    <- par("usr")[4] # This is length(cwt$scales)
-
-    # "clamp" the COI y-values to be *within* the plot's y-boundaries
+    y_bottom <- par("usr")[3]
+    y_top    <- par("usr")[4]
     coi_y_clamped <- pmin(pmax(coi_y_values, y_bottom), y_top)
 
-    # define the mask color based on user parameter
     mask_col <- if(mask.coi) "black" else adjustcolor("white", alpha.f = 0.5)
 
-    # create polygon from the clamped COI line to the top of the plot
     polygon(c(x_polygon, rev(x_polygon)),
             c(coi_y_clamped, rep(y_top, length(x_polygon))),
             col = mask_col, border = TRUE)
 
-
-    ############################################################################
-    # 2 - plot the cone of influence (COI) to indicate regions with reduced reliability (minimum resolvable period)
-
-    # get the minimum COI scale log-value
+    # 2. Minimum Scale COI (Bottom block)
     min_coi_log_value <- log2(cwt$coi_minscale * cwt$fourierfactor + 1e-20)
-
-    # rescale it to the plot's y-axis coordinates
     min_coi_y_coord <- .rescale(min_coi_log_value,
                                 from = log2(range(cwt$scales * cwt$fourierfactor)),
                                 to = c(1, length(cwt$scales)))
 
-    # draw the masking polygon at the bottom
     if (length(min_coi_y_coord) == 1 && is.numeric(min_coi_y_coord) && min_coi_y_coord > y_bottom) {
-      x_min <- par("usr")[1]
-      x_max <- par("usr")[2]
-      # draw a rectangle from the bottom (y_bottom) up to the min_coi_y_coord
-      rect(x_min, y_bottom, x_max, min_coi_y_coord, col = mask_col, border = TRUE)
+      rect(par("usr")[1], y_bottom, par("usr")[2], min_coi_y_coord, col = mask_col, border = TRUE)
     }
 
-    ############################################################################
-    # add a color legend to the plot (only once if same.scale = TRUE)
-    if (!same.scale) {
-      # current behaviour: draw one legend per plot
-      density_labs <- pretty(zlim)
-      density_labs <- density_labs[density_labs >= min(zlim) & density_labs <= max(zlim)]
-      digits <- max(.decimalPlaces(density_labs))
-      .colorlegend(col=color.pal, zlim=zlim, zval=density_labs, posx=legend.xpos,
-                   posy=legend.ypos, main="", main.cex=1, digit=digits, cex=cex.legend, xpd = NA)
-    } else if (same.scale && i == max(plot_ids)) {
-      # only draw the legend once (after the last plot)
-      # current behaviour: draw one legend per plot
-      density_labs <- pretty(zlim)
-      density_labs <- density_labs[density_labs >= min(zlim) & density_labs <= max(zlim)]
-      digits <- max(.decimalPlaces(density_labs))
-      .colorlegend(col=color.pal, zlim=zlim, zval=density_labs, posx=legend.xpos,
-                   posy=legend.ypos, main="", main.cex=1, digit=digits, cex=cex.legend, xpd = NA)
+    # --- Color Legend ---
+    # Draw legend only on the last plot of a set, or every plot if scales differ
+    if (!same.scale || (same.scale && i == max(plot_ids))) {
+
+      lab_scientific <- FALSE
+
+      if(power.scaling == "quantile" && !is.null(current_breaks)){
+
+        # ## Quantile Legend Logic ##
+        # Quantile scales distribute colors evenly, but the physical data values are skewed.
+        # We decouple the visual scale from the label values:
+        # 1. Visual Scale: Force a 0-1 linear scale for the color ticks (equidistant).
+        # 2. Labels: Calculate the actual data values at those percentiles and override the text.
+
+        leg_zlim <- c(0, 1)
+        leg_zval <- seq(0, 1, length.out = 6)
+
+        # Map ticks to break indices to find corresponding data values
+        idx <- round(seq(1, length(current_breaks), length.out = 6))
+        vals <- current_breaks[idx]
+        leg_zlab <- vals # Initialize
+
+        # ## Formatting Strategy ##
+        # Apply scientific notation to very small (< 0.1) or very large (>= 1000) values.
+        # Otherwise, use standard formatting.
+        sci_idx <- which(abs(vals) > 0 & (abs(vals) < 0.1 | abs(vals) >= 1000))
+        norm_idx <- which(abs(vals) == 0 | (abs(vals) >= 0.1 & abs(vals) < 1000))
+
+        if(length(sci_idx) > 0) leg_zlab[sci_idx] <- formatC(vals[sci_idx], format="e", digits=2)
+        if(length(norm_idx) > 0) leg_zlab[norm_idx] <- formatC(vals[norm_idx], format="g", digits=3)
+
+        leg_digit <- 3
+
+      } else {
+        # ## Linear Legend Logic ##
+        # Standard mapping where visual position equals data value.
+        leg_zlim <- zlim
+        leg_zval <- pretty(zlim)
+        leg_zval <- leg_zval[leg_zval >= min(zlim) & leg_zval <= max(zlim)]
+        leg_zlab <- NULL # No override
+
+        # Determine digits dynamically
+        digits_vec <- .decimalPlaces(leg_zval)
+        leg_digit <- if(all(is.na(digits_vec))) 2 else max(digits_vec, na.rm=TRUE)
+
+        # Force scientific if precision requirements are too high
+        if(leg_digit > 3) lab_scientific <- TRUE
+      }
+
+      .colorlegend(col = color.pal,
+                   zlim = leg_zlim,
+                   zval = leg_zval,
+                   zlab = leg_zlab,
+                   posx = legend.xpos,
+                   posy = legend.ypos,
+                   main = "",
+                   main.cex = 1,
+                   digit = leg_digit,
+                   lab.scientific = lab_scientific,
+                   cex = cex.legend,
+                   xpd = NA)
     }
   }
 
-  # add a top title for the whole plot
+  # Add Main Title
   mtext(text=plot.title, side=3, line=1.6, outer=T, cex=cex.main, font=2)
 
-  # if groupings are defined, add a legend for the groups
+  # Add Group Legend if applicable
   if(!is.null(id.groups)){
     label_pos <- rev(unlist(lapply(group_rows, function(x) x/2)))
-    for(i in 2:length(group_rows)){label_pos[i]<-label_pos[i]+rev(group_rows)[[i-1]]}
+    for(i in 2:length(group_rows)){label_pos[i] <- label_pos[i] + rev(group_rows)[[i-1]]}
     label_pos <- grconvertY(label_pos/rows, "ndc", "user")
     text(x=grconvertX(0.01, "ndc", "user"), y=label_pos, labels=rev(names(id.groups)),
          srt=90, cex=cex.main, font=2, xpd=NA)
