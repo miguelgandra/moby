@@ -14,6 +14,8 @@ plotCWTs(
   wavelet.type = "MORLET",
   gap.handling = "zero",
   power.scaling = "linear",
+  upper.value = NULL,
+  upper.quant = NULL,
   same.scale = FALSE,
   mask.coi = FALSE,
   period.range = c(3, 48),
@@ -72,8 +74,16 @@ Possible values are: "MORLET", "DOG", "PAUL", "HAAR", or "HAAR2". The default is
 \item{power.scaling}{Controls how the signal power (Z-axis color) is scaled. Options are:
 \itemize{
 \item "linear" (default): Raw power values. Large peaks may obscure smaller signals.
-\item "quantile": Quantile-based breaks. Maximizes contrast by distributing colors evenly across the \emph{positive} signal distribution, ignoring zeros to prevent color-scale skewing.
+\item "quantile": Quantile-based breaks. Maximizes contrast by distributing colors evenly across the distribution. Can appear "noisy".
+\item "log": Logarithmic scaling (log10). Good compromise: compresses large peaks and reveals lower power signals without maximizing noise.
+\item "sqrt": Square-root scaling. milder compression than log.
 }}
+
+\item{upper.value}{Optional numeric value. Threshold for winsorizing the raw power values (before scaling).
+Values above this threshold are set to this value. Useful for removing extreme outliers that skew the color scale.}
+
+\item{upper.quant}{Optional numeric value between 0 and 1. Percentile threshold for winsorizing the raw power values.
+e.g., 0.99 caps values at the 99th percentile.}
 
 \item{same.scale}{Forces same spectral scale (zlims) across all plots,
 allowing for density comparison between individuals.}

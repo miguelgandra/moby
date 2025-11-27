@@ -34,8 +34,14 @@
 #' @param power.scaling Controls how the signal power (Z-axis color) is scaled. Options are:
 #' \itemize{
 #'      \item "linear" (default): Raw power values. Large peaks may obscure smaller signals.
-#'      \item "quantile": Quantile-based breaks. Maximizes contrast by distributing colors evenly across the *positive* signal distribution, ignoring zeros to prevent color-scale skewing.
+#'      \item "quantile": Quantile-based breaks. Maximizes contrast by distributing colors evenly across the distribution. Can appear "noisy".
+#'      \item "log": Logarithmic scaling (log10). Good compromise: compresses large peaks and reveals lower power signals without maximizing noise.
+#'      \item "sqrt": Square-root scaling. milder compression than log.
 #' }
+#' @param upper.value Optional numeric value. Threshold for winsorizing the raw power values (before scaling).
+#' Values above this threshold are set to this value. Useful for removing extreme outliers that skew the color scale.
+#' @param upper.quant Optional numeric value between 0 and 1. Percentile threshold for winsorizing the raw power values.
+#' e.g., 0.99 caps values at the 99th percentile.
 #' @param same.scale Forces same spectral scale (zlims) across all plots,
 #' allowing for density comparison between individuals.
 #' @param mask.coi Logical. If TRUE, regions outside the cone of influence (COI)
@@ -117,6 +123,8 @@ plotCWTs <- function(data,
                      wavelet.type = "MORLET",
                      gap.handling = "zero",
                      power.scaling = "linear",
+                     upper.value = NULL,
+                     upper.quant = NULL,
                      same.scale = FALSE,
                      mask.coi = FALSE,
                      period.range = c(3, 48),
@@ -160,7 +168,13 @@ plotCWTs <- function(data,
   if(!detrend.method %in% c("none", "diff", "loess")) errors <- c(errors, "Invalid detrend.method.")
   if(detrend.method == "loess" && (!is.numeric(loess.span) || loess.span <= 0)) errors <- c(errors, "`loess.span` must be a positive numeric value.")
   if(!is.logical(standardize)) errors <- c(errors, "`standardize` must be TRUE or FALSE.")
-  if(!power.scaling %in% c("linear", "quantile")) errors <- c(errors, "Invalid power.scaling. Use 'linear' or 'quantile'.")
+
+  # Power scaling validation
+  if(!power.scaling %in% c("linear", "quantile", "log", "sqrt")) errors <- c(errors, "Invalid power.scaling. Use 'linear', 'quantile', 'log', or 'sqrt'.")
+
+  # Threshold validation
+  if(!is.null(upper.value) && (!is.numeric(upper.value) || upper.value < 0)) errors <- c(errors, "`upper.value` must be a positive numeric value.")
+  if(!is.null(upper.quant) && (!is.numeric(upper.quant) || upper.quant <= 0 || upper.quant > 1)) errors <- c(errors, "`upper.quant` must be a numeric value between 0 and 1.")
 
   # Check for zoo package if interpolation is required
   if(gap.handling %in% c("locf", "interpolate") && !requireNamespace("zoo", quietly=TRUE)) {
@@ -413,6 +427,24 @@ plotCWTs <- function(data,
     cwt <- cwts[[i]]
     Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
 
+    # --- UPDATED: Apply Thresholds (Winsorizing) ---
+    if(!is.null(upper.quant)){
+      quant_limit <- quantile(Z, probs = upper.quant, na.rm=TRUE)
+      Z[Z > quant_limit] <- quant_limit
+    }
+    if(!is.null(upper.value)){
+      Z[Z > upper.value] <- upper.value
+    }
+    # -----------------------------------------------
+
+    # --- UPDATED: Apply Power Transformations ---
+    if(power.scaling == "log") {
+      Z <- log10(Z + 1e-12) # Small offset to avoid log(0)
+    } else if (power.scaling == "sqrt") {
+      Z <- sqrt(Z)
+    }
+    # ------------------------------------------------
+
     # Optionally mask values outside the Cone of Influence (COI) for scale calculation
     if(mask.coi) {
       coi_mask <- matrix(TRUE, nrow = nrow(Z), ncol = ncol(Z))
@@ -464,6 +496,24 @@ plotCWTs <- function(data,
     id <- selected_individuals[i]
     cwt <- cwts[[i]]
     Z <- t(t(abs(cwt$coefs) ^ 2) / cwt$scales)
+
+    # --- UPDATED: Apply Thresholds (Winsorizing) ---
+    if(!is.null(upper.quant)){
+      quant_limit <- quantile(Z, probs = upper.quant, na.rm=TRUE)
+      Z[Z > quant_limit] <- quant_limit
+    }
+    if(!is.null(upper.value)){
+      Z[Z > upper.value] <- upper.value
+    }
+    # -----------------------------------------------
+
+    # --- UPDATED: Apply Power Transformations ---
+    if(power.scaling == "log") {
+      Z <- log10(Z + 1e-12)
+    } else if (power.scaling == "sqrt") {
+      Z <- sqrt(Z)
+    }
+    # ------------------------------------------------
 
     # --- Determine Z-limits and Breaks ---
     if(same.scale) {
@@ -576,11 +626,6 @@ plotCWTs <- function(data,
       if(power.scaling == "quantile" && !is.null(current_breaks)){
 
         # ## Quantile Legend Logic ##
-        # Quantile scales distribute colors evenly, but the physical data values are skewed.
-        # We decouple the visual scale from the label values:
-        # 1. Visual Scale: Force a 0-1 linear scale for the color ticks (equidistant).
-        # 2. Labels: Calculate the actual data values at those percentiles and override the text.
-
         leg_zlim <- c(0, 1)
         leg_zval <- seq(0, 1, length.out = 6)
 
@@ -589,20 +634,41 @@ plotCWTs <- function(data,
         vals <- current_breaks[idx]
         leg_zlab <- vals # Initialize
 
-        # ## Formatting Strategy ##
-        # Apply scientific notation to very small (< 0.1) or very large (>= 1000) values.
-        # Otherwise, use standard formatting.
+        # Formatting
         sci_idx <- which(abs(vals) > 0 & (abs(vals) < 0.1 | abs(vals) >= 1000))
         norm_idx <- which(abs(vals) == 0 | (abs(vals) >= 0.1 & abs(vals) < 1000))
 
         if(length(sci_idx) > 0) leg_zlab[sci_idx] <- formatC(vals[sci_idx], format="e", digits=2)
-        if(length(norm_idx) > 0) leg_zlab[norm_idx] <- formatC(vals[norm_idx], format="g", digits=3)
+        if(length(norm_idx) > 0) leg_zlab[norm_idx] <- formatC(vals[norm_idx], format="f", digits=2)
 
         leg_digit <- 3
 
+      } else if (power.scaling == "log") {
+
+        # ## UPDATED: Log Legend Logic ##
+        # Use visually evenly spaced ticks based on the log-transformed data
+        leg_zlim <- zlim
+        leg_zval <- pretty(zlim)
+        leg_zval <- leg_zval[leg_zval >= min(zlim) & leg_zval <= max(zlim)]
+
+        # Calculate labels by inverse-transforming (anti-log) the tick positions
+        # Note: zlim is already log10.
+        vals <- 10^leg_zval
+        leg_zlab <- vals
+
+        # Apply the same strict formatting as Quantile to make large numbers readable
+        sci_idx <- which(abs(vals) > 0 & (abs(vals) < 0.1 | abs(vals) >= 1000))
+        norm_idx <- which(abs(vals) == 0 | (abs(vals) >= 0.1 & abs(vals) < 1000))
+
+        if(length(sci_idx) > 0) leg_zlab[sci_idx] <- formatC(vals[sci_idx], format="e", digits=2)
+        if(length(norm_idx) > 0) leg_zlab[norm_idx] <- formatC(vals[norm_idx], format="f", digits=2)
+
+        leg_digit <- 3 # Passed but mostly overridden by zlab strings
+
       } else {
-        # ## Linear Legend Logic ##
+        # ## Linear / Sqrt Legend Logic ##
         # Standard mapping where visual position equals data value.
+
         leg_zlim <- zlim
         leg_zval <- pretty(zlim)
         leg_zval <- leg_zval[leg_zval >= min(zlim) & leg_zval <= max(zlim)]
