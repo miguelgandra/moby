@@ -53,6 +53,21 @@ test_that("file = NULL leaves the active device untouched (draws to it)", {
   expect_equal(dev.cur(), cur)                      # same device still current
 })
 
+# Does this platform's bare svg() device actually produce a file? `capabilities("cairo")` is not a
+# reliable answer: a cairo surface that fails to initialise (e.g. no usable fonts on a headless CI
+# runner) discards its output silently, so svg() opens and closes without error yet writes nothing.
+# Probing with grDevices alone keeps the check independent of moby.
+fo_svgWorks <- function() {
+  f <- tempfile(fileext = ".svg")
+  ok <- tryCatch({
+    grDevices::svg(f, width = 4, height = 3)
+    plot(1:10)
+    grDevices::dev.off()
+    file.exists(f) && file.info(f)$size > 0
+  }, error = function(e) FALSE)
+  isTRUE(ok)
+}
+
 test_that("output format is inferred from the extension; bad extensions error", {
   d <- fo_data()
   pdf(tempfile(fileext = ".pdf")); on.exit(dev.off(), add = TRUE)
@@ -61,7 +76,12 @@ test_that("output format is inferred from the extension; bad extensions error", 
     expect_no_error(suppressWarnings(suppressMessages(
       plotAbacus(d, id.col = "ID", datetime.col = "datetime", tagging.dates = rep(min(d$datetime), 3),
                  file = f, width = 8, height = 5, res = 100))))
-    expect_true(file.exists(f) && file.info(f)$size > 0, info = ext)
+    written <- file.exists(f) && file.info(f)$size > 0
+    # If moby produced no SVG, decide whether that is moby's fault or the platform's: re-run the
+    # same format through grDevices directly. Only excuse the failure if the bare device fails too.
+    if(ext == ".svg" && !written && !fo_svgWorks()) next
+    expect_true(written, info = sprintf("%s (exists=%s, size=%s, cairo=%s)", ext, file.exists(f),
+                                        if(file.exists(f)) file.info(f)$size else NA, capabilities("cairo")))
   }
   expect_error(
     plotAbacus(d, id.col = "ID", datetime.col = "datetime", tagging.dates = rep(min(d$datetime), 3),
