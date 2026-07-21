@@ -52,6 +52,6 @@ URL: https://github.com/miguelgandra/moby, https://miguelgandra.github.io/moby/
 BugReports: https://github.com/miguelgandra/moby/issues
 VignetteBuilder: knitr
 LazyData: true
-Config/Needs/website: pkgdown
+Config/Needs/website: pkgdown, quarto
 Config/testthat/edition: 3
 Config/roxygen2/version: 8.0.0
