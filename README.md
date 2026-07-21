@@ -29,7 +29,7 @@ familiar R workflows, and every moby function also accepts an ordinary data fram
 
 ## What moby does
 
-- **A tidy data model** — declare column roles and metadata once with `as_moby()` and carry them through the whole pipeline.
+- **A consistent data model** — declare column roles and metadata once with `as_moby()` and carry them through the whole pipeline.
 - **Import & quality control** — read detections, tags, and receiver deployments (VUE, ETN, OTN, glatos, …); match detections to deployment windows; flag false detections (Pincock short-interval / `min_lag`) and metadata inconsistencies.
 - **Temporal & spatial classification** — time bins, diel phase, season, and reproductive periods; centres of activity and least-cost (in-water) step distances.
 - **Residency, home range & movement** — residency indices and visit events; kernel and autocorrelated (AKDE) utilisation distributions and their overlap; rates of movement and trajectory linearity.
