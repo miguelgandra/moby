@@ -79,6 +79,7 @@
   if(!nzchar(ext))
     stop("Cannot determine the output format: 'file' has no extension (e.g. use \"plot.pdf\").", call. = FALSE)
   raster <- function(fun) fun(file, width = width, height = height, units = "in", res = res)
+  before <- as.integer(grDevices::dev.cur())
   switch(ext,
     pdf  = grDevices::pdf(file, width = width, height = height),
     svg  = grDevices::svg(file, width = width, height = height),
@@ -90,6 +91,16 @@
     bmp  = raster(grDevices::bmp),
     stop(sprintf("Unsupported output format '.%s'. Supported: pdf, svg, png, jpg/jpeg, tif/tiff, bmp.", ext),
          call. = FALSE))
+  # A device can fail to start WITHOUT signalling an R error - notably cairo-backed devices (svg, and
+  # png/jpeg/tiff when type = "cairo") whose surface cannot be created, e.g. on a headless machine
+  # with no usable fonts. The device then shuts itself straight back down, leaving the caller's
+  # device current. Callers register on.exit(dev.off()) immediately after this returns, so failing to
+  # detect it would silently draw into the user's active device and then CLOSE it. Fail loudly instead.
+  if(as.integer(grDevices::dev.cur()) == before)
+    stop(sprintf(paste0("Could not open a '%s' graphics device; the file was not written. This format ",
+                        "may be unsupported by this R build (see capabilities()). Try a different ",
+                        "extension, e.g. \"%s.png\"."),
+                 ext, tools::file_path_sans_ext(basename(file))), call. = FALSE)
   invisible(NULL)
 }
 
