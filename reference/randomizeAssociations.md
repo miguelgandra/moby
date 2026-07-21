@@ -188,7 +188,7 @@ assoc <- calculateAssociations(wide)
 # test the observed co-occurrences against a permutation null model
 # (iterations kept low here for speed; use the default 1000 in practice)
 rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
-#> Total execution time: 0.19 secs
+#> Total execution time: 0.22 secs
 rand$summary
 #>   Type N dyads Mean interval (d) Mean overlap (%) Mean null distr (%) P-value
 #> 1  All      28                77      0.47 ± 0.81         0.42 ± 0.09   0.515

@@ -321,6 +321,6 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #>   • Speed: 0 (0%) from 0 individual(s)
 #>   • flagged for review (overspeed, retained): 9
 #> Individuals fully discarded = 0 from a total of 3
-#> Total execution time: 1.88 secs
+#> Total execution time: 2.03 secs
 # }
 ```
