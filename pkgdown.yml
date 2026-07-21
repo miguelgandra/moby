@@ -1,0 +1,16 @@
+pandoc: 3.8.3
+pkgdown: 2.2.1
+pkgdown_sha: ~
+articles:
+  articles/00-etn-import: 00-etn-import.html
+  articles/01-import: 01-import.html
+  articles/02-quality-control: 02-quality-control.html
+  articles/03-exploratory: 03-exploratory.html
+  articles/04-space-use: 04-space-use.html
+  articles/05-movement-networks: 05-movement-networks.html
+  articles/06-association-networks: 06-association-networks.html
+  moby: moby.html
+last_built: 2026-07-21T16:11Z
+urls:
+  reference: https://miguelgandra.github.io/moby/reference
+  article: https://miguelgandra.github.io/moby/articles

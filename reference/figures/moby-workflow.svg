@@ -1,0 +1,168 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="1200" height="620"
+     font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+     role="img" aria-label="moby package workflow: raw data through import, quality control and reshaping into five analytical pathways">
+  <title>moby analysis workflow</title>
+  <desc>Raw detections, receiver deployments and tag metadata are imported, curated and reshaped into a mobyData object, which then feeds five analytical pathways: residency and activity, space use, movement, social networks and spatial networks.</desc>
+
+  <defs>
+    <marker id="arw" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6b7f"/>
+    </marker>
+    <filter id="cardshadow" x="-6%" y="-6%" width="112%" height="116%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2.4" flood-color="#243447" flood-opacity="0.11"/>
+    </filter>
+  </defs>
+
+  <!-- opaque panel so the figure reads identically in light and dark themes -->
+  <rect x="0" y="0" width="1200" height="620" rx="12" fill="#ffffff" stroke="#e6eaf0" stroke-width="1"/>
+
+  <!-- ==================== CORE PIPELINE — neutral slate spine ==================== -->
+
+  <!-- RAW SOURCES -->
+  <rect x="24" y="40" width="196" height="134" rx="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" filter="url(#cardshadow)"/>
+  <text x="37" y="61" font-size="12.5" font-weight="700" fill="#475569" letter-spacing="0.3">RAW DATA</text>
+  <text x="37" y="77" font-size="9.5" font-style="italic" fill="#94a3b8">three parallel sources</text>
+  <text x="37" y="100" font-size="10.5" fill="#475569">• detection export</text>
+  <text x="37" y="119" font-size="10.5" fill="#475569">• receiver deployment log</text>
+  <text x="37" y="138" font-size="10.5" fill="#475569">• tag / animal metadata</text>
+  <text x="37" y="162" font-size="9" fill="#b8c0cc">VUE · ETN · OTN · glatos</text>
+
+  <line x1="222" y1="107" x2="245" y2="107" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#arw)"/>
+
+  <!-- 1 · IMPORT -->
+  <rect x="249" y="40" width="212" height="134" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#cardshadow)"/>
+  <text x="261" y="61" font-size="12.5" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">1 · IMPORT</text>
+  <text x="261" y="77" font-size="9.5" font-style="italic" fill="#94a3b8">read &amp; harmonise any source</text>
+  <text x="261" y="101" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDetections()</text>
+  <text x="261" y="120" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDeployments()</text>
+  <text x="261" y="139" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importTags()</text>
+  <text x="261" y="162" font-size="9" fill="#b8c0cc">→ canonical columns</text>
+
+  <line x1="463" y1="107" x2="486" y2="107" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#arw)"/>
+
+  <!-- 2 · CURATE & QC -->
+  <rect x="490" y="40" width="316" height="134" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#cardshadow)"/>
+  <text x="502" y="61" font-size="12.5" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">2 · CURATE &amp; QUALITY CONTROL</text>
+  <text x="502" y="77" font-size="9.5" font-style="italic" fill="#94a3b8">match, label, filter</text>
+  <text x="502" y="100" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()  →  assignAnimalIDs()</text>
+  <text x="502" y="118" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">filterDetections()</text>
+  <line x1="502" y1="128" x2="794" y2="128" stroke="#d2dae4" stroke-width="0.9" stroke-dasharray="3 3"/>
+  <text x="502" y="141" font-size="9" fill="#b0b9c6">audit only (read-only reports):</text>
+  <text x="502" y="154" font-size="9.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#94a3b8">checkDeployments() · plotArray()</text>
+  <text x="502" y="167" font-size="9.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#94a3b8">plotDeployments() · plotMinLag()</text>
+
+  <line x1="808" y1="107" x2="831" y2="107" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#arw)"/>
+
+  <!-- 3 · BIN & RESHAPE (the fork) -->
+  <rect x="835" y="40" width="341" height="134" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#cardshadow)"/>
+  <text x="847" y="61" font-size="12.5" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">3 · BIN &amp; RESHAPE</text>
+  <text x="847" y="77" font-size="9.5" font-style="italic" fill="#94a3b8">the fork — one shape per pathway</text>
+  <text x="847" y="100" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">getTimeBins() · getDielPhase() · getSeason()</text>
+  <line x1="847" y1="110" x2="1164" y2="110" stroke="#d2dae4" stroke-width="0.9" stroke-dasharray="3 3"/>
+  <text x="847" y="126" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateCOAs()</text>
+  <text x="1012" y="126" font-size="9" fill="#b0b9c6">→ positions</text>
+  <text x="847" y="145" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateStepDistances()</text>
+  <text x="1012" y="145" font-size="9" fill="#b0b9c6">→ tracks</text>
+  <text x="847" y="164" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">createWideTable()</text>
+  <text x="1012" y="164" font-size="9" fill="#b0b9c6">→ bin × individual matrix</text>
+
+  <!-- ==================== mobyData RAIL ==================== -->
+  <rect x="24" y="190" width="1152" height="34" rx="17" fill="#eef2f7" stroke="#b9c4d3" stroke-width="1" stroke-dasharray="5 3"/>
+  <text x="46" y="212" font-size="11" font-weight="700" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#3f4a5a">as_moby()</text>
+  <text x="122" y="212" font-size="10.5" fill="#5b6675">the <tspan font-weight="700" fill="#3f4a5a">mobyData</tspan> spine — declare column roles, CRS, tagging dates and tag delays <tspan font-style="italic">once</tspan>; every function downstream reads them automatically</text>
+
+  <!-- fan from the core down to the five pathways -->
+  <path d="M 600 224 L 600 234" stroke="#5b6b7f" stroke-width="1.5" fill="none"/>
+  <path d="M 133 234 L 1066 234" stroke="#5b6b7f" stroke-width="1.5" fill="none"/>
+  <path d="M 133 234 L 133 250" stroke="#5b6b7f" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <path d="M 366 234 L 366 250" stroke="#5b6b7f" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <path d="M 599 234 L 599 250" stroke="#5b6b7f" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <path d="M 833 234 L 833 250" stroke="#5b6b7f" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+  <path d="M 1066 234 L 1066 250" stroke="#5b6b7f" stroke-width="1.5" fill="none" marker-end="url(#arw)"/>
+
+  <!-- ==================== FIVE ANALYTICAL PATHWAYS ==================== -->
+
+  <!-- A · RESIDENCY & ACTIVITY  (teal) -->
+  <rect x="24" y="250" width="219" height="272" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1" filter="url(#cardshadow)"/>
+  <path d="M 24 259 a9 9 0 0 1 9 -9 h201 a9 9 0 0 1 9 9 v19 h-219 z" fill="#2F7E8C"/>
+  <text x="35" y="270" font-size="11.5" font-weight="700" fill="#ffffff">A · RESIDENCY &amp; ACTIVITY</text>
+  <text x="35" y="296" font-size="9.5" font-style="italic" fill="#64748b">how long, how often, where</text>
+  <text x="35" y="311" font-size="9" fill="#9aa5b4">in: clean detections</text>
+  <text x="35" y="333" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateResidency()</text>
+  <text x="35" y="350" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateVisits()</text>
+  <text x="35" y="367" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">summaryTable()</text>
+  <line x1="35" y1="380" x2="232" y2="380" stroke="#eef1f5" stroke-width="1"/>
+  <text x="35" y="393" font-size="9" fill="#9aa5b4">visualise</text>
+  <text x="35" y="409" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotAbacus()</text>
+  <text x="35" y="425" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotChronogram()</text>
+  <text x="35" y="441" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotActograms()</text>
+  <text x="35" y="457" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotStationStats()</text>
+  <text x="35" y="473" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotContours()</text>
+  <text x="35" y="489" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotPeriodogram()</text>
+  <text x="35" y="505" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotScalogram()</text>
+
+  <!-- B · SPACE USE  (green) -->
+  <rect x="257" y="250" width="219" height="272" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1" filter="url(#cardshadow)"/>
+  <path d="M 257 259 a9 9 0 0 1 9 -9 h201 a9 9 0 0 1 9 9 v19 h-219 z" fill="#3F8A54"/>
+  <text x="268" y="270" font-size="11.5" font-weight="700" fill="#ffffff">B · SPACE USE</text>
+  <text x="268" y="296" font-size="9.5" font-style="italic" fill="#64748b">home ranges &amp; their overlap</text>
+  <text x="268" y="311" font-size="9" fill="#9aa5b4">in: calculateCOAs() positions</text>
+  <text x="268" y="333" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateUDs()</text>
+  <text x="268" y="348" font-size="9" fill="#9aa5b4">AKDE (default) or KDE</text>
+  <text x="268" y="369" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateUDOverlap()</text>
+  <line x1="268" y1="382" x2="465" y2="382" stroke="#eef1f5" stroke-width="1"/>
+  <text x="268" y="395" font-size="9" fill="#9aa5b4">visualise</text>
+  <text x="268" y="411" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotMaps()</text>
+
+  <!-- C · MOVEMENT  (ochre) -->
+  <rect x="490" y="250" width="219" height="272" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1" filter="url(#cardshadow)"/>
+  <path d="M 490 259 a9 9 0 0 1 9 -9 h201 a9 9 0 0 1 9 9 v19 h-219 z" fill="#AD7132"/>
+  <text x="501" y="270" font-size="11.5" font-weight="700" fill="#ffffff">C · MOVEMENT</text>
+  <text x="501" y="296" font-size="9.5" font-style="italic" fill="#64748b">how far, how fast, how directed</text>
+  <text x="501" y="311" font-size="9" fill="#9aa5b4">in: calculateStepDistances() tracks</text>
+  <text x="501" y="333" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateROM()</text>
+  <text x="501" y="350" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateLinearityIndex()</text>
+  <text x="501" y="367" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">movementTable()</text>
+  <text x="501" y="381" font-size="9" fill="#9aa5b4">also needs calculateUDs()</text>
+  <line x1="501" y1="391" x2="698" y2="391" stroke="#eef1f5" stroke-width="1"/>
+  <text x="501" y="404" font-size="9" fill="#9aa5b4">visualise</text>
+  <text x="501" y="420" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotMetricComparison()</text>
+
+  <!-- D · SOCIAL NETWORKS  (plum) -->
+  <rect x="723" y="250" width="219" height="272" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1" filter="url(#cardshadow)"/>
+  <path d="M 723 259 a9 9 0 0 1 9 -9 h201 a9 9 0 0 1 9 9 v19 h-219 z" fill="#9E5B84"/>
+  <text x="734" y="270" font-size="11.5" font-weight="700" fill="#ffffff">D · SOCIAL NETWORKS</text>
+  <text x="734" y="296" font-size="9.5" font-style="italic" fill="#64748b">who co-occurs with whom</text>
+  <text x="734" y="311" font-size="9" fill="#9aa5b4">in: createWideTable() matrix</text>
+  <text x="734" y="333" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateAssociations()</text>
+  <text x="734" y="350" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">randomizeAssociations()</text>
+  <text x="734" y="364" font-size="9" fill="#9aa5b4">permutation null model</text>
+  <line x1="734" y1="374" x2="931" y2="374" stroke="#eef1f5" stroke-width="1"/>
+  <text x="734" y="387" font-size="9" fill="#9aa5b4">visualise</text>
+  <text x="734" y="403" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotAssociations()</text>
+  <text x="734" y="419" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotAssociationMatrix()</text>
+  <text x="734" y="435" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotGroupSizeDistribution()</text>
+
+  <!-- E · SPATIAL NETWORKS  (indigo) -->
+  <rect x="956" y="250" width="220" height="272" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1" filter="url(#cardshadow)"/>
+  <path d="M 956 259 a9 9 0 0 1 9 -9 h202 a9 9 0 0 1 9 9 v19 h-220 z" fill="#4E6A9E"/>
+  <text x="967" y="270" font-size="11.5" font-weight="700" fill="#ffffff">E · SPATIAL NETWORKS</text>
+  <text x="967" y="296" font-size="9.5" font-style="italic" fill="#64748b">movements between sites</text>
+  <text x="967" y="311" font-size="9" fill="#9aa5b4">in: detections + a spatial column</text>
+  <text x="967" y="333" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">calculateTransitions()</text>
+  <text x="967" y="350" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">randomizeTransitions()</text>
+  <text x="967" y="367" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">transitionsTable()</text>
+  <line x1="967" y1="380" x2="1165" y2="380" stroke="#eef1f5" stroke-width="1"/>
+  <text x="967" y="393" font-size="9" fill="#9aa5b4">visualise</text>
+  <text x="967" y="409" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">plotMovements()</text>
+
+  <!-- shared: networkMetrics() serves BOTH network pathways -->
+  <path d="M 833 522 L 833 532 L 1066 532 L 1066 522" stroke="#aab4c2" stroke-width="1.1" fill="none" stroke-dasharray="4 3"/>
+  <rect x="806" y="538" width="290" height="24" rx="12" fill="#f4f6f9" stroke="#c3ccd8" stroke-width="1" stroke-dasharray="4 3"/>
+  <text x="822" y="554" font-size="10" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#576372">networkMetrics()</text>
+  <text x="930" y="554" font-size="9" fill="#9aa5b4">— either network type</text>
+
+  <!-- ==================== CAPTION ==================== -->
+  <text x="24" y="590" font-size="10" fill="#64748b">Arrows show <tspan font-weight="700" fill="#475569">data flow</tspan> — the output of one step is the input of the next.</text>
+  <text x="24" y="607" font-size="9.5" fill="#9aa5b4">44 of 57 exported functions shown; accessors and specialised helpers omitted — see the reference index at miguelgandra.github.io/moby/</text>
+</svg>

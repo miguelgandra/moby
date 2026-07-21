@@ -1,0 +1,139 @@
+# Create detections table in wide format
+
+This function generates a data frame containing binned detections in a
+wide format (time bin x individual matrix). The values in the matrix are
+determined by the specified column in the input data frame, which can
+represent, for instance, the receiver where most detections were
+registered within that time frame or the number of detections.
+
+## Usage
+
+``` r
+createWideTable(
+  data,
+  id.col = NULL,
+  timebin.col = NULL,
+  value.col,
+  start.dates = NULL,
+  end.dates = NULL,
+  agg.fun = NULL,
+  round.dates = FALSE,
+  verbose = TRUE
+)
+```
+
+## Arguments
+
+- data:
+
+  A data frame containing animal detections and including a time bin
+  column (as specified by the `timebin.col` argument). Time bins can be
+  created using the
+  [`getTimeBins`](https://miguelgandra.github.io/moby/reference/getTimeBins.md)
+  function.
+
+- id.col:
+
+  Name of the column containing animal IDs. Defaults to `"ID"`.
+
+- timebin.col:
+
+  Name of the column containing time bins (in POSIXct format). Defaults
+  to `"timebin"`.
+
+- value.col:
+
+  The column name in the data frame whose values will be assigned to
+  each entry in the resulting wide-format table. If set to "detections"
+  and no such column exists in the dataset, the function will assume one
+  detection per row and create a corresponding column.
+
+- start.dates:
+
+  Optional. A POSIXct vector containing the start date of the monitoring
+  period of each animal (e.g., tag/release date of each individual).
+  This parameter must be either:
+
+  - A single POSIXct value, which will be applied to all unique animal
+    IDs; or
+
+  - A named POSIXct vector, where the names correspond to the animal IDs
+    in the `id.col` column. If multiple tag durations are provided, the
+    vector must include all IDs and will be reordered to align with the
+    levels of `id.col`. If left null, defaults to each individual's
+    first detection.
+
+- end.dates:
+
+  Optional. A POSIXct vector containing a cut-off date for each animal.
+  This parameter must be either:
+
+  - A single POSIXct value, which will be applied to all unique animal
+    IDs; or
+
+  - A named POSIXct vector, where the names correspond to the animal IDs
+    in the `id.col` column. If multiple tag durations are provided, the
+    vector must include all IDs and will be reordered to align with the
+    levels of `id.col`. If left null, defaults to the individual's last
+    detection.
+
+- agg.fun:
+
+  A function to determine how values within each time bin are
+  aggregated. If left NULL, the aggregation method is automatically
+  chosen based on the type of `value.col`: for character or factor
+  columns (e.g., 'station'), the most frequent value (mode) is used; for
+  numeric columns (e.g., 'detections'), the sum of values is used.
+
+- round.dates:
+
+  Logical. If TRUE, the start and end dates are rounded to the nearest
+  day: the earliest start date is floored to the beginning of the day,
+  and the latest end date is rounded up to the end of the day. This
+  ensures that the time bins cover whole days. Defaults to FALSE.
+
+- verbose:
+
+  Output ties info to console? Defaults to TRUE.
+
+## Value
+
+A data frame in wide format with time bins as rows and individuals as
+columns. Each cell in the matrix represents the value from `value.col`
+for that time bin and individual, aggregated according to the specified
+aggregation function.
+
+## Examples
+
+``` r
+data <- data.frame(
+  timebin = as.POSIXct(c('2023-01-01 00:00:00', '2023-01-01 00:05:00', '2023-01-01 00:10:00',
+                         '2023-01-01 00:00:00', '2023-01-01 00:10:00', '2023-01-01 00:15:00',
+                         '2023-01-01 00:05:00', '2023-01-01 00:10:00', '2023-01-01 00:20:00'),
+                       tz = "UTC"),
+  id = c('A', 'A', 'A', 'B', 'B', 'B', 'C', 'C', 'C'),
+  detections = c(2, 3, 1, 5, 1, 4, 6, 2, 3)
+)
+
+start.dates <- as.POSIXct(rep('2023-01-01 00:00:00', 3), tz = "UTC")
+end.dates <- as.POSIXct(c('2023-01-01 00:10:00', '2023-01-01 00:15:00', '2023-01-01 00:20:00'),
+                        tz = "UTC")
+
+createWideTable(data, id.col = "id", timebin.col = "timebin", value.col = "detections",
+                start.dates = start.dates, end.dates = end.dates)
+#> Warning: - The vector for start.dates is unnamed and couldn't be auto-matched to
+#> specific individuals. Please double-check that the supplied values match the
+#> order of the animal ID levels. This warning will be displayed only once during
+#> this session.
+#> Warning: - The vector for end.dates is unnamed and couldn't be auto-matched to specific
+#> individuals. Please double-check that the supplied values match the order of
+#> the animal ID levels. This warning will be displayed only once during this
+#> session.
+#> Warning: - 'id.col' converted to factor.
+#>               timebin  A  B C
+#> 1 2023-01-01 00:00:00  2  5 0
+#> 2 2023-01-01 00:05:00  3  0 6
+#> 3 2023-01-01 00:10:00  1  1 2
+#> 4 2023-01-01 00:15:00 NA  4 0
+#> 5 2023-01-01 00:20:00 NA NA 3
+```

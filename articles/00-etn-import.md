@@ -1,0 +1,79 @@
+# 00 - Getting real data from ETN (appendix)
+
+> **Optional appendix**
+>
+> The core tutorials all run on the bundled `rays` dataset, so you **do
+> not need** this module to follow the course. It is here for when you
+> want to pull *your own* detections from a live database — the
+> [European Tracking Network (ETN)](https://www.lifewatch.be/etn/) in
+> this example. Every code chunk here requires database credentials, so
+> none of them run automatically.
+
+## Learning objectives
+
+1.  Install and authenticate the `etn` package.
+2.  Download animal metadata, deployments and detections for a project.
+3.  Save a detections file ready for [module
+    01](https://miguelgandra.github.io/moby/articles/01-import.md).
+
+## 1. Install required packages
+
+``` r
+
+# run once
+pak::pak("inbo/etn")
+install.packages("usethis")
+```
+
+## 2. Store ETN credentials locally
+
+Storing credentials in your `.Renviron` avoids typing them into every
+call (and into scripts you might share).
+
+``` r
+
+usethis::edit_r_environ()
+```
+
+Add these lines, save, then restart R (*Session → Restart R*):
+
+    ETN_USER="your_email@example.com"
+    ETN_PWD="your_password"
+
+## 3. Explore available projects
+
+``` r
+
+library(etn)
+etn_projects <- etn::get_animal_projects()
+View(etn_projects)
+```
+
+## 4. Download metadata, deployments and detections
+
+``` r
+
+id_metadata <- etn::get_animals(animal_project_code = "Inforbiomares")
+
+id_deployments <- etn::get_acoustic_deployments(acoustic_project_code = "Inforbiomares")
+
+all_detections <- etn::get_acoustic_detections(
+  animal_project_code = "Inforbiomares",
+  scientific_name     = c("Dasyatis pastinaca", "Raja clavata")
+)
+all_detections <- as.data.frame(all_detections)
+
+# record the download time for reproducibility
+attr(all_detections, "download.date") <- Sys.time()
+```
+
+## 5. Save for the import tutorial
+
+``` r
+
+write.csv2(all_detections, "INFORBIOMARES_detections.csv", row.names = FALSE)
+```
+
+➡️ Continue with [01 — From raw detections to a mobyData
+object](https://miguelgandra.github.io/moby/articles/01-import.md),
+pointing it at the file you just saved.
