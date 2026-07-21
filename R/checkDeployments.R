@@ -71,14 +71,19 @@
 #' mismatches (a known receiver associated with a station it was never deployed at).
 #'
 #' @param deployments A receiver-deployment data frame, e.g. from \code{\link{importDeployments}},
-#' with columns `receiver`, `station`, `lon`, `lat`, `deploy` and (optionally) `recover`.
+#' with `receiver` and `station` columns plus deployment / recovery date-times and (optionally)
+#' longitude / latitude. The date and coordinate columns may carry non-canonical names, resolved via
+#' `deploy.col`/`recover.col`/`lon.col`/`lat.col`.
 #' @param detections Optional. A detection dataset (`mobyData` or data frame) with `receiver`,
 #' `station` and a date-time column, used for the detection-vs-metadata checks.
 #' @param id.col,datetime.col,station.col Column names in `detections` (resolved from the
 #' `mobyData` metadata or canonical defaults when `NULL`).
-#' @param deploy.col,recover.col Names of the deployment and recovery date-time columns in
-#' `deployments`. Default to the canonical `"deploy"`/`"recover"` (as produced by
-#' \code{\link{importDeployments}}); set them when a log uses other names (e.g. `"deploy_date"`).
+#' @param deploy.col,recover.col,lon.col,lat.col Names of the deployment / recovery date-time and
+#' the longitude / latitude columns in `deployments`. Default to the canonical
+#' `"deploy"`/`"recover"`/`"lon"`/`"lat"` (as produced by \code{\link{importDeployments}}); set them
+#' when a log uses other names (e.g. `deploy.col = "deploy_date"`, `lon.col = "Longitude"`), so a
+#' non-canonical log need not be renamed first. The `receiver` and `station` columns are the
+#' canonical identifiers this function keys on and are always taken as-is.
 #' @param checks Character vector selecting which check groups to run (any of, or `"all"`, the
 #' default): `"dates"` (deploy/recover date integrity), `"overlaps"` (duplicate and overlapping
 #' deployment records), `"gaps"` (coverage gaps between consecutive deployments - often benign
@@ -132,6 +137,8 @@ checkDeployments <- function(deployments,
                           station.col = NULL,
                           deploy.col = "deploy",
                           recover.col = "recover",
+                          lon.col = "lon",
+                          lat.col = "lat",
                           checks = "all",
                           scope = c("all", "detected"),
                           coord.tolerance = 500,
@@ -146,10 +153,17 @@ checkDeployments <- function(deployments,
     stop(paste0("'deployments' is missing required column(s): ", paste(miss, collapse = ", "),
                 ". See importDeployments()."), call. = FALSE)
   }
-  # standardise the deploy/recover date columns to the canonical names used by the checks below
+  # standardise the deploy/recover/coordinate columns to the canonical names used by the checks below,
+  # so a log whose columns are named differently need not be renamed by the user first
   dep$deploy <- dep[[deploy.col]]
   dep$recover <- if (recover.col %in% colnames(dep)) dep[[recover.col]] else as.POSIXct(NA)
-  has_coords <- all(c("lon", "lat") %in% colnames(dep))
+  has_coords <- all(c(lon.col, lat.col) %in% colnames(dep))
+  # an explicitly named coordinate column that is absent is almost always a typo, not "no coordinates"
+  if (!has_coords && (!identical(lon.col, "lon") || !identical(lat.col, "lat")) &&
+      any(c(lon.col, lat.col) %in% colnames(dep)))
+    message("- coordinate column(s) '", paste(setdiff(c(lon.col, lat.col), colnames(dep)), collapse = "', '"),
+            "' not found in 'deployments'; skipping the coordinate checks.")
+  if (has_coords) { dep$lon <- dep[[lon.col]]; dep$lat <- dep[[lat.col]] }
 
   # resolve which check groups to run (default "all"); "detections" needs a detection dataset
   checks <- match.arg(checks, c("all", "dates", "overlaps", "gaps", "coordinates", "detections"), several.ok = TRUE)

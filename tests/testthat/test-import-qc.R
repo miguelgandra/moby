@@ -101,6 +101,29 @@ test_that("checkDeployments 'checks' selector runs only the requested groups", {
   expect_true(all(c("Invalid date range", "Implausible coordinates") %in% types()))
 })
 
+test_that("lon.col/lat.col let a non-canonical deployment log be checked without renaming", {
+  # same station, coordinates ~1.9 km apart, but columns named Longitude/Latitude/Deploy_Date
+  raw <- data.frame(receiver = c("R1", "R2"), station = c("A", "A"),
+                    Longitude = c(-8.00, -8.00), Latitude = c(37.000, 37.017),
+                    Deploy_Date = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"))
+  # canonical-named twin, to prove the two resolve identically
+  canon <- data.frame(receiver = raw$receiver, station = raw$station,
+                      lon = raw$Longitude, lat = raw$Latitude, deploy = raw$Deploy_Date)
+
+  a <- checkDeployments(raw, deploy.col = "Deploy_Date", lon.col = "Longitude",
+                        lat.col = "Latitude", verbose = FALSE)$report
+  b <- checkDeployments(canon, verbose = FALSE)$report
+  expect_equal(a, b)                                                        # identical to the canonical run
+  expect_true("Inconsistent station coordinates" %in% a$type)              # coord check actually ran
+  expect_match(a$details[a$type == "Inconsistent station coordinates"], "km")
+
+  # an explicitly named coordinate column that is absent is reported, not silently ignored
+  expect_message(
+    checkDeployments(raw, deploy.col = "Deploy_Date", lon.col = "lon_wgs84", lat.col = "Latitude",
+                     verbose = FALSE),
+    "lon_wgs84.*not found")
+})
+
 test_that("scope = 'detected' restricts metadata checks to receivers present in the detections", {
   # R1 detected a tag; R2 never did. Both have a coverage gap in the log.
   dep <- data.frame(

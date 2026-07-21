@@ -12,6 +12,8 @@ checkDeployments(
   station.col = NULL,
   deploy.col = "deploy",
   recover.col = "recover",
+  lon.col = "lon",
+  lat.col = "lat",
   checks = "all",
   scope = c("all", "detected"),
   coord.tolerance = 500,
@@ -21,7 +23,9 @@ checkDeployments(
 }
 \arguments{
 \item{deployments}{A receiver-deployment data frame, e.g. from \code{\link{importDeployments}},
-with columns \code{receiver}, \code{station}, \code{lon}, \code{lat}, \code{deploy} and (optionally) \code{recover}.}
+with \code{receiver} and \code{station} columns plus deployment / recovery date-times and (optionally)
+longitude / latitude. The date and coordinate columns may carry non-canonical names, resolved via
+\code{deploy.col}/\code{recover.col}/\code{lon.col}/\code{lat.col}.}
 
 \item{detections}{Optional. A detection dataset (\code{mobyData} or data frame) with \code{receiver},
 \code{station} and a date-time column, used for the detection-vs-metadata checks.}
@@ -29,9 +33,12 @@ with columns \code{receiver}, \code{station}, \code{lon}, \code{lat}, \code{depl
 \item{id.col, datetime.col, station.col}{Column names in \code{detections} (resolved from the
 \code{mobyData} metadata or canonical defaults when \code{NULL}).}
 
-\item{deploy.col, recover.col}{Names of the deployment and recovery date-time columns in
-\code{deployments}. Default to the canonical \code{"deploy"}/\code{"recover"} (as produced by
-\code{\link{importDeployments}}); set them when a log uses other names (e.g. \code{"deploy_date"}).}
+\item{deploy.col, recover.col, lon.col, lat.col}{Names of the deployment / recovery date-time and
+the longitude / latitude columns in \code{deployments}. Default to the canonical
+\code{"deploy"}/\code{"recover"}/\code{"lon"}/\code{"lat"} (as produced by \code{\link{importDeployments}}); set them
+when a log uses other names (e.g. \code{deploy.col = "deploy_date"}, \code{lon.col = "Longitude"}), so a
+non-canonical log need not be renamed first. The \code{receiver} and \code{station} columns are the
+canonical identifiers this function keys on and are always taken as-is.}
 
 \item{checks}{Character vector selecting which check groups to run (any of, or \code{"all"}, the
 default): \code{"dates"} (deploy/recover date integrity), \code{"overlaps"} (duplicate and overlapping
