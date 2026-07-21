@@ -291,7 +291,7 @@ if (requireNamespace("qgraph", quietly = TRUE)) {
   rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
   plotAssociations(assoc, rand)
 }
-#> Total execution time: 0.21 secs
+#> Total execution time: 0.20 secs
 #> 
 #> Association network
 #> ------------------------------------------------------
