@@ -139,7 +139,7 @@ rays_dist <- calculateStepDistances(rays)
 #> Warning: - 'id.col' converted to factor.
 #>   |                                                                              |                                                                      |   0%Calculating linear paths between consecutive positions...
 #>   |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
-#> Total execution time: 0.07 secs 
+#> Total execution time: 0.06 secs 
 head(rays_dist$dist_m)
 #> [1]    0.000    0.000    0.000    0.000 1639.958    0.000
 
@@ -157,6 +157,6 @@ rays_lc <- calculateStepDistances(rays[1:60, ], land.shape = land,
 #> Building least-cost graph (200m grid | 16 directions)
 #>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...
 #>   |                                                                              |======================================================================| 100%
-#> Total execution time: 0.28 secs 
+#> Total execution time: 0.27 secs 
 # }
 ```

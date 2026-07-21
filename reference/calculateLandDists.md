@@ -84,7 +84,7 @@ land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
   c(-9.05, 38.49)))), crs = 4326))
 rays_land <- calculateLandDists(rays, land.shape = land)
 #> Calculating distances to nearest land (raster method)...
-#> Done! Total execution time: 2.74 secs 
+#> Done! Total execution time: 2.68 secs 
 head(rays_land$land_dist)
 #> [1] 1298.88 1298.88 1298.88 1298.88 1298.88 2383.32
 # }

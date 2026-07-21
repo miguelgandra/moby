@@ -39,7 +39,7 @@ networks.](reference/figures/moby-workflow.svg)
 
 ## What moby does
 
-- **A consistent data model** — declare column roles and metadata once
+- **Consistent data model** — declare column roles and metadata once
   with
   [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
   and carry them through the whole pipeline.
