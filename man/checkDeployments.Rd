@@ -13,6 +13,7 @@ checkDeployments(
   deploy.col = "deploy",
   recover.col = "recover",
   checks = "all",
+  scope = c("all", "detected"),
   coord.tolerance = 500,
   gap.tolerance = 1,
   verbose = TRUE
@@ -39,6 +40,16 @@ servicing, so the easiest to drop), \code{"coordinates"} (implausible coordinate
 station-vs-coordinate naming consistency; skipped if \code{lon}/\code{lat} are absent) and \code{"detections"}
 (cross-check detections against deployment windows; requires the \code{detections} argument).}
 
+\item{scope}{Character; how much of the deployment log the \emph{metadata-internal} checks cover.
+\code{"all"} (default) audits every receiver in \code{deployments}. \code{"detected"} restricts those checks to
+receivers that appear in \code{detections} (i.e. that recorded at least one detection), which removes
+warnings about receivers that are irrelevant to the data being analysed - typically the bulk of
+the coverage-gap and duplicate-station noise. Each retained receiver keeps its full deployment
+timeline, so gap and overlap logic stays correct. \code{scope} only affects the metadata-internal
+checks; the \code{"detections"} cross-checks are inherently detection-scoped and always run against the
+complete metadata (so a receiver present in the detections but missing from the log is still
+flagged). \code{"detected"} needs \code{detections}; without it, the function warns and audits everything.}
+
 \item{coord.tolerance}{Numeric. Distance (in the coordinate units of the data; metres for
 geographic coordinates) beyond which coordinates sharing a station name are flagged as
 inconsistent, and below which differently-named stations are flagged as possible duplicates.
@@ -52,7 +63,9 @@ receiver to report as a coverage gap. Defaults to 1.}
 \value{
 An object of class \code{mobyQC}: a list with
 \item{report}{A tidy data frame of flagged issues (\code{type}, \code{receiver}, \code{station}, \code{first},
-\code{last}, \code{n_detections}, \code{n_individuals}, \code{details}).}
+\code{last}, \code{n_detections}, \code{n_individuals}, \code{details}). Columns that do not apply to a given issue
+are \code{NA} (kept typed, so the frame stays usable programmatically); for a more readable manual
+export, write with an explicit placeholder, e.g. \code{write.csv(x$report, "report.csv", row.names = FALSE, na = "-")}.}
 \item{deployments}{The input deployments with a cleaned \code{recover_clean} column.}
 \item{counts}{Named integer vector of issue counts by type.}
 }
@@ -83,6 +96,9 @@ checkDeployments(rays_deployments)
 # also cross-check the detections against the deployment windows
 data(rays)
 checkDeployments(rays_deployments, detections = rays)
+
+# restrict the metadata checks to receivers that actually recorded detections
+checkDeployments(rays_deployments, detections = rays, scope = "detected")
 
 }
 \seealso{

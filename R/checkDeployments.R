@@ -2,8 +2,9 @@
 ## Receiver-deployment / metadata quality control ####################################################
 #######################################################################################################
 
-# distance between two coordinate pairs, using great-circle distance when the values look
-# geographic (degrees) and Euclidean distance otherwise (already projected, metres)
+# distance (in metres) between two coordinate pairs, using great-circle distance when the values
+# look geographic (degrees) and Euclidean distance otherwise (already projected, metres for the
+# metric CRSs moby works with)
 .coordDist <- function(lon1, lat1, lon2, lat2) {
   geographic <- all(abs(c(lon1, lon2)) <= 180, na.rm = TRUE) && all(abs(c(lat1, lat2)) <= 90, na.rm = TRUE)
   if (geographic) {
@@ -11,6 +12,14 @@
   } else {
     sqrt((lon1 - lon2)^2 + (lat1 - lat2)^2)
   }
+}
+
+# render a distance in metres for a human-readable QC message: metres below 1 km, kilometres above.
+# .coordDist already returns metres (great-circle for lon/lat, or a metric projection), so the QC
+# messages report an interpretable unit rather than a bare "units" count.
+.formatDistance <- function(d) {
+  if (length(d) != 1 || is.na(d)) return("an undetermined distance")
+  if (d >= 1000) sprintf("%.1f km", d / 1000) else sprintf("%.0f m", d)
 }
 
 # fill a cleaned recover date: for a receiver's non-final deployments missing 'recover',
@@ -76,6 +85,15 @@
 #' servicing, so the easiest to drop), `"coordinates"` (implausible coordinates and
 #' station-vs-coordinate naming consistency; skipped if `lon`/`lat` are absent) and `"detections"`
 #' (cross-check detections against deployment windows; requires the `detections` argument).
+#' @param scope Character; how much of the deployment log the *metadata-internal* checks cover.
+#' `"all"` (default) audits every receiver in `deployments`. `"detected"` restricts those checks to
+#' receivers that appear in `detections` (i.e. that recorded at least one detection), which removes
+#' warnings about receivers that are irrelevant to the data being analysed - typically the bulk of
+#' the coverage-gap and duplicate-station noise. Each retained receiver keeps its full deployment
+#' timeline, so gap and overlap logic stays correct. `scope` only affects the metadata-internal
+#' checks; the `"detections"` cross-checks are inherently detection-scoped and always run against the
+#' complete metadata (so a receiver present in the detections but missing from the log is still
+#' flagged). `"detected"` needs `detections`; without it, the function warns and audits everything.
 #' @param coord.tolerance Numeric. Distance (in the coordinate units of the data; metres for
 #' geographic coordinates) beyond which coordinates sharing a station name are flagged as
 #' inconsistent, and below which differently-named stations are flagged as possible duplicates.
@@ -86,7 +104,10 @@
 #'
 #' @return An object of class `mobyQC`: a list with
 #' \item{report}{A tidy data frame of flagged issues (`type`, `receiver`, `station`, `first`,
-#' `last`, `n_detections`, `n_individuals`, `details`).}
+#' `last`, `n_detections`, `n_individuals`, `details`). Columns that do not apply to a given issue
+#' are `NA` (kept typed, so the frame stays usable programmatically); for a more readable manual
+#' export, write with an explicit placeholder, e.g. `write.csv(x$report, "report.csv",
+#' row.names = FALSE, na = "-")`.}
 #' \item{deployments}{The input deployments with a cleaned `recover_clean` column.}
 #' \item{counts}{Named integer vector of issue counts by type.}
 #'
@@ -99,6 +120,9 @@
 #' data(rays)
 #' checkDeployments(rays_deployments, detections = rays)
 #'
+#' # restrict the metadata checks to receivers that actually recorded detections
+#' checkDeployments(rays_deployments, detections = rays, scope = "detected")
+#'
 #' @export
 
 checkDeployments <- function(deployments,
@@ -109,10 +133,12 @@ checkDeployments <- function(deployments,
                           deploy.col = "deploy",
                           recover.col = "recover",
                           checks = "all",
+                          scope = c("all", "detected"),
                           coord.tolerance = 500,
                           gap.tolerance = 1,
                           verbose = TRUE) {
 
+  scope <- match.arg(scope)
   dep <- as.data.frame(deployments)
   required <- c("receiver", "station", deploy.col)
   miss <- setdiff(required, colnames(dep))
@@ -142,24 +168,41 @@ checkDeployments <- function(deployments,
   report <- list()
   add <- function(r) report[[length(report) + 1]] <<- r
 
+  # Scope of the metadata-internal checks (dates / overlaps / coordinates / gaps). With
+  # scope = "detected" they run only on receivers that appear in the detections, i.e. that recorded
+  # at least one detection, so issues affecting receivers absent from the data (a common source of
+  # benign coverage-gap and duplicate-station noise) are not reported. The whole receiver timeline is
+  # kept for each retained receiver, so gap/overlap logic stays correct. The detection-vs-metadata
+  # checks further below are inherently detection-scoped and always run on the FULL metadata.
+  detected_receivers <- NULL
+  if (!is.null(detections)) {
+    det_rec <- as.data.frame(detections)[["receiver"]]
+    if (!is.null(det_rec)) detected_receivers <- unique(as.character(det_rec))
+  }
+  if (scope == "detected" && is.null(detected_receivers))
+    message("- scope = \"detected\" needs a 'detections' dataset with a 'receiver' column; ",
+            "auditing all deployments instead.")
+  dep_scope <- if (scope == "detected" && !is.null(detected_receivers))
+    dep[dep$receiver %in% detected_receivers, , drop = FALSE] else dep
+
   ##############################################################################
   ## Metadata-internal checks ##################################################
   ##############################################################################
 
   if (do_dates) {
   # missing deploy dates
-  for (i in which(is.na(dep$deploy))) {
-    add(.qcRow("Missing deploy date", dep$receiver[i], dep$station[i],
+  for (i in which(is.na(dep_scope$deploy))) {
+    add(.qcRow("Missing deploy date", dep_scope$receiver[i], dep_scope$station[i],
                details = "Deployment date is missing."))
   }
 
   # missing recover dates (non-final deployments of a receiver)
-  for (rec in unique(dep$receiver)) {
-    idx <- which(dep$receiver == rec)
+  for (rec in unique(dep_scope$receiver)) {
+    idx <- which(dep_scope$receiver == rec)
     if (length(idx) > 1) {
       for (i in idx[-length(idx)]) {
-        if (is.na(dep$recover[i])) {
-          add(.qcRow("Missing recover date", rec, dep$station[i], first = dep$deploy[i],
+        if (is.na(dep_scope$recover[i])) {
+          add(.qcRow("Missing recover date", rec, dep_scope$station[i], first = dep_scope$deploy[i],
                      details = "Non-final deployment is missing a recovery date."))
         }
       }
@@ -167,34 +210,34 @@ checkDeployments <- function(deployments,
   }
 
   # invalid date ranges
-  bad_range <- which(!is.na(dep$recover) & !is.na(dep$deploy) & dep$recover < dep$deploy)
+  bad_range <- which(!is.na(dep_scope$recover) & !is.na(dep_scope$deploy) & dep_scope$recover < dep_scope$deploy)
   for (i in bad_range) {
-    add(.qcRow("Invalid date range", dep$receiver[i], dep$station[i],
-               first = dep$deploy[i], last = dep$recover[i],
+    add(.qcRow("Invalid date range", dep_scope$receiver[i], dep_scope$station[i],
+               first = dep_scope$deploy[i], last = dep_scope$recover[i],
                details = "Recovery date precedes deployment date."))
   }
   }  # end 'dates' checks
 
   if (do_overlaps) {
   # duplicate deployment records
-  dup_keys <- paste(dep$receiver, dep$station, dep$deploy, sep = "_|_")
+  dup_keys <- paste(dep_scope$receiver, dep_scope$station, dep_scope$deploy, sep = "_|_")
   for (k in unique(dup_keys[duplicated(dup_keys)])) {
     i <- which(dup_keys == k)[1]
-    add(.qcRow("Duplicate deployment", dep$receiver[i], dep$station[i], first = dep$deploy[i],
+    add(.qcRow("Duplicate deployment", dep_scope$receiver[i], dep_scope$station[i], first = dep_scope$deploy[i],
                details = paste0("Deployment record appears ", sum(dup_keys == k), " times.")))
   }
 
   # overlapping deployments on the same receiver
-  for (rec in unique(dep$receiver)) {
-    idx <- which(dep$receiver == rec)
+  for (rec in unique(dep_scope$receiver)) {
+    idx <- which(dep_scope$receiver == rec)
     if (length(idx) > 1) {
       for (i in seq_len(length(idx) - 1)) {
         curr <- idx[i]; nxt <- idx[i + 1]
-        if (!is.na(dep$deploy[nxt]) && dep$deploy[nxt] < dep$recover_clean[curr] &&
-            !is.na(dep$recover[curr])) {
+        if (!is.na(dep_scope$deploy[nxt]) && dep_scope$deploy[nxt] < dep_scope$recover_clean[curr] &&
+            !is.na(dep_scope$recover[curr])) {
           add(.qcRow("Overlapping deployments", rec,
-                     paste(dep$station[curr], "/", dep$station[nxt]),
-                     first = dep$deploy[nxt], last = dep$recover[curr],
+                     paste(dep_scope$station[curr], "/", dep_scope$station[nxt]),
+                     first = dep_scope$deploy[nxt], last = dep_scope$recover[curr],
                      details = "Next deployment starts before the previous one ends."))
         }
       }
@@ -205,26 +248,27 @@ checkDeployments <- function(deployments,
 
   # implausible / missing coordinates + station<->coordinate naming consistency
   if (do_coords && has_coords) {
-    lon <- suppressWarnings(as.numeric(dep$lon)); lat <- suppressWarnings(as.numeric(dep$lat))
+    lon <- suppressWarnings(as.numeric(dep_scope$lon)); lat <- suppressWarnings(as.numeric(dep_scope$lat))
     bad_coord <- which(is.na(lon) | is.na(lat) | lon == 0 | lat == 0 |
                        abs(lon) > 180 | abs(lat) > 90)
     for (i in bad_coord) {
-      add(.qcRow("Implausible coordinates", dep$receiver[i], dep$station[i], first = dep$deploy[i],
+      add(.qcRow("Implausible coordinates", dep_scope$receiver[i], dep_scope$station[i], first = dep_scope$deploy[i],
                  details = "Coordinate is missing, zero, or outside valid bounds."))
     }
     # inconsistent station naming: same station name -> divergent coordinates
-    for (st in unique(dep$station)) {
-      idx <- which(dep$station == st & !is.na(lon) & !is.na(lat))
+    for (st in unique(dep_scope$station)) {
+      idx <- which(dep_scope$station == st & !is.na(lon) & !is.na(lat))
       if (length(idx) > 1) {
         d <- .coordDist(lon[idx], lat[idx], rep(lon[idx[1]], length(idx)), rep(lat[idx[1]], length(idx)))
         if (any(d > coord.tolerance, na.rm = TRUE)) {
-          add(.qcRow("Inconsistent station coordinates", paste(unique(dep$receiver[idx]), collapse = " | "),
-                     st, details = sprintf("Coordinates for this station span %.0f units (> tolerance).", max(d, na.rm = TRUE))))
+          add(.qcRow("Inconsistent station coordinates", paste(unique(dep_scope$receiver[idx]), collapse = " | "),
+                     st, details = sprintf("Coordinates for this station span %s (> %s tolerance).",
+                                           .formatDistance(max(d, na.rm = TRUE)), .formatDistance(coord.tolerance))))
         }
       }
     }
     # possible duplicate station names: near-identical coordinates under different names
-    uniq <- dep[!is.na(lon) & !is.na(lat), c("station", "lon", "lat")]
+    uniq <- dep_scope[!is.na(lon) & !is.na(lat), c("station", "lon", "lat")]
     uniq <- uniq[!duplicated(uniq$station), , drop = FALSE]
     if (nrow(uniq) > 1) {
       for (i in seq_len(nrow(uniq) - 1)) for (j in (i + 1):nrow(uniq)) {
@@ -232,7 +276,8 @@ checkDeployments <- function(deployments,
         if (!is.na(dd) && dd < coord.tolerance) {
           add(.qcRow("Possible duplicate stations", NA,
                      paste(uniq$station[i], "/", uniq$station[j]),
-                     details = sprintf("Different station names %.0f units apart (< tolerance).", dd)))
+                     details = sprintf("Different station names %s apart (< %s tolerance).",
+                                       .formatDistance(dd), .formatDistance(coord.tolerance))))
         }
       }
     }
@@ -240,14 +285,14 @@ checkDeployments <- function(deployments,
 
   # coverage gaps in a receiver's activity
   if (do_gaps) {
-  for (rec in unique(dep$receiver)) {
-    idx <- which(dep$receiver == rec)
+  for (rec in unique(dep_scope$receiver)) {
+    idx <- which(dep_scope$receiver == rec)
     if (length(idx) > 1) {
       for (i in seq_len(length(idx) - 1)) {
-        gap <- as.numeric(difftime(dep$deploy[idx[i + 1]], dep$recover_clean[idx[i]], units = "days"))
+        gap <- as.numeric(difftime(dep_scope$deploy[idx[i + 1]], dep_scope$recover_clean[idx[i]], units = "days"))
         if (!is.na(gap) && gap > gap.tolerance) {
-          add(.qcRow("Coverage gap", rec, dep$station[idx[i]],
-                     first = dep$recover_clean[idx[i]], last = dep$deploy[idx[i + 1]],
+          add(.qcRow("Coverage gap", rec, dep_scope$station[idx[i]],
+                     first = dep_scope$recover_clean[idx[i]], last = dep_scope$deploy[idx[i + 1]],
                      details = sprintf("%.0f-day gap before the next deployment.", gap)))
         }
       }

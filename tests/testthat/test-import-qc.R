@@ -101,6 +101,58 @@ test_that("checkDeployments 'checks' selector runs only the requested groups", {
   expect_true(all(c("Invalid date range", "Implausible coordinates") %in% types()))
 })
 
+test_that("scope = 'detected' restricts metadata checks to receivers present in the detections", {
+  # R1 detected a tag; R2 never did. Both have a coverage gap in the log.
+  dep <- data.frame(
+    receiver = c("R1", "R1", "R2", "R2"),
+    station  = c("A", "A", "B", "B"),
+    lon = c(-8, -8, -8.1, -8.1), lat = c(37, 37, 37.1, 37.1),
+    deploy  = as.POSIXct(c("2023-01-01", "2023-06-01", "2023-01-01", "2023-06-01"), tz = "UTC"),
+    recover = as.POSIXct(c("2023-02-01", "2023-07-01", "2023-02-01", "2023-07-01"), tz = "UTC"))
+  det <- data.frame(receiver = "R1", ID = "t1",
+                    datetime = as.POSIXct("2023-01-10", tz = "UTC"), station = "A")
+
+  full <- checkDeployments(dep, detections = det, verbose = FALSE)              # scope = "all" (default)
+  scoped <- checkDeployments(dep, detections = det, scope = "detected", verbose = FALSE)
+
+  gaps_full   <- full$report[full$report$type == "Coverage gap", ]
+  gaps_scoped <- scoped$report[scoped$report$type == "Coverage gap", ]
+  expect_true("R2" %in% gaps_full$receiver)         # full audit flags the undetected receiver
+  expect_false("R2" %in% gaps_scoped$receiver)      # scoped audit drops it
+  expect_true("R1" %in% gaps_scoped$receiver)       # ...but keeps the detected one
+  expect_lt(nrow(scoped$report), nrow(full$report)) # scoping reduces, never adds
+  # $deployments still holds the complete log regardless of scope
+  expect_equal(nrow(scoped$deployments), nrow(dep))
+})
+
+test_that("scope = 'detected' without detections warns and audits everything", {
+  dep <- data.frame(receiver = c("R1", "R1"), station = c("A", "A"),
+                    lon = c(-8, -8), lat = c(37, 37),
+                    deploy  = as.POSIXct(c("2023-01-01", "2023-06-01"), tz = "UTC"),
+                    recover = as.POSIXct(c("2023-02-01", "2023-07-01"), tz = "UTC"))
+  expect_message(checkDeployments(dep, scope = "detected", verbose = FALSE), "needs a 'detections'")
+  a <- suppressMessages(checkDeployments(dep, scope = "detected", verbose = FALSE))
+  b <- checkDeployments(dep, verbose = FALSE)
+  expect_equal(a$report, b$report)                  # falls back to a full audit
+})
+
+test_that("inconsistent-coordinate messages report metres/kilometres, not 'units'", {
+  # same station name, two coordinates ~1.9 km apart (geographic)
+  dep <- data.frame(receiver = c("R1", "R2"), station = c("A", "A"),
+                    lon = c(-8.00, -8.00), lat = c(37.000, 37.017),
+                    deploy  = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
+                    recover = as.POSIXct(c("2023-06-01", "2023-06-01"), tz = "UTC"))
+  msg <- checkDeployments(dep, verbose = FALSE)$report
+  incoord <- msg$details[msg$type == "Inconsistent station coordinates"]
+  expect_length(incoord, 1)
+  expect_match(incoord, "\\bkm\\b")                 # ~1.9 km, expressed in km
+  expect_false(grepl("units", incoord))             # never the bare "units"
+  # the .formatDistance helper picks m below 1 km and km above
+  expect_equal(moby:::.formatDistance(320), "320 m")
+  expect_equal(moby:::.formatDistance(15765), "15.8 km")
+  expect_equal(moby:::.formatDistance(NA_real_), "an undetermined distance")
+})
+
 test_that("checkDeployments handles a clean log and a missing 'detections' request without error", {
   clean <- data.frame(receiver = "R1", station = "A", lon = -8, lat = 37,
                       deploy = as.POSIXct("2023-01-01", tz = "UTC"),
