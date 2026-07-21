@@ -1,0 +1,14 @@
+citHeader("To cite the moby package in publications, please use:")
+
+bibentry(
+  bibtype  = "Manual",
+  title    = "moby: Streamlined Acoustic Telemetry Analyses and Data Visualization",
+  author   = person("Miguel", "Gandra", comment = c(ORCID = "0000-0003-1506-5141")),
+  year     = "2026",
+  note     = sprintf("R package version %s", meta$Version),
+  url      = "https://github.com/miguelgandra/moby"
+)
+
+## NOTE (maintainer): once the accompanying peer-reviewed article is published, add it here as a
+## second bibentry(bibtype = "Article", ...) with journal, volume/pages and DOI, and update
+## citHeader() so users are asked to cite both the article and the software version they used.

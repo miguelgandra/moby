@@ -1,0 +1,162 @@
+vue_detections <- function() {
+  data.frame(check.names = FALSE,
+    "Date and Time (UTC)" = c("2023-06-01 00:00:00", "2023-06-01 01:00:00", "2023-06-01 02:00:00"),
+    "Receiver" = c("VR2W-1001", "VR2W-1001", "VR2W-1002"),
+    "Transmitter" = c("A69-1602-111", "A69-1602-111", "A69-1602-222"),
+    "Transmitter Name" = c("shark1", "shark1", "shark2"),
+    "Station Name" = c("st A", "st A", "st B"),
+    "Latitude" = c(37.0, 37.0, 37.1), "Longitude" = c(-8.0, -8.0, -8.1))
+}
+
+test_that("importDetections harmonises a VUE export into a mobyData", {
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  write.csv(vue_detections(), f, row.names = FALSE)
+  d <- importDetections(f, source = "vue")
+  expect_true(is_moby(d))
+  expect_true(all(c("ID", "datetime", "transmitter", "receiver", "station", "lon", "lat") %in% colnames(d)))
+  expect_s3_class(d$datetime, "POSIXct")
+  expect_true(is.numeric(d$lon))
+  # no animal id in VUE -> initialised from transmitter
+  expect_true(all(as.character(d$ID) %in% c("A69-1602-111", "A69-1602-222")))
+})
+
+test_that("importDetections handles GLATOS and ETN data frames", {
+  gl <- data.frame(animal_id = c("fish1", "fish1"),
+                   detection_timestamp_utc = c("2023-06-01 00:00:00", "2023-06-01 03:00:00"),
+                   transmitter_codespace = c("A69-1602", "A69-1602"), transmitter_id = c("111", "111"),
+                   receiver_sn = c("1001", "1001"), station = c("stA", "stA"),
+                   deploy_lat = c(37, 37), deploy_long = c(-8, -8))
+  d <- importDetections(gl, source = "glatos")
+  expect_true("fish1" %in% as.character(d$ID))
+  expect_true(all(d$transmitter == "A69-1602-111"))  # codespace + id combined
+
+  etn <- data.frame(animal_id = "eel1", date_time = "2023-06-01 00:00:00",
+                    acoustic_tag_id = "A69-1303-9", receiver_id = "R1", station_name = "S1",
+                    deploy_latitude = 51, deploy_longitude = 3)
+  de <- importDetections(etn, source = "etn")
+  expect_equal(as.character(de$ID), "eel1")
+  expect_equal(de$station, "S1")
+})
+
+test_that("importDetections supports generic col.map and missing optional fields", {
+  raw <- data.frame(when = "2023-06-01 00:00:00", tag = "T1", rec = "R1")
+  d <- importDetections(raw, source = "generic",
+                        col.map = list(datetime = "when", transmitter = "tag", receiver = "rec"))
+  expect_true(is_moby(d))
+  expect_equal(as.character(d$ID), "T1")
+  expect_false("lon" %in% colnames(d))  # absent optional field degrades gracefully
+})
+
+test_that("importDeployments produces the canonical deployment schema", {
+  raw <- data.frame(check.names = FALSE,
+    Receiver = "VR2W-1001", Station = "st A", Latitude = 37, Longitude = -8,
+    Deploymentdate = "2023-01-01 00:00:00", Dateout = "2023-04-01 00:00:00")
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  write.csv(raw, f, row.names = FALSE)
+  dep <- importDeployments(f, source = "vue")
+  expect_true(all(c("receiver", "station", "lon", "lat", "deploy", "recover") %in% colnames(dep)))
+  expect_s3_class(dep$deploy, "POSIXct")
+})
+
+test_that("checkDeployments flags overlapping deployments and bad coordinates/ranges", {
+  dep <- data.frame(
+    receiver = c("R1", "R1", "R2", "R3"),
+    station  = c("A", "A", "B", "C"),
+    lon = c(-8, -8, -8.1, 0), lat = c(37, 37, 37.1, 0),
+    deploy = as.POSIXct(c("2023-01-01", "2023-03-01", "2023-01-01", "2023-05-01"), tz = "UTC"),
+    recover = as.POSIXct(c("2023-04-01", "2023-06-01", "2023-12-01", "2023-04-01"), tz = "UTC"))
+  qc <- checkDeployments(dep, verbose = FALSE)
+  expect_s3_class(qc, "mobyQC")
+  expect_true("Overlapping deployments" %in% names(qc$counts))   # R1 redeployed before recovery
+  expect_true("Implausible coordinates" %in% names(qc$counts))   # R3 at 0,0
+  expect_true("Invalid date range" %in% names(qc$counts))        # R3 recover < deploy
+})
+
+test_that("checkDeployments cross-checks detections against metadata", {
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  d <- vue_detections()
+  d[4, ] <- list("2024-01-01 00:00:00", "VR2W-9999", "A69-1602-222", "shark2", "st X", 37.2, -8.2)
+  write.csv(d, f, row.names = FALSE)
+  det <- importDetections(f, source = "vue")
+  dep <- data.frame(receiver = c("VR2W-1001", "VR2W-1002"), station = c("st A", "st B"),
+                    lon = c(-8, -8.1), lat = c(37, 37.1),
+                    deploy = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
+                    recover = as.POSIXct(c("2023-12-01", "2023-12-01"), tz = "UTC"))
+  qc <- checkDeployments(dep, detections = det, verbose = FALSE)
+  expect_true("Receiver missing from metadata" %in% names(qc$counts))  # VR2W-9999
+})
+
+test_that("checkDeployments 'checks' selector runs only the requested groups", {
+  dep <- data.frame(
+    receiver = c("R1", "R1", "R3"), station = c("A", "A", "C"),
+    lon = c(-8, -8, 0), lat = c(37, 37, 0),
+    deploy = as.POSIXct(c("2023-01-01", "2023-03-01", "2023-05-01"), tz = "UTC"),
+    recover = as.POSIXct(c("2023-04-01", "2023-06-01", "2023-04-01"), tz = "UTC"))
+  types <- function(...) sort(unique(checkDeployments(dep, ..., verbose = FALSE)$report$type))
+  expect_setequal(types(checks = "dates"), "Invalid date range")             # R3 recover<deploy only
+  expect_setequal(types(checks = "coordinates"), "Implausible coordinates")  # R3 0,0 only
+  expect_true("Overlapping deployments" %in% types(checks = "overlaps"))
+  expect_false("Overlapping deployments" %in% types(checks = "coordinates")) # subset excludes it
+  # 'all' (default) is the union of the groups
+  expect_true(all(c("Invalid date range", "Implausible coordinates") %in% types()))
+})
+
+test_that("checkDeployments handles a clean log and a missing 'detections' request without error", {
+  clean <- data.frame(receiver = "R1", station = "A", lon = -8, lat = 37,
+                      deploy = as.POSIXct("2023-01-01", tz = "UTC"),
+                      recover = as.POSIXct("2023-06-01", tz = "UTC"))
+  qc <- checkDeployments(clean, verbose = FALSE)                 # empty report must not crash
+  expect_s3_class(qc, "mobyQC")
+  expect_equal(nrow(qc$report), 0)
+  expect_no_error(print(qc))                                     # print handles the empty case
+  expect_message(checkDeployments(clean, checks = "detections", verbose = FALSE), "no 'detections' supplied")
+  expect_error(checkDeployments(clean, checks = "bogus", verbose = FALSE), "should be one of")
+})
+
+test_that("checkDeployments accepts non-canonical deploy/recover column names (deploy.col/recover.col)", {
+  dep <- data.frame(receiver = c("R1", "R2"), station = c("A", "B"), lon = c(-9, -9), lat = c(38, 38),
+                    deploy_date = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
+                    recover_date = as.POSIXct(c("2023-06-01", "2023-06-01"), tz = "UTC"))
+  expect_error(checkDeployments(dep, verbose = FALSE), "missing required")     # canonical 'deploy' absent by default
+  qc <- suppressMessages(checkDeployments(dep, deploy.col = "deploy_date", recover.col = "recover_date", verbose = FALSE))
+  expect_s3_class(qc, "mobyQC")
+})
+
+test_that("importTags harmonises the transmitter nominal delay (incl. min/max midpoint)", {
+  # an explicit nominal delay is carried through as numeric
+  tg <- rays_tags; tg$nominal_delay <- "90"
+  out <- importTags(tg, source = "generic",
+                    col.map = list(ID = "ID", transmitter = "transmitter",
+                                   tagging_date = "tagging_date", nominal_delay = "nominal_delay"))
+  expect_true(is.numeric(out$nominal_delay))
+  expect_true(all(out$nominal_delay == 90))
+  # many tag exports give a delay RANGE: the nominal delay is its midpoint
+  tg2 <- rays_tags; tg2$min_delay <- 60; tg2$max_delay <- 180
+  out2 <- suppressMessages(importTags(tg2, source = "generic",
+                                      col.map = list(ID = "ID", transmitter = "transmitter",
+                                                     min_delay = "min_delay", max_delay = "max_delay")))
+  expect_true(all(out2$nominal_delay == 120))
+})
+
+test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections uses automatically", {
+  tg <- rays_tags; tg$nominal_delay <- 120
+  tags <- importTags(tg, source = "generic",
+                     col.map = list(ID = "ID", transmitter = "transmitter",
+                                    tagging_date = "tagging_date", nominal_delay = "nominal_delay"))
+  det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
+  md <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags)))
+
+  nd <- mobyMeta(md)$nominal.delay
+  expect_false(is.null(nd))
+  expect_true(all(nd == 120))
+  expect_true(all(names(nd) %in% as.character(unique(md$ID))))
+
+  # the whole point: filterDetections enables its min_lag filter with NO argument supplied,
+  # at the documented 30 x nominal.delay threshold (30 * 120 = 3600 s)
+  res <- suppressWarnings(suppressMessages(filterDetections(md)))
+  expect_true(any(grepl("min_lag > 3600 s", res$data_discarded$reason)))
+
+  # and it can be opted out of
+  md_off <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, set.nominal.delay = FALSE)))
+  expect_null(mobyMeta(md_off)$nominal.delay)
+})

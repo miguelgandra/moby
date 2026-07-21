@@ -1,0 +1,57 @@
+Package: moby
+Title: Streamlined Acoustic Telemetry Analyses and Data Visualization
+Version: 1.0.0
+Authors@R: person("Miguel", "Gandra", , "m3gandra@gmail.com", role = c("aut", "cre"),
+                  comment = c(ORCID = "0000-0003-1506-5141"))
+Description: Provides a comprehensive suite of functions and methods specifically tailored
+    for processing, visualizing, and interpreting passive acoustic telemetry data,
+    with a particular focus on marine environments. Tools span data cleaning, temporal
+    and spatial classification, movement and home-range analysis, residency metrics,
+    and spatiotemporal overlap and social-network analysis.
+License: GPL-3
+Encoding: UTF-8
+Roxygen: list(markdown = TRUE)
+Depends:
+    R (>= 3.5.0)
+Imports:
+    utils,
+    stats,
+    methods,
+    graphics,
+    grDevices,
+    geosphere,
+    igraph,
+    sf,
+    terra,
+    suntools,
+    lubridate
+Suggests:
+    knitr,
+    parallel,
+    foreach,
+    doSNOW,
+    doRNG,
+    adehabitatHR,
+    sp,
+    ctmm,
+    readxl,
+    qgraph,
+    wavScalogram,
+    lomb,
+    packcircles,
+    lunar,
+    maps,
+    rnaturalearth,
+    rnaturalearthdata,
+    coin,
+    colorspace,
+    Skillings.Mack,
+    rmarkdown,
+    testthat (>= 3.0.0)
+URL: https://github.com/miguelgandra/moby, https://miguelgandra.github.io/moby/
+BugReports: https://github.com/miguelgandra/moby/issues
+VignetteBuilder: knitr
+LazyData: true
+Config/Needs/website: pkgdown
+Config/testthat/edition: 3
+Config/roxygen2/version: 8.0.0

@@ -1,0 +1,88 @@
+---
+title: "04 - Movement & space use"
+---
+
+```{r}
+#| include: false
+#| purl: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 9, fig.height = 6, dpi = 96, fig.align = "center")
+```
+
+::: {.callout-note}
+## In this module
+Turn detections into positions, then quantify how much animals move and the areas they use: centres
+of activity, step distances, rates of movement, and home ranges (kernel utilisation distributions),
+all per species.
+
+**Prerequisites:** none. Loads the `rays` checkpoint.
+:::
+
+## Learning objectives
+
+1. Estimate positions (**centres of activity**) with `calculateCOAs()`.
+2. Reconstruct movement paths and step distances with `calculateStepDistances()`.
+3. Summarise movement with `calculateROM()` and `calculateLinearityIndex()`.
+4. Estimate home ranges with `calculateUDs()` (autocorrelated KDE) and map them with `plotMaps()`.
+
+## Setup
+
+```{r}
+#| message: false
+library(moby)
+data(rays)
+id_groups <- mobyMeta(rays)$id.groups
+```
+
+## 1. Centres of activity (positions)
+
+Acoustic detections are presence-at-a-receiver events; `calculateCOAs()` converts them into
+short-interval position estimates suitable for movement and home-range analysis.
+
+```{r}
+#| eval: false
+coas <- calculateCOAs(rays)   # aggregates the detections in each time bin (rays already carries 'timebin')
+```
+
+## 2. Step distances and movement tracks
+
+```{r}
+#| eval: false
+# great-circle step distances (supply a land.shape for shortest in-water paths)
+tracks <- calculateStepDistances(coas)
+getTrajectories(tracks)   # the reconstructed path geometries (an attribute)
+```
+
+## 3. Rates of movement & directness
+
+```{r}
+#| eval: false
+rom <- calculateROM(tracks)                 # total distance + mean/max rate of movement
+li  <- calculateLinearityIndex(tracks)      # movement directness (0 = convoluted, 1 = straight)
+```
+
+## 4. Home ranges (UDs) and maps
+
+`calculateUDs()` defaults to **autocorrelated kernel density estimation (AKDE)** via `ctmm`, which
+accounts for the autocorrelation inherent in tracking data.
+
+```{r}
+#| eval: false
+kud <- calculateUDs(coas, id.groups = id_groups)   # 'coas' carries the CRS forward from 'rays'
+
+plotMaps(coas, uds = kud, animal.tracks = tracks,
+         id.groups = id_groups)
+```
+
+## 5. A movement summary table
+
+```{r}
+#| eval: false
+movementTable(tracks, ud.results = kud, id.groups = id_groups)
+```
+
+## Recap & what's next
+
+You estimated positions, movement metrics and home ranges per species.
+
+➡️ **Next:** [05 — Movement (spatial) networks](05-movement-networks.html).

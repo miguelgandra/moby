@@ -1,0 +1,47 @@
+url: https://miguelgandra.github.io/moby/
+
+template:
+  bootstrap: 5
+
+navbar:
+  structure:
+    left: [intro, tutorials, reference, news]
+  components:
+    tutorials:
+      text: Tutorials
+      menu:
+      - text: "00 - Getting real data from ETN (appendix)"
+        href: articles/00-etn-import.html
+      - text: "01 - From raw detections to a mobyData object"
+        href: articles/01-import.html
+      - text: "02 - Quality control, deployment matching & filtering"
+        href: articles/02-quality-control.html
+      - text: "03 - Exploratory analysis"
+        href: articles/03-exploratory.html
+      - text: "04 - Movement & space use"
+        href: articles/04-space-use.html
+      - text: "05 - Movement (spatial) networks"
+        href: articles/05-movement-networks.html
+      - text: "06 - Association (social) networks"
+        href: articles/06-association-networks.html
+
+reference:
+- title: Data model
+  contents: [as_moby, mobyData, mobyMeta, is_moby, rays]
+- title: Import, quality control & curation
+  contents: [importDetections, importDeployments, importTags, checkDeployments,
+             matchDeployments, plotArray, assignAnimalIDs, filterDetections, plotMinLag]
+- title: Temporal & spatial classification
+  contents: [getTimeBins, getDielPhase, getSeason, getReprodPeriod, getSunTimes,
+             calculateCOAs, calculateStepDistances, getTrajectories, interpolateDistances,
+             calculateLandDists, correctPositions, createWideTable]
+- title: Summaries, residency & home range
+  contents: [calculateResidency, calculateVisits, summaryTable, calculateROM, calculateLinearityIndex,
+             movementTable, calculateUDs, calculateUDOverlap, plotMaps]
+- title: Network analysis
+  contents: [mobyNetwork, plot.mobyNetwork, calculateAssociations, randomizeAssociations,
+             plotAssociations, plotAssociationMatrix, plotGroupSizeDistribution, calculateTransitions,
+             randomizeTransitions, plotMovements, transitionsTable, networkMetrics]
+- title: Visualization
+  contents: [plotAbacus, plotDeployments, plotActograms, plotChronogram, plotContours, plotMetricComparison,
+             plotStationStats, plotPeriodogram, plotScalogram, shadeSeasons]

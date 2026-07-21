@@ -1,0 +1,33 @@
+# --- R session / IDE -------------------------------------------------------
+.Rproj.user
+.Rhistory
+.RData
+.Ruserdata
+*.Rproj
+
+# --- build artefacts -------------------------------------------------------
+*.tar.gz
+*.Rcheck/
+src/*.o
+src/*.so
+src/*.dll
+
+# --- pkgdown ---------------------------------------------------------------
+# the site is built and deployed by .github/workflows/pkgdown.yaml, never committed
+docs/
+pkgdown/index.html
+
+# --- quarto ----------------------------------------------------------------
+# article execution cache: rebuilt on every site deploy
+/vignettes/.quarto/
+/vignettes/articles/*_files/
+*.quarto_ipynb
+
+# --- OS / editor -----------------------------------------------------------
+.DS_Store
+Thumbs.db
+*~
+.vscode/
+
+# --- local tooling ---------------------------------------------------------
+.claude/settings.local.json

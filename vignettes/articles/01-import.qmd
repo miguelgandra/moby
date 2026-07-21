@@ -1,0 +1,105 @@
+---
+title: "01 - From raw detections to a mobyData object"
+---
+
+```{r}
+#| include: false
+#| purl: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+::: {.callout-note}
+## In this module
+Read raw detections from a file, harmonise them into moby's expected layout, attach tag metadata,
+and wrap everything into a **`mobyData`** object that downstream functions understand. You will also
+define the **`id.groups`** object that drives per-species analyses throughout the tutorials.
+
+**Prerequisites:** none. Uses the bundled CSV at
+`system.file("extdata", "rays_detections.csv", package = "moby")`. (For pulling data from a live
+database, see the optional [ETN appendix](00-etn-import.html).)
+:::
+
+## Learning objectives
+
+1. Read a generic detection export and map its columns with `importDetections()`.
+2. Attach tag metadata with `importTags()` / `assignAnimalIDs()`.
+3. Understand the `mobyData` data model and create one with `as_moby()`.
+4. Define `id.groups` (two species) once, for reuse everywhere.
+
+## Setup
+
+```{r}
+#| message: false
+library(moby)
+detections_csv <- system.file("extdata", "rays_detections.csv", package = "moby")
+```
+
+## 1. Read and harmonise the detections
+
+The raw file uses source-specific column names (`animal_id`, `timestamp`, `station_name`, …). The
+generic importer maps them onto moby's canonical names.
+
+```{r}
+#| eval: false
+raw <- read.csv(detections_csv, stringsAsFactors = FALSE)
+raw$timestamp <- as.POSIXct(raw$timestamp, tz = "UTC")
+
+detections <- importDetections(
+  raw,
+  source = "generic",
+  col.map = list(
+    ID          = "animal_id",
+    datetime    = "timestamp",
+    station     = "station_name",
+    lon         = "deploy_longitude",
+    lat         = "deploy_latitude",
+    transmitter = "transmitter"      # kept so assignAnimalIDs() can join tag metadata
+  )
+)
+```
+
+::: {.callout-tip}
+moby also ships dedicated importers for common sources — `importDetections(source = "vue")`,
+`"vdat"`, `"glatos"`, `"otn"`, `"etn"` — so you usually do **not** need to hand-map columns.
+:::
+
+## 2. Attach tag / animal metadata
+
+```{r}
+#| eval: false
+tags <- importTags(rays_tags, source = "generic",
+                   col.map = list(ID = "ID", tagging_date = "tagging_date"))
+
+detections <- assignAnimalIDs(detections, tags)
+```
+
+## 3. Build the `mobyData` object
+
+A `mobyData` *is* a data frame, but it carries metadata (column mapping, tagging dates, `id.groups`)
+as an attribute, so you don't repeat those arguments on every call.
+
+```{r}
+#| eval: false
+# one named list element per species -> drives per-species outputs everywhere
+id_groups <- split(rays_tags$ID, rays_tags$species)
+
+dataset <- as_moby(
+  detections,
+  id.col        = "ID",
+  datetime.col  = "datetime",
+  station.col   = "station",
+  lon.col       = "lon",
+  lat.col       = "lat",
+  tagging.dates = setNames(rays_tags$tagging_date, rays_tags$ID),
+  id.groups     = id_groups
+)
+
+mobyMeta(dataset)   # inspect the attached metadata
+```
+
+## Recap & what's next
+
+You produced a `mobyData` object and defined `id.groups`. The bundled `rays` object is exactly this,
+already cleaned — later modules load it directly.
+
+➡️ **Next:** [02 — Quality control, deployment matching & filtering](02-quality-control.html).

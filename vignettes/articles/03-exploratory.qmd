@@ -1,0 +1,166 @@
+---
+title: "03 - Exploratory analysis"
+---
+
+```{r}
+#| include: false
+#| purl: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>",
+                      fig.width = 9, fig.height = 5.5, dpi = 96, fig.align = "center")
+```
+
+::: {.callout-note}
+## In this module
+Starting from a clean `mobyData` checkpoint, you will visualise detection patterns, classify diel
+phases, quantify residency, and produce a publication-style summary table — **separately for each
+species** using a single `id.groups` object.
+
+**Prerequisites:** none. This module loads the bundled checkpoint `rays`, so you can run it without
+having completed modules 01–02.
+:::
+
+## Learning objectives
+
+By the end of this module you will be able to:
+
+1. Load the cleaned `mobyData` checkpoint and inspect its metadata.
+2. Use **`id.groups`** to generate every output per species automatically.
+3. Draw abacus, station-summary and chronogram plots.
+4. Classify detections by **diel phase** with `getDielPhase()`.
+5. Reveal activity **rhythms** with `plotPeriodogram()` and `plotScalogram()`.
+6. Compute **residency indices** with `calculateResidency()` and format them with `summaryTable()`.
+
+## Setup
+
+```{r}
+#| message: false
+library(moby)
+
+# the cleaned, analysis-ready checkpoint (a mobyData object: see ?rays)
+data(rays)
+
+# the two-species grouping is stored in the object's metadata
+id_groups <- mobyMeta(rays)$id.groups
+names(id_groups)
+```
+
+::: {.callout-tip}
+## The `id.groups` motif
+`id_groups` is a **named list of animal IDs, one element per species**. Passing it to a moby
+function tells that function to compute and lay out its results *independently for each group*. You
+will pass the same `id_groups` object to almost every function from here on — that is all it takes
+to get per-species outputs.
+:::
+
+```{r}
+str(id_groups)
+```
+
+## 1. A first look: the abacus plot
+
+An *abacus plot* shows, for every individual, when it was detected over the study period — the
+quickest way to eyeshot data coverage, gaps and tag attrition.
+
+```{r}
+#| fig-height: 6
+plotAbacus(rays, id.groups = id_groups)
+```
+
+## 2. Where were animals detected? Station summaries
+
+Each statistic is drawn in its own panel with its own axis, so counts of detections and of
+individuals are never conflated on a shared scale. Columns split the animals by species.
+
+```{r}
+#| fig-height: 6
+plotStationStats(rays, type = c("detections", "individuals"), id.groups = id_groups)
+```
+
+## 3. Diel patterns
+
+Many coastal species shift activity between day and night. First we classify every detection by
+**diel phase** (here a simple day/night split based on the array's location), then visualise the
+hour-by-date structure with a chronogram.
+
+```{r}
+# representative coordinates of the array (centre of the MPA)
+mpa_coords <- matrix(c(mean(rays$lon), mean(rays$lat)), nrow = 1)
+
+rays$diel <- getDielPhase(rays$datetime, coords = mpa_coords, phases = 2)
+table(rays$diel)
+```
+
+```{r}
+#| fig-height: 6
+# chronograms operate on time-binned detections; bin to the hour first
+rays$timebin <- getTimeBins(rays$datetime, interval = "60 mins")
+
+# one panel per species (split.by), points coloured by receiver
+plotChronogram(rays, sunriset.coords = mpa_coords, split.by = "species",
+               color.by = "station")
+```
+
+## 4. Activity rhythms
+
+The chronogram *shows* diel structure; `plotPeriodogram()` and `plotScalogram()` *quantify* the
+periodicities in a detection time series. Both work on a binned count series, so first collapse the
+detections into hourly counts per individual (`rays$timebin` was created above).
+
+```{r}
+# hourly detection counts per individual: a long ID x time-bin x count table
+binned <- aggregate(list(detections = rep(1L, nrow(rays))),
+                    by = list(ID = rays$ID, timebin = rays$timebin), FUN = sum)
+```
+
+A **periodogram** gives one global spectrum per animal — how much power sits at each candidate
+period. The tidal (~6–12 h) and diel (~24 h) bands are shaded and the dominant peak is marked.
+
+```{r}
+#| fig-height: 6.5
+plotPeriodogram(binned, id.col = "ID", timebin.col = "timebin", id.groups = id_groups)
+```
+
+A **scalogram** (continuous wavelet transform) shows *when* each rhythm is present — a time (x) by
+period (y) heat map. Shown here for the first species:
+
+```{r}
+#| fig-height: 6
+plotScalogram(binned[binned$ID %in% id_groups[[1]], ],
+              variable = "detections", id.col = "ID", timebin.col = "timebin", ncol = 2)
+```
+
+::: {.callout-note}
+For these simulated rays the strongest periodicities are multi-day presence bouts, with a weaker
+near-diel (~24 h) component. Real activity data with a clear circadian rhythm shows a sharp 24 h
+peak and a persistent diel band running across the scalogram.
+:::
+
+## 5. Residency
+
+`calculateResidency()` returns a tidy, numeric table of residency indices (IR1, IR2, IWR) and the
+building blocks they derive from. We supply the date monitoring ended so the indices that need the
+full study interval can be computed.
+
+```{r}
+monitoring_end <- as.POSIXct("2023-07-05", tz = "UTC")
+
+residency <- calculateResidency(rays, last.monitoring.date = monitoring_end)
+head(residency)
+```
+
+## 6. A publication-ready summary
+
+`summaryTable()` formats the residency values (and detection/coverage metrics) into a
+per-individual table, grouped by species when `id.groups` is supplied.
+
+```{r}
+summaryTable(rays, last.monitoring.date = monitoring_end, id.groups = id_groups)
+```
+
+## Recap & what's next
+
+You loaded a checkpoint, drove every output per species with one `id.groups` object, and moved from
+raw detections to residency indices and a formatted summary.
+
+➡️ **Next:** [04 — Movement & space use](04-space-use.html), where we turn detections into positions,
+distances and home ranges.

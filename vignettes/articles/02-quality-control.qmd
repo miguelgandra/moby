@@ -1,0 +1,145 @@
+---
+title: "02 - Quality control, deployment matching & filtering"
+---
+
+```{r}
+#| include: false
+#| purl: false
+knitr::opts_chunk$set(collapse = TRUE, comment = "#>")
+```
+
+::: {.callout-note}
+## In this module
+Make the data *trustworthy* before analysing it: audit the receiver-deployment log, match detections
+to deployments, remove spurious detections, and bin detections into regular time intervals.
+"Garbage in, garbage out" — this is where the science is won or lost.
+
+**Prerequisites:** none. Uses the bundled `rays_detections` and the raw ETN deployment log shipped
+at `system.file("extdata", "rays_deployments.csv", package = "moby")`.
+:::
+
+## Learning objectives
+
+1. Import a raw receiver-deployment log with `importDeployments()`.
+2. Audit deployment metadata with `checkDeployments()` and picture it with `plotDeployments()`.
+3. Match detections to deployment windows with `matchDeployments()`.
+4. Remove spurious detections with `filterDetections()`.
+5. Bin detections into regular intervals with `getTimeBins()`.
+
+## Setup
+
+```{r}
+#| message: false
+library(moby)
+data(rays_detections)
+data(rays_tags)
+```
+
+## 1. Import the receiver-deployment log
+
+Deployment logs arrive in vendor/network-specific layouts. `importDeployments()` harmonises them onto
+moby's canonical schema (`receiver` / `station` / `lon` / `lat` / `deploy` / `recover`) — pick the
+matching `source` preset (here the European Tracking Network export bundled with the package), or
+supply a `col.map` for a format it doesn't recognise.
+
+```{r}
+#| eval: false
+dep_file <- system.file("extdata", "rays_deployments.csv", package = "moby")   # raw ETN export
+deployments <- importDeployments(dep_file, source = "etn")
+head(deployments)
+```
+
+## 2. Audit the deployment log
+
+`checkDeployments()` audits the receiver log and only *reports* problems — it never edits the data
+or aborts — returning a structured report you can inspect or act on.
+
+```{r}
+#| eval: false
+qc <- checkDeployments(deployments)
+qc   # flags overlaps, impossible dates/coords, duplicates, coverage gaps
+```
+
+Supply the detections too, and it also **cross-checks them against the deployment windows** — flagging
+detections from unknown receivers, detections outside any window, and station-name mismatches:
+
+```{r}
+#| eval: false
+checkDeployments(deployments, detections = rays_detections, datetime.col = "datetime")
+```
+
+Every check runs by default. Use `checks =` to run only the groups you want (the coverage-gap check
+is the noisiest, since routine servicing gaps are legitimate):
+
+```{r}
+#| eval: false
+checkDeployments(deployments, checks = c("dates", "overlaps", "coordinates"))
+```
+
+## 3. Visualise receiver coverage
+
+`plotDeployments()` is the visual companion to the audit — a timeline of when each receiver was
+deployed and actively listening. It reads the same log, breaks a bar wherever coverage has a real
+gap, and (invisibly) returns a per-receiver coverage table (active days, gaps, coverage fraction).
+
+```{r}
+#| eval: false
+plotDeployments(deployments)
+```
+
+With a richer log — receivers moved between stations, servicing gaps, staggered deployments — group
+the rows by a coarser unit and colour them with `group.by`, e.g. `plotDeployments(dep, row.by =
+"station", group.by = "array")`.
+
+## 4. Match detections to deployments
+
+```{r}
+#| eval: false
+detections <- matchDeployments(rays_detections, deployments,
+                               station.col = "station")
+```
+
+## 5. Filter spurious detections
+
+`filterDetections()` applies a sequence of opt-in quality-control criteria: exact-duplicate removal,
+detections before tagging or after a cut-off, a per-receiver short-interval **false-detection filter**
+(`nominal.delay`, scaled to the transmitter delay — the standard code-collision filter of Pincock 2012 /
+Simpfendorfer et al. 2015), an optional residency/isolation filter (`isolation.window`, off by default),
+and an **unrealistic-speed** filter. Removed detections are returned in `data_discarded` with a `reason`;
+nothing is deleted silently.
+
+```{r}
+#| eval: false
+filtered <- filterDetections(
+  rays_detections,
+  id.col        = "ID",
+  datetime.col  = "datetime",
+  lon.col       = "lon", lat.col = "lat",
+  tagging.dates = setNames(rays_tags$tagging_date, rays_tags$ID),
+  nominal.delay = 120,         # s; enables the short-interval false-detection filter (~30x delay)
+  max.speed     = 2,           # m/s; great-circle distances (no land.shape needed)
+  speed.unit    = "m/s"
+)
+filtered                        # a printable <mobyFilter> summary
+clean <- filtered$data          # the cleaned detections (with a qc_flag column)
+```
+
+## 6. Bin detections into regular intervals
+
+Most downstream analyses operate on regular **time bins** rather than raw detections.
+
+```{r}
+#| eval: false
+clean$timebin <- getTimeBins(clean$datetime, interval = "1 hour")
+```
+
+::: {.callout-tip}
+The result of this module is equivalent to the bundled `rays` checkpoint, which later modules load
+directly so you can start anywhere.
+:::
+
+## Recap & what's next
+
+You audited, matched, filtered and binned the data into an analysis-ready `mobyData`.
+
+➡️ **Next:** [03 — Exploratory analysis](03-exploratory.html).
