@@ -39,7 +39,8 @@ networks.](reference/figures/moby-workflow.svg)
 
 ## What moby does
 
-- **A tidy data model** — declare column roles and metadata once with
+- **A consistent data model** — declare column roles and metadata once
+  with
   [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
   and carry them through the whole pipeline.
 - **Import & quality control** — read detections, tags, and receiver
