@@ -29,7 +29,7 @@
 #' \code{"BA"} is the default because it is the one index available under \emph{both} methods, so the
 #' default works whether the UDs are AKDE or KDE. All indices are bounded in \code{[0, 1]} except
 #' \code{UDOI}, which can exceed 1 when two ranges overlap and are both non-uniform. Overlap is
-#' computed within each unit (e.g. species / \code{id.groups} block) that `ud` was estimated over,
+#' computed within each unit (e.g. species / \code{id.groups} block) that `uds` was estimated over,
 #' never across units (whose UDs live on separate grids); pairs are formed among individuals of the
 #' same unit only.
 #'
@@ -41,7 +41,7 @@
 #' For these two indices the result therefore has one row per \emph{ordered} pair (both \code{id1->id2}
 #' and \code{id2->id1}), the value in each row being the index evaluated for \code{(id1, id2)}.
 #'
-#' @param ud The output of \code{\link{calculateUDs}} (a list with a `$ud` element). The estimation
+#' @param uds The output of \code{\link{calculateUDs}} (a list with a `$ud` element). The estimation
 #' method (AKDE vs KDE) is detected automatically.
 #' @param index Overlap index to compute (case-insensitive). One of \code{"BA"} (default), and for
 #' KDE-estimated UDs additionally \code{"UDOI"}, \code{"HR"}, \code{"PHR"}, \code{"VI"}, \code{"HD"}.
@@ -59,7 +59,7 @@
 #' \item{<index>}{the overlap value (column named after `index`, e.g. `BA` or `UDOI`). For `HR`/`PHR`
 #' this is the directional value for `(id1, id2)`.}
 #' \item{<index>_lower, <index>_upper}{(AKDE only) the confidence-interval bounds.}
-#' \item{group1, group2, pair_type}{(when `id.groups` is supplied or `ud` was grouped) the group
+#' \item{group1, group2, pair_type}{(when `id.groups` is supplied or `uds` was grouped) the group
 #' membership of each animal and whether the pair is within or between groups.}
 #' When a single unit produces pairs, the estimator's own overlap matrix is attached as attribute
 #' `"matrix"` (symmetric except for the directional `HR`/`PHR` indices, which stay asymmetric);
@@ -80,13 +80,13 @@
 #'   data(rays)
 #'   # estimate UDs for a few animals (kde keeps the example fast), then measure pairwise overlap
 #'   sub <- rays[rays$ID %in% head(levels(factor(rays$ID)), 3), ]
-#'   ud  <- calculateUDs(sub, method = "kde", bandwidth = 500, verbose = FALSE)
-#'   calculateUDOverlap(ud, index = "UDOI")
+#'   uds <- calculateUDs(sub, method = "kde", bandwidth = 500, verbose = FALSE)
+#'   calculateUDOverlap(uds, index = "UDOI")
 #' }
 #' }
 #' @export
 
-calculateUDOverlap <- function(ud,
+calculateUDOverlap <- function(uds,
                                index = "BA",
                                contour = 95,
                                conf.level = 0.95,
@@ -97,16 +97,16 @@ calculateUDOverlap <- function(ud,
   ## Validate + detect method ##################################################
   ##############################################################################
 
-  if (is.null(ud) || is.null(ud$ud))
-    stop("'ud' must be the output of calculateUDs() (a list with a '$ud' element).", call. = FALSE)
+  if (is.null(uds) || is.null(uds$ud))
+    stop("'uds' must be the output of calculateUDs() (a list with a '$ud' element).", call. = FALSE)
   if (!is.numeric(contour) || length(contour) != 1 || contour <= 0 || contour > 100)
     stop("'contour' must be a single isopleth percentage in (0, 100].", call. = FALSE)
   if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1)
     stop("'conf.level' must be a single confidence level in (0, 1).", call. = FALSE)
 
-  uds <- ud$ud
-  method <- attr(ud, "method")
-  if (is.null(method) || !method %in% c("akde", "kde")) method <- .detectUDMethod(uds)
+  ud_list <- uds$ud
+  method <- attr(uds, "method")
+  if (is.null(method) || !method %in% c("akde", "kde")) method <- .detectUDMethod(ud_list)
   if (is.na(method)) stop("Could not determine the UD estimation method from 'kud'.", call. = FALSE)
 
   kde_idx <- c("BA", "UDOI", "HR", "PHR", "VI", "HD")
@@ -126,7 +126,7 @@ calculateUDOverlap <- function(ud,
   ## Compute overlap (per group), assemble tidy pairs ##########################
   ##############################################################################
 
-  groups <- .udGroups(uds, method)   # named list of per-group UD collections ("all" if ungrouped)
+  groups <- .udGroups(ud_list, method)   # named list of per-group UD collections ("all" if ungrouped)
   # HR and PHR are DIRECTIONAL (asymmetric) indices: kerneloverlaphr()[i, j] differs from [j, i], so
   # each ordered pair is reported on its own row. All other indices (BA/UDOI/VI/HD, and AKDE's BA) are
   # symmetric and reported once per unordered pair.

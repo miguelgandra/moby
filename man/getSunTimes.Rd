@@ -4,16 +4,10 @@
 \alias{getSunTimes}
 \title{Retrieve diel phase boundary times (hours)}
 \usage{
-getSunTimes(
-  sunriset.coords,
-  start.time,
-  end.time,
-  by = "\%m",
-  solar.depth = 18
-)
+getSunTimes(coords, start.time, end.time, by = "\%m", solar.depth = 18)
 }
 \arguments{
-\item{sunriset.coords}{A SpatialPoints, matrix or numeric object containing longitude and
+\item{coords}{A SpatialPoints, matrix or numeric object containing longitude and
 latitude coordinates (in that order) at which to estimate sunrise and sunset times.}
 
 \item{start.time}{A POSIXct object containing the earliest date of the monitoring period.}

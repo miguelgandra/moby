@@ -20,7 +20,7 @@ test_that("plotChronogram runs across styles, metrics and overlays", {
   pdf(tempfile(fileext = ".pdf"), width = 9, height = 6)
   on.exit(dev.off(), add = TRUE)
   cc <- function(...) plotChronogram(d, id.col = "ID", timebin.col = "timebin", station.col = "station",
-                                     sunriset.coords = coords, ...)
+                                     coords = coords, ...)
   expect_no_error(suppressWarnings(suppressMessages(cc())))
   expect_no_error(suppressWarnings(suppressMessages(cc(style = "raster"))))
   expect_no_error(suppressWarnings(suppressMessages(cc(color.by = "station", shade = "diel"))))
@@ -32,7 +32,7 @@ test_that("plotChronogram runs across styles, metrics and overlays", {
   expect_no_error(suppressWarnings(suppressMessages(cc(color.by = "station", legend = FALSE))))
 })
 
-test_that("plotChronogram does not require sunriset.coords when diel is off", {
+test_that("plotChronogram does not require coords when diel is off", {
   d <- chrono_dataset()
   pdf(tempfile(fileext = ".pdf"), width = 9, height = 6)
   on.exit(dev.off(), add = TRUE)
@@ -41,7 +41,7 @@ test_that("plotChronogram does not require sunriset.coords when diel is off", {
   # but it errors clearly when diel lines are requested without coords
   expect_error(
     plotChronogram(d, id.col = "ID", timebin.col = "timebin", station.col = "station", diel.lines = 4),
-    "sunriset.coords")
+    "coords")
 })
 
 test_that("plotChronogram validates inputs and returns invisibly", {

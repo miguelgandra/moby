@@ -38,7 +38,7 @@
 #' @param color.by For `style = "points"`, a column used to colour the points (factor or numeric).
 #' @param color.pal Colours (or a palette function) for the points/raster. If NULL, a colourblind-safe
 #' default is used (Okabe-Ito for categorical, viridis for continuous/raster).
-#' @param sunriset.coords Longitude/latitude (a length-2 numeric, matrix or `SpatialPoints`) at which
+#' @param coords Longitude/latitude (a length-2 numeric, matrix or `SpatialPoints`) at which
 #' to compute diel-phase times. Required only when `diel.lines > 0` or `shade = "diel"`.
 #' @param solar.depth Sun angle below the horizon (degrees) defining twilight. Defaults to 18.
 #' @param diel.lines Number of diel-boundary lines to draw: 0, 2 (sunrise/sunset) or 4 (dawn,
@@ -77,7 +77,7 @@
 #' @return Called for its side effect: it generates chronogram panel(s).
 #' @examples
 #' # chronogram of detections with the diel cycle overlaid
-#' plotChronogram(rays, sunriset.coords = c(-9, 38.4))
+#' plotChronogram(rays, coords = c(-9, 38.4))
 #'
 #' # without the diel overlay (no coordinates required)
 #' plotChronogram(rays, diel.lines = 0)
@@ -93,7 +93,7 @@ plotChronogram <- function(data,
                            style = "points",
                            color.by = NULL,
                            color.pal = NULL,
-                           sunriset.coords = NULL,
+                           coords = NULL,
                            solar.depth = 18,
                            diel.lines = 4,
                            shade = FALSE,
@@ -135,10 +135,10 @@ plotChronogram <- function(data,
   if(!isFALSE(shade) && !is.data.frame(shade) && !(is.character(shade) && length(shade)==1 && shade %in% c("diel", "season")))
     stop("'shade' must be \"diel\", \"season\", FALSE, or a data frame of periods (start/end, optional label/color).", call.=FALSE)
 
-  # diel-phase times (and 'sunriset.coords') are only needed when diel lines or diel shading are used
+  # diel-phase times (and 'coords') are only needed when diel lines or diel shading are used
   need_sun <- (is.numeric(diel.lines) && diel.lines > 0) || identical(shade, "diel")
-  if(need_sun && is.null(sunriset.coords))
-    stop("'sunriset.coords' is required when diel.lines > 0 or shade = 'diel'. Set diel.lines = 0 to omit.", call.=FALSE)
+  if(need_sun && is.null(coords))
+    stop("'coords' is required when diel.lines > 0 or shade = 'diel'. Set diel.lines = 0 to omit.", call.=FALSE)
 
   # per-element text sizes derive from the global 'cex'
   cex_axis   <- 1.0 * cex
@@ -348,7 +348,7 @@ plotChronogram <- function(data,
     # diel-phase boundary times (in bin-row units), only if needed
     daytimes <- NULL
     if(need_sun){
-      daytimes <- getSunTimes(sunriset.coords, min(days), max(days), by="%Y-%m-%d", solar.depth)
+      daytimes <- getSunTimes(coords, min(days), max(days), by="%Y-%m-%d", solar.depth)
       daytimes[,-1] <- daytimes[,-1] * (60/interval) + 1
     }
 

@@ -20,7 +20,7 @@
 #' @param mov.threshold Numeric (0-1). Proportion of movement perpendicular to
 #' shore required for inshore/offshore classification.
 #' @param dist.col Optional. Column name for step length (meters).
-#' @param raster.res Numeric. Resolution of the distance raster in meters.
+#' @param grid.resolution Numeric. Resolution of the distance raster in meters.
 #'
 #' @return A data frame with added spatial and movement columns.
 #'
@@ -45,7 +45,7 @@ calculateLandDists <- function(data,
                                lon.col = NULL,
                                lat.col = NULL,
                                dist.col = NULL,
-                               raster.res = 100) {
+                               grid.resolution = 100) {
 
   # --- 1. Initial Setup and Validation ---
   start.time <- Sys.time()
@@ -89,7 +89,7 @@ calculateLandDists <- function(data,
   
   # Create a template raster based on the coastline extent
   r_template <- terra::rast(terra::ext(coast_vect), 
-                            resolution = raster.res, 
+                            resolution = grid.resolution, 
                             crs = terra::crs(coast_vect))
   
   # Rasterize land: land = 1, water = NA

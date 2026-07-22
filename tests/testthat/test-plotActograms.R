@@ -21,7 +21,7 @@ test_that("plotActograms runs across colour, groups, diel and date modes", {
   pdf(tempfile(fileext = ".pdf"), width = 9, height = 7)
   on.exit(dev.off(), add = TRUE)
   pa <- function(...) plotActograms(d, id.col = "ID", datetime.col = "datetime",
-                                    tagging.dates = tags, sunriset.coords = coords, ...)
+                                    tagging.dates = tags, coords = coords, ...)
   expect_no_error(suppressWarnings(suppressMessages(pa())))                                  # defaults
   expect_no_error(suppressWarnings(suppressMessages(pa(color.by = "station"))))              # colour + legend
   expect_no_error(suppressWarnings(suppressMessages(pa(diel.lines = 4))))                    # 4 diel lines
@@ -40,7 +40,7 @@ test_that("plotActograms requires coords only when diel lines are on", {
     plotActograms(d, id.col = "ID", datetime.col = "datetime", tagging.dates = tags, diel.lines = 0))))
   expect_error(
     plotActograms(d, id.col = "ID", datetime.col = "datetime", tagging.dates = tags, diel.lines = 4),
-    "sunriset.coords")
+    "coords")
 })
 
 test_that("plotActograms validates inputs and returns invisibly", {

@@ -20,7 +20,8 @@
 #' @inheritParams as_moby
 #' @param data A data frame (or \code{\link{mobyData}}) of detections.
 #' @param spatial.col Name of the column defining the network nodes (e.g. receiver, station,
-#' habitat, region).
+#' habitat, region). If `NULL` (default), it is taken from the `mobyData` station column (or the
+#' canonical `"station"`); set it to build transitions between any other spatial unit.
 #' @param id.groups Optional named list of ID groups; when supplied, an independent network is
 #' built for each group (carried in the `group` column of the node/edge tables).
 #' @param max.gap Maximum tolerated gap between successive detections within a single visit (passed
@@ -52,7 +53,7 @@
 #' @export
 
 calculateTransitions <- function(data,
-                                 spatial.col,
+                                 spatial.col = NULL,
                                  id.col = NULL,
                                  datetime.col = NULL,
                                  id.groups = NULL,
@@ -65,6 +66,10 @@ calculateTransitions <- function(data,
 
   # capture mobyData metadata before the data is coerced to a plain data.frame
   meta <- attr(data, "moby")
+  # the node column defaults to the dataset's station column (from the mobyData metadata, else the
+  # canonical "station"); pass spatial.col explicitly to build transitions between any other unit
+  if (is.null(spatial.col))
+    spatial.col <- if (!is.null(meta) && !is.null(meta$station.col)) meta$station.col else "station"
 
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data

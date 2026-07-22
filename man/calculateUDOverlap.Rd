@@ -5,7 +5,7 @@
 \title{Pairwise overlap between utilization distributions}
 \usage{
 calculateUDOverlap(
-  ud,
+  uds,
   index = "BA",
   contour = 95,
   conf.level = 0.95,
@@ -14,7 +14,7 @@ calculateUDOverlap(
 )
 }
 \arguments{
-\item{ud}{The output of \code{\link{calculateUDs}} (a list with a \verb{$ud} element). The estimation
+\item{uds}{The output of \code{\link{calculateUDs}} (a list with a \verb{$ud} element). The estimation
 method (AKDE vs KDE) is detected automatically.}
 
 \item{index}{Overlap index to compute (case-insensitive). One of \code{"BA"} (default), and for
@@ -38,7 +38,7 @@ pairs for symmetric indices, ordered pairs for the directional indices \code{HR}
 \item{\if{html}{\out{<index>}}}{the overlap value (column named after \code{index}, e.g. \code{BA} or \code{UDOI}). For \code{HR}/\code{PHR}
 this is the directional value for \verb{(id1, id2)}.}
 \item{\if{html}{\out{<index>}}_lower, \if{html}{\out{<index>}}_upper}{(AKDE only) the confidence-interval bounds.}
-\item{group1, group2, pair_type}{(when \code{id.groups} is supplied or \code{ud} was grouped) the group
+\item{group1, group2, pair_type}{(when \code{id.groups} is supplied or \code{uds} was grouped) the group
 membership of each animal and whether the pair is within or between groups.}
 When a single unit produces pairs, the estimator's own overlap matrix is attached as attribute
 \code{"matrix"} (symmetric except for the directional \code{HR}/\code{PHR} indices, which stay asymmetric);
@@ -71,7 +71,7 @@ finding animal j in animal i's range), \code{"VI"} (volume of intersection) or \
 \code{"BA"} is the default because it is the one index available under \emph{both} methods, so the
 default works whether the UDs are AKDE or KDE. All indices are bounded in \code{[0, 1]} except
 \code{UDOI}, which can exceed 1 when two ranges overlap and are both non-uniform. Overlap is
-computed within each unit (e.g. species / \code{id.groups} block) that \code{ud} was estimated over,
+computed within each unit (e.g. species / \code{id.groups} block) that \code{uds} was estimated over,
 never across units (whose UDs live on separate grids); pairs are formed among individuals of the
 same unit only.
 
@@ -89,8 +89,8 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
   data(rays)
   # estimate UDs for a few animals (kde keeps the example fast), then measure pairwise overlap
   sub <- rays[rays$ID \%in\% head(levels(factor(rays$ID)), 3), ]
-  ud  <- calculateUDs(sub, method = "kde", bandwidth = 500, verbose = FALSE)
-  calculateUDOverlap(ud, index = "UDOI")
+  uds <- calculateUDs(sub, method = "kde", bandwidth = 500, verbose = FALSE)
+  calculateUDOverlap(uds, index = "UDOI")
 }
 }
 }

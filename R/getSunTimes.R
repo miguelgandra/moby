@@ -7,7 +7,7 @@
 #' @description Returns a table containing average sunrise, sunset and twilight times
 #' for a given period (study duration).
 #' '
-#' @param sunriset.coords A SpatialPoints, matrix or numeric object containing longitude and
+#' @param coords A SpatialPoints, matrix or numeric object containing longitude and
 #' latitude coordinates (in that order) at which to estimate sunrise and sunset times.
 #' @param start.time A POSIXct object containing the earliest date of the monitoring period.
 #' @param end.time A POSIXct object containing the latest date of the monitoring period.
@@ -25,17 +25,17 @@
 #' @export
 
 
-getSunTimes <- function(sunriset.coords, start.time, end.time, by="%m", solar.depth=18) {
+getSunTimes <- function(coords, start.time, end.time, by="%m", solar.depth=18) {
 
-  if(is.numeric(sunriset.coords) && length(sunriset.coords)==2){
-    sunriset.coords <- matrix(sunriset.coords, ncol=2)
-  } else if(is.data.frame(sunriset.coords) && ncol(sunriset.coords)==2){
+  if(is.numeric(coords) && length(coords)==2){
+    coords <- matrix(coords, ncol=2)
+  } else if(is.data.frame(coords) && ncol(coords)==2){
     # accept a 2-column data.frame (longitude, latitude), consistent with getDielPhase()
-    sunriset.coords <- as.matrix(sunriset.coords)
+    coords <- as.matrix(coords)
   }
 
-  if(!inherits(sunriset.coords, c("matrix", "SpatialPoints"))){
-    .mobyAbort("'sunriset.coords' must be a SpatialPoints, matrix, numeric, or 2-column data.frame.")
+  if(!inherits(coords, c("matrix", "SpatialPoints"))){
+    .mobyAbort("'coords' must be a SpatialPoints, matrix, numeric, or 2-column data.frame.")
   }
 
   # diel times are reported as decimal hours in the timezone of the supplied
@@ -44,10 +44,10 @@ getSunTimes <- function(sunriset.coords, start.time, end.time, by="%m", solar.de
   tz <- .dataTZ(start.time)
 
   timebins <- seq.POSIXt(from=start.time, to=end.time, by=60*60*24)
-  sunrises <- suntools::sunriset(sunriset.coords, timebins, POSIXct.out=TRUE, direction="sunrise")$time
-  sunsets <- suntools::sunriset(sunriset.coords, timebins, POSIXct.out=TRUE, direction="sunset")$time
-  dusks <- suntools::crepuscule(sunriset.coords, timebins, POSIXct.out=TRUE, solarDep=solar.depth, direction="dusk")$time
-  dawns <- suntools::crepuscule(sunriset.coords, timebins, POSIXct.out=TRUE, solarDep=solar.depth, direction="dawn")$time
+  sunrises <- suntools::sunriset(coords, timebins, POSIXct.out=TRUE, direction="sunrise")$time
+  sunsets <- suntools::sunriset(coords, timebins, POSIXct.out=TRUE, direction="sunset")$time
+  dusks <- suntools::crepuscule(coords, timebins, POSIXct.out=TRUE, solarDep=solar.depth, direction="dusk")$time
+  dawns <- suntools::crepuscule(coords, timebins, POSIXct.out=TRUE, solarDep=solar.depth, direction="dawn")$time
 
   intervals <- strftime(timebins, by, tz=tz)
   sunrises <- as.POSIXlt(sunrises, tz=tz)

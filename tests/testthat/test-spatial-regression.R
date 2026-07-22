@@ -15,7 +15,7 @@
 TOL_STEP_ABS  <- 100    # one grid cell (grid.resolution = 100 m): least-cost path discretisation
 TOL_STEP_REL  <- 0.05   # 5%: geoCorrection / router differences on longer detours
 TOL_COORD_M   <- 150    # relocation target may shift ~1-2 raster cells between backends
-TOL_LAND_ABS  <- 100    # one raster cell (raster.res = 100 m)
+TOL_LAND_ABS  <- 100    # one raster cell (grid.resolution = 100 m)
 TOL_LAND_REL  <- 0.05
 
 fx     <- readRDS(test_path("_spatial", "fixtures.rds"))

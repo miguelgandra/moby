@@ -28,7 +28,8 @@
 #' @inheritParams as_moby
 #' @param data A data frame (or \code{\link{mobyData}}) of detections.
 #' @param spatial.col Name of the column defining the locations visited (e.g. receiver, station,
-#' habitat, region).
+#' habitat, region). If `NULL` (default), it is taken from the `mobyData` station column (or the
+#' canonical `"station"`); set it to track visits to any other spatial unit.
 #' @param id.groups Optional named list of ID groups; when supplied, visits are computed within each
 #' group and the group is carried in the `group` column.
 #' @param max.gap Maximum tolerated gap between successive detections within a single visit. Absences
@@ -64,7 +65,7 @@
 #' @export
 
 calculateVisits <- function(data,
-                            spatial.col,
+                            spatial.col = NULL,
                             id.col = NULL,
                             datetime.col = NULL,
                             id.groups = NULL,
@@ -74,6 +75,12 @@ calculateVisits <- function(data,
   ##############################################################################
   ## Validate ##################################################################
   ##############################################################################
+
+  # the location column defaults to the dataset's station column (from the mobyData metadata, else
+  # the canonical "station"); pass spatial.col explicitly to track visits to any other unit
+  meta <- attr(data, "moby")
+  if (is.null(spatial.col))
+    spatial.col <- if (!is.null(meta) && !is.null(meta$station.col)) meta$station.col else "station"
 
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data

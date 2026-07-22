@@ -51,7 +51,7 @@
 #' @param diel.lines Number of diel-boundary lines to draw: 0, 2 (sunrise/sunset) or 4 (dawn, sunrise,
 #' sunset, dusk). Defaults to 4.
 #' @param diel.lines.color Colour of the diel lines. Defaults to "black".
-#' @param sunriset.coords Longitude/latitude (length-2 numeric, matrix or `SpatialPoints`) for the
+#' @param coords Longitude/latitude (length-2 numeric, matrix or `SpatialPoints`) for the
 #' diel-phase times. Required only when `diel.lines > 0`.
 #' @param solar.depth Sun angle below the horizon (degrees) defining twilight. Defaults to 18.
 #' @param zlim Optional length-2 numeric setting the range of the colour scale (e.g. \code{c(-10, 10)}
@@ -91,7 +91,7 @@
 #' # contour plot of a continuous variable (here latitude) over hour-of-day and date,
 #' # with the diel cycle overlaid
 #' plotContours(rays, variables = "lat", var.titles = "Latitude",
-#'              sunriset.coords = c(-9, 38.4))
+#'              coords = c(-9, 38.4))
 #' @export
 
 
@@ -111,7 +111,7 @@ plotContours <- function(data,
                          annual.cycle = FALSE,
                          diel.lines = 4,
                          diel.lines.color = "black",
-                         sunriset.coords = NULL,
+                         coords = NULL,
                          solar.depth = 18,
                          zlim = NULL,
                          zlab = NULL,
@@ -145,7 +145,7 @@ plotContours <- function(data,
 
   errors <- c()
   if(!is.null(var.titles) && length(variables) != length(var.titles)) errors <- c(errors, "Number of 'variables' and 'var.titles' do not match.")
-  if(diel.lines > 0 && is.null(sunriset.coords)) errors <- c(errors, "'sunriset.coords' must be provided when diel.lines > 0.")
+  if(diel.lines > 0 && is.null(coords)) errors <- c(errors, "'coords' must be provided when diel.lines > 0.")
   valid_period <- function(s) tryCatch({ lubridate::as.period(lubridate::period(s)); TRUE }, error=function(e) FALSE)
   if(!valid_period(time.interval)) errors <- c(errors, "'time.interval' must be a valid lubridate period string (e.g. '30 mins', '1 hour').")
   if(!valid_period(date.interval)) errors <- c(errors, "'date.interval' must be a valid lubridate period string (e.g. '1 day', '1 week', '1 month').")
@@ -264,7 +264,7 @@ plotContours <- function(data,
   daytimes <- NULL
   if(diel.lines > 0){
     day_seq <- seq(min(date_break_times), max(date_break_times), by="1 day")
-    st <- getSunTimes(sunriset.coords, min(day_seq), max(day_seq), by="%Y-%m-%d", solar.depth=solar.depth)
+    st <- getSunTimes(coords, min(day_seq), max(day_seq), by="%Y-%m-%d", solar.depth=solar.depth)
     st_date <- as.POSIXct(st$interval, format="%Y-%m-%d", tz=tz)
     st$bin <- match(bin_key(lubridate::floor_date(st_date, date.interval)), date_breaks)
     st <- st[!is.na(st$bin), ]

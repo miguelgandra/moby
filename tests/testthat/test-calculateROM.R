@@ -77,7 +77,7 @@ test_that("movementTable ROM values match calculateROM (single source of truth)"
   attr(kud_mock, "bandwidth") <- 1
 
   mt <- suppressWarnings(suppressMessages(
-    movementTable(d, ud.results = kud_mock, id.col = "ID", timebin.col = "timebin",
+    movementTable(d, uds = kud_mock, id.col = "ID", timebin.col = "timebin",
                   lon.col = "lon", lat.col = "lat", dist.col = "dist_m")))
 
   rom_col <- grep("^ROM", colnames(mt), value = TRUE)

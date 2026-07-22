@@ -36,7 +36,7 @@
 #' @param color.pal Colours used to plot detections, one per `color.by` level. May be a plain vector
 #' (matched to the levels by position) or a named vector (matched by name). If NULL, a colourblind-
 #' safe palette is used (Okabe-Ito for up to 8 levels, HCL "Dark 3" beyond).
-#' @param sunriset.coords Longitude/latitude (length-2 numeric, matrix or `SpatialPoints`) used for
+#' @param coords Longitude/latitude (length-2 numeric, matrix or `SpatialPoints`) used for
 #' the diel-phase times. Required only when `diel.lines > 0`.
 #' @param diel.lines Number of diel-boundary lines to overlay: 0 (none), 2 (sunrise/sunset) or 4
 #' (dawn, sunrise, sunset, dusk). Defaults to 2.
@@ -72,7 +72,7 @@
 #' @examples
 #' # per-individual actograms with the diel cycle overlaid
 #' # (coordinates are required to compute sunrise/sunset times)
-#' plotActograms(rays, sunriset.coords = c(-9, 38.4))
+#' plotActograms(rays, coords = c(-9, 38.4))
 #' @export
 
 
@@ -85,7 +85,7 @@ plotActograms <- function(data,
                           discard.missing = TRUE,
                           color.by = NULL,
                           color.pal = NULL,
-                          sunriset.coords = NULL,
+                          coords = NULL,
                           diel.lines = 2,
                           solar.depth = 18,
                           date.interval = "auto",
@@ -118,8 +118,8 @@ plotActograms <- function(data,
   tagging.dates <- reviewed_params$tagging.dates
   tag.durations <- reviewed_params$tag.durations
 
-  if(diel.lines > 0 && is.null(sunriset.coords))
-    stop("'sunriset.coords' must be provided when diel.lines > 0.", call.=FALSE)
+  if(diel.lines > 0 && is.null(coords))
+    stop("'coords' must be provided when diel.lines > 0.", call.=FALSE)
   if(!(identical(date.interval, "auto") || (is.numeric(date.interval) && length(date.interval)==1)))
     stop("'date.interval' must be either \"auto\" or a single numeric value.", call.=FALSE)
   if(!is.null(color.by) && !is.null(color.pal)){
@@ -207,7 +207,7 @@ plotActograms <- function(data,
   # diel-phase boundary times (per day), only when requested
   daytimes_table <- NULL
   if(diel.lines > 0){
-    daytimes_table <- getSunTimes(sunriset.coords, date_lim1, date_lim2, by="%Y-%m-%d", solar.depth=solar.depth)
+    daytimes_table <- getSunTimes(coords, date_lim1, date_lim2, by="%Y-%m-%d", solar.depth=solar.depth)
     daytimes_table$interval <- as.POSIXct(daytimes_table$interval, "%Y-%m-%d", tz=tz)
   }
 

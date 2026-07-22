@@ -14,7 +14,7 @@ plotChronogram(
   style = "points",
   color.by = NULL,
   color.pal = NULL,
-  sunriset.coords = NULL,
+  coords = NULL,
   solar.depth = 18,
   diel.lines = 4,
   shade = FALSE,
@@ -63,7 +63,7 @@ levels (e.g. species, life stage, habitat).}
 \item{color.pal}{Colours (or a palette function) for the points/raster. If NULL, a colourblind-safe
 default is used (Okabe-Ito for categorical, viridis for continuous/raster).}
 
-\item{sunriset.coords}{Longitude/latitude (a length-2 numeric, matrix or \code{SpatialPoints}) at which
+\item{coords}{Longitude/latitude (a length-2 numeric, matrix or \code{SpatialPoints}) at which
 to compute diel-phase times. Required only when \code{diel.lines > 0} or \code{shade = "diel"}.}
 
 \item{solar.depth}{Sun angle below the horizon (degrees) defining twilight. Defaults to 18.}
@@ -165,7 +165,7 @@ stays consistent across datasets and graphics devices.
 }
 \examples{
 # chronogram of detections with the diel cycle overlaid
-plotChronogram(rays, sunriset.coords = c(-9, 38.4))
+plotChronogram(rays, coords = c(-9, 38.4))
 
 # without the diel overlay (no coordinates required)
 plotChronogram(rays, diel.lines = 0)

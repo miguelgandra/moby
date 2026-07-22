@@ -31,3 +31,7 @@ Thumbs.db
 
 # --- local tooling ---------------------------------------------------------
 .claude/settings.local.json
+
+# stray test plot artifact
+Rplots.pdf
+**/Rplots.pdf

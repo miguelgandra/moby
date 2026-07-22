@@ -90,3 +90,12 @@ test_that("plot.mobyNetwork draws a movement network", {
   tmp <- tempfile(fileext = ".pdf"); grDevices::pdf(tmp); on.exit({ grDevices::dev.off(); unlink(tmp) })
   expect_no_error(plot(net))
 })
+
+test_that("spatial.col defaults to the mobyData station column when omitted", {
+  # a mobyData whose station column is 'station' -> calculateTransitions(md) needs no spatial.col
+  data(rays)
+  net_default  <- calculateTransitions(rays)                       # resolved from metadata
+  net_explicit <- calculateTransitions(rays, spatial.col = mobyMeta(rays)$station.col)
+  expect_true(is_mobyNetwork(net_default))
+  expect_equal(networkNodes(net_default), networkNodes(net_explicit))
+})

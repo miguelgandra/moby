@@ -19,7 +19,7 @@
 #' @param color.by How to colour the nodes: "group" (default) assigns a colour per ID group, or
 #' "single" uses a single colour for all nodes.
 #' @param scale.nodes.by Numeric vector to scale the nodes. Length should match the number of IDs in overlaps.
-#' @param remove.missing Logical. If TRUE, excludes individuals without detections and null pairwise comparisons from the network.
+#' @param discard.missing Logical. If TRUE, excludes individuals without detections and null pairwise comparisons from the network.
 #' Defaults to FALSE.
 #' @param min.val Minimum value for overlap threshold. Can be a single value (used for all networks)
 #' or a vector with one value per network. Defaults to 0.
@@ -90,7 +90,7 @@ plotAssociations <- function(overlaps = NULL,
                         random.results = NULL,
                         color.by = c("group", "single"),
                         scale.nodes.by = NULL,
-                        remove.missing = FALSE,
+                        discard.missing = FALSE,
                         min.val = NULL,
                         cut.val = NULL,
                         group.order = NULL,
@@ -231,10 +231,10 @@ plotAssociations <- function(overlaps = NULL,
     names(scale.nodes.by) <- complete_ids
   }
 
-  # split overlaps by comparison type; drop any group left empty (e.g. by remove.missing) so the
+  # split overlaps by comparison type; drop any group left empty (e.g. by discard.missing) so the
   # per-group dcast cannot hit a zero-row / zero-level crash
   group_overlaps <- split(pairwise_overlaps, f=pairwise_overlaps$type, drop=TRUE)
-  if(remove.missing) group_overlaps <- lapply(group_overlaps, function(x) x[!is.na(x$association), , drop=FALSE])
+  if(discard.missing) group_overlaps <- lapply(group_overlaps, function(x) x[!is.na(x$association), , drop=FALSE])
   group_overlaps <- group_overlaps[vapply(group_overlaps, function(x) nrow(x) > 0, logical(1))]
   if(length(group_overlaps) == 0) stop("No pairwise overlaps left to plot.", call. = FALSE)
 

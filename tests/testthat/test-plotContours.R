@@ -22,7 +22,7 @@ test_that("plotContours runs across modes, intervals and overlays", {
   pdf(tempfile(fileext = ".pdf"), width = 9, height = 6)
   on.exit(dev.off(), add = TRUE)
   cc <- function(...) plotContours(d, variables = "depth", id.col = "ID", datetime.col = "datetime",
-                                   sunriset.coords = coords, ...)
+                                   coords = coords, ...)
   expect_no_error(suppressWarnings(suppressMessages(cc())))                              # true extent
   expect_no_error(suppressWarnings(suppressMessages(cc(annual.cycle = TRUE))))           # annual cycle
   expect_no_error(suppressWarnings(suppressMessages(cc(date.interval = "1 week"))))      # weekly bins
@@ -38,7 +38,7 @@ test_that("plotContours runs across modes, intervals and overlays", {
   expect_no_error(suppressWarnings(suppressMessages(cc(sample.size.color = "red"))))      # custom (n=) colour
   expect_no_error(suppressWarnings(suppressMessages(
     plotContours(d, variables = c("depth", "temperature"), var.titles = c("Depth (m)", "Temp"),
-                 id.col = "ID", datetime.col = "datetime", sunriset.coords = coords, ncol = 2))))
+                 id.col = "ID", datetime.col = "datetime", coords = coords, ncol = 2))))
 })
 
 test_that("plotContours errors clearly when the date.interval yields a single bin", {
@@ -58,7 +58,7 @@ test_that("plotContours does not require coords when diel lines are off", {
     plotContours(d, variables = "depth", id.col = "ID", datetime.col = "datetime", diel.lines = 0))))
   expect_error(
     plotContours(d, variables = "depth", id.col = "ID", datetime.col = "datetime", diel.lines = 4),
-    "sunriset.coords")
+    "coords")
 })
 
 test_that("plotContours validates inputs and returns invisibly", {

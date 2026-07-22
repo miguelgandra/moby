@@ -6,7 +6,7 @@
 \usage{
 calculateVisits(
   data,
-  spatial.col,
+  spatial.col = NULL,
   id.col = NULL,
   datetime.col = NULL,
   id.groups = NULL,
@@ -18,7 +18,8 @@ calculateVisits(
 \item{data}{A data frame (or \code{\link{mobyData}}) of detections.}
 
 \item{spatial.col}{Name of the column defining the locations visited (e.g. receiver, station,
-habitat, region).}
+habitat, region). If \code{NULL} (default), it is taken from the \code{mobyData} station column (or the
+canonical \code{"station"}); set it to track visits to any other spatial unit.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 

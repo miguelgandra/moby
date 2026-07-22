@@ -7,7 +7,7 @@
 plotStationStats(
   data,
   type = "detections",
-  scale = c("natural", "count", "proportion"),
+  value.scale = c("natural", "count", "proportion"),
   id.col = NULL,
   timebin.col = NULL,
   station.col = NULL,
@@ -36,7 +36,7 @@ plotStationStats(
 \item{type}{One or more statistics to plot (each drawn in its own panel row): \code{"detections"},
 \code{"average detections"}, \code{"individuals"}, \code{"co-occurrences"}. Defaults to \code{"detections"}.}
 
-\item{scale}{What the bar height encodes: \code{"natural"} (default; counts for count-based statistics,
+\item{value.scale}{What the bar height encodes: \code{"natural"} (default; counts for count-based statistics,
 a proportion for \code{"average detections"}), \code{"count"}, or \code{"proportion"}.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
@@ -110,7 +110,7 @@ quantities with different denominators are never conflated on a shared scale. Wh
 supplied, each group (and, for co-occurrences, each between-group pair when \code{group.comparisons} is
 \code{"between"}/\code{"all"}) becomes a column, sharing the per-type y-scale so groups are directly
 comparable. Bar height encodes counts for count-based statistics and a proportion for
-\code{"average detections"} by default (\code{scale} overrides this); the complementary quantity is shown as
+\code{"average detections"} by default (\code{value.scale} overrides this); the complementary quantity is shown as
 a bar annotation.
 
 The computed statistics are returned invisibly as a tidy data frame, so the plotted numbers are

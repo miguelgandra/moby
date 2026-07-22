@@ -6,7 +6,7 @@
 \usage{
 movementTable(
   data,
-  ud.results,
+  uds,
   land.shape = NULL,
   epsg.code = NULL,
   id.groups = NULL,
@@ -23,7 +23,7 @@ movementTable(
 \item{data}{A data frame containing binned animal detections and distances traveled,
 as returned by \code{\link{calculateStepDistances}}.}
 
-\item{ud.results}{Output of \code{\link{calculateUDs}}.}
+\item{uds}{Output of \code{\link{calculateUDs}}.}
 
 \item{land.shape}{Optional. A projected shape file containing coastlines, used (when supplied) to
 compute net displacements along the shortest in-water path for the linearity index.}
@@ -76,7 +76,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
                        spatial.grid = grid)
 
   # publication-ready movement metrics table (one row per animal + mean +/- SE)
-  movementTable(tracks, ud.results = kud)
+  movementTable(tracks, uds = kud)
 }
 }
 }

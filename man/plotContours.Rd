@@ -21,7 +21,7 @@ plotContours(
   annual.cycle = FALSE,
   diel.lines = 4,
   diel.lines.color = "black",
-  sunriset.coords = NULL,
+  coords = NULL,
   solar.depth = 18,
   zlim = NULL,
   zlab = NULL,
@@ -87,7 +87,7 @@ sunset, dusk). Defaults to 4.}
 
 \item{diel.lines.color}{Colour of the diel lines. Defaults to "black".}
 
-\item{sunriset.coords}{Longitude/latitude (length-2 numeric, matrix or \code{SpatialPoints}) for the
+\item{coords}{Longitude/latitude (length-2 numeric, matrix or \code{SpatialPoints}) for the
 diel-phase times. Required only when \code{diel.lines > 0}.}
 
 \item{solar.depth}{Sun angle below the horizon (degrees) defining twilight. Defaults to 18.}
@@ -184,5 +184,5 @@ consistent across datasets and graphics devices.
 # contour plot of a continuous variable (here latitude) over hour-of-day and date,
 # with the diel cycle overlaid
 plotContours(rays, variables = "lat", var.titles = "Latitude",
-             sunriset.coords = c(-9, 38.4))
+             coords = c(-9, 38.4))
 }

@@ -9,7 +9,7 @@ plotAssociations(
   random.results = NULL,
   color.by = c("group", "single"),
   scale.nodes.by = NULL,
-  remove.missing = FALSE,
+  discard.missing = FALSE,
   min.val = NULL,
   cut.val = NULL,
   group.order = NULL,
@@ -53,7 +53,7 @@ plotAssociations(
 
 \item{scale.nodes.by}{Numeric vector to scale the nodes. Length should match the number of IDs in overlaps.}
 
-\item{remove.missing}{Logical. If TRUE, excludes individuals without detections and null pairwise comparisons from the network.
+\item{discard.missing}{Logical. If TRUE, excludes individuals without detections and null pairwise comparisons from the network.
 Defaults to FALSE.}
 
 \item{min.val}{Minimum value for overlap threshold. Can be a single value (used for all networks)

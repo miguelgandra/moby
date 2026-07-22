@@ -13,7 +13,7 @@ calculateLandDists(
   lon.col = NULL,
   lat.col = NULL,
   dist.col = NULL,
-  raster.res = 100
+  grid.resolution = 100
 )
 }
 \arguments{
@@ -36,7 +36,7 @@ shore required for inshore/offshore classification.}
 
 \item{dist.col}{Optional. Column name for step length (meters).}
 
-\item{raster.res}{Numeric. Resolution of the distance raster in meters.}
+\item{grid.resolution}{Numeric. Resolution of the distance raster in meters.}
 }
 \value{
 A data frame with added spatial and movement columns.

@@ -14,7 +14,7 @@ plotActograms(
   discard.missing = TRUE,
   color.by = NULL,
   color.pal = NULL,
-  sunriset.coords = NULL,
+  coords = NULL,
   diel.lines = 2,
   solar.depth = 18,
   date.interval = "auto",
@@ -66,7 +66,7 @@ NULL, all detections are drawn in a single colour and no colour legend is shown.
 (matched to the levels by position) or a named vector (matched by name). If NULL, a colourblind-
 safe palette is used (Okabe-Ito for up to 8 levels, HCL "Dark 3" beyond).}
 
-\item{sunriset.coords}{Longitude/latitude (length-2 numeric, matrix or \code{SpatialPoints}) used for
+\item{coords}{Longitude/latitude (length-2 numeric, matrix or \code{SpatialPoints}) used for
 the diel-phase times. Required only when \code{diel.lines > 0}.}
 
 \item{diel.lines}{Number of diel-boundary lines to overlay: 0 (none), 2 (sunrise/sunset) or 4
@@ -155,5 +155,5 @@ switches to manual mode, where every n-th formatted date (per \code{date.format}
 \examples{
 # per-individual actograms with the diel cycle overlaid
 # (coordinates are required to compute sunrise/sunset times)
-plotActograms(rays, sunriset.coords = c(-9, 38.4))
+plotActograms(rays, coords = c(-9, 38.4))
 }

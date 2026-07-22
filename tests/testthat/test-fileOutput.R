@@ -21,11 +21,11 @@ fo_calls <- function(d) list(
   abacus       = function(f) plotAbacus(d, id.col = "ID", datetime.col = "datetime",
                                         tagging.dates = rep(min(d$datetime), 3), file = f),
   actograms    = function(f) plotActograms(d, id.col = "ID", datetime.col = "datetime",
-                                           tagging.dates = rep(min(d$datetime), 3), sunriset.coords = fo_coords, file = f),
+                                           tagging.dates = rep(min(d$datetime), 3), coords = fo_coords, file = f),
   chronogram   = function(f) plotChronogram(d, id.col = "ID", timebin.col = "timebin", station.col = "station",
-                                            sunriset.coords = fo_coords, file = f),
+                                            coords = fo_coords, file = f),
   contours     = function(f) plotContours(d, variables = "depth", id.col = "ID", datetime.col = "datetime",
-                                          sunriset.coords = fo_coords, file = f),
+                                          coords = fo_coords, file = f),
   stationStats = function(f) plotStationStats(d, id.col = "ID", timebin.col = "timebin", station.col = "station",
                                               type = c("detections", "individuals"), file = f)
 )

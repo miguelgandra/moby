@@ -15,7 +15,7 @@
 #' supplied, each group (and, for co-occurrences, each between-group pair when `group.comparisons` is
 #' `"between"`/`"all"`) becomes a column, sharing the per-type y-scale so groups are directly
 #' comparable. Bar height encodes counts for count-based statistics and a proportion for
-#' `"average detections"` by default (`scale` overrides this); the complementary quantity is shown as
+#' `"average detections"` by default (`value.scale` overrides this); the complementary quantity is shown as
 #' a bar annotation.
 #'
 #' The computed statistics are returned invisibly as a tidy data frame, so the plotted numbers are
@@ -28,7 +28,7 @@
 #' @param data A data frame containing animal detections with corresponding time-bins.
 #' @param type One or more statistics to plot (each drawn in its own panel row): `"detections"`,
 #' `"average detections"`, `"individuals"`, `"co-occurrences"`. Defaults to `"detections"`.
-#' @param scale What the bar height encodes: `"natural"` (default; counts for count-based statistics,
+#' @param value.scale What the bar height encodes: `"natural"` (default; counts for count-based statistics,
 #' a proportion for `"average detections"`), `"count"`, or `"proportion"`.
 #' @param aggregate.by Optional column name to summarise by (e.g. habitat or region); defaults to
 #' `station.col`. Each station must map to a single `aggregate.by` value.
@@ -61,7 +61,7 @@
 
 plotStationStats <- function(data,
                              type = "detections",
-                             scale = c("natural", "count", "proportion"),
+                             value.scale = c("natural", "count", "proportion"),
                              id.col = NULL,
                              timebin.col = NULL,
                              station.col = NULL,
@@ -90,7 +90,7 @@ plotStationStats <- function(data,
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-  scale          <- match.arg(scale)
+  value.scale    <- match.arg(value.scale)
   station.labels <- match.arg(station.labels)
   annotate       <- match.arg(annotate)
 
@@ -161,7 +161,7 @@ plotStationStats <- function(data,
                   "individuals"="Individuals", "co-occurrences"="Co-occurrences")
 
   # per-type scale ("average detections" is intrinsically a proportion)
-  type_scale <- function(tp) if(tp == "average detections") "proportion" else if(scale == "natural") "count" else scale
+  type_scale <- function(tp) if(tp == "average detections") "proportion" else if(value.scale == "natural") "count" else value.scale
   # per-type y-max (shared across the row's series), with headroom for annotations
   ymax_by_type <- vapply(type, function(tp){
     col <- if(type_scale(tp) == "count") "count" else "proportion"
@@ -195,7 +195,7 @@ plotStationStats <- function(data,
 
   .printStationStatsSummary(type=type, aggregate.by=aggregate.by, n_loc=length(loc_levels),
                             n_ids=nlevels(data[, id.col]), id.groups=id.groups, n_series=n_series,
-                            group.comparisons=group.comparisons, scale=scale)
+                            group.comparisons=group.comparisons, scale=value.scale)
 
 
   ######################################################################################

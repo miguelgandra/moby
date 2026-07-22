@@ -14,7 +14,7 @@
 #' @inheritParams as_moby
 #' @param data A data frame containing binned animal detections and distances traveled,
 #' as returned by \code{\link{calculateStepDistances}}.
-#' @param ud.results Output of \code{\link{calculateUDs}}.
+#' @param uds Output of \code{\link{calculateUDs}}.
 #' @param land.shape Optional. A projected shape file containing coastlines, used (when supplied) to
 #' compute net displacements along the shortest in-water path for the linearity index.
 #' @param epsg.code Coordinate reference system used to project positions (class 'CRS').
@@ -45,14 +45,14 @@
 #'                        spatial.grid = grid)
 #'
 #'   # publication-ready movement metrics table (one row per animal + mean +/- SE)
-#'   movementTable(tracks, ud.results = kud)
+#'   movementTable(tracks, uds = kud)
 #' }
 #' }
 #' @export
 
 
 movementTable <- function(data,
-                          ud.results,
+                          uds,
                           land.shape = NULL,
                           epsg.code = NULL,
                           id.groups = NULL,
@@ -73,8 +73,8 @@ movementTable <- function(data,
   data <- reviewed_params$data
   land.shape <- reviewed_params$land.shape
 
-  # validate ud.results
-  if(!c("bandwidth") %in% names(attributes(ud.results))) stop("The supplied ud.results do not seem to be in the right format. Please use the output of the 'calculateUDs' function.", call. = FALSE)
+  # validate uds
+  if(!c("bandwidth") %in% names(attributes(uds))) stop("The supplied uds do not seem to be in the right format. Please use the output of the 'calculateUDs' function.", call. = FALSE)
 
 
   ##############################################################################
@@ -105,8 +105,8 @@ movementTable <- function(data,
   }
 
   # subset UD results per group
-  summary_table <- ud.results$summary_table
-  ud.results <- lapply(id.groups, function(x) summary_table[summary_table[[id.col]] %in% x, ])
+  summary_table <- uds$summary_table
+  uds <- lapply(id.groups, function(x) summary_table[summary_table[[id.col]] %in% x, ])
 
 
 
@@ -155,7 +155,7 @@ movementTable <- function(data,
     colnames(movement_stats)[1] <- id.col
     colnames(movement_stats)[3] <- paste0(colnames(movement_stats)[3], " (", rom_units,")")
     colnames(movement_stats)[4] <- paste0(colnames(movement_stats)[4], " (", rom_units,")")
-    movement_stats <- .joinKeep(movement_stats, ud.results[[i]], by=id.col, type="left")
+    movement_stats <- .joinKeep(movement_stats, uds[[i]], by=id.col, type="left")
     if("group" %in% colnames(movement_stats)) movement_stats <- .dropCols(movement_stats, "group")
 
     # calculate means ± se and format missing values
