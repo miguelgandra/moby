@@ -51,24 +51,22 @@
 
 #' Check receiver deployment metadata (quality control)
 #'
-#' @description Quality-controls a receiver-deployment / station log and (optionally) cross-checks it
-#' against a detection dataset, flagging the kinds of issues that commonly corrupt acoustic
-#' telemetry analyses. This complements \code{\link{filterDetections}} (which cleans the
-#' detections themselves) by auditing the *metadata*. It generalises the receiver-log curation
-#' step that is otherwise done by hand. The function only *reports* problems (it never
-#' edits data or aborts on data issues), so it is a safe, explicit preprocessing step; the companion
-#' \code{\link{matchDeployments}} applies the corrections.
+#' @description Performs quality control on receiver deployment metadata by identifying
+#' inconsistencies that can compromise acoustic telemetry analyses. The function checks the internal
+#' consistency of deployment records and, optionally, cross-validates deployment metadata against a
+#' detection dataset.
 #'
-#' Metadata-internal checks: missing deploy/recover dates; invalid date ranges
-#' (recover before deploy); overlapping deployments on the same receiver; duplicate
-#' deployment records; missing/implausible coordinates; inconsistent station naming
-#' (one station name with divergent coordinates, or near-identical coordinates under
-#' different names); and gaps in a receiver's temporal coverage.
+#' The function is intentionally non-destructive: it only reports potential issues and never modifies
+#' input data. Reported issues can then be reviewed and, where appropriate, resolved using
+#' [matchDeployments()].
 #'
-#' Detection-vs-metadata checks (when `detections` is supplied): receivers present in the
-#' detections but absent from the metadata; detections occurring before a receiver's first
-#' deployment, after its last recovery, or within a gap between deployments; and station-name
-#' mismatches (a known receiver associated with a station it was never deployed at).
+#' @details Internal metadata checks include missing or invalid deployment dates, overlapping
+#' deployments, duplicate records, coordinate inconsistencies, station naming issues, and gaps in
+#' receiver coverage.
+#'
+#' When detections are provided, the function additionally checks whether detections are consistent
+#' with the deployment history, including unknown receivers, detections outside deployment periods,
+#' and station mismatches.
 #'
 #' @param deployments A receiver-deployment data frame, e.g. from \code{\link{importDeployments}},
 #' with a `receiver` column plus station, deployment / recovery date-times and (optionally)
