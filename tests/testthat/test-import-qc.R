@@ -101,6 +101,71 @@ test_that("checkDeployments 'checks' selector runs only the requested groups", {
   expect_true(all(c("Invalid date range", "Implausible coordinates") %in% types()))
 })
 
+# a big land square (~55 km across) in WGS84, for the on-land coordinate check
+qc_land_square <- function()
+  sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(-9.0, 38.0), c(-8.5, 38.0), c(-8.5, 38.5), c(-9.0, 38.5), c(-9.0, 38.0)))), crs = 4326))
+
+test_that("on-land check flags receivers on land, spares near-shore, and is opt-in", {
+  skip_if_not_installed("sf")
+  sq <- qc_land_square()
+  dep <- data.frame(receiver = c("R1", "R2", "R3"),
+                    station = c("deep_inland", "at_sea", "near_edge"),
+                    lon = c(-8.75, -9.30, -8.503), lat = c(38.25, 38.25, 38.25),
+                    deploy = as.POSIXct("2023-01-01", tz = "UTC"),
+                    recover = as.POSIXct("2023-06-01", tz = "UTC"))
+
+  # no land.shape -> the check simply does not run
+  expect_false("Coordinates on land" %in% checkDeployments(dep, verbose = FALSE)$report$type)
+
+  onland <- function(tol) {
+    r <- checkDeployments(dep, land.shape = sq, land.tolerance = tol, verbose = FALSE)$report
+    r$station[r$type == "Coordinates on land"]
+  }
+  expect_setequal(onland(500), "deep_inland")               # near_edge (262 m in) is spared at 500 m
+  expect_setequal(onland(0), c("deep_inland", "near_edge")) # a bare intersect catches both
+  expect_false("at_sea" %in% onland(0))                     # a point in water is never flagged
+
+  # a deep-inland error is labelled as a likely metadata error; details name the deployment records
+  det <- checkDeployments(dep, land.shape = sq, verbose = FALSE)$report
+  msg <- det$details[det$type == "Coordinates on land"]
+  expect_match(msg, "likely a metadata error")
+  expect_match(msg, "deployment records")
+})
+
+test_that("on-land check dedups by (station, position) so a moved receiver is still caught", {
+  skip_if_not_installed("sf")
+  sq <- qc_land_square()
+  # one station name, two deployments: first at sea, later moved onto land
+  dep <- data.frame(receiver = "R1", station = c("S", "S"),
+                    lon = c(-9.30, -8.75), lat = c(38.25, 38.25),
+                    deploy = as.POSIXct(c("2023-01-01", "2023-04-01"), tz = "UTC"),
+                    recover = as.POSIXct(c("2023-03-01", "2023-06-01"), tz = "UTC"))
+  r <- checkDeployments(dep, land.shape = sq, verbose = FALSE)$report
+  expect_equal(sum(r$type == "Coordinates on land"), 1L)    # the on-land position, not masked by the at-sea one
+})
+
+test_that("on-land check auto-resolves land.shape from the detections mobyData, and fails soft without a CRS", {
+  skip_if_not_installed("sf")
+  sq <- qc_land_square()
+  dep <- data.frame(receiver = "R1", station = "deep_inland", lon = -8.75, lat = 38.25,
+                    deploy = as.POSIXct("2023-01-01", tz = "UTC"),
+                    recover = as.POSIXct("2023-06-01", tz = "UTC"))
+  det <- suppressWarnings(as_moby(
+    data.frame(receiver = "R1", ID = "f", datetime = as.POSIXct("2023-02-01", tz = "UTC"),
+               station = "deep_inland", lon = -8.75, lat = 38.25),
+    land.shape = sq, tagging.dates = as.POSIXct("2023-01-01", tz = "UTC")))
+  # land.shape not passed explicitly -> borrowed from the detections metadata
+  r <- checkDeployments(dep, detections = det, verbose = FALSE)$report
+  expect_true("Coordinates on land" %in% r$type)
+
+  # a land layer with no CRS -> skip with a message, never error, never a false row
+  no_crs <- sf::st_set_crs(sq, NA)
+  expect_message(checkDeployments(dep, land.shape = no_crs, verbose = FALSE), "could not run the on-land check")
+  r2 <- suppressMessages(checkDeployments(dep, land.shape = no_crs, verbose = FALSE))$report
+  expect_false("Coordinates on land" %in% r2$type)
+})
+
 test_that("deployment.lon.col/lat.col let a non-canonical deployment log be checked without renaming", {
   # same station, coordinates ~1.9 km apart, but columns named Longitude/Latitude/Deploy_Date
   raw <- data.frame(receiver = c("R1", "R2"), station = c("A", "A"),

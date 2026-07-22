@@ -22,6 +22,35 @@
   if (d >= 1000) sprintf("%.1f km", d / 1000) else sprintf("%.0f m", d)
 }
 
+# For each (lon, lat), the distance in metres it lies INSIDE a land polygon (0 in water). Uses a
+# binary point-in-polygon test, then measures each on-land point's distance to the nearest coastline
+# so the caller can apply a tolerance (a genuine near-shore receiver a coarse coastline overlaps sits
+# a few metres inside; a metadata error - swapped lon/lat, a sign flip - lands kilometres inside).
+# Returns NULL if the test cannot be run safely (no sf, or no usable CRS), so the audit can skip it
+# without aborting. st_distance returns metres for a geographic CRS (via s2) and map units for a
+# projected one, matching the metric convention used elsewhere in the package.
+.distanceIntoLand <- function(lon, lat, land.shape, epsg.code = NULL) {
+  if (!requireNamespace("sf", quietly = TRUE)) return(NULL)
+  land <- tryCatch(sf::st_as_sf(land.shape), error = function(e) NULL)
+  if (is.null(land)) return(NULL)
+  land_crs <- sf::st_crs(land)
+  if (is.na(land_crs)) return(NULL)                       # cannot measure metres without a land CRS
+  geographic <- all(abs(lon) <= 180, na.rm = TRUE) && all(abs(lat) <= 90, na.rm = TRUE)
+  pt_crs <- if (!is.null(epsg.code)) sf::st_crs(epsg.code) else if (geographic) sf::st_crs(4326) else land_crs
+  out <- tryCatch({
+    pts <- sf::st_as_sf(data.frame(lon = lon, lat = lat), coords = c("lon", "lat"), crs = pt_crs)
+    pts <- sf::st_transform(pts, land_crs)
+    on_land <- lengths(sf::st_intersects(pts, land)) > 0
+    d <- rep(0, length(lon))
+    if (any(on_land)) {
+      coast <- sf::st_union(sf::st_boundary(sf::st_geometry(land)))
+      d[on_land] <- as.numeric(suppressWarnings(sf::st_distance(pts[on_land, ], coast)))
+    }
+    d
+  }, error = function(e) NULL)
+  out
+}
+
 # fill a cleaned recover date: for a receiver's non-final deployments missing 'recover',
 # use the next deployment's start; for the final one, use the current time (still active)
 .cleanRecover <- function(dep) {
@@ -62,7 +91,9 @@
 #'
 #' @details Internal metadata checks include missing or invalid deployment dates, overlapping
 #' deployments, duplicate records, coordinate inconsistencies, station naming issues, and gaps in
-#' receiver coverage.
+#' receiver coverage. When a land layer is supplied (`land.shape`), the function additionally flags
+#' receiver positions that fall on land - a common consequence of a coordinate-entry error (swapped
+#' longitude/latitude, a wrong sign, a decimal typo).
 #'
 #' When detections are provided, the function additionally checks whether detections are consistent
 #' with the deployment history, including unknown receivers, detections outside deployment periods,
@@ -82,9 +113,10 @@
 #' @param checks Character vector selecting which check groups to run (any of, or `"all"`, the
 #' default): `"dates"` (deploy/recover date integrity), `"overlaps"` (duplicate and overlapping
 #' deployment records), `"gaps"` (coverage gaps between consecutive deployments - often benign
-#' servicing, so the easiest to drop), `"coordinates"` (implausible coordinates and
-#' station-vs-coordinate naming consistency; skipped if `lon`/`lat` are absent) and `"detections"`
-#' (cross-check detections against deployment windows; requires the `detections` argument).
+#' servicing, so the easiest to drop), `"coordinates"` (implausible coordinates,
+#' station-vs-coordinate naming consistency, and - when `land.shape` is supplied - receiver positions
+#' on land; skipped if `lon`/`lat` are absent) and `"detections"` (cross-check detections against
+#' deployment windows; requires the `detections` argument).
 #' @param scope Character; how much of the deployment log the *metadata-internal* checks cover.
 #' `"all"` (default) audits every receiver in `deployments`. `"detected"` restricts those checks to
 #' receivers that appear in `detections` (i.e. that recorded at least one detection), which removes
@@ -100,6 +132,19 @@
 #' Defaults to 500.
 #' @param gap.tolerance Numeric. Minimum gap (in days) between consecutive deployments of a
 #' receiver to report as a coverage gap. Defaults to 1.
+#' @param land.shape Optional `sf` (or `SpatialPolygons*`) polygon layer of landmasses. When
+#' supplied, the `"coordinates"` group additionally flags receiver positions that fall on land.
+#' Off by default; if `NULL`, it is taken from the `detections` `mobyData` metadata when present (i.e.
+#' from `as_moby(detections, land.shape = ...)`). The layer must carry a coordinate reference system;
+#' if it lacks one, or cannot be reconciled with the deployment coordinates, the on-land check is
+#' skipped with a message (the audit never aborts).
+#' @param epsg.code Optional EPSG code for the deployment coordinates, used only by the on-land check.
+#' Needed only when the coordinates are projected (not longitude/latitude); geographic coordinates are
+#' assumed to be WGS84.
+#' @param land.tolerance Numeric. How far inside the coastline (in metres) a receiver position must
+#' lie to be reported as on land. This spares genuine near-shore receivers that a coarse coastline
+#' overlaps by a small margin; gross coordinate-entry errors (swapped lon/lat, a sign flip) fall
+#' kilometres inland and are still flagged. Defaults to 500.
 #' @param verbose Logical; print a summary to the console. Defaults to TRUE.
 #'
 #' @return An object of class `mobyQC`: a list with
@@ -139,9 +184,15 @@ checkDeployments <- function(deployments,
                           scope = c("all", "detected"),
                           coord.tolerance = 500,
                           gap.tolerance = 1,
+                          land.shape = NULL,
+                          epsg.code = NULL,
+                          land.tolerance = 500,
                           verbose = TRUE) {
 
   scope <- match.arg(scope)
+  # the on-land check is opt-in: use an explicit land.shape, otherwise borrow one the user already
+  # declared on the detections mobyData (as_moby(det, land.shape = ...)). Never required.
+  if (is.null(land.shape) && !is.null(detections)) land.shape <- attr(detections, "moby")$land.shape
   dep <- as.data.frame(deployments)
   required <- c("receiver", deployment.station.col, deployment.deploy.col)
   miss <- setdiff(required, colnames(dep))
@@ -290,6 +341,32 @@ checkDeployments <- function(deployments,
                      paste(uniq$station[i], "/", uniq$station[j]),
                      details = sprintf("Different station names %s apart (< %s tolerance).",
                                        .formatDistance(dd), .formatDistance(coord.tolerance))))
+        }
+      }
+    }
+
+    # receiver positions that fall on land (opt-in: only when a land layer is available). Dedup by
+    # (station, coordinate) so a receiver moved between an on-land and an off-land position under one
+    # name is still caught. A distance-into-land tolerance spares genuine near-shore receivers.
+    if (!is.null(land.shape)) {
+      ok <- !is.na(lon) & !is.na(lat)
+      pos <- dep_scope[ok, c("receiver", "station"), drop = FALSE]
+      pos$lon <- lon[ok]; pos$lat <- lat[ok]
+      pos <- pos[!duplicated(pos[c("station", "lon", "lat")]), , drop = FALSE]
+      din <- if (nrow(pos) > 0) .distanceIntoLand(pos$lon, pos$lat, land.shape, epsg.code) else numeric(0)
+      if (is.null(din)) {
+        message("- could not run the on-land check: 'land.shape' lacks a usable CRS or is ",
+                "incompatible with the coordinates; skipping it.")
+      } else {
+        for (i in which(din > land.tolerance)) {
+          likely_error <- din[i] > 5000
+          add(.qcRow("Coordinates on land", pos$receiver[i], pos$station[i],
+                     details = paste0("Station coordinates fall ", .formatDistance(din[i]), " inside land",
+                       if (likely_error)
+                         "; likely a metadata error (e.g. swapped lon/lat or a sign error). Verify against the deployment records."
+                       else
+                         paste0(" (beyond the ", .formatDistance(land.tolerance),
+                                " tolerance). Verify against the deployment records, or use correctPositions() for a genuine near-shore point."))))
         }
       }
     }

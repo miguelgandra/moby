@@ -19,6 +19,9 @@ checkDeployments(
   scope = c("all", "detected"),
   coord.tolerance = 500,
   gap.tolerance = 1,
+  land.shape = NULL,
+  epsg.code = NULL,
+  land.tolerance = 500,
   verbose = TRUE
 )
 }
@@ -53,9 +56,10 @@ always refer to the detection dataset.}
 \item{checks}{Character vector selecting which check groups to run (any of, or \code{"all"}, the
 default): \code{"dates"} (deploy/recover date integrity), \code{"overlaps"} (duplicate and overlapping
 deployment records), \code{"gaps"} (coverage gaps between consecutive deployments - often benign
-servicing, so the easiest to drop), \code{"coordinates"} (implausible coordinates and
-station-vs-coordinate naming consistency; skipped if \code{lon}/\code{lat} are absent) and \code{"detections"}
-(cross-check detections against deployment windows; requires the \code{detections} argument).}
+servicing, so the easiest to drop), \code{"coordinates"} (implausible coordinates,
+station-vs-coordinate naming consistency, and - when \code{land.shape} is supplied - receiver positions
+on land; skipped if \code{lon}/\code{lat} are absent) and \code{"detections"} (cross-check detections against
+deployment windows; requires the \code{detections} argument).}
 
 \item{scope}{Character; how much of the deployment log the \emph{metadata-internal} checks cover.
 \code{"all"} (default) audits every receiver in \code{deployments}. \code{"detected"} restricts those checks to
@@ -74,6 +78,22 @@ Defaults to 500.}
 
 \item{gap.tolerance}{Numeric. Minimum gap (in days) between consecutive deployments of a
 receiver to report as a coverage gap. Defaults to 1.}
+
+\item{land.shape}{Optional \code{sf} (or \verb{SpatialPolygons*}) polygon layer of landmasses. When
+supplied, the \code{"coordinates"} group additionally flags receiver positions that fall on land.
+Off by default; if \code{NULL}, it is taken from the \code{detections} \code{mobyData} metadata when present (i.e.
+from \code{as_moby(detections, land.shape = ...)}). The layer must carry a coordinate reference system;
+if it lacks one, or cannot be reconciled with the deployment coordinates, the on-land check is
+skipped with a message (the audit never aborts).}
+
+\item{epsg.code}{Optional EPSG code for the deployment coordinates, used only by the on-land check.
+Needed only when the coordinates are projected (not longitude/latitude); geographic coordinates are
+assumed to be WGS84.}
+
+\item{land.tolerance}{Numeric. How far inside the coastline (in metres) a receiver position must
+lie to be reported as on land. This spares genuine near-shore receivers that a coarse coastline
+overlaps by a small margin; gross coordinate-entry errors (swapped lon/lat, a sign flip) fall
+kilometres inland and are still flagged. Defaults to 500.}
 
 \item{verbose}{Logical; print a summary to the console. Defaults to TRUE.}
 }
@@ -99,7 +119,9 @@ input data. Reported issues can then be reviewed and, where appropriate, resolve
 \details{
 Internal metadata checks include missing or invalid deployment dates, overlapping
 deployments, duplicate records, coordinate inconsistencies, station naming issues, and gaps in
-receiver coverage.
+receiver coverage. When a land layer is supplied (\code{land.shape}), the function additionally flags
+receiver positions that fall on land - a common consequence of a coordinate-entry error (swapped
+longitude/latitude, a wrong sign, a decimal typo).
 
 When detections are provided, the function additionally checks whether detections are consistent
 with the deployment history, including unknown receivers, detections outside deployment periods,
