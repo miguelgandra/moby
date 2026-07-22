@@ -6,8 +6,8 @@ moby functions read this metadata automatically, so column names, EPSG codes and
 tagging dates do not have to be re-specified on every call.
 Because a mobyData object is a data.frame, it can be used anywhere a data frame
 is expected (including with base subsetting, dplyr, etc.), and plain data frames remain
-fully supported by all moby functions. This replaces the former global
-setDefaults()/getDefaults() mechanism with reproducible, object-carried metadata.
+fully supported by all moby functions. Metadata travels with the object rather than
+living in global state, so analyses stay reproducible and self-describing.
 Calling as_moby() on an existing mobyData object updates only the supplied fields and
 inherits the rest, making it easy to add metadata (e.g. tagging.dates) after construction."><meta property="og:description" content="Wraps a detection data frame into a mobyData object: a lightweight data.frame
 subclass that carries dataset-level metadata (column mapping, coordinate reference
@@ -16,8 +16,8 @@ moby functions read this metadata automatically, so column names, EPSG codes and
 tagging dates do not have to be re-specified on every call.
 Because a mobyData object is a data.frame, it can be used anywhere a data frame
 is expected (including with base subsetting, dplyr, etc.), and plain data frames remain
-fully supported by all moby functions. This replaces the former global
-setDefaults()/getDefaults() mechanism with reproducible, object-carried metadata.
+fully supported by all moby functions. Metadata travels with the object rather than
+living in global state, so analyses stay reproducible and self-describing.
 Calling as_moby() on an existing mobyData object updates only the supplied fields and
 inherits the rest, making it easy to add metadata (e.g. tagging.dates) after construction."><meta property="og:image" content="https://miguelgandra.github.io/moby/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
@@ -71,8 +71,8 @@ system, tagging dates, ID groups and an optional land layer) as attributes. Down
 tagging dates do not have to be re-specified on every call.</p>
 <p>Because a <code>mobyData</code> object <strong>is</strong> a <code>data.frame</code>, it can be used anywhere a data frame
 is expected (including with base subsetting, <code>dplyr</code>, etc.), and plain data frames remain
-fully supported by all <code>moby</code> functions. This replaces the former global
-<code>setDefaults()</code>/<code>getDefaults()</code> mechanism with reproducible, object-carried metadata.</p>
+fully supported by all <code>moby</code> functions. Metadata travels with the object rather than
+living in global state, so analyses stay reproducible and self-describing.</p>
 <p>Calling <code>as_moby()</code> on an existing <code>mobyData</code> object updates only the supplied fields and
 inherits the rest, making it easy to add metadata (e.g. <code>tagging.dates</code>) after construction.</p>
     </div>
