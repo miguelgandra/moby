@@ -6,12 +6,11 @@
 \usage{
 plotArray(
   deployments,
-  station.col = "station",
-  receiver.col = "receiver",
-  lon.col = "lon",
-  lat.col = "lat",
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.station.col = "station",
+  deployment.lon.col = "lon",
+  deployment.lat.col = "lat",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   detections = NULL,
   color.by = NULL,
   status.at = NULL,
@@ -60,25 +59,32 @@ plotArray(
 \code{\link{importDeployments}} - one row per deployment, with at least the station and coordinate
 columns. Multiple rows per station (repeated servicing) are reduced to one point per station.}
 
-\item{station.col}{Name of the station column. Defaults to "station".}
+\item{deployment.station.col, deployment.lon.col, deployment.lat.col}{Names of the station,
+longitude and latitude columns in the receiver-deployment log (\code{deployments}). Default to the
+canonical \code{"station"}/\code{"lon"}/\code{"lat"} produced by \code{\link{importDeployments}}; set them when a
+hand-made log uses other names (e.g. \code{deployment.lon.col = "Longitude"}). The \code{deployment.} prefix
+marks these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments,
+which always refer to the detection dataset. The \code{receiver} column is the canonical join key and
+is always taken as-is.}
 
-\item{receiver.col}{Name of the receiver column (used for labels/summary). Defaults to "receiver".}
-
-\item{lon.col, lat.col}{Names of the longitude/latitude columns. Defaults to "lon"/"lat".}
-
-\item{deploy.col, recover.col}{Names of the deployment/recovery date columns (used by \code{status.at}).
-Defaults to "deploy"/"recover".}
+\item{deployment.deploy.col, deployment.recover.col}{Names of the deployment and recovery
+date-time columns in the receiver-deployment log (\code{deployments}). Default to the canonical
+\code{"deploy"}/\code{"recover"} produced by \code{\link{importDeployments}}; set them when a hand-made log
+uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{deployment.} prefix marks
+these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
+always refer to the detection dataset.}
 
 \item{detections}{Optional. A detection dataset (data frame or \code{mobyData}). When supplied, stations
 with zero detections are highlighted and counted - a quick check for dead receivers or coverage
-gaps. The station column is taken from the data's metadata when present, otherwise from \code{station.col}.}
+gaps. The detection station column is taken from the dataset's \code{mobyData} metadata when present,
+otherwise from the canonical \code{"station"}.}
 
 \item{color.by}{Optional. Name of a \code{deployments} column used to colour the stations (e.g. habitat,
 receiver model); a colourblind-safe Okabe-Ito palette and a legend are added. Takes precedence over
 \code{status.at}.}
 
 \item{status.at}{Optional. A single date; each station is classified and coloured as \code{"active"},
-\code{"recovered"} or \code{"not yet deployed"} at that instant, from \code{deploy.col}/\code{recover.col} (a station is
+\code{"recovered"} or \code{"not yet deployed"} at that instant, from the deployment/recovery dates (a station is
 active while \verb{deploy <= status.at < recover}). Character/\code{Date} input is interpreted in the data's
 timezone (not the session's) for reproducibility.}
 

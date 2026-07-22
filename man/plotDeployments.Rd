@@ -9,8 +9,8 @@ plotDeployments(
   row.by = "receiver",
   group.by = NULL,
   events = NULL,
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   end = NULL,
   merge.gaps = 1,
   sort.by = c("group", "start", "name"),
@@ -38,7 +38,7 @@ plotDeployments(
 }
 \arguments{
 \item{deployments}{A receiver-deployment / station log (e.g. from \code{\link{importDeployments}}),
-with at least the \code{row.by} and \code{deploy.col} columns (and usually \code{recover.col}).}
+with at least the \code{row.by} and \code{deployment.deploy.col} columns (and usually \code{deployment.recover.col}).}
 
 \item{row.by}{Name of the column defining the rows (the operating unit). Defaults to \code{"receiver"};
 set to \code{"station"} (or any column) to aggregate operating periods to a coarser unit.}
@@ -50,8 +50,12 @@ set to \code{"station"} (or any column) to aggregate operating periods to a coar
 row key) and a date-time column (\code{time}, or the first POSIXct column). Study-neutral: taggings,
 servicing, downloads, etc.}
 
-\item{deploy.col, recover.col}{Names of the deployment and recovery date-time columns. A missing
-\code{recover} (still-active deployment) is extended to \code{end}. Default "deploy" / "recover".}
+\item{deployment.deploy.col, deployment.recover.col}{Names of the deployment and recovery
+date-time columns in the receiver-deployment log (\code{deployments}). Default to the canonical
+\code{"deploy"}/\code{"recover"} produced by \code{\link{importDeployments}}; set them when a hand-made log
+uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{deployment.} prefix marks
+these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
+always refer to the detection dataset.}
 
 \item{end}{Optional study-end date-time used to close still-active deployments. If NULL, the latest
 date in the log is used.}

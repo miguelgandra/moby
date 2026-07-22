@@ -61,7 +61,7 @@ test_that("plotDeployments validates inputs and writes files without leaking a d
   pdf(tempfile(fileext = ".pdf")); on.exit(dev.off(), add = TRUE)
   d <- deploy_log()
   expect_error(plotDeployments(d, row.by = "nope"), "not found")
-  expect_error(plotDeployments(d, deploy.col = "nope"), "not found")
+  expect_error(plotDeployments(d, deployment.deploy.col = "nope"), "not found")
   d2 <- d; d2$deploy <- as.character(d2$deploy)
   expect_error(plotDeployments(d2), "POSIXct")
   before <- length(dev.list()); f <- tempfile(fileext = ".png")

@@ -47,13 +47,32 @@ test_that("matchDeployments can drop unmatched detections", {
   expect_true(all(res$deployment_matched))
 })
 
-test_that("matchDeployments accepts non-canonical deploy/recover column names (deploy.col/recover.col)", {
+test_that("detection and deployment columns disambiguate: same concept, different names, both honoured", {
+  # detection coords live in x/y; deployment coords live in Longitude/Latitude - the namespaced
+  # arguments must resolve each against its own dataset without collision.
+  dep <- data.frame(receiver = "R1", Site = "A", Longitude = -9, Latitude = 38,
+                    deploy_date = as.POSIXct("2023-01-01", tz = "UTC"),
+                    recover_date = as.POSIXct("2023-06-01", tz = "UTC"))
+  det <- data.frame(receiver = "R1", site = "A", x = NA_real_, y = NA_real_,
+                    when = as.POSIXct("2023-02-01", tz = "UTC"), ID = "f1")
+  res <- suppressWarnings(suppressMessages(matchDeployments(
+    det, dep,
+    datetime.col = "when", station.col = "site", lon.col = "x", lat.col = "y",   # detection columns
+    deployment.station.col = "Site", deployment.lon.col = "Longitude", deployment.lat.col = "Latitude",
+    deployment.deploy.col = "deploy_date", deployment.recover.col = "recover_date", verbose = FALSE)))
+  expect_true(res$deployment_matched[1])
+  expect_equal(res$x[1], -9)     # detection lon (x) back-filled from deployment lon (Longitude)
+  expect_equal(res$y[1], 38)
+})
+
+test_that("matchDeployments accepts non-canonical deploy/recover column names (deployment.deploy.col/recover.col)", {
   dep <- data.frame(receiver = "R1", station = "A", lon = -9, lat = 38,
                     deploy_date = as.POSIXct("2023-01-01", tz = "UTC"),
                     recover_date = as.POSIXct("2023-06-01", tz = "UTC"))
   det <- data.frame(receiver = "R1", station = "A", datetime = as.POSIXct("2023-02-01", tz = "UTC"), ID = "f1")
   expect_error(matchDeployments(det, dep, datetime.col = "datetime", verbose = FALSE), "missing required")
   res <- suppressWarnings(suppressMessages(matchDeployments(
-    det, dep, deploy.col = "deploy_date", recover.col = "recover_date", datetime.col = "datetime", verbose = FALSE)))
+    det, dep, deployment.deploy.col = "deploy_date", deployment.recover.col = "recover_date",
+    datetime.col = "datetime", verbose = FALSE)))
   expect_equal(nrow(res), 1L)
 })

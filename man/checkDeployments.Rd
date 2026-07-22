@@ -10,10 +10,11 @@ checkDeployments(
   id.col = NULL,
   datetime.col = NULL,
   station.col = NULL,
-  deploy.col = "deploy",
-  recover.col = "recover",
-  lon.col = "lon",
-  lat.col = "lat",
+  deployment.station.col = "station",
+  deployment.lon.col = "lon",
+  deployment.lat.col = "lat",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   checks = "all",
   scope = c("all", "detected"),
   coord.tolerance = 500,
@@ -23,22 +24,31 @@ checkDeployments(
 }
 \arguments{
 \item{deployments}{A receiver-deployment data frame, e.g. from \code{\link{importDeployments}},
-with \code{receiver} and \code{station} columns plus deployment / recovery date-times and (optionally)
-longitude / latitude. The date and coordinate columns may carry non-canonical names, resolved via
-\code{deploy.col}/\code{recover.col}/\code{lon.col}/\code{lat.col}.}
+with a \code{receiver} column plus station, deployment / recovery date-times and (optionally)
+longitude / latitude. Those columns may carry non-canonical names, resolved via the
+\verb{deployment.*} arguments below.}
 
 \item{detections}{Optional. A detection dataset (\code{mobyData} or data frame) with \code{receiver},
 \code{station} and a date-time column, used for the detection-vs-metadata checks.}
 
-\item{id.col, datetime.col, station.col}{Column names in \code{detections} (resolved from the
-\code{mobyData} metadata or canonical defaults when \code{NULL}).}
+\item{id.col, datetime.col, station.col}{Column names in the \strong{detection} dataset (\code{detections}),
+resolved from its \code{mobyData} metadata or canonical defaults when \code{NULL}. Bare \verb{*.col} arguments
+always refer to the detections; the deployment log's columns use the \verb{deployment.*} arguments.}
 
-\item{deploy.col, recover.col, lon.col, lat.col}{Names of the deployment / recovery date-time and
-the longitude / latitude columns in \code{deployments}. Default to the canonical
-\code{"deploy"}/\code{"recover"}/\code{"lon"}/\code{"lat"} (as produced by \code{\link{importDeployments}}); set them
-when a log uses other names (e.g. \code{deploy.col = "deploy_date"}, \code{lon.col = "Longitude"}), so a
-non-canonical log need not be renamed first. The \code{receiver} and \code{station} columns are the
-canonical identifiers this function keys on and are always taken as-is.}
+\item{deployment.station.col, deployment.lon.col, deployment.lat.col}{Names of the station,
+longitude and latitude columns in the receiver-deployment log (\code{deployments}). Default to the
+canonical \code{"station"}/\code{"lon"}/\code{"lat"} produced by \code{\link{importDeployments}}; set them when a
+hand-made log uses other names (e.g. \code{deployment.lon.col = "Longitude"}). The \code{deployment.} prefix
+marks these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments,
+which always refer to the detection dataset. The \code{receiver} column is the canonical join key and
+is always taken as-is.}
+
+\item{deployment.deploy.col, deployment.recover.col}{Names of the deployment and recovery
+date-time columns in the receiver-deployment log (\code{deployments}). Default to the canonical
+\code{"deploy"}/\code{"recover"} produced by \code{\link{importDeployments}}; set them when a hand-made log
+uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{deployment.} prefix marks
+these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
+always refer to the detection dataset.}
 
 \item{checks}{Character vector selecting which check groups to run (any of, or \code{"all"}, the
 default): \code{"dates"} (deploy/recover date integrity), \code{"overlaps"} (duplicate and overlapping

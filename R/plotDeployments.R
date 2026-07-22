@@ -21,7 +21,7 @@
 #' the rest of the plotting family.
 #'
 #' @param deployments A receiver-deployment / station log (e.g. from \code{\link{importDeployments}}),
-#' with at least the `row.by` and `deploy.col` columns (and usually `recover.col`).
+#' with at least the `row.by` and `deployment.deploy.col` columns (and usually `deployment.recover.col`).
 #' @param row.by Name of the column defining the rows (the operating unit). Defaults to `"receiver"`;
 #' set to `"station"` (or any column) to aggregate operating periods to a coarser unit.
 #' @param group.by Optional column giving a coarser grouping used to colour the rows and their labels
@@ -29,8 +29,7 @@
 #' @param events Optional data frame of point events to overlay, with a column named as `row.by` (the
 #' row key) and a date-time column (`time`, or the first POSIXct column). Study-neutral: taggings,
 #' servicing, downloads, etc.
-#' @param deploy.col,recover.col Names of the deployment and recovery date-time columns. A missing
-#' `recover` (still-active deployment) is extended to `end`. Default "deploy" / "recover".
+#' @template deploymentDateArgs
 #' @param end Optional study-end date-time used to close still-active deployments. If NULL, the latest
 #' date in the log is used.
 #' @param merge.gaps Numeric. Consecutive deployments of a unit separated by `<=` this many days are
@@ -73,8 +72,8 @@ plotDeployments <- function(deployments,
                             row.by = "receiver",
                             group.by = NULL,
                             events = NULL,
-                            deploy.col = "deploy",
-                            recover.col = "recover",
+                            deployment.deploy.col = "deploy",
+                            deployment.recover.col = "recover",
                             end = NULL,
                             merge.gaps = 1,
                             sort.by = c("group", "start", "name"),
@@ -107,18 +106,18 @@ plotDeployments <- function(deployments,
   d <- as.data.frame(deployments)
   errors <- c()
   if(!row.by %in% names(d)) errors <- c(errors, sprintf("'row.by' column ('%s') not found in 'deployments'.", row.by))
-  if(!deploy.col %in% names(d)) errors <- c(errors, sprintf("'deploy.col' column ('%s') not found in 'deployments'.", deploy.col))
+  if(!deployment.deploy.col %in% names(d)) errors <- c(errors, sprintf("'deployment.deploy.col' column ('%s') not found in 'deployments'.", deployment.deploy.col))
   if(!is.null(group.by) && !group.by %in% names(d)) errors <- c(errors, sprintf("'group.by' column ('%s') not found in 'deployments'.", group.by))
-  if(length(errors) == 0 && !inherits(d[[deploy.col]], "POSIXct")) errors <- c(errors, "'deploy.col' must be a POSIXct date-time column.")
+  if(length(errors) == 0 && !inherits(d[[deployment.deploy.col]], "POSIXct")) errors <- c(errors, "'deployment.deploy.col' must be a POSIXct date-time column.")
   if(length(errors) > 0) stop(paste(c("", paste0("- ", errors)), collapse = "\n"), call. = FALSE)
-  if(!recover.col %in% names(d)) d[[recover.col]] <- as.POSIXct(NA)
+  if(!deployment.recover.col %in% names(d)) d[[deployment.recover.col]] <- as.POSIXct(NA)
 
-  tz <- .dataTZ(d[[deploy.col]])
+  tz <- .dataTZ(d[[deployment.deploy.col]])
   if(is.null(legend)) legend <- !is.null(group.by) || !is.null(events)
   cex_axis <- 0.8 * cex; cex_lab <- 1.0 * cex; cex_legend <- 0.75 * cex; cex_band <- 0.75 * cex
 
   row_key <- as.character(d[[row.by]])
-  start <- d[[deploy.col]]; stop_ <- d[[recover.col]]
+  start <- d[[deployment.deploy.col]]; stop_ <- d[[deployment.recover.col]]
   study_end <- if(!is.null(end)) as.POSIXct(end, tz = tz) else max(c(start, stop_), na.rm = TRUE)
   stop_[is.na(stop_)] <- study_end
   keep <- !is.na(start) & !is.na(row_key)

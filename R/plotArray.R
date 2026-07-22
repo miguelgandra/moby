@@ -23,19 +23,17 @@
 #' @param deployments A receiver-deployment log (a data frame), as produced by
 #' \code{\link{importDeployments}} - one row per deployment, with at least the station and coordinate
 #' columns. Multiple rows per station (repeated servicing) are reduced to one point per station.
-#' @param station.col Name of the station column. Defaults to "station".
-#' @param receiver.col Name of the receiver column (used for labels/summary). Defaults to "receiver".
-#' @param lon.col,lat.col Names of the longitude/latitude columns. Defaults to "lon"/"lat".
-#' @param deploy.col,recover.col Names of the deployment/recovery date columns (used by `status.at`).
-#' Defaults to "deploy"/"recover".
+#' @template deploymentSpatialArgs
+#' @template deploymentDateArgs
 #' @param detections Optional. A detection dataset (data frame or `mobyData`). When supplied, stations
 #' with zero detections are highlighted and counted - a quick check for dead receivers or coverage
-#' gaps. The station column is taken from the data's metadata when present, otherwise from `station.col`.
+#' gaps. The detection station column is taken from the dataset's `mobyData` metadata when present,
+#' otherwise from the canonical `"station"`.
 #' @param color.by Optional. Name of a `deployments` column used to colour the stations (e.g. habitat,
 #' receiver model); a colourblind-safe Okabe-Ito palette and a legend are added. Takes precedence over
 #' `status.at`.
 #' @param status.at Optional. A single date; each station is classified and coloured as `"active"`,
-#' `"recovered"` or `"not yet deployed"` at that instant, from `deploy.col`/`recover.col` (a station is
+#' `"recovered"` or `"not yet deployed"` at that instant, from the deployment/recovery dates (a station is
 #' active while `deploy <= status.at < recover`). Character/`Date` input is interpreted in the data's
 #' timezone (not the session's) for reproducibility.
 #' @param detection.range Optional. Nominal detection radius in metres, drawn as a semi-transparent
@@ -106,12 +104,11 @@
 #' @export
 
 plotArray <- function(deployments,
-                      station.col = "station",
-                      receiver.col = "receiver",
-                      lon.col = "lon",
-                      lat.col = "lat",
-                      deploy.col = "deploy",
-                      recover.col = "recover",
+                      deployment.station.col = "station",
+                      deployment.lon.col = "lon",
+                      deployment.lat.col = "lat",
+                      deployment.deploy.col = "deploy",
+                      deployment.recover.col = "recover",
                       detections = NULL,
                       color.by = NULL,
                       status.at = NULL,
@@ -159,7 +156,7 @@ plotArray <- function(deployments,
   #####################################################################################
 
   dep <- as.data.frame(deployments)
-  required <- c(station.col, lon.col, lat.col)
+  required <- c(deployment.station.col, deployment.lon.col, deployment.lat.col)
   miss <- setdiff(required, colnames(dep))
   if (length(miss) > 0)
     .mobyAbort("'deployments' is missing required column(s): ", paste(miss, collapse = ", "),
@@ -169,12 +166,12 @@ plotArray <- function(deployments,
   if (is.character(label) && length(label) == 1 && !label %in% colnames(dep))
     .mobyAbort("'label' column '", label, "' not found in 'deployments'.")
   if (!is.null(status.at)) {
-    if (!deploy.col %in% colnames(dep))
-      .mobyAbort("'status.at' requires the deployment-date column '", deploy.col, "', which is not in 'deployments'.")
+    if (!deployment.deploy.col %in% colnames(dep))
+      .mobyAbort("'status.at' requires the deployment-date column '", deployment.deploy.col, "', which is not in 'deployments'.")
     # coerce character/Date input in the DATA's timezone (not the session's) so the classification is
     # reproducible and locale-independent; an existing POSIXct is an absolute instant, left as-is
     if (!inherits(status.at, "POSIXct"))
-      status.at <- tryCatch(as.POSIXct(status.at, tz = .dataTZ(dep[[deploy.col]])), error = function(e) NA)
+      status.at <- tryCatch(as.POSIXct(status.at, tz = .dataTZ(dep[[deployment.deploy.col]])), error = function(e) NA)
     if (length(status.at) != 1 || is.na(status.at))
       .mobyAbort("'status.at' must be a single date (POSIXct or coercible to one).")
   }
@@ -199,16 +196,16 @@ plotArray <- function(deployments,
   # Reduce the deployment log to one point per station ################################
   #####################################################################################
 
-  dep[[station.col]] <- as.character(dep[[station.col]])
-  by_station <- split(dep, dep[[station.col]], drop = TRUE)
+  dep[[deployment.station.col]] <- as.character(dep[[deployment.station.col]])
+  by_station <- split(dep, dep[[deployment.station.col]], drop = TRUE)
   first_val <- function(d, col) if (col %in% names(d)) d[[col]][which(!is.na(d[[col]]))[1]] else NA
 
   stations <- data.frame(
     station     = names(by_station),
-    lon         = vapply(by_station, function(d) mean(d[[lon.col]], na.rm = TRUE), numeric(1)),
-    lat         = vapply(by_station, function(d) mean(d[[lat.col]], na.rm = TRUE), numeric(1)),
+    lon         = vapply(by_station, function(d) mean(d[[deployment.lon.col]], na.rm = TRUE), numeric(1)),
+    lat         = vapply(by_station, function(d) mean(d[[deployment.lat.col]], na.rm = TRUE), numeric(1)),
     n_receivers = vapply(by_station, function(d)
-      if (receiver.col %in% names(d)) length(unique(stats::na.omit(d[[receiver.col]]))) else nrow(d), integer(1)),
+      if ("receiver" %in% names(d)) length(unique(stats::na.omit(d[["receiver"]]))) else nrow(d), integer(1)),
     stringsAsFactors = FALSE, row.names = NULL)
   if (!is.null(color.by))
     stations$group <- vapply(by_station, function(d) as.character(first_val(d, color.by)), character(1))
@@ -216,7 +213,7 @@ plotArray <- function(deployments,
   # surface coordinate errors: warn when a station's rows disagree on position (it is plotted at the
   # mean, which would otherwise silently hide exactly the kind of mistake this QC map is meant to catch)
   coord_spread <- vapply(by_station, function(d) {
-    lo <- d[[lon.col]][is.finite(d[[lon.col]])]; la <- d[[lat.col]][is.finite(d[[lat.col]])]
+    lo <- d[[deployment.lon.col]][is.finite(d[[deployment.lon.col]])]; la <- d[[deployment.lat.col]][is.finite(d[[deployment.lat.col]])]
     max(if (length(lo) >= 2) diff(range(lo)) else 0, if (length(la) >= 2) diff(range(la)) else 0)
   }, numeric(1))
   divergent <- names(coord_spread)[coord_spread > 5e-4]                # ~50 m of longitude/latitude
@@ -230,7 +227,7 @@ plotArray <- function(deployments,
   # recover instant it is 'recovered'.
   if (!is.null(status.at)) {
     stations$status <- vapply(by_station, function(d) {
-      dp <- d[[deploy.col]]; rc <- if (recover.col %in% names(d)) d[[recover.col]] else as.POSIXct(NA)
+      dp <- d[[deployment.deploy.col]]; rc <- if (deployment.recover.col %in% names(d)) d[[deployment.recover.col]] else as.POSIXct(NA)
       active <- any(!is.na(dp) & dp <= status.at & (is.na(rc) | rc > status.at))
       if (active) "active"
       else if (any(!is.na(dp) & dp <= status.at)) "recovered"
@@ -275,7 +272,7 @@ plotArray <- function(deployments,
   if (!is.null(detections)) {
     det <- as.data.frame(detections)
     meta <- attr(detections, "moby")
-    det_station <- if (!is.null(meta) && !is.null(meta$station.col)) meta$station.col else station.col
+    det_station <- if (!is.null(meta) && !is.null(meta$station.col)) meta$station.col else "station"
     if (!det_station %in% colnames(det)) {
       .mobyWarn("Could not find the station column ('", det_station, "') in 'detections'; ",
                 "skipping the zero-detection check.")

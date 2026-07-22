@@ -11,8 +11,11 @@ matchDeployments(
   station.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.station.col = "station",
+  deployment.lon.col = "lon",
+  deployment.lat.col = "lat",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   coord.tolerance = 500,
   fill.coords = TRUE,
   fill.station = TRUE,
@@ -24,14 +27,28 @@ matchDeployments(
 \item{detections}{A detection dataset (\code{mobyData} or data frame) with a \code{receiver} column.}
 
 \item{deployments}{A receiver-deployment data frame from \code{\link{importDeployments}}
-(\code{receiver}, \code{station}, \code{lon}, \code{lat}, \code{deploy}, and optionally \code{recover}).}
+(\code{receiver} plus station, coordinates and deploy/recover date-times; column names resolved via the
+\verb{deployment.*} arguments).}
 
-\item{datetime.col, station.col, lon.col, lat.col}{Column names in \code{detections} (resolved from
-the \code{mobyData} metadata or canonical defaults when \code{NULL}).}
+\item{datetime.col, station.col, lon.col, lat.col}{Column names in the \strong{detection} dataset
+(\code{detections}), resolved from its \code{mobyData} metadata or canonical defaults when \code{NULL}. Bare
+\verb{*.col} arguments always refer to the detections; the deployment log's columns use the
+\verb{deployment.*} arguments.}
 
-\item{deploy.col, recover.col}{Names of the deployment and recovery date-time columns in
-\code{deployments}. Default to the canonical \code{"deploy"}/\code{"recover"}; set them when a log uses other
-names (e.g. \code{"deploy_date"}).}
+\item{deployment.station.col, deployment.lon.col, deployment.lat.col}{Names of the station,
+longitude and latitude columns in the receiver-deployment log (\code{deployments}). Default to the
+canonical \code{"station"}/\code{"lon"}/\code{"lat"} produced by \code{\link{importDeployments}}; set them when a
+hand-made log uses other names (e.g. \code{deployment.lon.col = "Longitude"}). The \code{deployment.} prefix
+marks these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments,
+which always refer to the detection dataset. The \code{receiver} column is the canonical join key and
+is always taken as-is.}
+
+\item{deployment.deploy.col, deployment.recover.col}{Names of the deployment and recovery
+date-time columns in the receiver-deployment log (\code{deployments}). Default to the canonical
+\code{"deploy"}/\code{"recover"} produced by \code{\link{importDeployments}}; set them when a hand-made log
+uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{deployment.} prefix marks
+these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
+always refer to the detection dataset.}
 
 \item{coord.tolerance}{Numeric. Distance (metres for geographic coordinates) above which a
 detection's own coordinates are flagged as disagreeing with the deployment metadata. The
