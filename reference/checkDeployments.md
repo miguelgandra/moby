@@ -1,30 +1,15 @@
 # Check receiver deployment metadata (quality control)
 
-Quality-controls a receiver-deployment / station log and (optionally)
-cross-checks it against a detection dataset, flagging the kinds of
-issues that commonly corrupt acoustic telemetry analyses. This
-complements
-[`filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
-(which cleans the detections themselves) by auditing the *metadata*. It
-generalises the receiver-log curation step that is otherwise done by
-hand. The function only *reports* problems (it never edits data or
-aborts on data issues), so it is a safe, explicit preprocessing step;
-the companion
-[`matchDeployments`](https://miguelgandra.github.io/moby/reference/matchDeployments.md)
-applies the corrections.
+Performs quality control on receiver deployment metadata by identifying
+inconsistencies that can compromise acoustic telemetry analyses. The
+function checks the internal consistency of deployment records and,
+optionally, cross-validates deployment metadata against a detection
+dataset.
 
-Metadata-internal checks: missing deploy/recover dates; invalid date
-ranges (recover before deploy); overlapping deployments on the same
-receiver; duplicate deployment records; missing/implausible coordinates;
-inconsistent station naming (one station name with divergent
-coordinates, or near-identical coordinates under different names); and
-gaps in a receiver's temporal coverage.
-
-Detection-vs-metadata checks (when `detections` is supplied): receivers
-present in the detections but absent from the metadata; detections
-occurring before a receiver's first deployment, after its last recovery,
-or within a gap between deployments; and station-name mismatches (a
-known receiver associated with a station it was never deployed at).
+The function is intentionally non-destructive: it only reports potential
+issues and never modifies input data. Reported issues can then be
+reviewed and, where appropriate, resolved using
+[`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md).
 
 ## Usage
 
@@ -35,11 +20,18 @@ checkDeployments(
   id.col = NULL,
   datetime.col = NULL,
   station.col = NULL,
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.station.col = "station",
+  deployment.lon.col = "lon",
+  deployment.lat.col = "lat",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   checks = "all",
+  scope = c("all", "detected"),
   coord.tolerance = 500,
   gap.tolerance = 1,
+  land.shape = NULL,
+  epsg.code = NULL,
+  land.tolerance = 500,
   verbose = TRUE
 )
 ```
@@ -50,8 +42,10 @@ checkDeployments(
 
   A receiver-deployment data frame, e.g. from
   [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md),
-  with columns `receiver`, `station`, `lon`, `lat`, `deploy` and
-  (optionally) `recover`.
+  with a `receiver` column plus station, deployment / recovery
+  date-times and (optionally) longitude / latitude. Those columns may
+  carry non-canonical names, resolved via the `deployment.*` arguments
+  below.
 
 - detections:
 
@@ -61,16 +55,33 @@ checkDeployments(
 
 - id.col, datetime.col, station.col:
 
-  Column names in `detections` (resolved from the `mobyData` metadata or
-  canonical defaults when `NULL`).
+  Column names in the **detection** dataset (`detections`), resolved
+  from its `mobyData` metadata or canonical defaults when `NULL`. Bare
+  `*.col` arguments always refer to the detections; the deployment log's
+  columns use the `deployment.*` arguments.
 
-- deploy.col, recover.col:
+- deployment.station.col, deployment.lon.col, deployment.lat.col:
 
-  Names of the deployment and recovery date-time columns in
-  `deployments`. Default to the canonical `"deploy"`/`"recover"` (as
-  produced by
-  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md));
-  set them when a log uses other names (e.g. `"deploy_date"`).
+  Names of the station, longitude and latitude columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"station"`/`"lon"`/`"lat"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.lon.col = "Longitude"`). The `deployment.` prefix marks
+  these as deployment-log columns, keeping them distinct from the bare
+  `*.col` arguments, which always refer to the detection dataset. The
+  `receiver` column is the canonical join key and is always taken as-is.
+
+- deployment.deploy.col, deployment.recover.col:
+
+  Names of the deployment and recovery date-time columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"deploy"`/`"recover"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.deploy.col = "deploy_date"`). The `deployment.` prefix
+  marks these as deployment-log columns, keeping them distinct from the
+  bare `*.col` arguments, which always refer to the detection dataset.
 
 - checks:
 
@@ -79,9 +90,26 @@ checkDeployments(
   `"overlaps"` (duplicate and overlapping deployment records), `"gaps"`
   (coverage gaps between consecutive deployments - often benign
   servicing, so the easiest to drop), `"coordinates"` (implausible
-  coordinates and station-vs-coordinate naming consistency; skipped if
+  coordinates, station-vs-coordinate naming consistency, and - when
+  `land.shape` is supplied - receiver positions on land; skipped if
   `lon`/`lat` are absent) and `"detections"` (cross-check detections
   against deployment windows; requires the `detections` argument).
+
+- scope:
+
+  Character; how much of the deployment log the *metadata-internal*
+  checks cover. `"all"` (default) audits every receiver in
+  `deployments`. `"detected"` restricts those checks to receivers that
+  appear in `detections` (i.e. that recorded at least one detection),
+  which removes warnings about receivers that are irrelevant to the data
+  being analysed - typically the bulk of the coverage-gap and
+  duplicate-station noise. Each retained receiver keeps its full
+  deployment timeline, so gap and overlap logic stays correct. `scope`
+  only affects the metadata-internal checks; the `"detections"`
+  cross-checks are inherently detection-scoped and always run against
+  the complete metadata (so a receiver present in the detections but
+  missing from the log is still flagged). `"detected"` needs
+  `detections`; without it, the function warns and audits everything.
 
 - coord.tolerance:
 
@@ -95,6 +123,31 @@ checkDeployments(
   Numeric. Minimum gap (in days) between consecutive deployments of a
   receiver to report as a coverage gap. Defaults to 1.
 
+- land.shape:
+
+  Optional `sf` (or `SpatialPolygons*`) polygon layer of landmasses.
+  When supplied, the `"coordinates"` group additionally flags receiver
+  positions that fall on land. Off by default; if `NULL`, it is taken
+  from the `detections` `mobyData` metadata when present (i.e. from
+  `as_moby(detections, land.shape = ...)`). The layer must carry a
+  coordinate reference system; if it lacks one, or cannot be reconciled
+  with the deployment coordinates, the on-land check is skipped with a
+  message (the audit never aborts).
+
+- epsg.code:
+
+  Optional EPSG code for the deployment coordinates, used only by the
+  on-land check. Needed only when the coordinates are projected (not
+  longitude/latitude); geographic coordinates are assumed to be WGS84.
+
+- land.tolerance:
+
+  Numeric. How far inside the coastline (in metres) a receiver position
+  must lie to be reported as on land. This spares genuine near-shore
+  receivers that a coarse coastline overlaps by a small margin; gross
+  coordinate-entry errors (swapped lon/lat, a sign flip) fall kilometres
+  inland and are still flagged. Defaults to 500.
+
 - verbose:
 
   Logical; print a summary to the console. Defaults to TRUE.
@@ -106,7 +159,11 @@ An object of class `mobyQC`: a list with
 - report:
 
   A tidy data frame of flagged issues (`type`, `receiver`, `station`,
-  `first`, `last`, `n_detections`, `n_individuals`, `details`).
+  `first`, `last`, `n_detections`, `n_individuals`, `details`). Columns
+  that do not apply to a given issue are `NA` (kept typed, so the frame
+  stays usable programmatically); for a more readable manual export,
+  write with an explicit placeholder, e.g.
+  `write.csv(x$report, "report.csv", row.names = FALSE, na = "-")`.
 
 - deployments:
 
@@ -115,6 +172,20 @@ An object of class `mobyQC`: a list with
 - counts:
 
   Named integer vector of issue counts by type.
+
+## Details
+
+Internal metadata checks include missing or invalid deployment dates,
+overlapping deployments, duplicate records, coordinate inconsistencies,
+station naming issues, and gaps in receiver coverage. When a land layer
+is supplied (`land.shape`), the function additionally flags receiver
+positions that fall on land - a common consequence of a coordinate-entry
+error (swapped longitude/latitude, a wrong sign, a decimal typo).
+
+When detections are provided, the function additionally checks whether
+detections are consistent with the deployment history, including unknown
+receivers, detections outside deployment periods, and station
+mismatches.
 
 ## See also
 
@@ -135,6 +206,12 @@ checkDeployments(rays_deployments)
 # also cross-check the detections against the deployment windows
 data(rays)
 checkDeployments(rays_deployments, detections = rays)
+#> <mobyQC> deployment metadata quality-control report
+#>   6 deployment records | 6 receivers | 6 stations
+#>   No issues flagged.
+
+# restrict the metadata checks to receivers that actually recorded detections
+checkDeployments(rays_deployments, detections = rays, scope = "detected")
 #> <mobyQC> deployment metadata quality-control report
 #>   6 deployment records | 6 receivers | 6 stations
 #>   No issues flagged.

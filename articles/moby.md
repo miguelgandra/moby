@@ -114,8 +114,9 @@ dim(wide)
 
 ## Where to go next
 
-See [`help(package = "moby")`](https://rdrr.io/pkg/moby/man) for the
-complete list of functions, including
+See
+[`help(package = "moby")`](https://miguelgandra.github.io/moby/reference)
+for the complete list of functions, including
 [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md),
 [`calculateStepDistances()`](https://miguelgandra.github.io/moby/reference/calculateStepDistances.md),
 [`calculateUDs()`](https://miguelgandra.github.io/moby/reference/calculateUDs.md),

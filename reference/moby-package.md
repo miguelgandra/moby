@@ -18,8 +18,9 @@ supported.
 
 ## Getting started
 
-See [`help(package = "moby")`](https://rdrr.io/pkg/moby/man) for the
-full list of functions, and the package vignette
+See
+[`help(package = "moby")`](https://miguelgandra.github.io/moby/reference)
+for the full list of functions, and the package vignette
 (`browseVignettes("moby")`) for an introductory workflow.
 
 ## See also

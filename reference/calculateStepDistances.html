@@ -193,13 +193,16 @@ across a call's segments (and across calls when the cache is supplied).</p>
 <span class="r-in"><span><span class="va">rays_lc</span> <span class="op">&lt;-</span> <span class="fu">calculateStepDistances</span><span class="op">(</span><span class="va">rays</span><span class="op">[</span><span class="fl">1</span><span class="op">:</span><span class="fl">60</span>, <span class="op">]</span>, land.shape <span class="op">=</span> <span class="va">land</span>,</span></span>
 <span class="r-in"><span>                                  grid.resolution <span class="op">=</span> <span class="fl">200</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- Some coordinates (n=27) overlap with the supplied land shape. Consider using</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> the 'correctPositions()' function to relocate these points to the nearest</span>
-<span class="r-wrn co"><span class="r-pr">#&gt;</span> marine cell, and then rerun the current function with the updated positions.</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 27 detection(s) at 3 location(s) fall on the supplied land shape. A</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> detection's position is the position of the receiver that logged it, so this</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> usually means the deployment metadata places a receiver on land. Audit the</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> receiver log with checkDeployments() and correct the coordinates at source; for</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> a genuine near-shore position that a coarse coastline overlaps,</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> correctPositions() can relocate points to the nearest marine cell.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Building least-cost graph (200m grid | 16 directions)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |======================================================================| 100%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Total execution time: 0.30 secs </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Total execution time: 0.31 secs </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

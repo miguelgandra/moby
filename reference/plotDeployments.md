@@ -20,8 +20,8 @@ plotDeployments(
   row.by = "receiver",
   group.by = NULL,
   events = NULL,
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   end = NULL,
   merge.gaps = 1,
   sort.by = c("group", "start", "name"),
@@ -54,8 +54,8 @@ plotDeployments(
 
   A receiver-deployment / station log (e.g. from
   [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md)),
-  with at least the `row.by` and `deploy.col` columns (and usually
-  `recover.col`).
+  with at least the `row.by` and `deployment.deploy.col` columns (and
+  usually `deployment.recover.col`).
 
 - row.by:
 
@@ -75,11 +75,16 @@ plotDeployments(
   `row.by` (the row key) and a date-time column (`time`, or the first
   POSIXct column). Study-neutral: taggings, servicing, downloads, etc.
 
-- deploy.col, recover.col:
+- deployment.deploy.col, deployment.recover.col:
 
-  Names of the deployment and recovery date-time columns. A missing
-  `recover` (still-active deployment) is extended to `end`. Default
-  "deploy" / "recover".
+  Names of the deployment and recovery date-time columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"deploy"`/`"recover"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.deploy.col = "deploy_date"`). The `deployment.` prefix
+  marks these as deployment-log columns, keeping them distinct from the
+  bare `*.col` arguments, which always refer to the detection dataset.
 
 - end:
 

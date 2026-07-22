@@ -151,12 +151,15 @@ land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
 rays_lc <- calculateStepDistances(rays[1:60, ], land.shape = land,
                                   grid.resolution = 200)
 #> Warning: - 'id.col' converted to factor.
-#> Warning: - Some coordinates (n=27) overlap with the supplied land shape. Consider using
-#> the 'correctPositions()' function to relocate these points to the nearest
-#> marine cell, and then rerun the current function with the updated positions.
+#> Warning: - 27 detection(s) at 3 location(s) fall on the supplied land shape. A
+#> detection's position is the position of the receiver that logged it, so this
+#> usually means the deployment metadata places a receiver on land. Audit the
+#> receiver log with checkDeployments() and correct the coordinates at source; for
+#> a genuine near-shore position that a coarse coastline overlaps,
+#> correctPositions() can relocate points to the nearest marine cell.
 #> Building least-cost graph (200m grid | 16 directions)
 #>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...
 #>   |                                                                              |======================================================================| 100%
-#> Total execution time: 0.30 secs 
+#> Total execution time: 0.31 secs 
 # }
 ```

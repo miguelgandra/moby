@@ -72,8 +72,8 @@ the sampling-effort context needed to read the detection plots correctly.</p>
 <span>  row.by <span class="op">=</span> <span class="st">"receiver"</span>,</span>
 <span>  group.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  events <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  deploy.col <span class="op">=</span> <span class="st">"deploy"</span>,</span>
-<span>  recover.col <span class="op">=</span> <span class="st">"recover"</span>,</span>
+<span>  deployment.deploy.col <span class="op">=</span> <span class="st">"deploy"</span>,</span>
+<span>  deployment.recover.col <span class="op">=</span> <span class="st">"recover"</span>,</span>
 <span>  end <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  merge.gaps <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  sort.by <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"group"</span>, <span class="st">"start"</span>, <span class="st">"name"</span><span class="op">)</span>,</span>
@@ -106,7 +106,7 @@ the sampling-effort context needed to read the detection plots correctly.</p>
 
 <dl><dt id="arg-deployments">deployments<a class="anchor" aria-label="anchor" href="#arg-deployments"></a></dt>
 <dd><p>A receiver-deployment / station log (e.g. from <code><a href="importDeployments.html">importDeployments</a></code>),
-with at least the <code>row.by</code> and <code>deploy.col</code> columns (and usually <code>recover.col</code>).</p></dd>
+with at least the <code>row.by</code> and <code>deployment.deploy.col</code> columns (and usually <code>deployment.recover.col</code>).</p></dd>
 
 
 <dt id="arg-row-by">row.by<a class="anchor" aria-label="anchor" href="#arg-row-by"></a></dt>
@@ -125,9 +125,13 @@ row key) and a date-time column (<code>time</code>, or the first POSIXct column)
 servicing, downloads, etc.</p></dd>
 
 
-<dt id="arg-deploy-col-recover-col">deploy.col, recover.col<a class="anchor" aria-label="anchor" href="#arg-deploy-col-recover-col"></a></dt>
-<dd><p>Names of the deployment and recovery date-time columns. A missing
-<code>recover</code> (still-active deployment) is extended to <code>end</code>. Default "deploy" / "recover".</p></dd>
+<dt id="arg-deployment-deploy-col-deployment-recover-col">deployment.deploy.col, deployment.recover.col<a class="anchor" aria-label="anchor" href="#arg-deployment-deploy-col-deployment-recover-col"></a></dt>
+<dd><p>Names of the deployment and recovery
+date-time columns in the receiver-deployment log (<code>deployments</code>). Default to the canonical
+<code>"deploy"</code>/<code>"recover"</code> produced by <code><a href="importDeployments.html">importDeployments</a></code>; set them when a hand-made log
+uses other names (e.g. <code>deployment.deploy.col = "deploy_date"</code>). The <code>deployment.</code> prefix marks
+these as deployment-log columns, keeping them distinct from the bare <code>*.col</code> arguments, which
+always refer to the detection dataset.</p></dd>
 
 
 <dt id="arg-end">end<a class="anchor" aria-label="anchor" href="#arg-end"></a></dt>

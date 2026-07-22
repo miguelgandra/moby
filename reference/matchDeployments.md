@@ -23,8 +23,11 @@ matchDeployments(
   station.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.station.col = "station",
+  deployment.lon.col = "lon",
+  deployment.lat.col = "lat",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   coord.tolerance = 500,
   fill.coords = TRUE,
   fill.station = TRUE,
@@ -44,19 +47,38 @@ matchDeployments(
 
   A receiver-deployment data frame from
   [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md)
-  (`receiver`, `station`, `lon`, `lat`, `deploy`, and optionally
-  `recover`).
+  (`receiver` plus station, coordinates and deploy/recover date-times;
+  column names resolved via the `deployment.*` arguments).
 
 - datetime.col, station.col, lon.col, lat.col:
 
-  Column names in `detections` (resolved from the `mobyData` metadata or
-  canonical defaults when `NULL`).
+  Column names in the **detection** dataset (`detections`), resolved
+  from its `mobyData` metadata or canonical defaults when `NULL`. Bare
+  `*.col` arguments always refer to the detections; the deployment log's
+  columns use the `deployment.*` arguments.
 
-- deploy.col, recover.col:
+- deployment.station.col, deployment.lon.col, deployment.lat.col:
 
-  Names of the deployment and recovery date-time columns in
-  `deployments`. Default to the canonical `"deploy"`/`"recover"`; set
-  them when a log uses other names (e.g. `"deploy_date"`).
+  Names of the station, longitude and latitude columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"station"`/`"lon"`/`"lat"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.lon.col = "Longitude"`). The `deployment.` prefix marks
+  these as deployment-log columns, keeping them distinct from the bare
+  `*.col` arguments, which always refer to the detection dataset. The
+  `receiver` column is the canonical join key and is always taken as-is.
+
+- deployment.deploy.col, deployment.recover.col:
+
+  Names of the deployment and recovery date-time columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"deploy"`/`"recover"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.deploy.col = "deploy_date"`). The `deployment.` prefix
+  marks these as deployment-log columns, keeping them distinct from the
+  bare `*.col` arguments, which always refer to the detection dataset.
 
 - coord.tolerance:
 

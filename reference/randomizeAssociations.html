@@ -205,11 +205,11 @@ matrices, one per level of the subset variable.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)</span>
 <span class="r-in"><span><span class="va">assoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateAssociations.html">calculateAssociations</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating overlap - complete monitoring duration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.06 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.04 secs</span>
 <span class="r-in"><span><span class="co"># test the observed co-occurrences against a permutation null model</span></span></span>
 <span class="r-in"><span><span class="co"># (iterations kept low here for speed; use the default 1000 in practice)</span></span></span>
 <span class="r-in"><span><span class="va">rand</span> <span class="op">&lt;-</span> <span class="fu">randomizeAssociations</span><span class="op">(</span><span class="va">wide</span>, <span class="va">assoc</span>, iterations <span class="op">=</span> <span class="fl">100</span>, random.seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.19 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.17 secs</span>
 <span class="r-in"><span><span class="va">rand</span><span class="op">$</span><span class="va">summary</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Type N dyads Mean interval (d) Mean overlap (%) Mean null distr (%) P-value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  All      28                77      0.47 ± 0.81         0.42 ± 0.09   0.515</span>

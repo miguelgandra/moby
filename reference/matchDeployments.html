@@ -77,8 +77,11 @@ reported by <code><a href="checkDeployments.html">checkDeployments</a></code>, a
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  deploy.col <span class="op">=</span> <span class="st">"deploy"</span>,</span>
-<span>  recover.col <span class="op">=</span> <span class="st">"recover"</span>,</span>
+<span>  deployment.station.col <span class="op">=</span> <span class="st">"station"</span>,</span>
+<span>  deployment.lon.col <span class="op">=</span> <span class="st">"lon"</span>,</span>
+<span>  deployment.lat.col <span class="op">=</span> <span class="st">"lat"</span>,</span>
+<span>  deployment.deploy.col <span class="op">=</span> <span class="st">"deploy"</span>,</span>
+<span>  deployment.recover.col <span class="op">=</span> <span class="st">"recover"</span>,</span>
 <span>  coord.tolerance <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  fill.coords <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  fill.station <span class="op">=</span> <span class="cn">TRUE</span>,</span>
@@ -97,18 +100,34 @@ reported by <code><a href="checkDeployments.html">checkDeployments</a></code>, a
 
 <dt id="arg-deployments">deployments<a class="anchor" aria-label="anchor" href="#arg-deployments"></a></dt>
 <dd><p>A receiver-deployment data frame from <code><a href="importDeployments.html">importDeployments</a></code>
-(<code>receiver</code>, <code>station</code>, <code>lon</code>, <code>lat</code>, <code>deploy</code>, and optionally <code>recover</code>).</p></dd>
+(<code>receiver</code> plus station, coordinates and deploy/recover date-times; column names resolved via the
+<code>deployment.*</code> arguments).</p></dd>
 
 
 <dt id="arg-datetime-col-station-col-lon-col-lat-col">datetime.col, station.col, lon.col, lat.col<a class="anchor" aria-label="anchor" href="#arg-datetime-col-station-col-lon-col-lat-col"></a></dt>
-<dd><p>Column names in <code>detections</code> (resolved from
-the <code>mobyData</code> metadata or canonical defaults when <code>NULL</code>).</p></dd>
+<dd><p>Column names in the <strong>detection</strong> dataset
+(<code>detections</code>), resolved from its <code>mobyData</code> metadata or canonical defaults when <code>NULL</code>. Bare
+<code>*.col</code> arguments always refer to the detections; the deployment log's columns use the
+<code>deployment.*</code> arguments.</p></dd>
 
 
-<dt id="arg-deploy-col-recover-col">deploy.col, recover.col<a class="anchor" aria-label="anchor" href="#arg-deploy-col-recover-col"></a></dt>
-<dd><p>Names of the deployment and recovery date-time columns in
-<code>deployments</code>. Default to the canonical <code>"deploy"</code>/<code>"recover"</code>; set them when a log uses other
-names (e.g. <code>"deploy_date"</code>).</p></dd>
+<dt id="arg-deployment-station-col-deployment-lon-col-deployment-lat-col">deployment.station.col, deployment.lon.col, deployment.lat.col<a class="anchor" aria-label="anchor" href="#arg-deployment-station-col-deployment-lon-col-deployment-lat-col"></a></dt>
+<dd><p>Names of the station,
+longitude and latitude columns in the receiver-deployment log (<code>deployments</code>). Default to the
+canonical <code>"station"</code>/<code>"lon"</code>/<code>"lat"</code> produced by <code><a href="importDeployments.html">importDeployments</a></code>; set them when a
+hand-made log uses other names (e.g. <code>deployment.lon.col = "Longitude"</code>). The <code>deployment.</code> prefix
+marks these as deployment-log columns, keeping them distinct from the bare <code>*.col</code> arguments,
+which always refer to the detection dataset. The <code>receiver</code> column is the canonical join key and
+is always taken as-is.</p></dd>
+
+
+<dt id="arg-deployment-deploy-col-deployment-recover-col">deployment.deploy.col, deployment.recover.col<a class="anchor" aria-label="anchor" href="#arg-deployment-deploy-col-deployment-recover-col"></a></dt>
+<dd><p>Names of the deployment and recovery
+date-time columns in the receiver-deployment log (<code>deployments</code>). Default to the canonical
+<code>"deploy"</code>/<code>"recover"</code> produced by <code><a href="importDeployments.html">importDeployments</a></code>; set them when a hand-made log
+uses other names (e.g. <code>deployment.deploy.col = "deploy_date"</code>). The <code>deployment.</code> prefix marks
+these as deployment-log columns, keeping them distinct from the bare <code>*.col</code> arguments, which
+always refer to the detection dataset.</p></dd>
 
 
 <dt id="arg-coord-tolerance">coord.tolerance<a class="anchor" aria-label="anchor" href="#arg-coord-tolerance"></a></dt>

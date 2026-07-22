@@ -29,12 +29,11 @@ and
 ``` r
 plotArray(
   deployments,
-  station.col = "station",
-  receiver.col = "receiver",
-  lon.col = "lon",
-  lat.col = "lat",
-  deploy.col = "deploy",
-  recover.col = "recover",
+  deployment.station.col = "station",
+  deployment.lon.col = "lon",
+  deployment.lat.col = "lat",
+  deployment.deploy.col = "deploy",
+  deployment.recover.col = "recover",
   detections = NULL,
   color.by = NULL,
   status.at = NULL,
@@ -89,31 +88,36 @@ plotArray(
   columns. Multiple rows per station (repeated servicing) are reduced to
   one point per station.
 
-- station.col:
+- deployment.station.col, deployment.lon.col, deployment.lat.col:
 
-  Name of the station column. Defaults to "station".
+  Names of the station, longitude and latitude columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"station"`/`"lon"`/`"lat"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.lon.col = "Longitude"`). The `deployment.` prefix marks
+  these as deployment-log columns, keeping them distinct from the bare
+  `*.col` arguments, which always refer to the detection dataset. The
+  `receiver` column is the canonical join key and is always taken as-is.
 
-- receiver.col:
+- deployment.deploy.col, deployment.recover.col:
 
-  Name of the receiver column (used for labels/summary). Defaults to
-  "receiver".
-
-- lon.col, lat.col:
-
-  Names of the longitude/latitude columns. Defaults to "lon"/"lat".
-
-- deploy.col, recover.col:
-
-  Names of the deployment/recovery date columns (used by `status.at`).
-  Defaults to "deploy"/"recover".
+  Names of the deployment and recovery date-time columns in the
+  receiver-deployment log (`deployments`). Default to the canonical
+  `"deploy"`/`"recover"` produced by
+  [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md);
+  set them when a hand-made log uses other names (e.g.
+  `deployment.deploy.col = "deploy_date"`). The `deployment.` prefix
+  marks these as deployment-log columns, keeping them distinct from the
+  bare `*.col` arguments, which always refer to the detection dataset.
 
 - detections:
 
   Optional. A detection dataset (data frame or `mobyData`). When
   supplied, stations with zero detections are highlighted and counted -
-  a quick check for dead receivers or coverage gaps. The station column
-  is taken from the data's metadata when present, otherwise from
-  `station.col`.
+  a quick check for dead receivers or coverage gaps. The detection
+  station column is taken from the dataset's `mobyData` metadata when
+  present, otherwise from the canonical `"station"`.
 
 - color.by:
 
@@ -125,7 +129,7 @@ plotArray(
 
   Optional. A single date; each station is classified and coloured as
   `"active"`, `"recovered"` or `"not yet deployed"` at that instant,
-  from `deploy.col`/`recover.col` (a station is active while
+  from the deployment/recovery dates (a station is active while
   `deploy <= status.at < recover`). Character/`Date` input is
   interpreted in the data's timezone (not the session's) for
   reproducibility.
