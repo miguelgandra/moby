@@ -15,7 +15,7 @@
 #' be one-tailed or two-tailed based on the specified alternative hypothesis (a
 #' continuity correction is applied to avoid p-values of exactly 0 or 1).
 #'
-#' @param table A data frame containing binned detections in the wide format
+#' @param data A data frame containing binned detections in the wide format
 #' (time bin x individual matrix, with values corresponding to the receiver/station with the
 #' highest number of detections), as returned by \code{\link{createWideTable}}.
 #' @param overlaps Data frame containing paiwise overlaps, as returned by \code{\link{calculateAssociations}}.
@@ -93,7 +93,7 @@
 #' @export
 
 
-randomizeAssociations <- function(table,
+randomizeAssociations <- function(data,
                              overlaps,
                              constraint.by = NULL,
                              iterations = 1000,
@@ -110,10 +110,10 @@ randomizeAssociations <- function(table,
 
   # validate parameters
   errors <- c()
-  if (!is.data.frame(table)) errors <- c(errors, "The 'table' argument must be a data frame.")
-  if(!c("ids") %in% names(attributes(table))) errors <- c(errors, "The supplied table does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
+  if (!is.data.frame(data)) errors <- c(errors, "The 'data' argument must be a data frame.")
+  if(!c("ids") %in% names(attributes(data))) errors <- c(errors, "The supplied data does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
   if (!is.data.frame(overlaps) || !c("ids") %in% names(attributes(overlaps))) errors <- c(errors, "'overlaps' format not recognized. Please make sure to use the output from the 'calculateAssociations' function.")
-  if (!is.null(constraint.by) && !all(constraint.by %in% colnames(table))) errors <- c(errors,  "Constraint variable(s) not found in the supplied table.")
+  if (!is.null(constraint.by) && !all(constraint.by %in% colnames(data))) errors <- c(errors,  "Constraint variable(s) not found in the supplied data.")
   if (!is.null(random.seed) && !inherits(random.seed, "numeric")) errors <- c(errors, "The random seed must be an integer.")
   if (!alternative %in% c("two.sided", "less", "greater")) errors <- c(errors, "Invalid value for argument 'alternative'. Must be one of 'two.sided', 'less', or 'greater'.")
   if (length(p.adjust.method)!=1 || !p.adjust.method %in% stats::p.adjust.methods) errors <- c(errors, paste0("Invalid 'p.adjust.method'. Must be one of: ", paste(stats::p.adjust.methods, collapse=", "), "."))
@@ -137,11 +137,11 @@ randomizeAssociations <- function(table,
     }
   }
 
-  # get table attributes
-  complete_ids <- as.character(attributes(table)$ids)
-  timebin.col <- attributes(table)$timebin.col
-  start_dates <- attributes(table)$start.dates
-  end_dates <- attributes(table)$end.dates
+  # get data attributes
+  complete_ids <- as.character(attributes(data)$ids)
+  timebin.col <- attributes(data)$timebin.col
+  start_dates <- attributes(data)$start.dates
+  end_dates <- attributes(data)$end.dates
 
   # get overlap results attributes
   id.groups <- attributes(overlaps)$id.groups
@@ -159,26 +159,26 @@ randomizeAssociations <- function(table,
 
   # retrieve number of animals
   n_ids <- length(complete_ids)
-  animal_cols <- which(colnames(table) %in% complete_ids)
+  animal_cols <- which(colnames(data) %in% complete_ids)
 
   # create constraint variable
   if(!is.null(constraint.by)){
-    if(length(constraint.by)==1){table$constraint <- table[,constraint.by]}
-    if(length(constraint.by)>1){table$constraint <- apply(table[,constraint.by], 1 , paste, collapse="//")}
+    if(length(constraint.by)==1){data$constraint <- data[,constraint.by]}
+    if(length(constraint.by)>1){data$constraint <- apply(data[,constraint.by], 1 , paste, collapse="//")}
   }else{
-    table$constraint <- 1
+    data$constraint <- 1
   }
 
   # create subset variable if not provided
   if(is.null(subset)){
-    table$subset <- 1
+    data$subset <- 1
     overlaps$subset <- 1
   } else {
-    table$subset <- interaction(table[, subset], drop = TRUE)
+    data$subset <- interaction(data[, subset], drop = TRUE)
   }
 
-  # split table by subset
-  subset_list <- list("table"= split(table, f=table$subset),
+  # split data by subset
+  subset_list <- list("data"= split(data, f=data$subset),
                       "overlaps"=split(overlaps, f=overlaps$subset))
 
 
@@ -195,7 +195,7 @@ randomizeAssociations <- function(table,
   n_pairs <- length(unique_pairs)
 
   # initialize final results list
-  final_results <- vector("list", length(subset_list$table))
+  final_results <- vector("list", length(subset_list$data))
 
   # set alpha value
   alpha <- 1 - conf.level
@@ -205,9 +205,9 @@ randomizeAssociations <- function(table,
 
   ##############################################################################
   # iterate over each subset   #################################################
-  for(s in seq_along(subset_list$table)){
+  for(s in seq_along(subset_list$data)){
 
-    subset_table <- subset_list$table[[s]]
+    subset_table <- subset_list$data[[s]]
     subset_overlaps <- subset_list$overlaps[[s]]
 
     # assign pair to current data
@@ -217,7 +217,7 @@ randomizeAssociations <- function(table,
 
     # build the [pairs x iterations] null-overlap matrix (rows = unique_pairs). The serial engine is
     # bit-identical to the previous implementation; cores > 1 splits the iterations across workers.
-    if (!is.null(subset)) .mobyInform("Running permutations - ", names(subset_list$table)[s], verbose = verbose)
+    if (!is.null(subset)) .mobyInform("Running permutations - ", names(subset_list$data)[s], verbose = verbose)
     else if (cores > 1 && s == 1) .mobyInform("Starting parallel computation: ", cores, " cores", verbose = verbose)
 
     null_mat <- .nullOverlapMatrix(subset_table, complete_ids, timebin.col, start_dates, end_dates,
@@ -347,7 +347,7 @@ randomizeAssociations <- function(table,
       final_results <- final_results[[1]]
       final_results$summary <- .dropCols(final_results$summary, "Subset")
     }else{
-      snames <- names(subset_list$table)
+      snames <- names(subset_list$data)
       out <- list(summary          = do.call("rbind", lapply(final_results, `[[`, "summary")),
                   pairwise_results = do.call("rbind", lapply(final_results, `[[`, "pairwise_results")),
                   randomized_overlaps = setNames(lapply(final_results, `[[`, "randomized_overlaps"), snames))
@@ -484,7 +484,7 @@ randomizeAssociations <- function(table,
     .progressEnd(pb)
   } else {
     # split the iterations into 'cores' chunks; each worker precomputes locally (cheap) and runs its
-    # chunk, so only the subset table is shipped to the workers, not a matrix per iteration
+    # chunk, so only the subset data is shipped to the workers, not a matrix per iteration
     k <- NULL                                          # bound by foreach() at runtime (quiets R CMD check)
     precompute <- .nullPrecompute; iterate <- .nullIterateChunk  # export as locals (no ::: on own package)
     chunk <- as.integer(cut(seq_len(iterations), cores, labels = FALSE))

@@ -5,7 +5,7 @@
 \title{Test association-network co-occurrences against a null model}
 \usage{
 randomizeAssociations(
-  table,
+  data,
   overlaps,
   constraint.by = NULL,
   iterations = 1000,
@@ -18,7 +18,7 @@ randomizeAssociations(
 )
 }
 \arguments{
-\item{table}{A data frame containing binned detections in the wide format
+\item{data}{A data frame containing binned detections in the wide format
 (time bin x individual matrix, with values corresponding to the receiver/station with the
 highest number of detections), as returned by \code{\link{createWideTable}}.}
 

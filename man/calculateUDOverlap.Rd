@@ -8,7 +8,7 @@ calculateUDOverlap(
   ud,
   index = "BA",
   contour = 95,
-  level = 0.95,
+  conf.level = 0.95,
   id.groups = NULL,
   verbose = TRUE
 )
@@ -23,7 +23,7 @@ KDE-estimated UDs additionally \code{"UDOI"}, \code{"HR"}, \code{"PHR"}, \code{"
 \item{contour}{KDE only: the home-range isopleth percentage the overlap is restricted to (a value
 in (0, 100]). Defaults to 95. Ignored for AKDE (which integrates the full UD).}
 
-\item{level}{AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
+\item{conf.level}{AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
 Ignored for KDE (which provides no CIs).}
 
 \item{id.groups}{Optional named list of ID groups. When supplied, each pair is annotated with its
@@ -42,7 +42,7 @@ this is the directional value for \verb{(id1, id2)}.}
 membership of each animal and whether the pair is within or between groups.}
 When a single unit produces pairs, the estimator's own overlap matrix is attached as attribute
 \code{"matrix"} (symmetric except for the directional \code{HR}/\code{PHR} indices, which stay asymmetric);
-\code{"method"}, \code{"index"}, and \code{"contour"}/\code{"level"} record how it was computed.
+\code{"method"}, \code{"index"}, and \code{"contour"}/\code{"conf.level"} record how it was computed.
 }
 \description{
 Computes pairwise overlap between the individual utilization distributions (UDs)
@@ -61,7 +61,7 @@ intervals}; for classic kernel density (\code{method = "kde"}) it uses
 Available \code{index} values depend on how the UDs were estimated:
 \itemize{
 \item \strong{AKDE} (\code{ctmm}): only \code{"BA"} (Bhattacharyya coefficient), reported with a
-lower/upper confidence interval at the requested \code{level}. This autocorrelation-aware estimate is
+lower/upper confidence interval at the requested \code{conf.level}. This autocorrelation-aware estimate is
 the recommended choice for tracking data.
 \item \strong{KDE} (\code{adehabitatHR}): \code{"BA"} (Bhattacharyya), \code{"UDOI"} (utilization
 distribution overlap index), \code{"HR"} (home-range area overlap), \code{"PHR"} (probability of

@@ -22,9 +22,11 @@
 #' @param bandwidth Numeric smoothing parameter (h) for `method = "kde"` only; ignored for AKDE
 #' (which estimates smoothing from the fitted movement model). Larger values produce smoother,
 #' broader distributions; smaller values give more localized, potentially fragmented estimates.
-#' @param time.col Name of the POSIXct time column used by `method = "akde"` to model temporal
-#' autocorrelation. If `NULL`, the function uses the `mobyData` time-bin/date-time column and,
-#' failing that, a `"timebin"` or `"datetime"` column present in the data.
+#' @param timebin.col Name of the POSIXct time column used by `method = "akde"` to model temporal
+#' autocorrelation. The canonical input is a time-binned series (e.g. the `timebin` column of
+#' \code{\link{calculateCOAs}} output), but a raw date-time column is also accepted. If `NULL`, the
+#' function uses the `mobyData` time-bin (then date-time) column and, failing that, a `"timebin"` or
+#' `"datetime"` column present in the data.
 #' @param model.selection For `method = "akde"`: `"fit"` (default) fits a single movement model
 #' from an automated guess (faster); `"select"` runs \code{ctmm::ctmm.select} to choose among
 #' candidate models (more thorough, slower).
@@ -167,7 +169,7 @@ calculateUDs <- function(data,
                           id.groups = NULL,
                           land.shape = NULL,
                           id.col = NULL,
-                          time.col = NULL,
+                          timebin.col = NULL,
                           lon.col = NULL,
                           lat.col = NULL,
                           epsg.code = NULL,
@@ -201,7 +203,7 @@ calculateUDs <- function(data,
   # capture mobyData metadata (before the data is coerced to a plain data.frame) so the
   # AKDE pathway can locate the time column even when not explicitly supplied
   .meta <- attr(data, "moby")
-  akde_time <- time.col
+  akde_time <- timebin.col
   if (is.null(akde_time) && !is.null(.meta)) {
     akde_time <- if (!is.null(.meta$timebin.col)) .meta$timebin.col else .meta$datetime.col
   }
@@ -769,7 +771,7 @@ calculateUDs <- function(data,
   for (cc in candidates) if (inherits(data[[cc]], "POSIXct")) { time_col <- cc; break }
   if (is.null(time_col)) {
     stop(paste("method='akde' requires a POSIXct time column (it models temporal",
-               "autocorrelation). Please supply 'datetime.col' (e.g. the time-bin column",
+               "autocorrelation). Please supply 'timebin.col' (e.g. the time-bin column",
                "of your COAs), or use method='kde'."), call. = FALSE)
   }
   tz <- .dataTZ(data[[time_col]])

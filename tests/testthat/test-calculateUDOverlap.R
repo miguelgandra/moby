@@ -114,14 +114,14 @@ test_that("id.groups annotates pairs as within / between", {
 test_that("AKDE overlap reports BA with a bracketing confidence interval", {
   skip_if_not_installed("ctmm")
   ud  <- suppressWarnings(calculateUDs(moby_track(c("A", "B")), verbose = FALSE))  # akde default
-  res <- suppressWarnings(calculateUDOverlap(ud, index = "BA", level = 0.95, verbose = FALSE))
+  res <- suppressWarnings(calculateUDOverlap(ud, index = "BA", conf.level = 0.95, verbose = FALSE))
 
   expect_equal(nrow(res), 1L)
   expect_true(all(c("BA", "BA_lower", "BA_upper") %in% names(res)))
   expect_true(all(res$BA_lower <= res$BA & res$BA <= res$BA_upper))
   expect_true(all(res$BA >= 0 & res$BA <= 1))
   expect_equal(attr(res, "method"), "akde")
-  expect_equal(attr(res, "level"), 0.95)
+  expect_equal(attr(res, "conf.level"), 0.95)
   # AKDE (ctmm::overlap) only offers the Bhattacharyya coefficient
   expect_error(calculateUDOverlap(ud, index = "UDOI"), "AKDE")
 })
@@ -132,6 +132,6 @@ test_that("bad input is rejected clearly", {
   # argument validation fires before the UD is inspected, so a stub with a $ud element suffices
   stub <- list(ud = 1)
   expect_error(calculateUDOverlap(list()), "\\$ud")
-  expect_error(calculateUDOverlap(stub, level = 1.5), "level")
+  expect_error(calculateUDOverlap(stub, conf.level = 1.5), "conf.level")
   expect_error(calculateUDOverlap(stub, contour = 0), "contour")
 })

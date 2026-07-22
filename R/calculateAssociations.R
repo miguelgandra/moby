@@ -21,14 +21,14 @@
 #' two release dates to the earlier of the two last-detection dates), so that an individual's
 #' absence is not mistaken for non-association when it was due to transmitter failure or death.
 #'
-#' @param table A data frame containing binned detections in the wide format
+#' @param data A data frame containing binned detections in the wide format
 #' (time bin x individual matrix, with values corresponding to the receiver/station with the
 #' highest number of detections), as returned by \code{\link{createWideTable}}.
 #' @param id.groups Optional. A list containing ID groups, used to calculate stats independently
 #' within each group, as well as comparing relationships between ids of different groups.
 #' @param subset If defined, overlaps are calculated independently for each level of
 #' this variable. This can either be a single column name (variable) or a vector
-#' of column names, corresponding to variables contained in the table. In the case of
+#' of column names, corresponding to variables contained in the data. In the case of
 #' multiple columns, their interaction is used for grouping. If left NULL,
 #' single overlap indices are calculated for the whole monitoring period.
 #' @param group.comparisons Controls the type of comparisons to be run, when id.groups are defined.
@@ -100,7 +100,7 @@
 #'
 #' @export
 
-calculateAssociations <- function(table,
+calculateAssociations <- function(data,
                                   id.groups = NULL,
                                   subset = NULL,
                                   metric = "simple-ratio",
@@ -114,9 +114,9 @@ calculateAssociations <- function(table,
 
   # validate parameters
   errors <- c()
-  if(!c("ids") %in% names(attributes(table))) errors <- c(errors, "The supplied table does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
-  if (!is.data.frame(table)) errors <- c(errors, "The 'table' argument must be a data frame.")
-  if (!is.null(subset) && !all(subset %in% colnames(table))) errors <- c(errors,  "Subset variable(s) not found in the supplied table.")
+  if(!c("ids") %in% names(attributes(data))) errors <- c(errors, "The supplied data does not seem to be in the wide format. Please use the output of the 'createWideTable' function.")
+  if (!is.data.frame(data)) errors <- c(errors, "The 'data' argument must be a data frame.")
+  if (!is.null(subset) && !all(subset %in% colnames(data))) errors <- c(errors,  "Subset variable(s) not found in the supplied data.")
   if (!metric %in% c("simple-ratio", "half-weight")) errors <- c(errors, "Metric must be one of 'simple-ratio' or 'half-weight'.")
   if (!group.comparisons %in% c("all", "within", "between")) errors <- c(errors, "Group comparisons must be one of 'all', 'within' or 'between'.")
   if (!is.numeric(cores) || cores < 1 || cores %% 1 != 0) errors <- c(errors, "The 'cores' parameter must be a positive integer.")
@@ -133,24 +133,24 @@ calculateAssociations <- function(table,
     stop(stop_message, call.=FALSE)
   }
 
-  # get table attributes
-  complete_ids <- as.character(attributes(table)$ids)
-  timebin.col <- attributes(table)$timebin.col
-  start_dates <- attributes(table)$start.dates
-  end_dates <- attributes(table)$end.dates
+  # get data attributes
+  complete_ids <- as.character(attributes(data)$ids)
+  timebin.col <- attributes(data)$timebin.col
+  start_dates <- attributes(data)$start.dates
+  end_dates <- attributes(data)$end.dates
 
   # reorder ID levels if ID groups are defined
   if (!is.null(id.groups)) {
     if (any(duplicated(unlist(id.groups)))) stop("Repeated ID(s) in id.groups", call.=FALSE)
-    if (any(!unlist(id.groups) %in% complete_ids)) stop("Some of the ID(s) in id.groups were not found in the supplied table", call.=FALSE)
+    if (any(!unlist(id.groups) %in% complete_ids)) stop("Some of the ID(s) in id.groups were not found in the supplied data", call.=FALSE)
 
     # remove individuals not present in ID groups
     selected_ids <- unique(unlist(id.groups))
     discard_indexes <- which(!complete_ids %in% selected_ids)
-    id_cols <- which(colnames(table) %in% complete_ids)
-    discard_cols <- id_cols[!colnames(table)[id_cols] %in% selected_ids]
+    id_cols <- which(colnames(data) %in% complete_ids)
+    discard_cols <- id_cols[!colnames(data)[id_cols] %in% selected_ids]
     if (length(discard_cols) > 0) {
-      table <- table[, -discard_cols]
+      data <- data[, -discard_cols]
       complete_ids <- complete_ids[-discard_indexes]
       start_dates <- start_dates[-discard_indexes]
       end_dates <- end_dates[-discard_indexes]
@@ -171,7 +171,7 @@ calculateAssociations <- function(table,
   n_ids <- length(complete_ids)
 
   # select core columns
-  keep_cols <- which(colnames(table) %in% complete_ids)
+  keep_cols <- which(colnames(data) %in% complete_ids)
   missing_individuals <- names(which(is.na(end_dates)))
   keep_cols <- c(1, keep_cols)
 
@@ -180,12 +180,12 @@ calculateAssociations <- function(table,
 
   # if no subset variable is defined, calculate overlaps for the entire study duration
   if (is.null(subset)) {
-    data_list[[1]] <- table[, keep_cols]
+    data_list[[1]] <- data[, keep_cols]
     names(data_list) <- "complete monitoring duration"
   # else, split data and calculate overlaps independently for each group
   } else {
-    keep_cols <- c(keep_cols, which(colnames(table) %in% subset))
-    data_list <- split(table[,keep_cols], f=table[,subset])
+    keep_cols <- c(keep_cols, which(colnames(data) %in% subset))
+    data_list <- split(data[,keep_cols], f=data[,subset])
     data_list <- lapply(data_list, function(x) .dropCols(x, subset))
   }
 

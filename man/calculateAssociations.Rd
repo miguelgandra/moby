@@ -5,7 +5,7 @@
 \title{Calculate pairwise spatiotemporal associations (co-occurrence network)}
 \usage{
 calculateAssociations(
-  table,
+  data,
   id.groups = NULL,
   subset = NULL,
   metric = "simple-ratio",
@@ -15,7 +15,7 @@ calculateAssociations(
 )
 }
 \arguments{
-\item{table}{A data frame containing binned detections in the wide format
+\item{data}{A data frame containing binned detections in the wide format
 (time bin x individual matrix, with values corresponding to the receiver/station with the
 highest number of detections), as returned by \code{\link{createWideTable}}.}
 
@@ -24,7 +24,7 @@ within each group, as well as comparing relationships between ids of different g
 
 \item{subset}{If defined, overlaps are calculated independently for each level of
 this variable. This can either be a single column name (variable) or a vector
-of column names, corresponding to variables contained in the table. In the case of
+of column names, corresponding to variables contained in the data. In the case of
 multiple columns, their interaction is used for grouping. If left NULL,
 single overlap indices are calculated for the whole monitoring period.}
 

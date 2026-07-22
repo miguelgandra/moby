@@ -13,7 +13,7 @@ calculateUDs(
   id.groups = NULL,
   land.shape = NULL,
   id.col = NULL,
-  time.col = NULL,
+  timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   epsg.code = NULL,
@@ -55,9 +55,11 @@ any portions of the estimated areas that overlap with landmasses.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
-\item{time.col}{Name of the POSIXct time column used by \code{method = "akde"} to model temporal
-autocorrelation. If \code{NULL}, the function uses the \code{mobyData} time-bin/date-time column and,
-failing that, a \code{"timebin"} or \code{"datetime"} column present in the data.}
+\item{timebin.col}{Name of the POSIXct time column used by \code{method = "akde"} to model temporal
+autocorrelation. The canonical input is a time-binned series (e.g. the \code{timebin} column of
+\code{\link{calculateCOAs}} output), but a raw date-time column is also accepted. If \code{NULL}, the
+function uses the \code{mobyData} time-bin (then date-time) column and, failing that, a \code{"timebin"} or
+\code{"datetime"} column present in the data.}
 
 \item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
 

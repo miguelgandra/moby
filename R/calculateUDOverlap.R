@@ -19,7 +19,7 @@
 #' @details Available `index` values depend on how the UDs were estimated:
 #' \itemize{
 #'   \item \strong{AKDE} (`ctmm`): only \code{"BA"} (Bhattacharyya coefficient), reported with a
-#'   lower/upper confidence interval at the requested `level`. This autocorrelation-aware estimate is
+#'   lower/upper confidence interval at the requested `conf.level`. This autocorrelation-aware estimate is
 #'   the recommended choice for tracking data.
 #'   \item \strong{KDE} (`adehabitatHR`): \code{"BA"} (Bhattacharyya), \code{"UDOI"} (utilization
 #'   distribution overlap index), \code{"HR"} (home-range area overlap), \code{"PHR"} (probability of
@@ -47,7 +47,7 @@
 #' KDE-estimated UDs additionally \code{"UDOI"}, \code{"HR"}, \code{"PHR"}, \code{"VI"}, \code{"HD"}.
 #' @param contour KDE only: the home-range isopleth percentage the overlap is restricted to (a value
 #' in (0, 100]). Defaults to 95. Ignored for AKDE (which integrates the full UD).
-#' @param level AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
+#' @param conf.level AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
 #' Ignored for KDE (which provides no CIs).
 #' @param id.groups Optional named list of ID groups. When supplied, each pair is annotated with its
 #' `group1`/`group2` membership and a `pair_type` of `"within"` or `"between"`.
@@ -63,7 +63,7 @@
 #' membership of each animal and whether the pair is within or between groups.}
 #' When a single unit produces pairs, the estimator's own overlap matrix is attached as attribute
 #' `"matrix"` (symmetric except for the directional `HR`/`PHR` indices, which stay asymmetric);
-#' `"method"`, `"index"`, and `"contour"`/`"level"` record how it was computed.
+#' `"method"`, `"index"`, and `"contour"`/`"conf.level"` record how it was computed.
 #'
 #' @references
 #' Fieberg, J. & Kochanny, C. O. (2005). Quantifying home-range overlap: the importance of the
@@ -89,7 +89,7 @@
 calculateUDOverlap <- function(ud,
                                index = "BA",
                                contour = 95,
-                               level = 0.95,
+                               conf.level = 0.95,
                                id.groups = NULL,
                                verbose = TRUE) {
 
@@ -101,8 +101,8 @@ calculateUDOverlap <- function(ud,
     stop("'ud' must be the output of calculateUDs() (a list with a '$ud' element).", call. = FALSE)
   if (!is.numeric(contour) || length(contour) != 1 || contour <= 0 || contour > 100)
     stop("'contour' must be a single isopleth percentage in (0, 100].", call. = FALSE)
-  if (!is.numeric(level) || length(level) != 1 || level <= 0 || level >= 1)
-    stop("'level' must be a single confidence level in (0, 1).", call. = FALSE)
+  if (!is.numeric(conf.level) || length(conf.level) != 1 || conf.level <= 0 || conf.level >= 1)
+    stop("'conf.level' must be a single confidence level in (0, 1).", call. = FALSE)
 
   uds <- ud$ud
   method <- attr(ud, "method")
@@ -143,7 +143,7 @@ calculateUDOverlap <- function(ud,
       m  <- adehabitatHR::kerneloverlaphr(coll, method = index, percent = contour, conditional = TRUE)
       df <- .overlapPairs(m, index, ci = NULL, directed = directed)
     } else {
-      ov  <- ctmm::overlap(coll, level = level)
+      ov  <- ctmm::overlap(coll, level = conf.level)
       ci  <- ov$CI                                  # [n, n, 3]; 3rd dim = low / est / high
       n   <- length(ids)
       pull <- function(k) matrix(ci[, , k], n, n, dimnames = list(ids, ids))  # shape-agnostic slice
@@ -174,7 +174,7 @@ calculateUDOverlap <- function(ud,
 
   attr(result, "method") <- method
   attr(result, "index") <- index
-  if (method == "kde") attr(result, "contour") <- contour else attr(result, "level") <- level
+  if (method == "kde") attr(result, "contour") <- contour else attr(result, "conf.level") <- conf.level
   # attach the estimator's own overlap matrix when a single unit produced pairs (symmetric except HR/PHR)
   if (length(mats) == 1 && nrow(result) > 0) attr(result, "matrix") <- mats[[1]]
   attr(result, "processing.date") <- Sys.time()

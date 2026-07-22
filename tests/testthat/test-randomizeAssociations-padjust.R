@@ -10,13 +10,13 @@ make_overlap_inputs <- function(seed = 1) {
                 tagging.dates = as.POSIXct("2023-01-01", tz = "UTC"))
   wt <- suppressWarnings(suppressMessages(createWideTable(md, value.col = "station", verbose = FALSE)))
   ov <- suppressWarnings(suppressMessages(calculateAssociations(wt)))
-  list(table = wt, overlaps = ov)
+  list(data = wt, overlaps = ov)
 }
 
 test_that("randomizeAssociations reports both raw and multiple-comparison-adjusted p-values", {
   inp <- make_overlap_inputs()
   r <- suppressWarnings(suppressMessages(
-    randomizeAssociations(inp$table, inp$overlaps, iterations = 100, random.seed = 1, p.adjust.method = "fdr")))
+    randomizeAssociations(inp$data, inp$overlaps, iterations = 100, random.seed = 1, p.adjust.method = "fdr")))
   pr <- r$pairwise_results
   expect_true(all(c("p_value", "p_adjusted") %in% colnames(pr)))
   padj <- suppressWarnings(as.numeric(pr$p_adjusted))
@@ -28,11 +28,11 @@ test_that("randomizeAssociations reports both raw and multiple-comparison-adjust
 test_that("p.adjust.method = 'none' leaves p-values unchanged; invalid method errors", {
   inp <- make_overlap_inputs()
   r <- suppressWarnings(suppressMessages(
-    randomizeAssociations(inp$table, inp$overlaps, iterations = 100, random.seed = 1, p.adjust.method = "none")))
+    randomizeAssociations(inp$data, inp$overlaps, iterations = 100, random.seed = 1, p.adjust.method = "none")))
   pr <- r$pairwise_results
   expect_equal(suppressWarnings(as.numeric(pr$p_adjusted)),
                suppressWarnings(as.numeric(pr$p_value)))
   expect_error(
-    suppressWarnings(suppressMessages(randomizeAssociations(inp$table, inp$overlaps, p.adjust.method = "bogus"))),
+    suppressWarnings(suppressMessages(randomizeAssociations(inp$data, inp$overlaps, p.adjust.method = "bogus"))),
     "p.adjust.method")
 })
