@@ -207,15 +207,23 @@ calculateStepDistances <- function(data,
       data$lat_wgs84_tmp <- sf::st_coordinates(coords_wgs84)[,2]
     }
 
-    # check if any coordinates overlap land (per-point, so the count is accurate)
+    # check whether any coordinates overlap land
     pts <- sf::st_as_sf(data.frame(lon=data$lon_m_tmp, lat=data$lat_m_tmp),
                         coords=c("lon","lat"), crs=sf::st_crs(epsg.code))
     overlapping_pts <- lengths(sf::st_intersects(pts, sf::st_as_sf(land.shape), sparse=TRUE))
     if(any(overlapping_pts > 0)){
-      num_overlapping <- sum(overlapping_pts > 0)  # count of points overlapping land
-      warning_str <- paste0("- Some coordinates (n=", num_overlapping,") overlap with the supplied land shape. ",
-      "Consider using the 'correctPositions()' function to relocate these points to the nearest marine cell, ",
-      "and then rerun the current function with the updated positions.")
+      on_land <- overlapping_pts > 0
+      n_detections <- sum(on_land)
+      # Collapse to distinct positions: a detection's coordinates are its receiver's coordinates, so
+      # the many on-land detections come from a handful of on-land receiver/station locations. Report
+      # both counts, and attribute the cause to the deployment metadata rather than the detections.
+      n_locations <- nrow(unique(data.frame(lon=data$lon_m_tmp[on_land], lat=data$lat_m_tmp[on_land])))
+      warning_str <- paste0(
+        "- ", n_detections, " detection(s) at ", n_locations, " location(s) fall on the supplied land ",
+        "shape. A detection's position is the position of the receiver that logged it, so this usually ",
+        "means the deployment metadata places a receiver on land. Audit the receiver log with ",
+        "checkDeployments() and correct the coordinates at source; for a genuine near-shore position that ",
+        "a coarse coastline overlaps, correctPositions() can relocate points to the nearest marine cell.")
       warning(paste(strwrap(warning_str, width=getOption("width")), collapse="\n"), call. = FALSE)
     }
 
