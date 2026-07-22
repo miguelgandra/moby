@@ -16,8 +16,8 @@ plotContours(
   data,
   variables,
   var.titles = NULL,
+  panel.titles = NULL,
   main = NULL,
-  plot.title = NULL,
   split.by = NULL,
   id.col = NULL,
   datetime.col = NULL,
@@ -68,17 +68,17 @@ plotContours(
   Optional display names for the variables (e.g. "Depth (m)"). If NULL,
   the column names are used.
 
+- panel.titles:
+
+  Per-panel title(s). If NULL (default), each panel is titled
+  automatically (the group name when `split.by` is set, the variable
+  name, or both when several variables and groups are shown). Pass a
+  character vector to override (recycled across panels), or FALSE to
+  suppress them.
+
 - main:
 
-  Panel title(s). If NULL (default), each panel is titled automatically
-  (the group name when `split.by` is set, the variable name, or both
-  when several variables and groups are shown). Pass a character vector
-  to override (recycled across panels), or FALSE to suppress panel
-  titles.
-
-- plot.title:
-
-  Optional overall title above the whole panel.
+  Optional overall title above the whole panel grid.
 
 - split.by:
 

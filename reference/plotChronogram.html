@@ -89,6 +89,7 @@ is drawn for each group (e.g. species).</p>
 <span>  highlight.isolated <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  shared.scale <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  shared.dates <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  panel.titles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  legend.cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -215,10 +216,14 @@ levels on top so they are not hidden behind denser clusters. Defaults to FALSE.<
 <dd><p>Use a common date range across panels. Defaults to TRUE.</p></dd>
 
 
+<dt id="arg-panel-titles">panel.titles<a class="anchor" aria-label="anchor" href="#arg-panel-titles"></a></dt>
+<dd><p>Per-panel title(s). If NULL (default), titles are generated automatically (the
+group name when <code>split.by</code> is used, otherwise the metric); a character vector overrides them
+(recycled across panels); FALSE omits them.</p></dd>
+
+
 <dt id="arg-main">main<a class="anchor" aria-label="anchor" href="#arg-main"></a></dt>
-<dd><p>Panel title(s). If NULL (default), titles are generated automatically (the group name
-when <code>split.by</code> is used, otherwise the metric); a character vector overrides them (recycled across
-panels); FALSE omits titles.</p></dd>
+<dd><p>Optional overall title above the whole panel grid.</p></dd>
 
 
 <dt id="arg-legend">legend<a class="anchor" aria-label="anchor" href="#arg-legend"></a></dt>

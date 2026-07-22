@@ -133,7 +133,7 @@ corrected <- correctPositions(rays[1:50, ], spatial.layer = land)
 #> Relocating positions on land to the nearest marine cell
 #> Points relocated: 23
 #> Mean relocation distance: 133 m (0 m — 436 m)
-#> Total execution time: 0.27 secs
+#> Total execution time: 0.35 secs
 #> Warning: Coordinates were initially in a geographic CRS. They have been projected for spatial processing and converted back to geographic coordinates.
 attr(corrected, "points.relocated")
 #> [1] 23

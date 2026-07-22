@@ -68,8 +68,8 @@ for each group.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">variables</span>,</span>
 <span>  var.titles <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  panel.titles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  plot.title <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  split.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -121,14 +121,14 @@ for each group.</p>
 names are used.</p></dd>
 
 
+<dt id="arg-panel-titles">panel.titles<a class="anchor" aria-label="anchor" href="#arg-panel-titles"></a></dt>
+<dd><p>Per-panel title(s). If NULL (default), each panel is titled automatically (the
+group name when <code>split.by</code> is set, the variable name, or both when several variables and groups are
+shown). Pass a character vector to override (recycled across panels), or FALSE to suppress them.</p></dd>
+
+
 <dt id="arg-main">main<a class="anchor" aria-label="anchor" href="#arg-main"></a></dt>
-<dd><p>Panel title(s). If NULL (default), each panel is titled automatically (the group name
-when <code>split.by</code> is set, the variable name, or both when several variables and groups are shown).
-Pass a character vector to override (recycled across panels), or FALSE to suppress panel titles.</p></dd>
-
-
-<dt id="arg-plot-title">plot.title<a class="anchor" aria-label="anchor" href="#arg-plot-title"></a></dt>
-<dd><p>Optional overall title above the whole panel.</p></dd>
+<dd><p>Optional overall title above the whole panel grid.</p></dd>
 
 
 <dt id="arg-split-by">split.by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>

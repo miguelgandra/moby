@@ -37,6 +37,7 @@ plotChronogram(
   highlight.isolated = FALSE,
   shared.scale = FALSE,
   shared.dates = TRUE,
+  panel.titles = NULL,
   main = NULL,
   legend = TRUE,
   legend.cols = NULL,
@@ -178,12 +179,16 @@ plotChronogram(
 
   Use a common date range across panels. Defaults to TRUE.
 
+- panel.titles:
+
+  Per-panel title(s). If NULL (default), titles are generated
+  automatically (the group name when `split.by` is used, otherwise the
+  metric); a character vector overrides them (recycled across panels);
+  FALSE omits them.
+
 - main:
 
-  Panel title(s). If NULL (default), titles are generated automatically
-  (the group name when `split.by` is used, otherwise the metric); a
-  character vector overrides them (recycled across panels); FALSE omits
-  titles.
+  Optional overall title above the whole panel grid.
 
 - legend:
 
