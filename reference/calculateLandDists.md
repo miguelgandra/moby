@@ -21,7 +21,7 @@ calculateLandDists(
   lon.col = NULL,
   lat.col = NULL,
   dist.col = NULL,
-  raster.res = 100
+  grid.resolution = 100
 )
 ```
 
@@ -65,7 +65,7 @@ calculateLandDists(
 
   Optional. Column name for step length (meters).
 
-- raster.res:
+- grid.resolution:
 
   Numeric. Resolution of the distance raster in meters.
 
@@ -84,7 +84,7 @@ land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
   c(-9.05, 38.49)))), crs = 4326))
 rays_land <- calculateLandDists(rays, land.shape = land)
 #> Calculating distances to nearest land (raster method)...
-#> Done! Total execution time: 2.29 secs 
+#> Done! Total execution time: 2.12 secs 
 head(rays_land$land_dist)
 #> [1] 1298.88 1298.88 1298.88 1298.88 1298.88 2383.32
 # }

@@ -15,7 +15,7 @@ raw values rather than a formatted table.
 ``` r
 movementTable(
   data,
-  ud.results,
+  uds,
   land.shape = NULL,
   epsg.code = NULL,
   id.groups = NULL,
@@ -37,7 +37,7 @@ movementTable(
   traveled, as returned by
   [`calculateStepDistances`](https://miguelgandra.github.io/moby/reference/calculateStepDistances.md).
 
-- ud.results:
+- uds:
 
   Output of
   [`calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md).
@@ -123,7 +123,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
                        spatial.grid = grid)
 
   # publication-ready movement metrics table (one row per animal + mean +/- SE)
-  movementTable(tracks, ud.results = kud)
+  movementTable(tracks, uds = kud)
 }
 #> Grouping data by: id.groups
 #> Estimating kernel utilization distributions [Dasyatis pastinaca]...
@@ -132,7 +132,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #> Estimating kernel utilization distributions [Raja clavata]...
 #> Calculating 50% contours...
 #> Calculating 95% contours...
-#> Total execution time: 0.53 secs
+#> Total execution time: 0.46 secs
 #> Interpolating distances
 #>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
 #>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI

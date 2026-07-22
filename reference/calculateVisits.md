@@ -22,12 +22,12 @@ engine, so counts and durations are consistent across them.
 ``` r
 calculateVisits(
   data,
-  spatial.col,
+  spatial.col = NULL,
   id.col = NULL,
   datetime.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.units = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs")
 )
 ```
 
@@ -42,7 +42,9 @@ calculateVisits(
 - spatial.col:
 
   Name of the column defining the locations visited (e.g. receiver,
-  station, habitat, region).
+  station, habitat, region). If `NULL` (default), it is taken from the
+  `mobyData` station column (or the canonical `"station"`); set it to
+  track visits to any other spatial unit.
 
 - id.col:
 
@@ -65,7 +67,7 @@ calculateVisits(
   residence events. Defaults to 48 (hours). Use `Inf` to segment on
   location changes only.
 
-- max.gap.units:
+- max.gap.unit:
 
   Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`,
   `"secs"`.

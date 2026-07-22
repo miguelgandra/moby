@@ -66,7 +66,7 @@ you need the raw values rather than a formatted table.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">movementTable</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  <span class="va">ud.results</span>,</span>
+<span>  <span class="va">uds</span>,</span>
 <span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -89,7 +89,7 @@ you need the raw values rather than a formatted table.</p>
 as returned by <code><a href="calculateStepDistances.html">calculateStepDistances</a></code>.</p></dd>
 
 
-<dt id="arg-ud-results">ud.results<a class="anchor" aria-label="anchor" href="#arg-ud-results"></a></dt>
+<dt id="arg-uds">uds<a class="anchor" aria-label="anchor" href="#arg-uds"></a></dt>
 <dd><p>Output of <code><a href="calculateUDs.html">calculateUDs</a></code>.</p></dd>
 
 
@@ -164,7 +164,7 @@ detections for each individual (e.g., <code>grid.resolution</code>, <code>mov.di
 <span class="r-in"><span>                       spatial.grid <span class="op">=</span> <span class="va">grid</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span>  <span class="co"># publication-ready movement metrics table (one row per animal + mean +/- SE)</span></span></span>
-<span class="r-in"><span>  <span class="fu">movementTable</span><span class="op">(</span><span class="va">tracks</span>, ud.results <span class="op">=</span> <span class="va">kud</span><span class="op">)</span></span></span>
+<span class="r-in"><span>  <span class="fu">movementTable</span><span class="op">(</span><span class="va">tracks</span>, uds <span class="op">=</span> <span class="va">kud</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Grouping data by: id.groups</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Estimating kernel utilization distributions [Dasyatis pastinaca]...</span>
@@ -173,7 +173,7 @@ detections for each individual (e.g., <code>grid.resolution</code>, <code>mov.di
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Estimating kernel utilization distributions [Raja clavata]...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 50% contours...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 95% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.53 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.46 secs</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Interpolating distances</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI</span>

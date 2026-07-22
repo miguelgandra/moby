@@ -24,7 +24,7 @@ plotActograms(
   discard.missing = TRUE,
   color.by = NULL,
   color.pal = NULL,
-  sunriset.coords = NULL,
+  coords = NULL,
   diel.lines = 2,
   solar.depth = 18,
   date.interval = "auto",
@@ -101,7 +101,7 @@ plotActograms(
   (matched by name). If NULL, a colourblind- safe palette is used
   (Okabe-Ito for up to 8 levels, HCL "Dark 3" beyond).
 
-- sunriset.coords:
+- coords:
 
   Longitude/latitude (length-2 numeric, matrix or `SpatialPoints`) used
   for the diel-phase times. Required only when `diel.lines > 0`.
@@ -243,7 +243,7 @@ axis is taken from the data.
 ``` r
 # per-individual actograms with the diel cycle overlaid
 # (coordinates are required to compute sunrise/sunset times)
-plotActograms(rays, sunriset.coords = c(-9, 38.4))
+plotActograms(rays, coords = c(-9, 38.4))
 #> Warning: - 'id.col' converted to factor.
 #> 
 #> Actogram plot

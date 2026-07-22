@@ -19,7 +19,7 @@ plotAssociations(
   random.results = NULL,
   color.by = c("group", "single"),
   scale.nodes.by = NULL,
-  remove.missing = FALSE,
+  discard.missing = FALSE,
   min.val = NULL,
   cut.val = NULL,
   group.order = NULL,
@@ -76,7 +76,7 @@ plotAssociations(
   Numeric vector to scale the nodes. Length should match the number of
   IDs in overlaps.
 
-- remove.missing:
+- discard.missing:
 
   Logical. If TRUE, excludes individuals without detections and null
   pairwise comparisons from the network. Defaults to FALSE.
@@ -270,7 +270,7 @@ wide  <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.03 secs
+#> Total execution time: 0.04 secs
 if (requireNamespace("qgraph", quietly = TRUE)) {
   plotAssociations(assoc)
 }
@@ -291,7 +291,7 @@ if (requireNamespace("qgraph", quietly = TRUE)) {
   rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
   plotAssociations(assoc, rand)
 }
-#> Total execution time: 0.15 secs
+#> Total execution time: 0.14 secs
 #> 
 #> Association network
 #> ------------------------------------------------------

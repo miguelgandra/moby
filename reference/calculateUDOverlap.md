@@ -23,7 +23,7 @@ which offers a wider set of indices but no CIs.
 
 ``` r
 calculateUDOverlap(
-  ud,
+  uds,
   index = "BA",
   contour = 95,
   conf.level = 0.95,
@@ -34,7 +34,7 @@ calculateUDOverlap(
 
 ## Arguments
 
-- ud:
+- uds:
 
   The output of
   [`calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md)
@@ -89,7 +89,7 @@ directional indices `HR`/`PHR`:
 
 - group1, group2, pair_type:
 
-  (when `id.groups` is supplied or `ud` was grouped) the group
+  (when `id.groups` is supplied or `uds` was grouped) the group
   membership of each animal and whether the pair is within or between
   groups.
 
@@ -117,7 +117,7 @@ Available `index` values depend on how the UDs were estimated:
 methods, so the default works whether the UDs are AKDE or KDE. All
 indices are bounded in `[0, 1]` except `UDOI`, which can exceed 1 when
 two ranges overlap and are both non-uniform. Overlap is computed within
-each unit (e.g. species / `id.groups` block) that `ud` was estimated
+each unit (e.g. species / `id.groups` block) that `uds` was estimated
 over, never across units (whose UDs live on separate grids); pairs are
 formed among individuals of the same unit only.
 
@@ -155,8 +155,8 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
   data(rays)
   # estimate UDs for a few animals (kde keeps the example fast), then measure pairwise overlap
   sub <- rays[rays$ID %in% head(levels(factor(rays$ID)), 3), ]
-  ud  <- calculateUDs(sub, method = "kde", bandwidth = 500, verbose = FALSE)
-  calculateUDOverlap(ud, index = "UDOI")
+  uds <- calculateUDs(sub, method = "kde", bandwidth = 500, verbose = FALSE)
+  calculateUDOverlap(uds, index = "UDOI")
 }
 #> Warning: - 'id.col' converted to factor.
 #> Warning: - Some of the ID(s) in id.groups don't match the IDs in the data.

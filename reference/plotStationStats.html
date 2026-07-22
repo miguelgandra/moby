@@ -64,7 +64,7 @@ more animals share a location). Data can be split by animal class through <code>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotStationStats</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"detections"</span>,</span>
-<span>  scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"count"</span>, <span class="st">"proportion"</span><span class="op">)</span>,</span>
+<span>  value.scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"count"</span>, <span class="st">"proportion"</span><span class="op">)</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -101,7 +101,7 @@ more animals share a location). Data can be split by animal class through <code>
 <code>"average detections"</code>, <code>"individuals"</code>, <code>"co-occurrences"</code>. Defaults to <code>"detections"</code>.</p></dd>
 
 
-<dt id="arg-scale">scale<a class="anchor" aria-label="anchor" href="#arg-scale"></a></dt>
+<dt id="arg-value-scale">value.scale<a class="anchor" aria-label="anchor" href="#arg-value-scale"></a></dt>
 <dd><p>What the bar height encodes: <code>"natural"</code> (default; counts for count-based statistics,
 a proportion for <code>"average detections"</code>), <code>"count"</code>, or <code>"proportion"</code>.</p></dd>
 
@@ -210,7 +210,7 @@ quantities with different denominators are never conflated on a shared scale. Wh
 supplied, each group (and, for co-occurrences, each between-group pair when <code>group.comparisons</code> is
 <code>"between"</code>/<code>"all"</code>) becomes a column, sharing the per-type y-scale so groups are directly
 comparable. Bar height encodes counts for count-based statistics and a proportion for
-<code>"average detections"</code> by default (<code>scale</code> overrides this); the complementary quantity is shown as
+<code>"average detections"</code> by default (<code>value.scale</code> overrides this); the complementary quantity is shown as
 a bar annotation.</p>
 <p>The computed statistics are returned invisibly as a tidy data frame, so the plotted numbers are
 available programmatically.</p>

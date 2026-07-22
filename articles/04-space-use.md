@@ -81,7 +81,7 @@ plotMaps(coas, uds = kud, animal.tracks = tracks,
 
 ``` r
 
-movementTable(tracks, ud.results = kud, id.groups = id_groups)
+movementTable(tracks, uds = kud, id.groups = id_groups)
 ```
 
 ## Recap & what’s next

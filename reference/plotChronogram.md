@@ -22,7 +22,7 @@ plotChronogram(
   style = "points",
   color.by = NULL,
   color.pal = NULL,
-  sunriset.coords = NULL,
+  coords = NULL,
   solar.depth = 18,
   diel.lines = 4,
   shade = FALSE,
@@ -98,7 +98,7 @@ plotChronogram(
   colourblind-safe default is used (Okabe-Ito for categorical, viridis
   for continuous/raster).
 
-- sunriset.coords:
+- coords:
 
   Longitude/latitude (a length-2 numeric, matrix or `SpatialPoints`) at
   which to compute diel-phase times. Required only when `diel.lines > 0`
@@ -270,7 +270,7 @@ layout stays consistent across datasets and graphics devices.
 
 ``` r
 # chronogram of detections with the diel cycle overlaid
-plotChronogram(rays, sunriset.coords = c(-9, 38.4))
+plotChronogram(rays, coords = c(-9, 38.4))
 #> Warning: - 'id.col' converted to factor.
 #> 
 #> Chronogram

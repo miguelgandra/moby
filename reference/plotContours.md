@@ -21,7 +21,7 @@ plotContours(
   split.by = NULL,
   id.col = NULL,
   datetime.col = NULL,
-  aggregate.fun = function(x) mean(x, na.rm = TRUE),
+  agg.fun = function(x) mean(x, na.rm = TRUE),
   color.pal = NULL,
   time.interval = "hour",
   date.interval = "month",
@@ -29,7 +29,7 @@ plotContours(
   annual.cycle = FALSE,
   diel.lines = 4,
   diel.lines.color = "black",
-  sunriset.coords = NULL,
+  coords = NULL,
   solar.depth = 18,
   zlim = NULL,
   zlab = NULL,
@@ -94,7 +94,7 @@ plotContours(
   Name of the column containing date-times in POSIXct format. Defaults
   to `"datetime"`.
 
-- aggregate.fun:
+- agg.fun:
 
   Function used to aggregate values within each (id, time bin, date
   bin). Defaults to the mean.
@@ -137,7 +137,7 @@ plotContours(
 
   Colour of the diel lines. Defaults to "black".
 
-- sunriset.coords:
+- coords:
 
   Longitude/latitude (length-2 numeric, matrix or `SpatialPoints`) for
   the diel-phase times. Required only when `diel.lines > 0`.
@@ -289,7 +289,7 @@ the layout stays consistent across datasets and graphics devices.
 # contour plot of a continuous variable (here latitude) over hour-of-day and date,
 # with the diel cycle overlaid
 plotContours(rays, variables = "lat", var.titles = "Latitude",
-             sunriset.coords = c(-9, 38.4))
+             coords = c(-9, 38.4))
 #> Warning: - 'id.col' converted to factor.
 #> 
 #> Contour plot

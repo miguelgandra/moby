@@ -14,7 +14,7 @@ split by animal class through `id.groups`.
 plotStationStats(
   data,
   type = "detections",
-  scale = c("natural", "count", "proportion"),
+  value.scale = c("natural", "count", "proportion"),
   id.col = NULL,
   timebin.col = NULL,
   station.col = NULL,
@@ -51,7 +51,7 @@ plotStationStats(
   `"detections"`, `"average detections"`, `"individuals"`,
   `"co-occurrences"`. Defaults to `"detections"`.
 
-- scale:
+- value.scale:
 
   What the bar height encodes: `"natural"` (default; counts for
   count-based statistics, a proportion for `"average detections"`),
@@ -175,7 +175,7 @@ conflated on a shared scale. When `id.groups` is supplied, each group
 `group.comparisons` is `"between"`/`"all"`) becomes a column, sharing
 the per-type y-scale so groups are directly comparable. Bar height
 encodes counts for count-based statistics and a proportion for
-`"average detections"` by default (`scale` overrides this); the
+`"average detections"` by default (`value.scale` overrides this); the
 complementary quantity is shown as a bar annotation.
 
 The computed statistics are returned invisibly as a tidy data frame, so

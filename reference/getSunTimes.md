@@ -6,18 +6,12 @@ for a given period (study duration). '
 ## Usage
 
 ``` r
-getSunTimes(
-  sunriset.coords,
-  start.time,
-  end.time,
-  by = "%m",
-  solar.depth = 18
-)
+getSunTimes(coords, start.time, end.time, by = "%m", solar.depth = 18)
 ```
 
 ## Arguments
 
-- sunriset.coords:
+- coords:
 
   A SpatialPoints, matrix or numeric object containing longitude and
   latitude coordinates (in that order) at which to estimate sunrise and

@@ -21,7 +21,7 @@ plotMinLag(
   datetime.col = NULL,
   station.col = NULL,
   remove.duplicates = TRUE,
-  color = "#0072B2",
+  bar.color = "#0072B2",
   background.color = "grey96",
   breaks = 40,
   cex = 1,
@@ -76,7 +76,7 @@ plotMinLag(
   [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md).
   Defaults to TRUE.
 
-- color:
+- bar.color:
 
   Fill colour for the histogram. Defaults to a colourblind-safe blue.
 

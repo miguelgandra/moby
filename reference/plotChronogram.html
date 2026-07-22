@@ -74,7 +74,7 @@ is drawn for each group (e.g. species).</p>
 <span>  style <span class="op">=</span> <span class="st">"points"</span>,</span>
 <span>  color.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  sunriset.coords <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  coords <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  solar.depth <span class="op">=</span> <span class="fl">18</span>,</span>
 <span>  diel.lines <span class="op">=</span> <span class="fl">4</span>,</span>
 <span>  shade <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -145,7 +145,7 @@ levels (e.g. species, life stage, habitat).</p></dd>
 default is used (Okabe-Ito for categorical, viridis for continuous/raster).</p></dd>
 
 
-<dt id="arg-sunriset-coords">sunriset.coords<a class="anchor" aria-label="anchor" href="#arg-sunriset-coords"></a></dt>
+<dt id="arg-coords">coords<a class="anchor" aria-label="anchor" href="#arg-coords"></a></dt>
 <dd><p>Longitude/latitude (a length-2 numeric, matrix or <code>SpatialPoints</code>) at which
 to compute diel-phase times. Required only when <code>diel.lines &gt; 0</code> or <code>shade = "diel"</code>.</p></dd>
 
@@ -291,7 +291,7 @@ stays consistent across datasets and graphics devices.</p>
     <div class="section level2">
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># chronogram of detections with the diel cycle overlaid</span></span></span>
-<span class="r-in"><span><span class="fu">plotChronogram</span><span class="op">(</span><span class="va">rays</span>, sunriset.coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9</span>, <span class="fl">38.4</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-in"><span><span class="fu">plotChronogram</span><span class="op">(</span><span class="va">rays</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9</span>, <span class="fl">38.4</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Chronogram</span>

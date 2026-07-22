@@ -25,12 +25,12 @@ mistaken for one continuous stay.
 ``` r
 calculateTransitions(
   data,
-  spatial.col,
+  spatial.col = NULL,
   id.col = NULL,
   datetime.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.units = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs")
 )
 ```
 
@@ -45,7 +45,9 @@ calculateTransitions(
 - spatial.col:
 
   Name of the column defining the network nodes (e.g. receiver, station,
-  habitat, region).
+  habitat, region). If `NULL` (default), it is taken from the `mobyData`
+  station column (or the canonical `"station"`); set it to build
+  transitions between any other spatial unit.
 
 - id.col:
 
@@ -70,7 +72,7 @@ calculateTransitions(
   a longer absence ends a stay, so a later return counts as a new visit.
   Defaults to 48 (hours). Use `Inf` to segment on location changes only.
 
-- max.gap.units:
+- max.gap.unit:
 
   Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`,
   `"secs"`.
