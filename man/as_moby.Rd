@@ -66,8 +66,8 @@ tagging dates do not have to be re-specified on every call.
 
 Because a \code{mobyData} object \strong{is} a \code{data.frame}, it can be used anywhere a data frame
 is expected (including with base subsetting, \code{dplyr}, etc.), and plain data frames remain
-fully supported by all \code{moby} functions. This replaces the former global
-\code{setDefaults()}/\code{getDefaults()} mechanism with reproducible, object-carried metadata.
+fully supported by all \code{moby} functions. Metadata travels with the object rather than
+living in global state, so analyses stay reproducible and self-describing.
 
 Calling \code{as_moby()} on an existing \code{mobyData} object updates only the supplied fields and
 inherits the rest, making it easy to add metadata (e.g. \code{tagging.dates}) after construction.

@@ -27,8 +27,8 @@
 #'
 #' Because a `mobyData` object **is** a `data.frame`, it can be used anywhere a data frame
 #' is expected (including with base subsetting, `dplyr`, etc.), and plain data frames remain
-#' fully supported by all `moby` functions. This replaces the former global
-#' `setDefaults()`/`getDefaults()` mechanism with reproducible, object-carried metadata.
+#' fully supported by all `moby` functions. Metadata travels with the object rather than
+#' living in global state, so analyses stay reproducible and self-describing.
 #'
 #' Calling `as_moby()` on an existing `mobyData` object updates only the supplied fields and
 #' inherits the rest, making it easy to add metadata (e.g. `tagging.dates`) after construction.
