@@ -11,12 +11,14 @@ for removal, and the filtered detections carry a `qc_flag` column.
 ``` r
 filterDetections(
   data,
-  tagging.dates = NULL,
-  cutoff.dates = NULL,
   id.col = NULL,
   datetime.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  land.shape = NULL,
+  epsg.code = NULL,
+  tagging.dates = NULL,
+  cutoff.dates = NULL,
   remove.duplicates = TRUE,
   nominal.delay = NULL,
   min.lag.factor = 30,
@@ -29,8 +31,6 @@ filterDetections(
   max.iterations = 20L,
   min.detections = 0,
   min.days = 0,
-  land.shape = NULL,
-  epsg.code = NULL,
   verbose = getOption("moby.verbose", TRUE),
   ...
 )
@@ -41,18 +41,6 @@ filterDetections(
 - data:
 
   A data frame (or `mobyData`) of raw animal detections.
-
-- tagging.dates:
-
-  Optional POSIXct vector of tagging/release dates. Either a single
-  value (applied to all individuals) or a named vector whose names match
-  the animal IDs.
-
-- cutoff.dates:
-
-  Optional. Cut-off date(s) beyond which detections are discarded (tag
-  expiry, last download, etc.). A single POSIXct applied to all IDs, or
-  a named POSIXct vector keyed by `id.col`.
 
 - id.col:
 
@@ -72,6 +60,29 @@ filterDetections(
 
   Name of the column containing latitude (or projected y) values.
   Defaults to `"lat"`.
+
+- land.shape:
+
+  Optional. Coastline/landmass polygons (`sf`, or `SpatialPolygons*`),
+  enabling shortest in-water distances in the speed filter. Passed to
+  [`calculateStepDistances`](https://miguelgandra.github.io/moby/reference/calculateStepDistances.md).
+
+- epsg.code:
+
+  Optional integer EPSG code of a projected (metre-based) CRS used to
+  project positions for the speed filter.
+
+- tagging.dates:
+
+  Optional POSIXct vector of tagging/release dates. Either a single
+  value (applied to all individuals) or a named vector whose names match
+  the animal IDs.
+
+- cutoff.dates:
+
+  Optional. Cut-off date(s) beyond which detections are discarded (tag
+  expiry, last download, etc.). A single POSIXct applied to all IDs, or
+  a named POSIXct vector keyed by `id.col`.
 
 - remove.duplicates:
 
@@ -147,17 +158,6 @@ filterDetections(
 
   Discard individuals detected on fewer than this many distinct days. 0
   = off.
-
-- land.shape:
-
-  Optional. Coastline/landmass polygons (`sf`, or `SpatialPolygons*`),
-  enabling shortest in-water distances in the speed filter. Passed to
-  [`calculateStepDistances`](https://miguelgandra.github.io/moby/reference/calculateStepDistances.md).
-
-- epsg.code:
-
-  Optional integer EPSG code of a projected (metre-based) CRS used to
-  project positions for the speed filter.
 
 - verbose:
 
@@ -304,7 +304,7 @@ filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
 #>   • Before tagging: 0 (0%) from 0 individual(s)
 #>   • False detection: 87 (5%) from 8 individual(s)
 #> Individuals fully discarded = 0 from a total of 8
-#> Total execution time: 0.03 secs
+#> Total execution time: 0.04 secs
 
 # \donttest{
 # add a movement-speed filter (slower: computes step distances); on a 3-animal subset
@@ -321,6 +321,6 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #>   • Speed: 0 (0%) from 0 individual(s)
 #>   • flagged for review (overspeed, retained): 9
 #> Individuals fully discarded = 0 from a total of 3
-#> Total execution time: 1.97 secs
+#> Total execution time: 2.13 secs
 # }
 ```

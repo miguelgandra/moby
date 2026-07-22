@@ -21,13 +21,13 @@ distances are used. This is the numeric core behind the `LI` column of
 ``` r
 calculateLinearityIndex(
   data,
-  land.shape = NULL,
-  epsg.code = NULL,
   id.col = NULL,
   timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   dist.col = "dist_m",
+  land.shape = NULL,
+  epsg.code = NULL,
   ...
 )
 ```
@@ -40,17 +40,6 @@ calculateLinearityIndex(
   [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md))
   of binned detections with stepwise distances, as returned by
   [`calculateStepDistances`](https://miguelgandra.github.io/moby/reference/calculateStepDistances.md).
-
-- land.shape:
-
-  Optional. A projected coastline/landmass layer (`sf` or convertible).
-  When supplied, net displacements follow the shortest in-water path;
-  otherwise linear (great-circle) distances are used.
-
-- epsg.code:
-
-  Optional. Coordinate reference system used to project positions. If
-  not supplied, the CRS is taken from `land.shape` (when available).
 
 - id.col:
 
@@ -75,6 +64,17 @@ calculateLinearityIndex(
 
   Name of the column containing the (stepwise) distance values, in
   metres. Defaults to `"dist_m"`.
+
+- land.shape:
+
+  Optional. A projected coastline/landmass layer (`sf` or convertible).
+  When supplied, net displacements follow the shortest in-water path;
+  otherwise linear (great-circle) distances are used.
+
+- epsg.code:
+
+  Optional. Coordinate reference system used to project positions. If
+  not supplied, the CRS is taken from `land.shape` (when available).
 
 - ...:
 

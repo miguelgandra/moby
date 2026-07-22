@@ -14,8 +14,8 @@ design-appropriate group comparison test.
 plotMetricComparison(
   data,
   metrics,
-  split.by,
   id.col = NULL,
+  split.by,
   metric.labels = NULL,
   agg.fun = function(x) mean(x, na.rm = TRUE),
   plot.type = c("box", "violin", "points"),
@@ -31,8 +31,8 @@ plotMetricComparison(
   background.color = "grey96",
   outliers = FALSE,
   main = NULL,
-  cex = 1,
   ncol = 2,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -51,14 +51,14 @@ plotMetricComparison(
 
   Character vector of numeric column names to compare (one panel each).
 
+- id.col:
+
+  Name of the column containing animal IDs. Defaults to `"ID"`.
+
 - split.by:
 
   Name of the grouping column (the within-individual factor: diel phase,
   season, ...).
-
-- id.col:
-
-  Name of the column containing animal IDs. Defaults to `"ID"`.
 
 - metric.labels:
 
@@ -131,13 +131,13 @@ plotMetricComparison(
 
   Optional overall title.
 
-- cex:
-
-  Global expansion factor for all plot text. Defaults to 1.
-
 - ncol:
 
   Number of columns in the panel layout. Defaults to 2.
+
+- cex:
+
+  Global expansion factor for all plot text. Defaults to 1.
 
 - file:
 

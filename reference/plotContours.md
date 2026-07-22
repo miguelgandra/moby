@@ -15,12 +15,12 @@ is supplied, for each group.
 plotContours(
   data,
   variables,
+  id.col = NULL,
+  datetime.col = NULL,
+  split.by = NULL,
   var.titles = NULL,
   panel.titles = NULL,
   main = NULL,
-  split.by = NULL,
-  id.col = NULL,
-  datetime.col = NULL,
   agg.fun = function(x) mean(x, na.rm = TRUE),
   color.pal = NULL,
   time.interval = "hour",
@@ -38,12 +38,12 @@ plotContours(
   grid = TRUE,
   grid.color = adjustcolor("black", 0.1),
   na.color = grey(0.94),
-  cex = 1,
   legend = TRUE,
   sample.size = TRUE,
   sample.size.color = "auto",
   ncol = 1,
   disable.par = FALSE,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -63,6 +63,20 @@ plotContours(
   Column name(s) of the continuous variable(s) to plot (one panel per
   variable).
 
+- id.col:
+
+  Name of the column containing animal IDs. Defaults to `"ID"`.
+
+- datetime.col:
+
+  Name of the column containing date-times in POSIXct format. Defaults
+  to `"datetime"`.
+
+- split.by:
+
+  Optional column name(s); a separate set of panels is drawn for each
+  level (or combination of levels) - e.g. species, sex, life stage.
+
 - var.titles:
 
   Optional display names for the variables (e.g. "Depth (m)"). If NULL,
@@ -79,20 +93,6 @@ plotContours(
 - main:
 
   Optional overall title above the whole panel grid.
-
-- split.by:
-
-  Optional column name(s); a separate set of panels is drawn for each
-  level (or combination of levels) - e.g. species, sex, life stage.
-
-- id.col:
-
-  Name of the column containing animal IDs. Defaults to `"ID"`.
-
-- datetime.col:
-
-  Name of the column containing date-times in POSIXct format. Defaults
-  to `"datetime"`.
 
 - agg.fun:
 
@@ -195,10 +195,6 @@ plotContours(
   monitoring period when `annual.cycle = TRUE`). Defaults to a very
   light grey.
 
-- cex:
-
-  Global expansion factor for all plot text. Defaults to 1.
-
 - legend:
 
   Logical; draw the colour-scale legend. Defaults to TRUE.
@@ -223,6 +219,10 @@ plotContours(
   Logical. If TRUE, the function does not set up its own multi-panel
   layout (so it can be embedded in a user-managed layout); `ncol` then
   has no effect. Defaults to FALSE.
+
+- cex:
+
+  Global expansion factor for all plot text. Defaults to 1.
 
 - file:
 

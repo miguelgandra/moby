@@ -25,9 +25,9 @@ mistaken for one continuous stay.
 ``` r
 calculateTransitions(
   data,
-  spatial.col = NULL,
   id.col = NULL,
   datetime.col = NULL,
+  spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
   max.gap.unit = c("hours", "days", "mins", "secs")
@@ -42,13 +42,6 @@ calculateTransitions(
   [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md))
   of detections.
 
-- spatial.col:
-
-  Name of the column defining the network nodes (e.g. receiver, station,
-  habitat, region). If `NULL` (default), it is taken from the `mobyData`
-  station column (or the canonical `"station"`); set it to build
-  transitions between any other spatial unit.
-
 - id.col:
 
   Name of the column containing animal IDs. Defaults to `"ID"`.
@@ -57,6 +50,13 @@ calculateTransitions(
 
   Name of the column containing date-times in POSIXct format. Defaults
   to `"datetime"`.
+
+- spatial.col:
+
+  Name of the column defining the network nodes (e.g. receiver, station,
+  habitat, region). If `NULL` (default), it is taken from the `mobyData`
+  station column (or the canonical `"station"`); set it to build
+  transitions between any other spatial unit.
 
 - id.groups:
 

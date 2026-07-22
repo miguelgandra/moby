@@ -67,12 +67,12 @@ for each group.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotContours</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">variables</span>,</span>
+<span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  split.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  var.titles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  panel.titles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  split.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  agg.fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">x</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  color.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  time.interval <span class="op">=</span> <span class="st">"hour"</span>,</span>
@@ -90,12 +90,12 @@ for each group.</p>
 <span>  grid <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  grid.color <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/adjustcolor.html" class="external-link">adjustcolor</a></span><span class="op">(</span><span class="st">"black"</span>, <span class="fl">0.1</span><span class="op">)</span>,</span>
 <span>  na.color <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/grDevices/gray.html" class="external-link">grey</a></span><span class="op">(</span><span class="fl">0.94</span><span class="op">)</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  sample.size <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  sample.size.color <span class="op">=</span> <span class="st">"auto"</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  disable.par <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -116,6 +116,19 @@ for each group.</p>
 <dd><p>Column name(s) of the continuous variable(s) to plot (one panel per variable).</p></dd>
 
 
+<dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
+<dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
+
+
+<dt id="arg-datetime-col">datetime.col<a class="anchor" aria-label="anchor" href="#arg-datetime-col"></a></dt>
+<dd><p>Name of the column containing date-times in POSIXct format. Defaults to <code>"datetime"</code>.</p></dd>
+
+
+<dt id="arg-split-by">split.by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>
+<dd><p>Optional column name(s); a separate set of panels is drawn for each level (or
+combination of levels) - e.g. species, sex, life stage.</p></dd>
+
+
 <dt id="arg-var-titles">var.titles<a class="anchor" aria-label="anchor" href="#arg-var-titles"></a></dt>
 <dd><p>Optional display names for the variables (e.g. "Depth (m)"). If NULL, the column
 names are used.</p></dd>
@@ -129,19 +142,6 @@ shown). Pass a character vector to override (recycled across panels), or FALSE t
 
 <dt id="arg-main">main<a class="anchor" aria-label="anchor" href="#arg-main"></a></dt>
 <dd><p>Optional overall title above the whole panel grid.</p></dd>
-
-
-<dt id="arg-split-by">split.by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>
-<dd><p>Optional column name(s); a separate set of panels is drawn for each level (or
-combination of levels) - e.g. species, sex, life stage.</p></dd>
-
-
-<dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
-<dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
-
-
-<dt id="arg-datetime-col">datetime.col<a class="anchor" aria-label="anchor" href="#arg-datetime-col"></a></dt>
-<dd><p>Name of the column containing date-times in POSIXct format. Defaults to <code>"datetime"</code>.</p></dd>
 
 
 <dt id="arg-agg-fun">agg.fun<a class="anchor" aria-label="anchor" href="#arg-agg-fun"></a></dt>
@@ -232,10 +232,6 @@ vs low values, supply a reversed <code>color.pal</code> (e.g. <code>rev(...)</co
 period when <code>annual.cycle = TRUE</code>). Defaults to a very light grey.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
-
-
 <dt id="arg-legend">legend<a class="anchor" aria-label="anchor" href="#arg-legend"></a></dt>
 <dd><p>Logical; draw the colour-scale legend. Defaults to TRUE.</p></dd>
 
@@ -257,6 +253,10 @@ black and white according to the brightness of the fill behind it; any colour ca
 <dt id="arg-disable-par">disable.par<a class="anchor" aria-label="anchor" href="#arg-disable-par"></a></dt>
 <dd><p>Logical. If TRUE, the function does not set up its own multi-panel layout (so it
 can be embedded in a user-managed layout); <code>ncol</code> then has no effect. Defaults to FALSE.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

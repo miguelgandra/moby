@@ -65,6 +65,7 @@ bands shaded and the dominant period marked. It is the global-spectrum complemen
 <span>  <span class="va">data</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  type <span class="op">=</span> <span class="st">"detections"</span>,</span>
 <span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fft"</span>, <span class="st">"lomb"</span><span class="op">)</span>,</span>
 <span>  detrend <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"none"</span>, <span class="st">"linear"</span>, <span class="st">"diff"</span><span class="op">)</span>,</span>
@@ -73,12 +74,11 @@ bands shaded and the dominant period marked. It is the global-spectrum complemen
 <span>  axis.periods <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">48</span>, <span class="fl">24</span>, <span class="fl">12</span>, <span class="fl">8</span>, <span class="fl">6</span><span class="op">)</span>,</span>
 <span>  highlight.bands <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  min.days <span class="op">=</span> <span class="fl">10</span>,</span>
-<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  shared.scale <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  color.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  background.color <span class="op">=</span> <span class="st">"grey96"</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -100,6 +100,10 @@ bands shaded and the dominant period marked. It is the global-spectrum complemen
 
 <dt id="arg-timebin-col">timebin.col<a class="anchor" aria-label="anchor" href="#arg-timebin-col"></a></dt>
 <dd><p>Name of the column containing time bins (in POSIXct format). Defaults to <code>"timebin"</code>.</p></dd>
+
+
+<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
+<dd><p>Optional named list of ID groups (one block of panels each).</p></dd>
 
 
 <dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
@@ -139,10 +143,6 @@ for the dominant peak. If NULL (default), spans ~2 sampling intervals to twice t
 <dd><p>Discard individuals detected on fewer than this many distinct days. Defaults to 10.</p></dd>
 
 
-<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
-<dd><p>Optional named list of ID groups (one block of panels each).</p></dd>
-
-
 <dt id="arg-shared-scale">shared.scale<a class="anchor" aria-label="anchor" href="#arg-shared-scale"></a></dt>
 <dd><p>Logical; share the y-axis (spectral power) across panels. Defaults to TRUE.</p></dd>
 
@@ -155,12 +155,12 @@ for the dominant peak. If NULL (default), spans ~2 sampling intervals to twice t
 <dd><p>Panel background colour. Defaults to "grey96".</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
-
-
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of panel columns. If NULL, set from the number of individuals.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

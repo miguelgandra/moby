@@ -84,9 +84,9 @@ wrapper around <code><a href="https://rdrr.io/pkg/wavScalogram/man/cwt_wst.html"
 <span>  min.days <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  date.format <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  cores <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -192,10 +192,6 @@ translucent veil. The COI is excluded from the colour scale either way. Defaults
 <dd><p>Overall plot title. If NULL, generated from <code>variable</code>.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
-
-
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of panel columns. Defaults to 1.</p></dd>
 
@@ -203,6 +199,10 @@ translucent veil. The COI is excluded from the colour scale either way. Defaults
 <dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>
 <dd><p>Number of CPU cores for the CWT computation (needs <span class="pkg">parallel</span>, <span class="pkg">doSNOW</span>,
 <span class="pkg">foreach</span> when &gt; 1). Defaults to 1.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

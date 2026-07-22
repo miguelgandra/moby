@@ -20,8 +20,8 @@ Optional biometric columns can be joined in as well.
 assignAnimalIDs(
   detections,
   tags,
-  transmitter.col = "transmitter",
   id.col = NULL,
+  transmitter.col = "transmitter",
   keep.cols = NULL,
   set.tagging.dates = TRUE,
   set.nominal.delay = TRUE
@@ -41,15 +41,15 @@ assignAnimalIDs(
   [`importTags`](https://miguelgandra.github.io/moby/reference/importTags.md)
   (or a data frame with at least a `transmitter` column).
 
-- transmitter.col:
-
-  Name of the transmitter column in `detections`. Defaults to
-  `"transmitter"`.
-
 - id.col:
 
   Name of the animal-ID column to (re)create in `detections`. Resolved
   from the `mobyData` metadata or `"ID"` when `NULL`.
+
+- transmitter.col:
+
+  Name of the transmitter column in `detections`. Defaults to
+  `"transmitter"`.
 
 - keep.cols:
 

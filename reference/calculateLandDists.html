@@ -66,14 +66,14 @@ alongshore).</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateLandDists</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  <span class="va">land.shape</span>,</span>
-<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  mov.threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dist.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  grid.resolution <span class="op">=</span> <span class="fl">100</span></span>
+<span>  <span class="va">land.shape</span>,</span>
+<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  grid.resolution <span class="op">=</span> <span class="fl">100</span>,</span>
+<span>  mov.threshold <span class="op">=</span> <span class="fl">0.5</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -83,21 +83,6 @@ alongshore).</p>
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame containing animal positions.</p></dd>
-
-
-<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
-<dd><p>An sf object representing landmass.</p></dd>
-
-
-<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
-<dd><p>Integer. The projected EPSG code (must use meters). If not supplied,
-it is taken from the <code>mobyData</code> metadata (see <code><a href="as_moby.html">as_moby</a></code>); a projected
-(metric) CRS is required.</p></dd>
-
-
-<dt id="arg-mov-threshold">mov.threshold<a class="anchor" aria-label="anchor" href="#arg-mov-threshold"></a></dt>
-<dd><p>Numeric (0-1). Proportion of movement perpendicular to
-shore required for inshore/offshore classification.</p></dd>
 
 
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
@@ -116,8 +101,23 @@ shore required for inshore/offshore classification.</p></dd>
 <dd><p>Optional. Column name for step length (meters).</p></dd>
 
 
+<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
+<dd><p>An sf object representing landmass.</p></dd>
+
+
+<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
+<dd><p>Integer. The projected EPSG code (must use meters). If not supplied,
+it is taken from the <code>mobyData</code> metadata (see <code><a href="as_moby.html">as_moby</a></code>); a projected
+(metric) CRS is required.</p></dd>
+
+
 <dt id="arg-grid-resolution">grid.resolution<a class="anchor" aria-label="anchor" href="#arg-grid-resolution"></a></dt>
 <dd><p>Numeric. Resolution of the distance raster in meters.</p></dd>
+
+
+<dt id="arg-mov-threshold">mov.threshold<a class="anchor" aria-label="anchor" href="#arg-mov-threshold"></a></dt>
+<dd><p>Numeric (0-1). Proportion of movement perpendicular to
+shore required for inshore/offshore classification.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -135,7 +135,7 @@ shore required for inshore/offshore classification.</p></dd>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9.05</span>, <span class="fl">38.49</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">rays_land</span> <span class="op">&lt;-</span> <span class="fu">calculateLandDists</span><span class="op">(</span><span class="va">rays</span>, land.shape <span class="op">=</span> <span class="va">land</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating distances to nearest land (raster method)...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Done! Total execution time: 2.75 secs </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Done! Total execution time: 2.88 secs </span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rays_land</span><span class="op">$</span><span class="va">land_dist</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1298.88 1298.88 1298.88 1298.88 1298.88 2383.32</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

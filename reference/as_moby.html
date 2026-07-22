@@ -87,11 +87,11 @@ inherits the rest, making it easy to add metadata (e.g. <code>tagging.dates</cod
 <span>  station.col <span class="op">=</span> <span class="va">.mobyDefaults</span><span class="op">[[</span><span class="st">"station.col"</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="va">.mobyDefaults</span><span class="op">[[</span><span class="st">"lon.col"</span><span class="op">]</span><span class="op">]</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="va">.mobyDefaults</span><span class="op">[[</span><span class="st">"lat.col"</span><span class="op">]</span><span class="op">]</span>,</span>
+<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -127,6 +127,16 @@ inherits the rest, making it easy to add metadata (e.g. <code>tagging.dates</cod
 <dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
 
 
+<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
+<dd><p>Optional named list grouping IDs (e.g. by species, sex or life stage),
+used by many functions to compute metrics or draw plots independently per group.</p></dd>
+
+
+<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
+<dd><p>Optional <code>sf</code> (or <code>SpatialPolygons*</code>) object representing landmasses,
+used by spatial functions (e.g. in-water distances, UD land clipping).</p></dd>
+
+
 <dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
 <dd><p>Optional integer EPSG code of a <strong>projected</strong> (metre-based) coordinate
 reference system, used when projecting coordinates or computing distances/areas.</p></dd>
@@ -144,16 +154,6 @@ value (applied to all individuals) or a named numeric vector whose names match t
 automatically by <code><a href="filterDetections.html">filterDetections</a></code> to scale its short-interval (min_lag)
 false-detection filter. Usually populated for you by <code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code> when the tag
 table carries a delay column.</p></dd>
-
-
-<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
-<dd><p>Optional named list grouping IDs (e.g. by species, sex or life stage),
-used by many functions to compute metrics or draw plots independently per group.</p></dd>
-
-
-<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
-<dd><p>Optional <code>sf</code> (or <code>SpatialPolygons*</code>) object representing landmasses,
-used by spatial functions (e.g. in-water distances, UD land clipping).</p></dd>
 
 </dl></div>
     <div class="section level2">

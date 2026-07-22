@@ -25,12 +25,12 @@ checkDeployments(
   deployment.lat.col = "lat",
   deployment.deploy.col = "deploy",
   deployment.recover.col = "recover",
+  land.shape = NULL,
+  epsg.code = NULL,
   checks = "all",
   scope = c("all", "detected"),
   coord.tolerance = 500,
   gap.tolerance = 1,
-  land.shape = NULL,
-  epsg.code = NULL,
   land.tolerance = 500,
   verbose = TRUE
 )
@@ -83,6 +83,23 @@ checkDeployments(
   marks these as deployment-log columns, keeping them distinct from the
   bare `*.col` arguments, which always refer to the detection dataset.
 
+- land.shape:
+
+  Optional `sf` (or `SpatialPolygons*`) polygon layer of landmasses.
+  When supplied, the `"coordinates"` group additionally flags receiver
+  positions that fall on land. Off by default; if `NULL`, it is taken
+  from the `detections` `mobyData` metadata when present (i.e. from
+  `as_moby(detections, land.shape = ...)`). The layer must carry a
+  coordinate reference system; if it lacks one, or cannot be reconciled
+  with the deployment coordinates, the on-land check is skipped with a
+  message (the audit never aborts).
+
+- epsg.code:
+
+  Optional EPSG code for the deployment coordinates, used only by the
+  on-land check. Needed only when the coordinates are projected (not
+  longitude/latitude); geographic coordinates are assumed to be WGS84.
+
 - checks:
 
   Character vector selecting which check groups to run (any of, or
@@ -122,23 +139,6 @@ checkDeployments(
 
   Numeric. Minimum gap (in days) between consecutive deployments of a
   receiver to report as a coverage gap. Defaults to 1.
-
-- land.shape:
-
-  Optional `sf` (or `SpatialPolygons*`) polygon layer of landmasses.
-  When supplied, the `"coordinates"` group additionally flags receiver
-  positions that fall on land. Off by default; if `NULL`, it is taken
-  from the `detections` `mobyData` metadata when present (i.e. from
-  `as_moby(detections, land.shape = ...)`). The layer must carry a
-  coordinate reference system; if it lacks one, or cannot be reconciled
-  with the deployment coordinates, the on-land check is skipped with a
-  message (the audit never aborts).
-
-- epsg.code:
-
-  Optional EPSG code for the deployment coordinates, used only by the
-  on-land check. Needed only when the coordinates are projected (not
-  longitude/latitude); geographic coordinates are assumed to be WGS84.
 
 - land.tolerance:
 

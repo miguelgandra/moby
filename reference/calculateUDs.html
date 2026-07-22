@@ -75,17 +75,17 @@ be estimated independently for different groups or time periods.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateUDs</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  bandwidth <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"akde"</span>, <span class="st">"kde"</span><span class="op">)</span>,</span>
-<span>  spatial.grid <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  subset <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  spatial.grid <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  bandwidth <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  method <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"akde"</span>, <span class="st">"kde"</span><span class="op">)</span>,</span>
 <span>  contour.percent <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">50</span>, <span class="fl">95</span><span class="op">)</span>,</span>
 <span>  model.selection <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"fit"</span>, <span class="st">"select"</span><span class="op">)</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
@@ -99,45 +99,6 @@ be estimated independently for different groups or time periods.</p>
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame with animal positions (e.g. COAs), containing longitude/latitude
 (or projected x/y) columns and, for <code>method = "akde"</code>, a POSIXct time column.</p></dd>
-
-
-<dt id="arg-bandwidth">bandwidth<a class="anchor" aria-label="anchor" href="#arg-bandwidth"></a></dt>
-<dd><p>Numeric smoothing parameter (h) for <code>method = "kde"</code> only; ignored for AKDE
-(which estimates smoothing from the fitted movement model). Larger values produce smoother,
-broader distributions; smaller values give more localized, potentially fragmented estimates.</p></dd>
-
-
-<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
-<dd><p>Estimation method: <code>"akde"</code> (default; autocorrelated KDE via <code>ctmm</code>, with
-confidence intervals) or <code>"kde"</code> (classic fixed-bandwidth KDE via <code>adehabitatHR</code>).</p></dd>
-
-
-<dt id="arg-spatial-grid">spatial.grid<a class="anchor" aria-label="anchor" href="#arg-spatial-grid"></a></dt>
-<dd><p>Optional. A <code>Raster</code> or <code>SpatialPixels</code> object representing the
-grid over which the animal kernel utilization distributions (UDs) will be estimated
-(see the <code>grid</code> argument in <code><a href="https://rdrr.io/pkg/adehabitatHR/man/kernelUD.html" class="external-link">kernelUD</a></code>). If set to <code>NULL</code>,
-the function will automatically generate an appropriate grid based on the spatial extent
-of the supplied animal's positions.</p></dd>
-
-
-<dt id="arg-subset">subset<a class="anchor" aria-label="anchor" href="#arg-subset"></a></dt>
-<dd><p>Optional. A variable used to subset the data, allowing UDs to be calculated independently
-for each level of this variable. This should be the name of a column in the provided dataset.
-If left <code>NULL</code>, UDs are calculated for the whole monitoring period.</p></dd>
-
-
-<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
-<dd><p>Optional. A named list where each element represents a group (e.g., species, sex, or age class),
-containing a vector of IDs for that group. If supplied, UDs will be calculated
-independently for each group. The names of the list correspond to the group labels.</p></dd>
-
-
-<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
-<dd><p>Optional. A shapefile containing coastlines or landmasses,
-provided either as an 'sf' object or as a 'SpatialPolygonsDataFrame'/'SpatialPolygons' object.
-If the input is not in 'sf' format, the function will automatically convert it to 'sf'
-to ensure compatibility with subsequent spatial operations. Used to clip and exclude
-any portions of the estimated areas that overlap with landmasses.</p></dd>
 
 
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
@@ -160,9 +121,48 @@ function uses the <code>mobyData</code> time-bin (then date-time) column and, fa
 <dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
 
 
+<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
+<dd><p>Optional. A named list where each element represents a group (e.g., species, sex, or age class),
+containing a vector of IDs for that group. If supplied, UDs will be calculated
+independently for each group. The names of the list correspond to the group labels.</p></dd>
+
+
+<dt id="arg-subset">subset<a class="anchor" aria-label="anchor" href="#arg-subset"></a></dt>
+<dd><p>Optional. A variable used to subset the data, allowing UDs to be calculated independently
+for each level of this variable. This should be the name of a column in the provided dataset.
+If left <code>NULL</code>, UDs are calculated for the whole monitoring period.</p></dd>
+
+
+<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
+<dd><p>Optional. A shapefile containing coastlines or landmasses,
+provided either as an 'sf' object or as a 'SpatialPolygonsDataFrame'/'SpatialPolygons' object.
+If the input is not in 'sf' format, the function will automatically convert it to 'sf'
+to ensure compatibility with subsequent spatial operations. Used to clip and exclude
+any portions of the estimated areas that overlap with landmasses.</p></dd>
+
+
 <dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
 <dd><p>Optional integer EPSG code of a <strong>projected</strong> (metre-based) coordinate
 reference system, used when projecting coordinates or computing distances/areas.</p></dd>
+
+
+<dt id="arg-spatial-grid">spatial.grid<a class="anchor" aria-label="anchor" href="#arg-spatial-grid"></a></dt>
+<dd><p>Optional. A <code>Raster</code> or <code>SpatialPixels</code> object representing the
+grid over which the animal kernel utilization distributions (UDs) will be estimated
+(see the <code>grid</code> argument in <code><a href="https://rdrr.io/pkg/adehabitatHR/man/kernelUD.html" class="external-link">kernelUD</a></code>). If set to <code>NULL</code>,
+the function will automatically generate an appropriate grid based on the spatial extent
+of the supplied animal's positions.</p></dd>
+
+
+<dt id="arg-bandwidth">bandwidth<a class="anchor" aria-label="anchor" href="#arg-bandwidth"></a></dt>
+<dd><p>Numeric smoothing parameter (h) for <code>method = "kde"</code> only; ignored for AKDE
+(which estimates smoothing from the fitted movement model). Larger values produce smoother,
+broader distributions; smaller values give more localized, potentially fragmented estimates.</p></dd>
+
+
+<dt id="arg-method">method<a class="anchor" aria-label="anchor" href="#arg-method"></a></dt>
+<dd><p>Estimation method: <code>"akde"</code> (default; autocorrelated KDE via <code>ctmm</code>, with
+confidence intervals) or <code>"kde"</code> (classic fixed-bandwidth KDE via <code>adehabitatHR</code>).</p></dd>
 
 
 <dt id="arg-contour-percent">contour.percent<a class="anchor" aria-label="anchor" href="#arg-contour-percent"></a></dt>
@@ -298,7 +298,7 @@ https://doi.org/10.1890/14-2010.1</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Estimating kernel utilization distributions [Raja clavata]...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 50% contours...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 95% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.61 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.65 secs</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 Dasyatis pastinaca D01    249         4.61        17.56</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 Dasyatis pastinaca D02    154         3.42        16.55</span>

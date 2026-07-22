@@ -87,12 +87,15 @@ dataset is supplied - stations that never logged a detection are highlighted.</p
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotArray</span><span class="op">(</span></span>
 <span>  <span class="va">deployments</span>,</span>
+<span>  detections <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  deployment.station.col <span class="op">=</span> <span class="st">"station"</span>,</span>
 <span>  deployment.lon.col <span class="op">=</span> <span class="st">"lon"</span>,</span>
 <span>  deployment.lat.col <span class="op">=</span> <span class="st">"lat"</span>,</span>
 <span>  deployment.deploy.col <span class="op">=</span> <span class="st">"deploy"</span>,</span>
 <span>  deployment.recover.col <span class="op">=</span> <span class="st">"recover"</span>,</span>
-<span>  detections <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  coastline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.coastline"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
+<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  status.at <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  detection.range <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -112,10 +115,7 @@ dataset is supplied - stations that never logged a detection are highlighted.</p
 <span>  pt.color <span class="op">=</span> <span class="st">"black"</span>,</span>
 <span>  pt.bg <span class="op">=</span> <span class="st">"white"</span>,</span>
 <span>  pt.lwd <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  coastline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.coastline"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  land.color <span class="op">=</span> <span class="st">"gray50"</span>,</span>
-<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  background.layer <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  background.color <span class="op">=</span> <span class="st">"#F3F7F7"</span>,</span>
 <span>  background.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -128,11 +128,11 @@ dataset is supplied - stations that never logged a detection are highlighted.</p
 <span>  legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  res <span class="op">=</span> <span class="fl">300</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
+<span>  res <span class="op">=</span> <span class="fl">300</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -144,6 +144,13 @@ dataset is supplied - stations that never logged a detection are highlighted.</p
 <dd><p>A receiver-deployment log (a data frame), as produced by
 <code><a href="importDeployments.html">importDeployments</a></code> - one row per deployment, with at least the station and coordinate
 columns. Multiple rows per station (repeated servicing) are reduced to one point per station.</p></dd>
+
+
+<dt id="arg-detections">detections<a class="anchor" aria-label="anchor" href="#arg-detections"></a></dt>
+<dd><p>Optional. A detection dataset (data frame or <code>mobyData</code>). When supplied, stations
+with zero detections are highlighted and counted - a quick check for dead receivers or coverage
+gaps. The detection station column is taken from the dataset's <code>mobyData</code> metadata when present,
+otherwise from the canonical <code>"station"</code>.</p></dd>
 
 
 <dt id="arg-deployment-station-col-deployment-lon-col-deployment-lat-col">deployment.station.col, deployment.lon.col, deployment.lat.col<a class="anchor" aria-label="anchor" href="#arg-deployment-station-col-deployment-lon-col-deployment-lat-col"></a></dt>
@@ -165,11 +172,23 @@ these as deployment-log columns, keeping them distinct from the bare <code>*.col
 always refer to the detection dataset.</p></dd>
 
 
-<dt id="arg-detections">detections<a class="anchor" aria-label="anchor" href="#arg-detections"></a></dt>
-<dd><p>Optional. A detection dataset (data frame or <code>mobyData</code>). When supplied, stations
-with zero detections are highlighted and counted - a quick check for dead receivers or coverage
-gaps. The detection station column is taken from the dataset's <code>mobyData</code> metadata when present,
-otherwise from the canonical <code>"station"</code>.</p></dd>
+<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
+<dd><p>Optional. An <code>sf</code> object with coastlines/landmasses, drawn underneath the array.</p></dd>
+
+
+<dt id="arg-coastline">coastline<a class="anchor" aria-label="anchor" href="#arg-coastline"></a></dt>
+<dd><p>When the map is projected (an <code>epsg.code</code>, <code>land.shape</code> or <code>background.layer</code> is
+given) and no <code>land.shape</code> is supplied, draw a default coastline for the extent. <code>TRUE</code> auto-picks a
+scale; a string forces an <code>rnaturalearth</code> scale; <code>FALSE</code> draws none. Defaults to
+<code>getOption("moby.coastline", TRUE)</code>. Requires the (Suggested) <code>rnaturalearth</code> (with
+<code>rnaturalearthdata</code>) or <code>maps</code> package.</p></dd>
+
+
+<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
+<dd><p>Optional. A projected coordinate reference system (numeric EPSG code or <code>crs</code>
+object, in metre units) used to project the coordinates and map layers. Required for the scale bar;
+when omitted (and no map layer is supplied) the array is drawn in geographic (longitude/latitude)
+space with coordinate axes.</p></dd>
 
 
 <dt id="arg-color-by">color.by<a class="anchor" aria-label="anchor" href="#arg-color-by"></a></dt>
@@ -237,27 +256,8 @@ Defaults to 21.</p></dd>
 symbols. <code>pt.bg</code> is overridden when <code>color.by</code>/<code>status.at</code> is used.</p></dd>
 
 
-<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
-<dd><p>Optional. An <code>sf</code> object with coastlines/landmasses, drawn underneath the array.</p></dd>
-
-
-<dt id="arg-coastline">coastline<a class="anchor" aria-label="anchor" href="#arg-coastline"></a></dt>
-<dd><p>When the map is projected (an <code>epsg.code</code>, <code>land.shape</code> or <code>background.layer</code> is
-given) and no <code>land.shape</code> is supplied, draw a default coastline for the extent. <code>TRUE</code> auto-picks a
-scale; a string forces an <code>rnaturalearth</code> scale; <code>FALSE</code> draws none. Defaults to
-<code>getOption("moby.coastline", TRUE)</code>. Requires the (Suggested) <code>rnaturalearth</code> (with
-<code>rnaturalearthdata</code>) or <code>maps</code> package.</p></dd>
-
-
 <dt id="arg-land-color">land.color<a class="anchor" aria-label="anchor" href="#arg-land-color"></a></dt>
 <dd><p>Colour of land areas. Defaults to "gray50".</p></dd>
-
-
-<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
-<dd><p>Optional. A projected coordinate reference system (numeric EPSG code or <code>crs</code>
-object, in metre units) used to project the coordinates and map layers. Required for the scale bar;
-when omitted (and no map layer is supplied) the array is drawn in geographic (longitude/latitude)
-space with coordinate axes.</p></dd>
 
 
 <dt id="arg-background-layer">background.layer<a class="anchor" aria-label="anchor" href="#arg-background-layer"></a></dt>
@@ -313,6 +313,11 @@ keeps the bounding box; values &gt; 1 add a margin. Defaults to 1.15.</p></dd>
 <dd><p>Global expansion factor scaling every text element. Defaults to 1.</p></dd>
 
 
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print the array summary to the console. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
+
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
 <dd><p>Optional output file. If <code>NULL</code> (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a
@@ -333,11 +338,6 @@ may still need you to set <code>width</code>/<code>height</code> explicitly. The
 <dd><p>Resolution in pixels per inch, for raster formats only (<code>.png</code>, <code>.jpg</code>, <code>.tif</code>,
 <code>.bmp</code>); ignored for vector formats (<code>.pdf</code>, <code>.svg</code>). Used only when <code>file</code> is supplied. Defaults
 to 300.</p></dd>
-
-
-<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Logical; print the array summary to the console. Defaults to
-<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">

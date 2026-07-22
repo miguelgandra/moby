@@ -64,8 +64,8 @@ points), and, optionally, annotates a design-appropriate group comparison test.<
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotMetricComparison</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
 <span>  <span class="va">metrics</span>,</span>
-<span>  <span class="va">split.by</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  <span class="va">split.by</span>,</span>
 <span>  metric.labels <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  agg.fun <span class="op">=</span> <span class="kw">function</span><span class="op">(</span><span class="va">x</span><span class="op">)</span> <span class="fu"><a href="https://rdrr.io/r/base/mean.html" class="external-link">mean</a></span><span class="op">(</span><span class="va">x</span>, na.rm <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  plot.type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"box"</span>, <span class="st">"violin"</span>, <span class="st">"points"</span><span class="op">)</span>,</span>
@@ -81,8 +81,8 @@ points), and, optionally, annotates a design-appropriate group comparison test.<
 <span>  background.color <span class="op">=</span> <span class="st">"grey96"</span>,</span>
 <span>  outliers <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">2</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -103,12 +103,12 @@ the grouping column.</p></dd>
 <dd><p>Character vector of numeric column names to compare (one panel each).</p></dd>
 
 
-<dt id="arg-split-by">split.by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>
-<dd><p>Name of the grouping column (the within-individual factor: diel phase, season, ...).</p></dd>
-
-
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
 <dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
+
+
+<dt id="arg-split-by">split.by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>
+<dd><p>Name of the grouping column (the within-individual factor: diel phase, season, ...).</p></dd>
 
 
 <dt id="arg-metric-labels">metric.labels<a class="anchor" aria-label="anchor" href="#arg-metric-labels"></a></dt>
@@ -177,12 +177,12 @@ values are plotted while the test still uses complete blocks.</p></dd>
 <dd><p>Optional overall title.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
-
-
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of columns in the panel layout. Defaults to 2.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

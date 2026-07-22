@@ -60,12 +60,14 @@ detections are never discarded silently: they are returned in <code>data_discard
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">filterDetections</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cutoff.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cutoff.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  remove.duplicates <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  min.lag.factor <span class="op">=</span> <span class="fl">30</span>,</span>
@@ -78,8 +80,6 @@ detections are never discarded silently: they are returned in <code>data_discard
 <span>  max.iterations <span class="op">=</span> <span class="fl">20L</span>,</span>
 <span>  min.detections <span class="op">=</span> <span class="fl">0</span>,</span>
 <span>  min.days <span class="op">=</span> <span class="fl">0</span>,</span>
-<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -91,16 +91,6 @@ detections are never discarded silently: they are returned in <code>data_discard
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame (or <code>mobyData</code>) of raw animal detections.</p></dd>
-
-
-<dt id="arg-tagging-dates">tagging.dates<a class="anchor" aria-label="anchor" href="#arg-tagging-dates"></a></dt>
-<dd><p>Optional POSIXct vector of tagging/release dates. Either a single value
-(applied to all individuals) or a named vector whose names match the animal IDs.</p></dd>
-
-
-<dt id="arg-cutoff-dates">cutoff.dates<a class="anchor" aria-label="anchor" href="#arg-cutoff-dates"></a></dt>
-<dd><p>Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
-last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct vector keyed by <code>id.col</code>.</p></dd>
 
 
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
@@ -117,6 +107,26 @@ last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct ve
 
 <dt id="arg-lat-col">lat.col<a class="anchor" aria-label="anchor" href="#arg-lat-col"></a></dt>
 <dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
+
+
+<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
+<dd><p>Optional. Coastline/landmass polygons (<code>sf</code>, or <code>SpatialPolygons*</code>), enabling
+shortest in-water distances in the speed filter. Passed to <code><a href="calculateStepDistances.html">calculateStepDistances</a></code>.</p></dd>
+
+
+<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
+<dd><p>Optional integer EPSG code of a projected (metre-based) CRS used to project
+positions for the speed filter.</p></dd>
+
+
+<dt id="arg-tagging-dates">tagging.dates<a class="anchor" aria-label="anchor" href="#arg-tagging-dates"></a></dt>
+<dd><p>Optional POSIXct vector of tagging/release dates. Either a single value
+(applied to all individuals) or a named vector whose names match the animal IDs.</p></dd>
+
+
+<dt id="arg-cutoff-dates">cutoff.dates<a class="anchor" aria-label="anchor" href="#arg-cutoff-dates"></a></dt>
+<dd><p>Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
+last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct vector keyed by <code>id.col</code>.</p></dd>
 
 
 <dt id="arg-remove-duplicates">remove.duplicates<a class="anchor" aria-label="anchor" href="#arg-remove-duplicates"></a></dt>
@@ -182,16 +192,6 @@ for unlimited.</p></dd>
 
 <dt id="arg-min-days">min.days<a class="anchor" aria-label="anchor" href="#arg-min-days"></a></dt>
 <dd><p>Discard individuals detected on fewer than this many distinct days. 0 = off.</p></dd>
-
-
-<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
-<dd><p>Optional. Coastline/landmass polygons (<code>sf</code>, or <code>SpatialPolygons*</code>), enabling
-shortest in-water distances in the speed filter. Passed to <code><a href="calculateStepDistances.html">calculateStepDistances</a></code>.</p></dd>
-
-
-<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
-<dd><p>Optional integer EPSG code of a projected (metre-based) CRS used to project
-positions for the speed filter.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -309,7 +309,7 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • Before tagging: 0 (0%) from 0 individual(s)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • False detection: 87 (5%) from 8 individual(s)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.03 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.04 secs</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># add a movement-speed filter (slower: computes step distances); on a 3-animal subset</span></span></span>
@@ -326,7 +326,7 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • Speed: 0 (0%) from 0 individual(s)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • flagged for review (overspeed, retained): 9</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 1.97 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 2.13 secs</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

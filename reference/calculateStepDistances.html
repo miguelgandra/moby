@@ -78,13 +78,13 @@ to run, even with parallel computing enabled.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateStepDistances</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
+<span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  grid.resolution <span class="op">=</span> <span class="fl">100</span>,</span>
 <span>  mov.directions <span class="op">=</span> <span class="fl">16</span>,</span>
-<span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cores <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -96,6 +96,18 @@ to run, even with parallel computing enabled.</p>
 
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame with animal positions, containing longitude and latitude values.</p></dd>
+
+
+<dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
+<dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
+
+
+<dt id="arg-lon-col">lon.col<a class="anchor" aria-label="anchor" href="#arg-lon-col"></a></dt>
+<dd><p>Name of the column containing longitude (or projected x) values. Defaults to <code>"lon"</code>.</p></dd>
+
+
+<dt id="arg-lat-col">lat.col<a class="anchor" aria-label="anchor" href="#arg-lat-col"></a></dt>
+<dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
 
 
 <dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
@@ -122,18 +134,6 @@ resolution leads to more precise path calculations but may increase computation 
 <dt id="arg-mov-directions">mov.directions<a class="anchor" aria-label="anchor" href="#arg-mov-directions"></a></dt>
 <dd><p>Size of the movement neighbourhood used when building the least-cost graph:
 <code>4</code> (rook), <code>8</code> (rook + bishop), or <code>16</code> (adds knight moves, the default; smoother least-cost paths).</p></dd>
-
-
-<dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
-<dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
-
-
-<dt id="arg-lon-col">lon.col<a class="anchor" aria-label="anchor" href="#arg-lon-col"></a></dt>
-<dd><p>Name of the column containing longitude (or projected x) values. Defaults to <code>"lon"</code>.</p></dd>
-
-
-<dt id="arg-lat-col">lat.col<a class="anchor" aria-label="anchor" href="#arg-lat-col"></a></dt>
-<dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
 
 
 <dt id="arg-cores">cores<a class="anchor" aria-label="anchor" href="#arg-cores"></a></dt>
@@ -202,7 +202,7 @@ across a call's segments (and across calls when the cache is supplied).</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> Building least-cost graph (200m grid | 16 directions)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |======================================================================| 100%</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Total execution time: 0.31 secs </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Total execution time: 0.33 secs </span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 <span class="r-in"><span></span></span>
 </code></pre></div>

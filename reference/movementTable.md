@@ -16,14 +16,14 @@ raw values rather than a formatted table.
 movementTable(
   data,
   uds,
-  land.shape = NULL,
-  epsg.code = NULL,
-  id.groups = NULL,
   id.col = NULL,
   timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   dist.col = "dist_m",
+  id.groups = NULL,
+  land.shape = NULL,
+  epsg.code = NULL,
   discard.missing = TRUE,
   ...
 )
@@ -41,22 +41,6 @@ movementTable(
 
   Output of
   [`calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md).
-
-- land.shape:
-
-  Optional. A projected shape file containing coastlines, used (when
-  supplied) to compute net displacements along the shortest in-water
-  path for the linearity index.
-
-- epsg.code:
-
-  Coordinate reference system used to project positions (class 'CRS').
-  If not supplied, CRS is assumed to be the same as in land.shape.
-
-- id.groups:
-
-  Optional. A list containing ID groups, used to visually aggregate
-  animals belonging to the same class (e.g. different species).
 
 - id.col:
 
@@ -81,6 +65,22 @@ movementTable(
 
   Name of the column containing distance values (in meters). Defaults to
   'dist_m'.
+
+- id.groups:
+
+  Optional. A list containing ID groups, used to visually aggregate
+  animals belonging to the same class (e.g. different species).
+
+- land.shape:
+
+  Optional. A projected shape file containing coastlines, used (when
+  supplied) to compute net displacements along the shortest in-water
+  path for the linearity index.
+
+- epsg.code:
+
+  Coordinate reference system used to project positions (class 'CRS').
+  If not supplied, CRS is assumed to be the same as in land.shape.
 
 - discard.missing:
 
@@ -132,7 +132,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #> Estimating kernel utilization distributions [Raja clavata]...
 #> Calculating 50% contours...
 #> Calculating 95% contours...
-#> Total execution time: 0.61 secs
+#> Total execution time: 0.63 secs
 #> Interpolating distances
 #>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
 #>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI

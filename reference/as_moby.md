@@ -29,11 +29,11 @@ as_moby(
   station.col = .mobyDefaults[["station.col"]],
   lon.col = .mobyDefaults[["lon.col"]],
   lat.col = .mobyDefaults[["lat.col"]],
+  id.groups = NULL,
+  land.shape = NULL,
   epsg.code = NULL,
   tagging.dates = NULL,
-  nominal.delay = NULL,
-  id.groups = NULL,
-  land.shape = NULL
+  nominal.delay = NULL
 )
 ```
 
@@ -73,6 +73,17 @@ as_moby(
   Name of the column containing latitude (or projected y) values.
   Defaults to `"lat"`.
 
+- id.groups:
+
+  Optional named list grouping IDs (e.g. by species, sex or life stage),
+  used by many functions to compute metrics or draw plots independently
+  per group.
+
+- land.shape:
+
+  Optional `sf` (or `SpatialPolygons*`) object representing landmasses,
+  used by spatial functions (e.g. in-water distances, UD land clipping).
+
 - epsg.code:
 
   Optional integer EPSG code of a **projected** (metre-based) coordinate
@@ -96,17 +107,6 @@ as_moby(
   populated for you by
   [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
   when the tag table carries a delay column.
-
-- id.groups:
-
-  Optional named list grouping IDs (e.g. by species, sex or life stage),
-  used by many functions to compute metrics or draw plots independently
-  per group.
-
-- land.shape:
-
-  Optional `sf` (or `SpatialPolygons*`) object representing landmasses,
-  used by spatial functions (e.g. in-water distances, UD land clipping).
 
 ## Value
 

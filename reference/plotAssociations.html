@@ -103,8 +103,8 @@ and the histogram.</p>
 <span>  standardize.edge.weights <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  standardize.freqs <span class="op">=</span> <span class="cn">FALSE</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -251,12 +251,12 @@ Larger values make all edges thicker, smaller values make them thinner.</p></dd>
 <dd><p>Optional overall title drawn above the panel grid.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor scaling all text (titles, node/edge labels, axes, legend). Defaults to 1.</p></dd>
-
-
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of columns for the plot layout. Defaults to NULL.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor scaling all text (titles, node/edge labels, axes, legend). Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
@@ -308,7 +308,7 @@ mean overlap, mean shared monitoring days, mean binary degree, and the edge disp
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)</span>
 <span class="r-in"><span><span class="va">assoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateAssociations.html">calculateAssociations</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating overlap - complete monitoring duration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.04 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.05 secs</span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"qgraph"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu">plotAssociations</span><span class="op">(</span><span class="va">assoc</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>

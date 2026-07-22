@@ -9,11 +9,11 @@ or bathymetry values.
 ``` r
 correctPositions(
   data,
-  spatial.layer,
-  raster.type = "land",
-  epsg.code = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  spatial.layer,
+  epsg.code = NULL,
+  raster.type = "land",
   depth.threshold = 0,
   max.distance.km = 50,
   plot = FALSE,
@@ -29,6 +29,16 @@ correctPositions(
   A data frame with animal positions, containing longitude and latitude
   values.
 
+- lon.col:
+
+  Name of the column containing longitude (or projected x) values.
+  Defaults to `"lon"`.
+
+- lat.col:
+
+  Name of the column containing latitude (or projected y) values.
+  Defaults to `"lat"`.
+
 - spatial.layer:
 
   A spatial object used to determine land and marine areas. This can be
@@ -39,6 +49,12 @@ correctPositions(
 
   - An `sf` or `SpatialPolygons` object representing coastlines or
     landmasses.
+
+- epsg.code:
+
+  Optional integer EPSG code of a **projected** (metre-based) coordinate
+  reference system, used when projecting coordinates or computing
+  distances/areas.
 
 - raster.type:
 
@@ -54,22 +70,6 @@ correctPositions(
 
   - If 'bathy', the raster is assumed to range between 0 (land) to
     maximum depth (positive or negative values).
-
-- epsg.code:
-
-  Optional integer EPSG code of a **projected** (metre-based) coordinate
-  reference system, used when projecting coordinates or computing
-  distances/areas.
-
-- lon.col:
-
-  Name of the column containing longitude (or projected x) values.
-  Defaults to `"lon"`.
-
-- lat.col:
-
-  Name of the column containing latitude (or projected y) values.
-  Defaults to `"lat"`.
 
 - depth.threshold:
 
@@ -133,7 +133,7 @@ corrected <- correctPositions(rays[1:50, ], spatial.layer = land)
 #> Relocating positions on land to the nearest marine cell
 #> Points relocated: 23
 #> Mean relocation distance: 133 m (0 m — 436 m)
-#> Total execution time: 0.35 secs
+#> Total execution time: 0.37 secs
 #> Warning: Coordinates were initially in a geographic CRS. They have been projected for spatial processing and converted back to geographic coordinates.
 attr(corrected, "points.relocated")
 #> [1] 23

@@ -17,8 +17,8 @@ plotChronogram(
   id.col = NULL,
   timebin.col = NULL,
   station.col = NULL,
-  metric = "detections",
   split.by = NULL,
+  metric = "detections",
   style = "points",
   color.by = NULL,
   color.pal = NULL,
@@ -41,8 +41,8 @@ plotChronogram(
   main = NULL,
   legend = TRUE,
   legend.cols = NULL,
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -72,16 +72,16 @@ plotChronogram(
   Name of the column containing station/receiver IDs. Defaults to
   `"station"`.
 
+- split.by:
+
+  Optional column name; when supplied, a separate panel is drawn for
+  each of its levels (e.g. species, life stage, habitat).
+
 - metric:
 
   The metric to plot: one of `"detections"` (the default),
   `"individuals"` or `"co-occurrences"` (see Details for the
   co-occurrence definition and its caveats).
-
-- split.by:
-
-  Optional column name; when supplied, a separate panel is drawn for
-  each of its levels (e.g. species, life stage, habitat).
 
 - style:
 
@@ -199,14 +199,14 @@ plotChronogram(
   Number of columns for the `color.by` legend. If NULL, chosen
   automatically.
 
-- cex:
-
-  Global expansion factor for all plot text. Defaults to 1.
-
 - ncol:
 
   Number of columns in the panel layout. If NULL, panels are stacked
   (one column).
+
+- cex:
+
+  Global expansion factor for all plot text. Defaults to 1.
 
 - file:
 

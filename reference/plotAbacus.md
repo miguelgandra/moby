@@ -15,9 +15,9 @@ plotAbacus(
   data,
   id.col = NULL,
   datetime.col = NULL,
+  id.groups = NULL,
   tagging.dates = NULL,
   tag.durations = NULL,
-  id.groups = NULL,
   color.by = NULL,
   color.pal = NULL,
   discard.missing = FALSE,
@@ -61,6 +61,12 @@ plotAbacus(
   Name of the column containing date-times in POSIXct format. Defaults
   to `"datetime"`.
 
+- id.groups:
+
+  Optional named list of ID groups used to visually aggregate animals
+  belonging to the same class (e.g. species, sex or age). Each element
+  is a vector of IDs in that group.
+
 - tagging.dates:
 
   A POSIXct vector of tagging/release dates (single value or named by
@@ -72,12 +78,6 @@ plotAbacus(
   used to mark the estimated tag-expiry date of each animal. Either a
   single value (applied to all IDs) or a named vector matching the IDs
   in `id.col`.
-
-- id.groups:
-
-  Optional named list of ID groups used to visually aggregate animals
-  belonging to the same class (e.g. species, sex or age). Each element
-  is a vector of IDs in that group.
 
 - color.by:
 

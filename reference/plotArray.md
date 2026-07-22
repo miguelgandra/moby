@@ -29,12 +29,15 @@ and
 ``` r
 plotArray(
   deployments,
+  detections = NULL,
   deployment.station.col = "station",
   deployment.lon.col = "lon",
   deployment.lat.col = "lat",
   deployment.deploy.col = "deploy",
   deployment.recover.col = "recover",
-  detections = NULL,
+  land.shape = NULL,
+  coastline = getOption("moby.coastline", TRUE),
+  epsg.code = NULL,
   color.by = NULL,
   status.at = NULL,
   detection.range = NULL,
@@ -54,10 +57,7 @@ plotArray(
   pt.color = "black",
   pt.bg = "white",
   pt.lwd = 1,
-  land.shape = NULL,
-  coastline = getOption("moby.coastline", TRUE),
   land.color = "gray50",
-  epsg.code = NULL,
   background.layer = NULL,
   background.color = "#F3F7F7",
   background.pal = NULL,
@@ -70,11 +70,11 @@ plotArray(
   legend = TRUE,
   main = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
-  res = 300,
-  verbose = getOption("moby.verbose", TRUE)
+  res = 300
 )
 ```
 
@@ -87,6 +87,14 @@ plotArray(
   one row per deployment, with at least the station and coordinate
   columns. Multiple rows per station (repeated servicing) are reduced to
   one point per station.
+
+- detections:
+
+  Optional. A detection dataset (data frame or `mobyData`). When
+  supplied, stations with zero detections are highlighted and counted -
+  a quick check for dead receivers or coverage gaps. The detection
+  station column is taken from the dataset's `mobyData` metadata when
+  present, otherwise from the canonical `"station"`.
 
 - deployment.station.col, deployment.lon.col, deployment.lat.col:
 
@@ -111,13 +119,27 @@ plotArray(
   marks these as deployment-log columns, keeping them distinct from the
   bare `*.col` arguments, which always refer to the detection dataset.
 
-- detections:
+- land.shape:
 
-  Optional. A detection dataset (data frame or `mobyData`). When
-  supplied, stations with zero detections are highlighted and counted -
-  a quick check for dead receivers or coverage gaps. The detection
-  station column is taken from the dataset's `mobyData` metadata when
-  present, otherwise from the canonical `"station"`.
+  Optional. An `sf` object with coastlines/landmasses, drawn underneath
+  the array.
+
+- coastline:
+
+  When the map is projected (an `epsg.code`, `land.shape` or
+  `background.layer` is given) and no `land.shape` is supplied, draw a
+  default coastline for the extent. `TRUE` auto-picks a scale; a string
+  forces an `rnaturalearth` scale; `FALSE` draws none. Defaults to
+  `getOption("moby.coastline", TRUE)`. Requires the (Suggested)
+  `rnaturalearth` (with `rnaturalearthdata`) or `maps` package.
+
+- epsg.code:
+
+  Optional. A projected coordinate reference system (numeric EPSG code
+  or `crs` object, in metre units) used to project the coordinates and
+  map layers. Required for the scale bar; when omitted (and no map layer
+  is supplied) the array is drawn in geographic (longitude/latitude)
+  space with coordinate axes.
 
 - color.by:
 
@@ -190,31 +212,9 @@ plotArray(
   Size, border colour, fill colour and border width of the station
   symbols. `pt.bg` is overridden when `color.by`/`status.at` is used.
 
-- land.shape:
-
-  Optional. An `sf` object with coastlines/landmasses, drawn underneath
-  the array.
-
-- coastline:
-
-  When the map is projected (an `epsg.code`, `land.shape` or
-  `background.layer` is given) and no `land.shape` is supplied, draw a
-  default coastline for the extent. `TRUE` auto-picks a scale; a string
-  forces an `rnaturalearth` scale; `FALSE` draws none. Defaults to
-  `getOption("moby.coastline", TRUE)`. Requires the (Suggested)
-  `rnaturalearth` (with `rnaturalearthdata`) or `maps` package.
-
 - land.color:
 
   Colour of land areas. Defaults to "gray50".
-
-- epsg.code:
-
-  Optional. A projected coordinate reference system (numeric EPSG code
-  or `crs` object, in metre units) used to project the coordinates and
-  map layers. Required for the scale bar; when omitted (and no map layer
-  is supplied) the array is drawn in geographic (longitude/latitude)
-  space with coordinate axes.
 
 - background.layer:
 
@@ -273,6 +273,11 @@ plotArray(
 
   Global expansion factor scaling every text element. Defaults to 1.
 
+- verbose:
+
+  Logical; print the array summary to the console. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -297,11 +302,6 @@ plotArray(
   Resolution in pixels per inch, for raster formats only (`.png`,
   `.jpg`, `.tif`, `.bmp`); ignored for vector formats (`.pdf`, `.svg`).
   Used only when `file` is supplied. Defaults to 300.
-
-- verbose:
-
-  Logical; print the array summary to the console. Defaults to
-  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 

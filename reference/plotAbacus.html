@@ -68,9 +68,9 @@ temporal context.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tag.durations <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  discard.missing <span class="op">=</span> <span class="cn">FALSE</span>,</span>
@@ -115,6 +115,11 @@ temporal context.</p>
 <dd><p>Name of the column containing date-times in POSIXct format. Defaults to <code>"datetime"</code>.</p></dd>
 
 
+<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
+<dd><p>Optional named list of ID groups used to visually aggregate animals belonging to
+the same class (e.g. species, sex or age). Each element is a vector of IDs in that group.</p></dd>
+
+
 <dt id="arg-tagging-dates">tagging.dates<a class="anchor" aria-label="anchor" href="#arg-tagging-dates"></a></dt>
 <dd><p>A POSIXct vector of tagging/release dates (single value or named by ID).
 Inherited from the <code>mobyData</code> metadata when available.</p></dd>
@@ -124,11 +129,6 @@ Inherited from the <code>mobyData</code> metadata when available.</p></dd>
 <dd><p>Optional numeric vector of estimated tag battery durations (in days), used
 to mark the estimated tag-expiry date of each animal. Either a single value (applied to all IDs)
 or a named vector matching the IDs in <code>id.col</code>.</p></dd>
-
-
-<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
-<dd><p>Optional named list of ID groups used to visually aggregate animals belonging to
-the same class (e.g. species, sex or age). Each element is a vector of IDs in that group.</p></dd>
 
 
 <dt id="arg-color-by">color.by<a class="anchor" aria-label="anchor" href="#arg-color-by"></a></dt>

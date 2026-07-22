@@ -44,8 +44,8 @@ plotAssociations(
   standardize.edge.weights = TRUE,
   standardize.freqs = FALSE,
   main = NULL,
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -205,14 +205,14 @@ plotAssociations(
 
   Optional overall title drawn above the panel grid.
 
+- ncol:
+
+  Number of columns for the plot layout. Defaults to NULL.
+
 - cex:
 
   Global expansion factor scaling all text (titles, node/edge labels,
   axes, legend). Defaults to 1.
-
-- ncol:
-
-  Number of columns for the plot layout. Defaults to NULL.
 
 - file:
 
@@ -270,7 +270,7 @@ wide  <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.04 secs
+#> Total execution time: 0.05 secs
 if (requireNamespace("qgraph", quietly = TRUE)) {
   plotAssociations(assoc)
 }

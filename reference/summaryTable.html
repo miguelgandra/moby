@@ -66,19 +66,19 @@ computes overall means and error metrics.</p>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">summaryTable</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  tag.durations <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.metadata <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  tag.durations <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sensor.cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  sensor.titles <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  residency.index <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"IR1"</span>, <span class="st">"IR2"</span>, <span class="st">"IR2/IR1"</span><span class="op">)</span>,</span>
 <span>  start.point <span class="op">=</span> <span class="st">"release"</span>,</span>
 <span>  last.monitoring.date <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  residency.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  error.stat <span class="op">=</span> <span class="st">"sd"</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -90,19 +90,6 @@ computes overall means and error metrics.</p>
 <dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame containing animal detections. Each row should represent an individual detection event,
 unless a 'detections' column is included to indicate the number of detections for each row.</p></dd>
-
-
-<dt id="arg-tagging-dates">tagging.dates<a class="anchor" aria-label="anchor" href="#arg-tagging-dates"></a></dt>
-<dd><p>Optional POSIXct vector of tagging/release dates. Either a single value
-(applied to all individuals) or a named vector whose names match the animal IDs.</p></dd>
-
-
-<dt id="arg-tag-durations">tag.durations<a class="anchor" aria-label="anchor" href="#arg-tag-durations"></a></dt>
-<dd><p>Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). This parameter must be either:</p><ul><li><p>A single numeric value, which will be applied to all unique animal IDs; or</p></li>
-<li><p>A named numeric vector, where the names correspond to the animal IDs in the <code>id.col</code> column.
-If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of <code>id.col</code>.</p></li>
-</ul></dd>
 
 
 <dt id="arg-id-metadata">id.metadata<a class="anchor" aria-label="anchor" href="#arg-id-metadata"></a></dt>
@@ -122,6 +109,25 @@ before merging with other statistics.</p></dd>
 
 <dt id="arg-station-col">station.col<a class="anchor" aria-label="anchor" href="#arg-station-col"></a></dt>
 <dd><p>Name of the column containing station/receiver IDs. Defaults to <code>"station"</code>.</p></dd>
+
+
+<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
+<dd><p>Optional. A list where each element is a group of IDs, used for visually aggregating
+animals belonging to the same class (e.g., different species or life stages). If supplied, averages
+will be calculated independently for each group.</p></dd>
+
+
+<dt id="arg-tagging-dates">tagging.dates<a class="anchor" aria-label="anchor" href="#arg-tagging-dates"></a></dt>
+<dd><p>Optional POSIXct vector of tagging/release dates. Either a single value
+(applied to all individuals) or a named vector whose names match the animal IDs.</p></dd>
+
+
+<dt id="arg-tag-durations">tag.durations<a class="anchor" aria-label="anchor" href="#arg-tag-durations"></a></dt>
+<dd><p>Optional. A numeric vector containing the estimated battery
+duration of the deployed tags (in days). This parameter must be either:</p><ul><li><p>A single numeric value, which will be applied to all unique animal IDs; or</p></li>
+<li><p>A named numeric vector, where the names correspond to the animal IDs in the <code>id.col</code> column.
+If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of <code>id.col</code>.</p></li>
+</ul></dd>
 
 
 <dt id="arg-sensor-cols">sensor.cols<a class="anchor" aria-label="anchor" href="#arg-sensor-cols"></a></dt>
@@ -168,12 +174,6 @@ date or the last monitoring day.</p></dd>
 <dt id="arg-residency-by">residency.by<a class="anchor" aria-label="anchor" href="#arg-residency-by"></a></dt>
 <dd><p>Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 Defaults to NULL.</p></dd>
-
-
-<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
-<dd><p>Optional. A list where each element is a group of IDs, used for visually aggregating
-animals belonging to the same class (e.g., different species or life stages). If supplied, averages
-will be calculated independently for each group.</p></dd>
 
 
 <dt id="arg-error-stat">error.stat<a class="anchor" aria-label="anchor" href="#arg-error-stat"></a></dt>

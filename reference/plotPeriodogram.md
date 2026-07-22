@@ -16,6 +16,7 @@ plotPeriodogram(
   data,
   id.col = NULL,
   timebin.col = NULL,
+  id.groups = NULL,
   type = "detections",
   method = c("fft", "lomb"),
   detrend = c("none", "linear", "diff"),
@@ -24,12 +25,11 @@ plotPeriodogram(
   axis.periods = c(48, 24, 12, 8, 6),
   highlight.bands = TRUE,
   min.days = 10,
-  id.groups = NULL,
   shared.scale = TRUE,
   color.pal = NULL,
   background.color = "grey96",
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -52,6 +52,10 @@ plotPeriodogram(
 
   Name of the column containing time bins (in POSIXct format). Defaults
   to `"timebin"`.
+
+- id.groups:
+
+  Optional named list of ID groups (one block of panels each).
 
 - type:
 
@@ -95,10 +99,6 @@ plotPeriodogram(
   Discard individuals detected on fewer than this many distinct days.
   Defaults to 10.
 
-- id.groups:
-
-  Optional named list of ID groups (one block of panels each).
-
 - shared.scale:
 
   Logical; share the y-axis (spectral power) across panels. Defaults to
@@ -112,13 +112,13 @@ plotPeriodogram(
 
   Panel background colour. Defaults to "grey96".
 
-- cex:
-
-  Global expansion factor for all plot text. Defaults to 1.
-
 - ncol:
 
   Number of panel columns. If NULL, set from the number of individuals.
+
+- cex:
+
+  Global expansion factor for all plot text. Defaults to 1.
 
 - file:
 

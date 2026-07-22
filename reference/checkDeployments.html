@@ -78,12 +78,12 @@ input data. Reported issues can then be reviewed and, where appropriate, resolve
 <span>  deployment.lat.col <span class="op">=</span> <span class="st">"lat"</span>,</span>
 <span>  deployment.deploy.col <span class="op">=</span> <span class="st">"deploy"</span>,</span>
 <span>  deployment.recover.col <span class="op">=</span> <span class="st">"recover"</span>,</span>
+<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  checks <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  scope <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"all"</span>, <span class="st">"detected"</span><span class="op">)</span>,</span>
 <span>  coord.tolerance <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  gap.tolerance <span class="op">=</span> <span class="fl">1</span>,</span>
-<span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  land.tolerance <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -130,6 +130,21 @@ these as deployment-log columns, keeping them distinct from the bare <code>*.col
 always refer to the detection dataset.</p></dd>
 
 
+<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
+<dd><p>Optional <code>sf</code> (or <code>SpatialPolygons*</code>) polygon layer of landmasses. When
+supplied, the <code>"coordinates"</code> group additionally flags receiver positions that fall on land.
+Off by default; if <code>NULL</code>, it is taken from the <code>detections</code> <code>mobyData</code> metadata when present (i.e.
+from <code>as_moby(detections, land.shape = ...)</code>). The layer must carry a coordinate reference system;
+if it lacks one, or cannot be reconciled with the deployment coordinates, the on-land check is
+skipped with a message (the audit never aborts).</p></dd>
+
+
+<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
+<dd><p>Optional EPSG code for the deployment coordinates, used only by the on-land check.
+Needed only when the coordinates are projected (not longitude/latitude); geographic coordinates are
+assumed to be WGS84.</p></dd>
+
+
 <dt id="arg-checks">checks<a class="anchor" aria-label="anchor" href="#arg-checks"></a></dt>
 <dd><p>Character vector selecting which check groups to run (any of, or <code>"all"</code>, the
 default): <code>"dates"</code> (deploy/recover date integrity), <code>"overlaps"</code> (duplicate and overlapping
@@ -162,21 +177,6 @@ Defaults to 500.</p></dd>
 <dt id="arg-gap-tolerance">gap.tolerance<a class="anchor" aria-label="anchor" href="#arg-gap-tolerance"></a></dt>
 <dd><p>Numeric. Minimum gap (in days) between consecutive deployments of a
 receiver to report as a coverage gap. Defaults to 1.</p></dd>
-
-
-<dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
-<dd><p>Optional <code>sf</code> (or <code>SpatialPolygons*</code>) polygon layer of landmasses. When
-supplied, the <code>"coordinates"</code> group additionally flags receiver positions that fall on land.
-Off by default; if <code>NULL</code>, it is taken from the <code>detections</code> <code>mobyData</code> metadata when present (i.e.
-from <code>as_moby(detections, land.shape = ...)</code>). The layer must carry a coordinate reference system;
-if it lacks one, or cannot be reconciled with the deployment coordinates, the on-land check is
-skipped with a message (the audit never aborts).</p></dd>
-
-
-<dt id="arg-epsg-code">epsg.code<a class="anchor" aria-label="anchor" href="#arg-epsg-code"></a></dt>
-<dd><p>Optional EPSG code for the deployment coordinates, used only by the on-land check.
-Needed only when the coordinates are projected (not longitude/latitude); geographic coordinates are
-assumed to be WGS84.</p></dd>
 
 
 <dt id="arg-land-tolerance">land.tolerance<a class="anchor" aria-label="anchor" href="#arg-land-tolerance"></a></dt>

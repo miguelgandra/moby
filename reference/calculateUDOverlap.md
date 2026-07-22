@@ -24,10 +24,10 @@ which offers a wider set of indices but no CIs.
 ``` r
 calculateUDOverlap(
   uds,
+  id.groups = NULL,
   index = "BA",
   contour = 95,
   conf.level = 0.95,
-  id.groups = NULL,
   verbose = TRUE
 )
 ```
@@ -40,6 +40,12 @@ calculateUDOverlap(
   [`calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md)
   (a list with a `$ud` element). The estimation method (AKDE vs KDE) is
   detected automatically.
+
+- id.groups:
+
+  Optional named list of ID groups. When supplied, each pair is
+  annotated with its `group1`/`group2` membership and a `pair_type` of
+  `"within"` or `"between"`.
 
 - index:
 
@@ -57,12 +63,6 @@ calculateUDOverlap(
 
   AKDE only: the confidence level for the reported overlap CIs. Defaults
   to 0.95. Ignored for KDE (which provides no CIs).
-
-- id.groups:
-
-  Optional named list of ID groups. When supplied, each pair is
-  annotated with its `group1`/`group2` membership and a `pair_type` of
-  `"within"` or `"between"`.
 
 - verbose:
 

@@ -22,9 +22,9 @@ engine, so counts and durations are consistent across them.
 ``` r
 calculateVisits(
   data,
-  spatial.col = NULL,
   id.col = NULL,
   datetime.col = NULL,
+  spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
   max.gap.unit = c("hours", "days", "mins", "secs")
@@ -39,13 +39,6 @@ calculateVisits(
   [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md))
   of detections.
 
-- spatial.col:
-
-  Name of the column defining the locations visited (e.g. receiver,
-  station, habitat, region). If `NULL` (default), it is taken from the
-  `mobyData` station column (or the canonical `"station"`); set it to
-  track visits to any other spatial unit.
-
 - id.col:
 
   Name of the column containing animal IDs. Defaults to `"ID"`.
@@ -54,6 +47,13 @@ calculateVisits(
 
   Name of the column containing date-times in POSIXct format. Defaults
   to `"datetime"`.
+
+- spatial.col:
+
+  Name of the column defining the locations visited (e.g. receiver,
+  station, habitat, region). If `NULL` (default), it is taken from the
+  `mobyData` station column (or the canonical `"station"`); set it to
+  track visits to any other spatial unit.
 
 - id.groups:
 

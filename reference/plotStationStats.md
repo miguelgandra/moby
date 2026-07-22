@@ -13,14 +13,14 @@ split by animal class through `id.groups`.
 ``` r
 plotStationStats(
   data,
-  type = "detections",
-  value.scale = c("natural", "count", "proportion"),
   id.col = NULL,
   timebin.col = NULL,
   station.col = NULL,
-  aggregate.by = NULL,
   id.groups = NULL,
   group.comparisons = "all",
+  aggregate.by = NULL,
+  type = "detections",
+  value.scale = c("natural", "count", "proportion"),
   color.pal = NULL,
   background.color = "grey96",
   station.labels = c("names", "rotated", "numbered"),
@@ -45,18 +45,6 @@ plotStationStats(
   A data frame containing animal detections with corresponding
   time-bins.
 
-- type:
-
-  One or more statistics to plot (each drawn in its own panel row):
-  `"detections"`, `"average detections"`, `"individuals"`,
-  `"co-occurrences"`. Defaults to `"detections"`.
-
-- value.scale:
-
-  What the bar height encodes: `"natural"` (default; counts for
-  count-based statistics, a proportion for `"average detections"`),
-  `"count"`, or `"proportion"`.
-
 - id.col:
 
   Name of the column containing animal IDs. Defaults to `"ID"`.
@@ -71,12 +59,6 @@ plotStationStats(
   Name of the column containing station/receiver IDs. Defaults to
   `"station"`.
 
-- aggregate.by:
-
-  Optional column name to summarise by (e.g. habitat or region);
-  defaults to `station.col`. Each station must map to a single
-  `aggregate.by` value.
-
 - id.groups:
 
   Optional named list of ID groups, used to split animals into classes
@@ -87,6 +69,24 @@ plotStationStats(
   For co-occurrences with `id.groups`: `"within"` (intra-group),
   `"between"` (inter-group pairs) or `"all"` (both). Defaults to
   `"all"`.
+
+- aggregate.by:
+
+  Optional column name to summarise by (e.g. habitat or region);
+  defaults to `station.col`. Each station must map to a single
+  `aggregate.by` value.
+
+- type:
+
+  One or more statistics to plot (each drawn in its own panel row):
+  `"detections"`, `"average detections"`, `"individuals"`,
+  `"co-occurrences"`. Defaults to `"detections"`.
+
+- value.scale:
+
+  What the bar height encodes: `"natural"` (default; counts for
+  count-based statistics, a proportion for `"average detections"`),
+  `"count"`, or `"proportion"`.
 
 - color.pal:
 

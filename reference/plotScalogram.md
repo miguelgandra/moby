@@ -36,9 +36,9 @@ plotScalogram(
   min.days = NULL,
   date.format = NULL,
   main = NULL,
-  cex = 1,
   ncol = 1,
   cores = 1,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -151,10 +151,6 @@ plotScalogram(
 
   Overall plot title. If NULL, generated from `variable`.
 
-- cex:
-
-  Global expansion factor for all plot text. Defaults to 1.
-
 - ncol:
 
   Number of panel columns. Defaults to 1.
@@ -163,6 +159,10 @@ plotScalogram(
 
   Number of CPU cores for the CWT computation (needs parallel, doSNOW,
   foreach when \> 1). Defaults to 1.
+
+- cex:
+
+  Global expansion factor for all plot text. Defaults to 1.
 
 - file:
 

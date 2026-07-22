@@ -29,11 +29,11 @@ movement-type
 ``` r
 plotMovements(
   network,
-  edge.metric = c("movements", "individuals"),
   land.shape = NULL,
   coastline = getOption("moby.coastline", TRUE),
-  land.color = "gray50",
   epsg.code = NULL,
+  edge.metric = c("movements", "individuals"),
+  land.color = "gray50",
   background.layer = NULL,
   background.color = "#F3F7F7",
   background.pal = NULL,
@@ -61,8 +61,8 @@ plotMovements(
   scale.color = "black",
   extent.factor = 1.1,
   main = NULL,
-  cex = 1,
   ncol = 1,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -82,12 +82,6 @@ plotMovements(
   When the network carries ID groups, a separate panel is drawn for each
   group.
 
-- edge.metric:
-
-  Metric used to scale and label the edges: `"movements"` (number of
-  transitions, the default) or `"individuals"` (number of distinct
-  individuals transiting between sites).
-
 - land.shape:
 
   Optional. An `sf` object containing coastlines, drawn underneath the
@@ -102,16 +96,22 @@ plotMovements(
   `getOption("moby.coastline", TRUE)`. Requires the (Suggested)
   `rnaturalearth` (with `rnaturalearthdata`) or `maps` package.
 
-- land.color:
-
-  Colour of land areas. Defaults to "gray50".
-
 - epsg.code:
 
   Optional. A projected coordinate reference system (numeric EPSG code
   or `crs` object, in metre units) used to project the node coordinates
   and the map layers. Required for the scale bar when coordinates are
   geographic.
+
+- edge.metric:
+
+  Metric used to scale and label the edges: `"movements"` (number of
+  transitions, the default) or `"individuals"` (number of distinct
+  individuals transiting between sites).
+
+- land.color:
+
+  Colour of land areas. Defaults to "gray50".
 
 - background.layer:
 
@@ -245,14 +245,14 @@ plotMovements(
 
   Optional overall title drawn above the panel grid.
 
+- ncol:
+
+  Number of columns in the multi-panel layout. Defaults to 1.
+
 - cex:
 
   Global expansion factor scaling every text element (titles, node/edge
   labels, scale bar, legend). Defaults to 1.
-
-- ncol:
-
-  Number of columns in the multi-panel layout. Defaults to 1.
 
 - file:
 

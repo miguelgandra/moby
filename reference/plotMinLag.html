@@ -63,17 +63,17 @@ default <code>min.lag.factor = 30</code> is appropriate for a given dataset, rat
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotMinLag</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  factors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">50</span><span class="op">)</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  factors <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="fl">20</span>, <span class="fl">30</span>, <span class="fl">50</span><span class="op">)</span>,</span>
 <span>  remove.duplicates <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  bar.color <span class="op">=</span> <span class="st">"#0072B2"</span>,</span>
 <span>  background.color <span class="op">=</span> <span class="st">"grey96"</span>,</span>
 <span>  breaks <span class="op">=</span> <span class="fl">40</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -89,17 +89,6 @@ default <code>min.lag.factor = 30</code> is appropriate for a given dataset, rat
 <dd><p>A <code>mobyData</code> object or a data frame of detections.</p></dd>
 
 
-<dt id="arg-nominal-delay">nominal.delay<a class="anchor" aria-label="anchor" href="#arg-nominal-delay"></a></dt>
-<dd><p>Transmitter nominal (mean) delay, in seconds. A single value applied to all
-individuals, or a vector named by <code>id.col</code> for mixed tag families. Read from the <code>mobyData</code>
-metadata (<code>nominal.delay</code>) when not supplied. Required: the diagnostic normalises <code>min_lag</code> by it.</p></dd>
-
-
-<dt id="arg-factors">factors<a class="anchor" aria-label="anchor" href="#arg-factors"></a></dt>
-<dd><p>Reference threshold multipliers (of the nominal delay) to overlay on the plot and
-tabulate. Defaults to <code>c(20, 30, 50)</code>; the middle value is the <code><a href="filterDetections.html">filterDetections()</a></code> default.</p></dd>
-
-
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
 <dd><p>Name of the column with animal IDs. Resolved from the metadata / canonical default
 ("ID") when not supplied.</p></dd>
@@ -113,6 +102,17 @@ metadata / canonical default ("datetime") when not supplied.</p></dd>
 <dt id="arg-station-col">station.col<a class="anchor" aria-label="anchor" href="#arg-station-col"></a></dt>
 <dd><p>Name of the receiver/station column. Resolved from the metadata / canonical
 default ("station") when not supplied.</p></dd>
+
+
+<dt id="arg-nominal-delay">nominal.delay<a class="anchor" aria-label="anchor" href="#arg-nominal-delay"></a></dt>
+<dd><p>Transmitter nominal (mean) delay, in seconds. A single value applied to all
+individuals, or a vector named by <code>id.col</code> for mixed tag families. Read from the <code>mobyData</code>
+metadata (<code>nominal.delay</code>) when not supplied. Required: the diagnostic normalises <code>min_lag</code> by it.</p></dd>
+
+
+<dt id="arg-factors">factors<a class="anchor" aria-label="anchor" href="#arg-factors"></a></dt>
+<dd><p>Reference threshold multipliers (of the nominal delay) to overlay on the plot and
+tabulate. Defaults to <code>c(20, 30, 50)</code>; the middle value is the <code><a href="filterDetections.html">filterDetections()</a></code> default.</p></dd>
 
 
 <dt id="arg-remove-duplicates">remove.duplicates<a class="anchor" aria-label="anchor" href="#arg-remove-duplicates"></a></dt>
@@ -132,12 +132,12 @@ before computing <code>min_lag</code>, matching the stage-0 behaviour of <code><
 <dd><p>Number of histogram bins on the log10 axis. Defaults to 40.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for labels. Defaults to 1.</p></dd>
-
-
 <dt id="arg-main">main<a class="anchor" aria-label="anchor" href="#arg-main"></a></dt>
 <dd><p>Optional plot title.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for labels. Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

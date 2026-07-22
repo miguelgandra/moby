@@ -13,10 +13,10 @@ plotMaps(
   data,
   uds = NULL,
   animal.tracks = NULL,
-  id.groups = NULL,
   id.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  id.groups = NULL,
   land.shape = NULL,
   coastline = getOption("moby.coastline", TRUE),
   epsg.code = NULL,
@@ -45,8 +45,8 @@ plotMaps(
   scale.inset = 0.05,
   extent.factor = 1.1,
   main = NULL,
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -78,10 +78,6 @@ plotMaps(
   (tracks are read from its `"trajectories"` attribute), or a
   pre-extracted list of per-individual linestring geometries.
 
-- id.groups:
-
-  Optional named list of ID groups (one block of panels each).
-
 - id.col:
 
   Name of the column containing animal IDs. Defaults to `"ID"`.
@@ -95,6 +91,10 @@ plotMaps(
 
   Name of the column containing latitude (or projected y) values.
   Defaults to `"lat"`.
+
+- id.groups:
+
+  Optional named list of ID groups (one block of panels each).
 
 - land.shape:
 
@@ -223,14 +223,14 @@ plotMaps(
 
   Optional overall title above the panel grid.
 
+- ncol:
+
+  Number of panel columns. If NULL, set from the number of individuals.
+
 - cex:
 
   Global expansion factor for all plot text (ID labels, legends, scale
   bar). Defaults to 1.
-
-- ncol:
-
-  Number of panel columns. If NULL, set from the number of individuals.
 
 - file:
 

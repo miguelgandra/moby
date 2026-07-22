@@ -62,10 +62,10 @@ detection points. Panels can be grouped by <code>id.groups</code>.</p>
 <span>  <span class="va">data</span>,</span>
 <span>  uds <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  animal.tracks <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  coastline <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.coastline"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -94,8 +94,8 @@ detection points. Panels can be grouped by <code>id.groups</code>.</p>
 <span>  scale.inset <span class="op">=</span> <span class="fl">0.05</span>,</span>
 <span>  extent.factor <span class="op">=</span> <span class="fl">1.1</span>,</span>
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -124,10 +124,6 @@ are read from its <code>"trajectories"</code> attribute), or a pre-extracted lis
 linestring geometries.</p></dd>
 
 
-<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
-<dd><p>Optional named list of ID groups (one block of panels each).</p></dd>
-
-
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
 <dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
 
@@ -138,6 +134,10 @@ linestring geometries.</p></dd>
 
 <dt id="arg-lat-col">lat.col<a class="anchor" aria-label="anchor" href="#arg-lat-col"></a></dt>
 <dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
+
+
+<dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
+<dd><p>Optional named list of ID groups (one block of panels each).</p></dd>
 
 
 <dt id="arg-land-shape">land.shape<a class="anchor" aria-label="anchor" href="#arg-land-shape"></a></dt>
@@ -259,12 +259,12 @@ Defaults to c(-0.08, 0).</p></dd>
 <dd><p>Optional overall title above the panel grid.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for all plot text (ID labels, legends, scale bar). Defaults to 1.</p></dd>
-
-
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of panel columns. If NULL, set from the number of individuals.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for all plot text (ID labels, legends, scale bar). Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

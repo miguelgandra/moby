@@ -15,9 +15,9 @@ calculateCOAs(
   data,
   id.col = NULL,
   timebin.col = NULL,
+  station.col = NULL,
   lon.col = NULL,
-  lat.col = NULL,
-  station.col = NULL
+  lat.col = NULL
 )
 ```
 
@@ -40,6 +40,11 @@ calculateCOAs(
   Name of the column containing time bins (in POSIXct format). Defaults
   to `"timebin"`.
 
+- station.col:
+
+  Name of the column containing station/receiver IDs. Defaults to
+  `"station"`.
+
 - lon.col:
 
   Name of the column containing longitude (or projected x) values.
@@ -49,11 +54,6 @@ calculateCOAs(
 
   Name of the column containing latitude (or projected y) values.
   Defaults to `"lat"`.
-
-- station.col:
-
-  Name of the column containing station/receiver IDs. Defaults to
-  `"station"`.
 
 ## Value
 

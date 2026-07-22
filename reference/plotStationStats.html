@@ -63,14 +63,14 @@ more animals share a location). Data can be split by animal class through <code>
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">plotStationStats</span><span class="op">(</span></span>
 <span>  <span class="va">data</span>,</span>
-<span>  type <span class="op">=</span> <span class="st">"detections"</span>,</span>
-<span>  value.scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"count"</span>, <span class="st">"proportion"</span><span class="op">)</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  aggregate.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  group.comparisons <span class="op">=</span> <span class="st">"all"</span>,</span>
+<span>  aggregate.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  type <span class="op">=</span> <span class="st">"detections"</span>,</span>
+<span>  value.scale <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"natural"</span>, <span class="st">"count"</span>, <span class="st">"proportion"</span><span class="op">)</span>,</span>
 <span>  color.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  background.color <span class="op">=</span> <span class="st">"grey96"</span>,</span>
 <span>  station.labels <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"names"</span>, <span class="st">"rotated"</span>, <span class="st">"numbered"</span><span class="op">)</span>,</span>
@@ -96,16 +96,6 @@ more animals share a location). Data can be split by animal class through <code>
 <dd><p>A data frame containing animal detections with corresponding time-bins.</p></dd>
 
 
-<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
-<dd><p>One or more statistics to plot (each drawn in its own panel row): <code>"detections"</code>,
-<code>"average detections"</code>, <code>"individuals"</code>, <code>"co-occurrences"</code>. Defaults to <code>"detections"</code>.</p></dd>
-
-
-<dt id="arg-value-scale">value.scale<a class="anchor" aria-label="anchor" href="#arg-value-scale"></a></dt>
-<dd><p>What the bar height encodes: <code>"natural"</code> (default; counts for count-based statistics,
-a proportion for <code>"average detections"</code>), <code>"count"</code>, or <code>"proportion"</code>.</p></dd>
-
-
 <dt id="arg-id-col">id.col<a class="anchor" aria-label="anchor" href="#arg-id-col"></a></dt>
 <dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
 
@@ -118,11 +108,6 @@ a proportion for <code>"average detections"</code>), <code>"count"</code>, or <c
 <dd><p>Name of the column containing station/receiver IDs. Defaults to <code>"station"</code>.</p></dd>
 
 
-<dt id="arg-aggregate-by">aggregate.by<a class="anchor" aria-label="anchor" href="#arg-aggregate-by"></a></dt>
-<dd><p>Optional column name to summarise by (e.g. habitat or region); defaults to
-<code>station.col</code>. Each station must map to a single <code>aggregate.by</code> value.</p></dd>
-
-
 <dt id="arg-id-groups">id.groups<a class="anchor" aria-label="anchor" href="#arg-id-groups"></a></dt>
 <dd><p>Optional named list of ID groups, used to split animals into classes (e.g.
 species); each becomes a panel column.</p></dd>
@@ -131,6 +116,21 @@ species); each becomes a panel column.</p></dd>
 <dt id="arg-group-comparisons">group.comparisons<a class="anchor" aria-label="anchor" href="#arg-group-comparisons"></a></dt>
 <dd><p>For co-occurrences with <code>id.groups</code>: <code>"within"</code> (intra-group), <code>"between"</code>
 (inter-group pairs) or <code>"all"</code> (both). Defaults to <code>"all"</code>.</p></dd>
+
+
+<dt id="arg-aggregate-by">aggregate.by<a class="anchor" aria-label="anchor" href="#arg-aggregate-by"></a></dt>
+<dd><p>Optional column name to summarise by (e.g. habitat or region); defaults to
+<code>station.col</code>. Each station must map to a single <code>aggregate.by</code> value.</p></dd>
+
+
+<dt id="arg-type">type<a class="anchor" aria-label="anchor" href="#arg-type"></a></dt>
+<dd><p>One or more statistics to plot (each drawn in its own panel row): <code>"detections"</code>,
+<code>"average detections"</code>, <code>"individuals"</code>, <code>"co-occurrences"</code>. Defaults to <code>"detections"</code>.</p></dd>
+
+
+<dt id="arg-value-scale">value.scale<a class="anchor" aria-label="anchor" href="#arg-value-scale"></a></dt>
+<dd><p>What the bar height encodes: <code>"natural"</code> (default; counts for count-based statistics,
+a proportion for <code>"average detections"</code>), <code>"count"</code>, or <code>"proportion"</code>.</p></dd>
 
 
 <dt id="arg-color-pal">color.pal<a class="anchor" aria-label="anchor" href="#arg-color-pal"></a></dt>

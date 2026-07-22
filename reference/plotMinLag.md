@@ -15,17 +15,17 @@ dataset, rather than assuming it.
 ``` r
 plotMinLag(
   data,
-  nominal.delay = NULL,
-  factors = c(20, 30, 50),
   id.col = NULL,
   datetime.col = NULL,
   station.col = NULL,
+  nominal.delay = NULL,
+  factors = c(20, 30, 50),
   remove.duplicates = TRUE,
   bar.color = "#0072B2",
   background.color = "grey96",
   breaks = 40,
-  cex = 1,
   main = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -38,21 +38,6 @@ plotMinLag(
 - data:
 
   A `mobyData` object or a data frame of detections.
-
-- nominal.delay:
-
-  Transmitter nominal (mean) delay, in seconds. A single value applied
-  to all individuals, or a vector named by `id.col` for mixed tag
-  families. Read from the `mobyData` metadata (`nominal.delay`) when not
-  supplied. Required: the diagnostic normalises `min_lag` by it.
-
-- factors:
-
-  Reference threshold multipliers (of the nominal delay) to overlay on
-  the plot and tabulate. Defaults to `c(20, 30, 50)`; the middle value
-  is the
-  [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
-  default.
 
 - id.col:
 
@@ -68,6 +53,21 @@ plotMinLag(
 
   Name of the receiver/station column. Resolved from the metadata /
   canonical default ("station") when not supplied.
+
+- nominal.delay:
+
+  Transmitter nominal (mean) delay, in seconds. A single value applied
+  to all individuals, or a vector named by `id.col` for mixed tag
+  families. Read from the `mobyData` metadata (`nominal.delay`) when not
+  supplied. Required: the diagnostic normalises `min_lag` by it.
+
+- factors:
+
+  Reference threshold multipliers (of the nominal delay) to overlay on
+  the plot and tabulate. Defaults to `c(20, 30, 50)`; the middle value
+  is the
+  [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
+  default.
 
 - remove.duplicates:
 
@@ -88,13 +88,13 @@ plotMinLag(
 
   Number of histogram bins on the log10 axis. Defaults to 40.
 
-- cex:
-
-  Global expansion factor for labels. Defaults to 1.
-
 - main:
 
   Optional plot title.
+
+- cex:
+
+  Global expansion factor for labels. Defaults to 1.
 
 - file:
 

@@ -14,19 +14,19 @@ overall means and error metrics.
 ``` r
 summaryTable(
   data,
-  tagging.dates = NULL,
-  tag.durations = NULL,
   id.metadata = NULL,
   id.col = NULL,
   datetime.col = NULL,
   station.col = NULL,
+  id.groups = NULL,
+  tagging.dates = NULL,
+  tag.durations = NULL,
   sensor.cols = NULL,
   sensor.titles = NULL,
   residency.index = c("IR1", "IR2", "IR2/IR1"),
   start.point = "release",
   last.monitoring.date = NULL,
   residency.by = NULL,
-  id.groups = NULL,
   error.stat = "sd"
 )
 ```
@@ -38,25 +38,6 @@ summaryTable(
   A data frame containing animal detections. Each row should represent
   an individual detection event, unless a 'detections' column is
   included to indicate the number of detections for each row.
-
-- tagging.dates:
-
-  Optional POSIXct vector of tagging/release dates. Either a single
-  value (applied to all individuals) or a named vector whose names match
-  the animal IDs.
-
-- tag.durations:
-
-  Optional. A numeric vector containing the estimated battery duration
-  of the deployed tags (in days). This parameter must be either:
-
-  - A single numeric value, which will be applied to all unique animal
-    IDs; or
-
-  - A named numeric vector, where the names correspond to the animal IDs
-    in the `id.col` column. If multiple tag durations are provided, the
-    vector must include all IDs and will be reordered to align with the
-    levels of `id.col`.
 
 - id.metadata:
 
@@ -79,6 +60,32 @@ summaryTable(
 
   Name of the column containing station/receiver IDs. Defaults to
   `"station"`.
+
+- id.groups:
+
+  Optional. A list where each element is a group of IDs, used for
+  visually aggregating animals belonging to the same class (e.g.,
+  different species or life stages). If supplied, averages will be
+  calculated independently for each group.
+
+- tagging.dates:
+
+  Optional POSIXct vector of tagging/release dates. Either a single
+  value (applied to all individuals) or a named vector whose names match
+  the animal IDs.
+
+- tag.durations:
+
+  Optional. A numeric vector containing the estimated battery duration
+  of the deployed tags (in days). This parameter must be either:
+
+  - A single numeric value, which will be applied to all unique animal
+    IDs; or
+
+  - A named numeric vector, where the names correspond to the animal IDs
+    in the `id.col` column. If multiple tag durations are provided, the
+    vector must include all IDs and will be reordered to align with the
+    levels of `id.col`.
 
 - sensor.cols:
 
@@ -158,13 +165,6 @@ summaryTable(
 
   Optional. Variable used to calculate partial residencies (e.g. array
   or habitat). Defaults to NULL.
-
-- id.groups:
-
-  Optional. A list where each element is a group of IDs, used for
-  visually aggregating animals belonging to the same class (e.g.,
-  different species or life stages). If supplied, averages will be
-  calculated independently for each group.
 
 - error.stat:
 

@@ -17,11 +17,11 @@ read the detection plots correctly.
 ``` r
 plotDeployments(
   deployments,
-  row.by = "receiver",
-  group.by = NULL,
   events = NULL,
   deployment.deploy.col = "deploy",
   deployment.recover.col = "recover",
+  group.by = NULL,
+  row.by = "receiver",
   end = NULL,
   merge.gaps = 1,
   sort.by = c("group", "start", "name"),
@@ -57,18 +57,6 @@ plotDeployments(
   with at least the `row.by` and `deployment.deploy.col` columns (and
   usually `deployment.recover.col`).
 
-- row.by:
-
-  Name of the column defining the rows (the operating unit). Defaults to
-  `"receiver"`; set to `"station"` (or any column) to aggregate
-  operating periods to a coarser unit.
-
-- group.by:
-
-  Optional column giving a coarser grouping used to colour the rows and
-  their labels (e.g. `"array"`, `"region"`). If NULL, all rows share
-  `single.color`.
-
 - events:
 
   Optional data frame of point events to overlay, with a column named as
@@ -85,6 +73,18 @@ plotDeployments(
   `deployment.deploy.col = "deploy_date"`). The `deployment.` prefix
   marks these as deployment-log columns, keeping them distinct from the
   bare `*.col` arguments, which always refer to the detection dataset.
+
+- group.by:
+
+  Optional column giving a coarser grouping used to colour the rows and
+  their labels (e.g. `"array"`, `"region"`). If NULL, all rows share
+  `single.color`.
+
+- row.by:
+
+  Name of the column defining the rows (the operating unit). Defaults to
+  `"receiver"`; set to `"station"` (or any column) to aggregate
+  operating periods to a coarser unit.
 
 - end:
 

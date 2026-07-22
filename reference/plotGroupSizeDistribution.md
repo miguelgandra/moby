@@ -21,8 +21,8 @@ plotGroupSizeDistribution(
   timebin.col = NULL,
   station.col = NULL,
   id.groups = NULL,
-  group.comparisons = "all",
   split.by = NULL,
+  group.comparisons = "all",
   levels.order = NULL,
   color.pal = NULL,
   background.color = "grey96",
@@ -31,8 +31,8 @@ plotGroupSizeDistribution(
   legend = TRUE,
   legend.pos = "topright",
   legend.horiz = FALSE,
-  cex = 1,
   ncol = 1,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -65,16 +65,16 @@ plotGroupSizeDistribution(
   Optional named list of ID groups (e.g. species), each drawn in its own
   panel.
 
-- group.comparisons:
-
-  For `id.groups`: `"within"` (intra-class), `"between"` (inter-class
-  pairs) or `"all"` (both). Defaults to `"all"`.
-
 - split.by:
 
   Optional name of a time-bin variable (e.g. diel phase, season) by
   which to split each distribution into a stacked bar. If NULL
   (default), the distribution is computed over the whole study.
+
+- group.comparisons:
+
+  For `id.groups`: `"within"` (intra-class), `"between"` (inter-class
+  pairs) or `"all"` (both). Defaults to `"all"`.
 
 - levels.order:
 
@@ -111,13 +111,13 @@ plotGroupSizeDistribution(
 
   Logical; draw the legend horizontally. Defaults to FALSE.
 
-- cex:
-
-  Global expansion factor for all plot text. Defaults to 1.
-
 - ncol:
 
   Number of columns in the panel layout. Defaults to 1.
+
+- cex:
+
+  Global expansion factor for all plot text. Defaults to 1.
 
 - file:
 

@@ -73,8 +73,8 @@ classes via <code>id.groups</code> and <code>group.comparisons</code>.</p>
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  group.comparisons <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  split.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  group.comparisons <span class="op">=</span> <span class="st">"all"</span>,</span>
 <span>  levels.order <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  color.pal <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  background.color <span class="op">=</span> <span class="st">"grey96"</span>,</span>
@@ -83,8 +83,8 @@ classes via <code>id.groups</code> and <code>group.comparisons</code>.</p>
 <span>  legend <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  legend.pos <span class="op">=</span> <span class="st">"topright"</span>,</span>
 <span>  legend.horiz <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -116,15 +116,15 @@ classes via <code>id.groups</code> and <code>group.comparisons</code>.</p>
 <dd><p>Optional named list of ID groups (e.g. species), each drawn in its own panel.</p></dd>
 
 
-<dt id="arg-group-comparisons">group.comparisons<a class="anchor" aria-label="anchor" href="#arg-group-comparisons"></a></dt>
-<dd><p>For <code>id.groups</code>: <code>"within"</code> (intra-class), <code>"between"</code> (inter-class pairs)
-or <code>"all"</code> (both). Defaults to <code>"all"</code>.</p></dd>
-
-
 <dt id="arg-split-by">split.by<a class="anchor" aria-label="anchor" href="#arg-split-by"></a></dt>
 <dd><p>Optional name of a time-bin variable (e.g. diel phase, season) by which to split
 each distribution into a stacked bar. If NULL (default), the distribution is computed over the
 whole study.</p></dd>
+
+
+<dt id="arg-group-comparisons">group.comparisons<a class="anchor" aria-label="anchor" href="#arg-group-comparisons"></a></dt>
+<dd><p>For <code>id.groups</code>: <code>"within"</code> (intra-class), <code>"between"</code> (inter-class pairs)
+or <code>"all"</code> (both). Defaults to <code>"all"</code>.</p></dd>
 
 
 <dt id="arg-levels-order">levels.order<a class="anchor" aria-label="anchor" href="#arg-levels-order"></a></dt>
@@ -161,12 +161,12 @@ NULL). If NULL, a colourblind-safe palette is used.</p></dd>
 <dd><p>Logical; draw the legend horizontally. Defaults to FALSE.</p></dd>
 
 
-<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
-<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
-
-
 <dt id="arg-ncol">ncol<a class="anchor" aria-label="anchor" href="#arg-ncol"></a></dt>
 <dd><p>Number of columns in the panel layout. Defaults to 1.</p></dd>
+
+
+<dt id="arg-cex">cex<a class="anchor" aria-label="anchor" href="#arg-cex"></a></dt>
+<dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>

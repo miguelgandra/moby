@@ -18,17 +18,17 @@ estimated independently for different groups or time periods.
 ``` r
 calculateUDs(
   data,
-  bandwidth = NULL,
-  method = c("akde", "kde"),
-  spatial.grid = NULL,
-  subset = NULL,
-  id.groups = NULL,
-  land.shape = NULL,
   id.col = NULL,
   timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  id.groups = NULL,
+  subset = NULL,
+  land.shape = NULL,
   epsg.code = NULL,
+  spatial.grid = NULL,
+  bandwidth = NULL,
+  method = c("akde", "kde"),
   contour.percent = c(50, 95),
   model.selection = c("fit", "select"),
   verbose = getOption("moby.verbose", TRUE)
@@ -42,52 +42,6 @@ calculateUDs(
   A data frame with animal positions (e.g. COAs), containing
   longitude/latitude (or projected x/y) columns and, for
   `method = "akde"`, a POSIXct time column.
-
-- bandwidth:
-
-  Numeric smoothing parameter (h) for `method = "kde"` only; ignored for
-  AKDE (which estimates smoothing from the fitted movement model).
-  Larger values produce smoother, broader distributions; smaller values
-  give more localized, potentially fragmented estimates.
-
-- method:
-
-  Estimation method: `"akde"` (default; autocorrelated KDE via `ctmm`,
-  with confidence intervals) or `"kde"` (classic fixed-bandwidth KDE via
-  `adehabitatHR`).
-
-- spatial.grid:
-
-  Optional. A `Raster` or `SpatialPixels` object representing the grid
-  over which the animal kernel utilization distributions (UDs) will be
-  estimated (see the `grid` argument in
-  [`kernelUD`](https://rdrr.io/pkg/adehabitatHR/man/kernelUD.html)). If
-  set to `NULL`, the function will automatically generate an appropriate
-  grid based on the spatial extent of the supplied animal's positions.
-
-- subset:
-
-  Optional. A variable used to subset the data, allowing UDs to be
-  calculated independently for each level of this variable. This should
-  be the name of a column in the provided dataset. If left `NULL`, UDs
-  are calculated for the whole monitoring period.
-
-- id.groups:
-
-  Optional. A named list where each element represents a group (e.g.,
-  species, sex, or age class), containing a vector of IDs for that
-  group. If supplied, UDs will be calculated independently for each
-  group. The names of the list correspond to the group labels.
-
-- land.shape:
-
-  Optional. A shapefile containing coastlines or landmasses, provided
-  either as an 'sf' object or as a
-  'SpatialPolygonsDataFrame'/'SpatialPolygons' object. If the input is
-  not in 'sf' format, the function will automatically convert it to 'sf'
-  to ensure compatibility with subsequent spatial operations. Used to
-  clip and exclude any portions of the estimated areas that overlap with
-  landmasses.
 
 - id.col:
 
@@ -114,11 +68,57 @@ calculateUDs(
   Name of the column containing latitude (or projected y) values.
   Defaults to `"lat"`.
 
+- id.groups:
+
+  Optional. A named list where each element represents a group (e.g.,
+  species, sex, or age class), containing a vector of IDs for that
+  group. If supplied, UDs will be calculated independently for each
+  group. The names of the list correspond to the group labels.
+
+- subset:
+
+  Optional. A variable used to subset the data, allowing UDs to be
+  calculated independently for each level of this variable. This should
+  be the name of a column in the provided dataset. If left `NULL`, UDs
+  are calculated for the whole monitoring period.
+
+- land.shape:
+
+  Optional. A shapefile containing coastlines or landmasses, provided
+  either as an 'sf' object or as a
+  'SpatialPolygonsDataFrame'/'SpatialPolygons' object. If the input is
+  not in 'sf' format, the function will automatically convert it to 'sf'
+  to ensure compatibility with subsequent spatial operations. Used to
+  clip and exclude any portions of the estimated areas that overlap with
+  landmasses.
+
 - epsg.code:
 
   Optional integer EPSG code of a **projected** (metre-based) coordinate
   reference system, used when projecting coordinates or computing
   distances/areas.
+
+- spatial.grid:
+
+  Optional. A `Raster` or `SpatialPixels` object representing the grid
+  over which the animal kernel utilization distributions (UDs) will be
+  estimated (see the `grid` argument in
+  [`kernelUD`](https://rdrr.io/pkg/adehabitatHR/man/kernelUD.html)). If
+  set to `NULL`, the function will automatically generate an appropriate
+  grid based on the spatial extent of the supplied animal's positions.
+
+- bandwidth:
+
+  Numeric smoothing parameter (h) for `method = "kde"` only; ignored for
+  AKDE (which estimates smoothing from the fitted movement model).
+  Larger values produce smoother, broader distributions; smaller values
+  give more localized, potentially fragmented estimates.
+
+- method:
+
+  Estimation method: `"akde"` (default; autocorrelated KDE via `ctmm`,
+  with confidence intervals) or `"kde"` (classic fixed-bandwidth KDE via
+  `adehabitatHR`).
 
 - contour.percent:
 
@@ -289,7 +289,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #> Estimating kernel utilization distributions [Raja clavata]...
 #> Calculating 50% contours...
 #> Calculating 95% contours...
-#> Total execution time: 0.61 secs
+#> Total execution time: 0.65 secs
 #>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)
 #> 1 Dasyatis pastinaca D01    249         4.61        17.56
 #> 2 Dasyatis pastinaca D02    154         3.42        16.55

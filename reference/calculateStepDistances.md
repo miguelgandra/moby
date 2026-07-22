@@ -18,13 +18,13 @@ parallel computing enabled.
 ``` r
 calculateStepDistances(
   data,
+  id.col = NULL,
+  lon.col = NULL,
+  lat.col = NULL,
   land.shape = NULL,
   epsg.code = NULL,
   grid.resolution = 100,
   mov.directions = 16,
-  id.col = NULL,
-  lon.col = NULL,
-  lat.col = NULL,
   cores = 1,
   verbose = TRUE
 )
@@ -36,6 +36,20 @@ calculateStepDistances(
 
   A data frame with animal positions, containing longitude and latitude
   values.
+
+- id.col:
+
+  Name of the column containing animal IDs. Defaults to `"ID"`.
+
+- lon.col:
+
+  Name of the column containing longitude (or projected x) values.
+  Defaults to `"lon"`.
+
+- lat.col:
+
+  Name of the column containing latitude (or projected y) values.
+  Defaults to `"lat"`.
 
 - land.shape:
 
@@ -68,20 +82,6 @@ calculateStepDistances(
   Size of the movement neighbourhood used when building the least-cost
   graph: `4` (rook), `8` (rook + bishop), or `16` (adds knight moves,
   the default; smoother least-cost paths).
-
-- id.col:
-
-  Name of the column containing animal IDs. Defaults to `"ID"`.
-
-- lon.col:
-
-  Name of the column containing longitude (or projected x) values.
-  Defaults to `"lon"`.
-
-- lat.col:
-
-  Name of the column containing latitude (or projected y) values.
-  Defaults to `"lat"`.
 
 - cores:
 
@@ -160,6 +160,6 @@ rays_lc <- calculateStepDistances(rays[1:60, ], land.shape = land,
 #> Building least-cost graph (200m grid | 16 directions)
 #>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...
 #>   |                                                                              |======================================================================| 100%
-#> Total execution time: 0.31 secs 
+#> Total execution time: 0.33 secs 
 # }
 ```

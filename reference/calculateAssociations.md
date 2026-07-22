@@ -28,8 +28,8 @@ calculateAssociations(
   data,
   id.groups = NULL,
   subset = NULL,
-  metric = "simple-ratio",
   group.comparisons = "all",
+  metric = "simple-ratio",
   cores = 1,
   verbose = getOption("moby.verbose", TRUE)
 )
@@ -59,10 +59,6 @@ calculateAssociations(
   grouping. If left NULL, single overlap indices are calculated for the
   whole monitoring period.
 
-- metric:
-
-  One of "simple-ratio" or "half-weight".
-
 - group.comparisons:
 
   Controls the type of comparisons to be run, when id.groups are
@@ -70,6 +66,10 @@ calculateAssociations(
   comparisons between individuals belonging to the same group or skip
   comparisons between different groups, when these are not required
   (less computing time). Defaults to "all".
+
+- metric:
+
+  One of "simple-ratio" or "half-weight".
 
 - cores:
 

@@ -34,10 +34,10 @@ interval (release to monitoring end).
 ``` r
 calculateResidency(
   data,
-  tagging.dates = NULL,
-  tag.durations = NULL,
   id.col = NULL,
   datetime.col = NULL,
+  tagging.dates = NULL,
+  tag.durations = NULL,
   last.monitoring.date = NULL,
   residency.index = c("IR1", "IR2", "IWR"),
   start.point = "release",
@@ -54,6 +54,15 @@ calculateResidency(
   [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md))
   of detections.
 
+- id.col:
+
+  Name of the column containing animal IDs. Defaults to `"ID"`.
+
+- datetime.col:
+
+  Name of the column containing date-times in POSIXct format. Defaults
+  to `"datetime"`.
+
 - tagging.dates:
 
   A POSIXct vector of tagging/release dates (single value or named by
@@ -65,15 +74,6 @@ calculateResidency(
   `last.monitoring.date`) to define the study interval Dt. Required
   (together with, or instead of, `last.monitoring.date`) when `IR2` or
   `IWR` are requested.
-
-- id.col:
-
-  Name of the column containing animal IDs. Defaults to `"ID"`.
-
-- datetime.col:
-
-  Name of the column containing date-times in POSIXct format. Defaults
-  to `"datetime"`.
 
 - last.monitoring.date:
 
