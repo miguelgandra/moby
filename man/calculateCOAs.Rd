@@ -8,9 +8,9 @@ calculateCOAs(
   data,
   id.col = NULL,
   timebin.col = NULL,
+  station.col = NULL,
   lon.col = NULL,
-  lat.col = NULL,
-  station.col = NULL
+  lat.col = NULL
 )
 }
 \arguments{
@@ -22,11 +22,11 @@ calculateCOAs(
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to \code{"timebin"}.}
 
+\item{station.col}{Name of the column containing station/receiver IDs. Defaults to \code{"station"}.}
+
 \item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
 
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
-
-\item{station.col}{Name of the column containing station/receiver IDs. Defaults to \code{"station"}.}
 }
 \value{
 A data frame of per-(ID, time bin) positions with columns:

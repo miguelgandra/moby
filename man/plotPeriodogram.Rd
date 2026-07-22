@@ -8,6 +8,7 @@ plotPeriodogram(
   data,
   id.col = NULL,
   timebin.col = NULL,
+  id.groups = NULL,
   type = "detections",
   method = c("fft", "lomb"),
   detrend = c("none", "linear", "diff"),
@@ -16,12 +17,11 @@ plotPeriodogram(
   axis.periods = c(48, 24, 12, 8, 6),
   highlight.bands = TRUE,
   min.days = 10,
-  id.groups = NULL,
   shared.scale = TRUE,
   color.pal = NULL,
   background.color = "grey96",
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -34,6 +34,8 @@ plotPeriodogram(
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to \code{"timebin"}.}
+
+\item{id.groups}{Optional named list of ID groups (one block of panels each).}
 
 \item{type}{Response analysed: \code{"detections"} (counts) or \code{"presences"} (binary per bin).}
 
@@ -56,17 +58,15 @@ for the dominant peak. If NULL (default), spans ~2 sampling intervals to twice t
 
 \item{min.days}{Discard individuals detected on fewer than this many distinct days. Defaults to 10.}
 
-\item{id.groups}{Optional named list of ID groups (one block of panels each).}
-
 \item{shared.scale}{Logical; share the y-axis (spectral power) across panels. Defaults to TRUE.}
 
 \item{color.pal}{Colour for the spectrum. If NULL, a colourblind-safe colour is used.}
 
 \item{background.color}{Panel background colour. Defaults to "grey96".}
 
-\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
-
 \item{ncol}{Number of panel columns. If NULL, set from the number of individuals.}
+
+\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

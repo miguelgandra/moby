@@ -6,11 +6,11 @@
 \usage{
 plotMovements(
   network,
-  edge.metric = c("movements", "individuals"),
   land.shape = NULL,
   coastline = getOption("moby.coastline", TRUE),
-  land.color = "gray50",
   epsg.code = NULL,
+  edge.metric = c("movements", "individuals"),
+  land.color = "gray50",
   background.layer = NULL,
   background.color = "#F3F7F7",
   background.pal = NULL,
@@ -38,8 +38,8 @@ plotMovements(
   scale.color = "black",
   extent.factor = 1.1,
   main = NULL,
-  cex = 1,
   ncol = 1,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -52,9 +52,6 @@ plotMovements(
 \code{\link{calculateTransitions}}. When the network carries ID groups, a separate panel is drawn
 for each group.}
 
-\item{edge.metric}{Metric used to scale and label the edges: \code{"movements"} (number of transitions,
-the default) or \code{"individuals"} (number of distinct individuals transiting between sites).}
-
 \item{land.shape}{Optional. An \code{sf} object containing coastlines, drawn underneath the network.}
 
 \item{coastline}{When the map is projected (an \code{epsg.code}, \code{land.shape} or \code{background.layer} is
@@ -63,11 +60,14 @@ a scale; a string forces an \code{rnaturalearth} scale; \code{FALSE} draws none.
 \code{getOption("moby.coastline", TRUE)}. Requires the (Suggested) \code{rnaturalearth} (with
 \code{rnaturalearthdata}) or \code{maps} package.}
 
-\item{land.color}{Colour of land areas. Defaults to "gray50".}
-
 \item{epsg.code}{Optional. A projected coordinate reference system (numeric EPSG code or \code{crs}
 object, in metre units) used to project the node coordinates and the map layers. Required for the
 scale bar when coordinates are geographic.}
+
+\item{edge.metric}{Metric used to scale and label the edges: \code{"movements"} (number of transitions,
+the default) or \code{"individuals"} (number of distinct individuals transiting between sites).}
+
+\item{land.color}{Colour of land areas. Defaults to "gray50".}
 
 \item{background.layer}{Optional. A projected raster displayed in the background (e.g. bathymetry,
 temperature).}
@@ -137,10 +137,10 @@ value of 1 keeps the bounding box; values > 1 increase the extent. Defaults to 1
 
 \item{main}{Optional overall title drawn above the panel grid.}
 
+\item{ncol}{Number of columns in the multi-panel layout. Defaults to 1.}
+
 \item{cex}{Global expansion factor scaling every text element (titles, node/edge labels, scale
 bar, legend). Defaults to 1.}
-
-\item{ncol}{Number of columns in the multi-panel layout. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

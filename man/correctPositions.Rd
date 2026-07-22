@@ -6,11 +6,11 @@
 \usage{
 correctPositions(
   data,
-  spatial.layer,
-  raster.type = "land",
-  epsg.code = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  spatial.layer,
+  epsg.code = NULL,
+  raster.type = "land",
   depth.threshold = 0,
   max.distance.km = 50,
   plot = FALSE,
@@ -21,11 +21,18 @@ correctPositions(
 \arguments{
 \item{data}{A data frame with animal positions, containing longitude and latitude values.}
 
+\item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
+
+\item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
+
 \item{spatial.layer}{A spatial object used to determine land and marine areas. This can be one of the following:
 \itemize{
 \item A \code{SpatRaster} (terra; a \code{RasterLayer} is also accepted) with binary values or bathymetric data.
 \item An \code{sf} or \code{SpatialPolygons} object representing coastlines or landmasses.
 }}
+
+\item{epsg.code}{Optional integer EPSG code of a \strong{projected} (metre-based) coordinate
+reference system, used when projecting coordinates or computing distances/areas.}
 
 \item{raster.type}{A character string indicating the type of raster when \code{spatial.layer} is a \code{Raster}.
 This parameter can be either 'land', 'water', or 'bathy'.
@@ -34,13 +41,6 @@ This parameter can be either 'land', 'water', or 'bathy'.
 \item If 'water', the raster is assumed to contain NA values in land surfaces.
 \item If 'bathy', the raster is assumed to range between 0 (land) to maximum depth (positive or negative values).
 }}
-
-\item{epsg.code}{Optional integer EPSG code of a \strong{projected} (metre-based) coordinate
-reference system, used when projecting coordinates or computing distances/areas.}
-
-\item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
-
-\item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
 
 \item{depth.threshold}{A numeric value. If set, shortest in-water paths will be calculated only
 for cells with depths >= this threshold. Only takes effect when raster

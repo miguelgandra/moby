@@ -162,20 +162,20 @@
 ## Main function - Estimate Kernel Density #####################################
 
 calculateUDs <- function(data,
-                          bandwidth = NULL,
-                          method = c("akde", "kde"),
-                          spatial.grid = NULL,
-                          subset = NULL,
-                          id.groups = NULL,
-                          land.shape = NULL,
-                          id.col = NULL,
-                          timebin.col = NULL,
-                          lon.col = NULL,
-                          lat.col = NULL,
-                          epsg.code = NULL,
-                          contour.percent = c(50,95),
-                          model.selection = c("fit", "select"),
-                          verbose = getOption("moby.verbose", TRUE)) {
+                         id.col = NULL,
+                         timebin.col = NULL,
+                         lon.col = NULL,
+                         lat.col = NULL,
+                         id.groups = NULL,
+                         subset = NULL,
+                         land.shape = NULL,
+                         epsg.code = NULL,
+                         spatial.grid = NULL,
+                         bandwidth = NULL,
+                         method = c("akde", "kde"),
+                         contour.percent = c(50,95),
+                         model.selection = c("fit", "select"),
+                         verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
   ## Initial checks ############################################################

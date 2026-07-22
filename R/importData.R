@@ -518,8 +518,8 @@ importTags <- function(x,
 
 assignAnimalIDs <- function(detections,
                             tags,
-                            transmitter.col = "transmitter",
                             id.col = NULL,
+                            transmitter.col = "transmitter",
                             keep.cols = NULL,
                             set.tagging.dates = TRUE,
                             set.nominal.delay = TRUE) {

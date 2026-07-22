@@ -6,16 +6,19 @@
 \usage{
 calculateUDOverlap(
   uds,
+  id.groups = NULL,
   index = "BA",
   contour = 95,
   conf.level = 0.95,
-  id.groups = NULL,
   verbose = TRUE
 )
 }
 \arguments{
 \item{uds}{The output of \code{\link{calculateUDs}} (a list with a \verb{$ud} element). The estimation
 method (AKDE vs KDE) is detected automatically.}
+
+\item{id.groups}{Optional named list of ID groups. When supplied, each pair is annotated with its
+\code{group1}/\code{group2} membership and a \code{pair_type} of \code{"within"} or \code{"between"}.}
 
 \item{index}{Overlap index to compute (case-insensitive). One of \code{"BA"} (default), and for
 KDE-estimated UDs additionally \code{"UDOI"}, \code{"HR"}, \code{"PHR"}, \code{"VI"}, \code{"HD"}.}
@@ -25,9 +28,6 @@ in (0, 100]). Defaults to 95. Ignored for AKDE (which integrates the full UD).}
 
 \item{conf.level}{AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
 Ignored for KDE (which provides no CIs).}
-
-\item{id.groups}{Optional named list of ID groups. When supplied, each pair is annotated with its
-\code{group1}/\code{group2} membership and a \code{pair_type} of \code{"within"} or \code{"between"}.}
 
 \item{verbose}{Logical; print progress messages. Defaults to TRUE.}
 }

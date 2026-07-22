@@ -84,11 +84,11 @@ as_moby <- function(data,
                     station.col  = .mobyDefaults[["station.col"]],
                     lon.col      = .mobyDefaults[["lon.col"]],
                     lat.col      = .mobyDefaults[["lat.col"]],
+                    id.groups    = NULL,
+                    land.shape   = NULL,
                     epsg.code    = NULL,
                     tagging.dates = NULL,
-                    nominal.delay = NULL,
-                    id.groups    = NULL,
-                    land.shape   = NULL) {
+                    nominal.delay = NULL) {
 
   if (!inherits(data, "data.frame")) {
     stop("'data' must be a data frame.", call. = FALSE)

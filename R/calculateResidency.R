@@ -67,10 +67,10 @@
 #' @export
 
 calculateResidency <- function(data,
-                               tagging.dates = NULL,
-                               tag.durations = NULL,
                                id.col = NULL,
                                datetime.col = NULL,
+                               tagging.dates = NULL,
+                               tag.durations = NULL,
                                last.monitoring.date = NULL,
                                residency.index = c("IR1", "IR2", "IWR"),
                                start.point = "release",

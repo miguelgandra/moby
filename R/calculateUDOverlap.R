@@ -87,10 +87,10 @@
 #' @export
 
 calculateUDOverlap <- function(uds,
+                               id.groups = NULL,
                                index = "BA",
                                contour = 95,
                                conf.level = 0.95,
-                               id.groups = NULL,
                                verbose = TRUE) {
 
   ##############################################################################

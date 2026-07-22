@@ -6,10 +6,10 @@
 \usage{
 calculateResidency(
   data,
-  tagging.dates = NULL,
-  tag.durations = NULL,
   id.col = NULL,
   datetime.col = NULL,
+  tagging.dates = NULL,
+  tag.durations = NULL,
   last.monitoring.date = NULL,
   residency.index = c("IR1", "IR2", "IWR"),
   start.point = "release",
@@ -20,16 +20,16 @@ calculateResidency(
 \arguments{
 \item{data}{A data frame (or \code{\link{mobyData}}) of detections.}
 
+\item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
+
+\item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
+
 \item{tagging.dates}{A POSIXct vector of tagging/release dates (single value or named by ID).
 Inherited from the \code{mobyData} metadata when available.}
 
 \item{tag.durations}{Optional numeric vector of tag battery durations (in days), used (with
 \code{last.monitoring.date}) to define the study interval Dt. Required (together with, or instead of,
 \code{last.monitoring.date}) when \code{IR2} or \code{IWR} are requested.}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
-
-\item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
 \item{last.monitoring.date}{Optional POSIXct value or named vector giving the last date data
 could be retrieved (last download / receivers operational). When both this and \code{tag.durations}

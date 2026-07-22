@@ -6,12 +6,15 @@
 \usage{
 plotArray(
   deployments,
+  detections = NULL,
   deployment.station.col = "station",
   deployment.lon.col = "lon",
   deployment.lat.col = "lat",
   deployment.deploy.col = "deploy",
   deployment.recover.col = "recover",
-  detections = NULL,
+  land.shape = NULL,
+  coastline = getOption("moby.coastline", TRUE),
+  epsg.code = NULL,
   color.by = NULL,
   status.at = NULL,
   detection.range = NULL,
@@ -31,10 +34,7 @@ plotArray(
   pt.color = "black",
   pt.bg = "white",
   pt.lwd = 1,
-  land.shape = NULL,
-  coastline = getOption("moby.coastline", TRUE),
   land.color = "gray50",
-  epsg.code = NULL,
   background.layer = NULL,
   background.color = "#F3F7F7",
   background.pal = NULL,
@@ -47,17 +47,22 @@ plotArray(
   legend = TRUE,
   main = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
-  res = 300,
-  verbose = getOption("moby.verbose", TRUE)
+  res = 300
 )
 }
 \arguments{
 \item{deployments}{A receiver-deployment log (a data frame), as produced by
 \code{\link{importDeployments}} - one row per deployment, with at least the station and coordinate
 columns. Multiple rows per station (repeated servicing) are reduced to one point per station.}
+
+\item{detections}{Optional. A detection dataset (data frame or \code{mobyData}). When supplied, stations
+with zero detections are highlighted and counted - a quick check for dead receivers or coverage
+gaps. The detection station column is taken from the dataset's \code{mobyData} metadata when present,
+otherwise from the canonical \code{"station"}.}
 
 \item{deployment.station.col, deployment.lon.col, deployment.lat.col}{Names of the station,
 longitude and latitude columns in the receiver-deployment log (\code{deployments}). Default to the
@@ -74,10 +79,18 @@ uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{
 these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
 always refer to the detection dataset.}
 
-\item{detections}{Optional. A detection dataset (data frame or \code{mobyData}). When supplied, stations
-with zero detections are highlighted and counted - a quick check for dead receivers or coverage
-gaps. The detection station column is taken from the dataset's \code{mobyData} metadata when present,
-otherwise from the canonical \code{"station"}.}
+\item{land.shape}{Optional. An \code{sf} object with coastlines/landmasses, drawn underneath the array.}
+
+\item{coastline}{When the map is projected (an \code{epsg.code}, \code{land.shape} or \code{background.layer} is
+given) and no \code{land.shape} is supplied, draw a default coastline for the extent. \code{TRUE} auto-picks a
+scale; a string forces an \code{rnaturalearth} scale; \code{FALSE} draws none. Defaults to
+\code{getOption("moby.coastline", TRUE)}. Requires the (Suggested) \code{rnaturalearth} (with
+\code{rnaturalearthdata}) or \code{maps} package.}
+
+\item{epsg.code}{Optional. A projected coordinate reference system (numeric EPSG code or \code{crs}
+object, in metre units) used to project the coordinates and map layers. Required for the scale bar;
+when omitted (and no map layer is supplied) the array is drawn in geographic (longitude/latitude)
+space with coordinate axes.}
 
 \item{color.by}{Optional. Name of a \code{deployments} column used to colour the stations (e.g. habitat,
 receiver model); a colourblind-safe Okabe-Ito palette and a legend are added. Takes precedence over
@@ -118,20 +131,7 @@ Defaults to 21.}
 \item{pt.cex, pt.color, pt.bg, pt.lwd}{Size, border colour, fill colour and border width of the station
 symbols. \code{pt.bg} is overridden when \code{color.by}/\code{status.at} is used.}
 
-\item{land.shape}{Optional. An \code{sf} object with coastlines/landmasses, drawn underneath the array.}
-
-\item{coastline}{When the map is projected (an \code{epsg.code}, \code{land.shape} or \code{background.layer} is
-given) and no \code{land.shape} is supplied, draw a default coastline for the extent. \code{TRUE} auto-picks a
-scale; a string forces an \code{rnaturalearth} scale; \code{FALSE} draws none. Defaults to
-\code{getOption("moby.coastline", TRUE)}. Requires the (Suggested) \code{rnaturalearth} (with
-\code{rnaturalearthdata}) or \code{maps} package.}
-
 \item{land.color}{Colour of land areas. Defaults to "gray50".}
-
-\item{epsg.code}{Optional. A projected coordinate reference system (numeric EPSG code or \code{crs}
-object, in metre units) used to project the coordinates and map layers. Required for the scale bar;
-when omitted (and no map layer is supplied) the array is drawn in geographic (longitude/latitude)
-space with coordinate axes.}
 
 \item{background.layer}{Optional. A projected raster displayed in the background (e.g. bathymetry).}
 
@@ -162,6 +162,9 @@ keeps the bounding box; values > 1 add a margin. Defaults to 1.15.}
 
 \item{cex}{Global expansion factor scaling every text element. Defaults to 1.}
 
+\item{verbose}{Logical; print the array summary to the console. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
+
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a
 graphics device chosen from the file extension (\code{.pdf}, \code{.svg}, \code{.png}, \code{.jpg}/\code{.jpeg},
@@ -177,9 +180,6 @@ may still need you to set \code{width}/\code{height} explicitly. The two can be 
 \item{res}{Resolution in pixels per inch, for raster formats only (\code{.png}, \code{.jpg}, \code{.tif},
 \code{.bmp}); ignored for vector formats (\code{.pdf}, \code{.svg}). Used only when \code{file} is supplied. Defaults
 to 300.}
-
-\item{verbose}{Logical; print the array summary to the console. Defaults to
-\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 Invisibly, a data frame of the plotted stations (station, receiver count, coordinates, and -

@@ -65,9 +65,9 @@
 #' @export
 
 calculateVisits <- function(data,
-                            spatial.col = NULL,
                             id.col = NULL,
                             datetime.col = NULL,
+                            spatial.col = NULL,
                             id.groups = NULL,
                             max.gap = 48,
                             max.gap.unit = c("hours", "days", "mins", "secs")) {

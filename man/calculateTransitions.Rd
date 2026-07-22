@@ -6,9 +6,9 @@
 \usage{
 calculateTransitions(
   data,
-  spatial.col = NULL,
   id.col = NULL,
   datetime.col = NULL,
+  spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
   max.gap.unit = c("hours", "days", "mins", "secs")
@@ -17,13 +17,13 @@ calculateTransitions(
 \arguments{
 \item{data}{A data frame (or \code{\link{mobyData}}) of detections.}
 
-\item{spatial.col}{Name of the column defining the network nodes (e.g. receiver, station,
-habitat, region). If \code{NULL} (default), it is taken from the \code{mobyData} station column (or the
-canonical \code{"station"}); set it to build transitions between any other spatial unit.}
-
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
 \item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
+
+\item{spatial.col}{Name of the column defining the network nodes (e.g. receiver, station,
+habitat, region). If \code{NULL} (default), it is taken from the \code{mobyData} station column (or the
+canonical \code{"station"}); set it to build transitions between any other spatial unit.}
 
 \item{id.groups}{Optional named list of ID groups; when supplied, an independent network is
 built for each group (carried in the \code{group} column of the node/edge tables).}

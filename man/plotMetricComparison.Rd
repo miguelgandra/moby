@@ -7,8 +7,8 @@
 plotMetricComparison(
   data,
   metrics,
-  split.by,
   id.col = NULL,
+  split.by,
   metric.labels = NULL,
   agg.fun = function(x) mean(x, na.rm = TRUE),
   plot.type = c("box", "violin", "points"),
@@ -24,8 +24,8 @@ plotMetricComparison(
   background.color = "grey96",
   outliers = FALSE,
   main = NULL,
-  cex = 1,
   ncol = 2,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -38,9 +38,9 @@ the grouping column.}
 
 \item{metrics}{Character vector of numeric column names to compare (one panel each).}
 
-\item{split.by}{Name of the grouping column (the within-individual factor: diel phase, season, ...).}
-
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
+
+\item{split.by}{Name of the grouping column (the within-individual factor: diel phase, season, ...).}
 
 \item{metric.labels}{Optional display names for the panels (defaults to the column names).}
 
@@ -78,9 +78,9 @@ values are plotted while the test still uses complete blocks.}
 
 \item{main}{Optional overall title.}
 
-\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
-
 \item{ncol}{Number of columns in the panel layout. Defaults to 2.}
+
+\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

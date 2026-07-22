@@ -6,36 +6,25 @@
 \usage{
 summaryTable(
   data,
-  tagging.dates = NULL,
-  tag.durations = NULL,
   id.metadata = NULL,
   id.col = NULL,
   datetime.col = NULL,
   station.col = NULL,
+  id.groups = NULL,
+  tagging.dates = NULL,
+  tag.durations = NULL,
   sensor.cols = NULL,
   sensor.titles = NULL,
   residency.index = c("IR1", "IR2", "IR2/IR1"),
   start.point = "release",
   last.monitoring.date = NULL,
   residency.by = NULL,
-  id.groups = NULL,
   error.stat = "sd"
 )
 }
 \arguments{
 \item{data}{A data frame containing animal detections. Each row should represent an individual detection event,
 unless a 'detections' column is included to indicate the number of detections for each row.}
-
-\item{tagging.dates}{Optional POSIXct vector of tagging/release dates. Either a single value
-(applied to all individuals) or a named vector whose names match the animal IDs.}
-
-\item{tag.durations}{Optional. A numeric vector containing the estimated battery
-duration of the deployed tags (in days). This parameter must be either:
-\itemize{
-\item A single numeric value, which will be applied to all unique animal IDs; or
-\item A named numeric vector, where the names correspond to the animal IDs in the \code{id.col} column.
-If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
-}}
 
 \item{id.metadata}{A data frame containing metadata about the tagged animals, such as their length,
 sex, or transmitter type. All columns in this data frame will be summarized and included
@@ -47,6 +36,21 @@ before merging with other statistics.}
 \item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to \code{"station"}.}
+
+\item{id.groups}{Optional. A list where each element is a group of IDs, used for visually aggregating
+animals belonging to the same class (e.g., different species or life stages). If supplied, averages
+will be calculated independently for each group.}
+
+\item{tagging.dates}{Optional POSIXct vector of tagging/release dates. Either a single value
+(applied to all individuals) or a named vector whose names match the animal IDs.}
+
+\item{tag.durations}{Optional. A numeric vector containing the estimated battery
+duration of the deployed tags (in days). This parameter must be either:
+\itemize{
+\item A single numeric value, which will be applied to all unique animal IDs; or
+\item A named numeric vector, where the names correspond to the animal IDs in the \code{id.col} column.
+If multiple tag durations are provided, the vector must include all IDs and will be reordered to align with the levels of \code{id.col}.
+}}
 
 \item{sensor.cols}{Optional. A character vector specifying column names in \code{data} that contain
 additional sensor readings (e.g., depth, temperature). For each column specified, the mean,
@@ -89,10 +93,6 @@ date or the last monitoring day.}
 
 \item{residency.by}{Optional. Variable used to calculate partial residencies (e.g. array or habitat).
 Defaults to NULL.}
-
-\item{id.groups}{Optional. A list where each element is a group of IDs, used for visually aggregating
-animals belonging to the same class (e.g., different species or life stages). If supplied, averages
-will be calculated independently for each group.}
 
 \item{error.stat}{The statistic to use for variability/error calculation, either 'sd' (standard deviation)
 or 'se' (standard error). Defaults to 'sd'.}

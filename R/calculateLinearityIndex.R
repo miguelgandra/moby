@@ -49,13 +49,13 @@
 #' @export
 
 calculateLinearityIndex <- function(data,
-                                    land.shape = NULL,
-                                    epsg.code = NULL,
                                     id.col = NULL,
                                     timebin.col = NULL,
                                     lon.col = NULL,
                                     lat.col = NULL,
                                     dist.col = "dist_m",
+                                    land.shape = NULL,
+                                    epsg.code = NULL,
                                     ...) {
 
   ##############################################################################

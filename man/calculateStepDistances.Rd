@@ -6,19 +6,25 @@
 \usage{
 calculateStepDistances(
   data,
+  id.col = NULL,
+  lon.col = NULL,
+  lat.col = NULL,
   land.shape = NULL,
   epsg.code = NULL,
   grid.resolution = 100,
   mov.directions = 16,
-  id.col = NULL,
-  lon.col = NULL,
-  lat.col = NULL,
   cores = 1,
   verbose = TRUE
 )
 }
 \arguments{
 \item{data}{A data frame with animal positions, containing longitude and latitude values.}
+
+\item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
+
+\item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
+
+\item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
 
 \item{land.shape}{Optional. A shapefile containing coastlines or landmasses. It can be supplied as
 an 'sf' object or as an object of class 'SpatialPolygonsDataFrame' or 'SpatialPolygons'.
@@ -37,12 +43,6 @@ resolution leads to more precise path calculations but may increase computation 
 
 \item{mov.directions}{Size of the movement neighbourhood used when building the least-cost graph:
 \code{4} (rook), \code{8} (rook + bishop), or \code{16} (adds knight moves, the default; smoother least-cost paths).}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
-
-\item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
-
-\item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
 
 \item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
 means no parallel computing (single core).  If set to a value greater than 1,

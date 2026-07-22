@@ -7,14 +7,14 @@
 movementTable(
   data,
   uds,
-  land.shape = NULL,
-  epsg.code = NULL,
-  id.groups = NULL,
   id.col = NULL,
   timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   dist.col = "dist_m",
+  id.groups = NULL,
+  land.shape = NULL,
+  epsg.code = NULL,
   discard.missing = TRUE,
   ...
 )
@@ -25,15 +25,6 @@ as returned by \code{\link{calculateStepDistances}}.}
 
 \item{uds}{Output of \code{\link{calculateUDs}}.}
 
-\item{land.shape}{Optional. A projected shape file containing coastlines, used (when supplied) to
-compute net displacements along the shortest in-water path for the linearity index.}
-
-\item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
-If not supplied, CRS is assumed to be the same as in land.shape.}
-
-\item{id.groups}{Optional. A list containing ID groups, used to
-visually aggregate animals belonging to the same class (e.g. different species).}
-
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to \code{"timebin"}.}
@@ -43,6 +34,15 @@ visually aggregate animals belonging to the same class (e.g. different species).
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
 
 \item{dist.col}{Name of the column containing distance values (in meters). Defaults to 'dist_m'.}
+
+\item{id.groups}{Optional. A list containing ID groups, used to
+visually aggregate animals belonging to the same class (e.g. different species).}
+
+\item{land.shape}{Optional. A projected shape file containing coastlines, used (when supplied) to
+compute net displacements along the shortest in-water path for the linearity index.}
+
+\item{epsg.code}{Coordinate reference system used to project positions (class 'CRS').
+If not supplied, CRS is assumed to be the same as in land.shape.}
 
 \item{discard.missing}{If true, only individuals with detections are included.}
 

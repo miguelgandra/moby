@@ -6,27 +6,18 @@
 \usage{
 calculateLandDists(
   data,
-  land.shape,
-  epsg.code = NULL,
-  mov.threshold = 0.5,
   id.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   dist.col = NULL,
-  grid.resolution = 100
+  land.shape,
+  epsg.code = NULL,
+  grid.resolution = 100,
+  mov.threshold = 0.5
 )
 }
 \arguments{
 \item{data}{A data frame containing animal positions.}
-
-\item{land.shape}{An sf object representing landmass.}
-
-\item{epsg.code}{Integer. The projected EPSG code (must use meters). If not supplied,
-it is taken from the \code{mobyData} metadata (see \code{\link{as_moby}}); a projected
-(metric) CRS is required.}
-
-\item{mov.threshold}{Numeric (0-1). Proportion of movement perpendicular to
-shore required for inshore/offshore classification.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
@@ -36,7 +27,16 @@ shore required for inshore/offshore classification.}
 
 \item{dist.col}{Optional. Column name for step length (meters).}
 
+\item{land.shape}{An sf object representing landmass.}
+
+\item{epsg.code}{Integer. The projected EPSG code (must use meters). If not supplied,
+it is taken from the \code{mobyData} metadata (see \code{\link{as_moby}}); a projected
+(metric) CRS is required.}
+
 \item{grid.resolution}{Numeric. Resolution of the distance raster in meters.}
+
+\item{mov.threshold}{Numeric (0-1). Proportion of movement perpendicular to
+shore required for inshore/offshore classification.}
 }
 \value{
 A data frame with added spatial and movement columns.

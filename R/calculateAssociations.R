@@ -103,8 +103,8 @@
 calculateAssociations <- function(data,
                                   id.groups = NULL,
                                   subset = NULL,
-                                  metric = "simple-ratio",
                                   group.comparisons = "all",
+                                  metric = "simple-ratio",
                                   cores = 1,
                                   verbose = getOption("moby.verbose", TRUE)) {
 

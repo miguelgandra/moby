@@ -7,8 +7,8 @@
 assignAnimalIDs(
   detections,
   tags,
-  transmitter.col = "transmitter",
   id.col = NULL,
+  transmitter.col = "transmitter",
   keep.cols = NULL,
   set.tagging.dates = TRUE,
   set.nominal.delay = TRUE
@@ -20,11 +20,11 @@ assignAnimalIDs(
 \item{tags}{A harmonised tag table from \code{\link{importTags}} (or a data frame with at
 least a \code{transmitter} column).}
 
-\item{transmitter.col}{Name of the transmitter column in \code{detections}. Defaults to
-\code{"transmitter"}.}
-
 \item{id.col}{Name of the animal-ID column to (re)create in \code{detections}. Resolved from the
 \code{mobyData} metadata or \code{"ID"} when \code{NULL}.}
+
+\item{transmitter.col}{Name of the transmitter column in \code{detections}. Defaults to
+\code{"transmitter"}.}
 
 \item{keep.cols}{Optional character vector of additional \code{tags} columns (e.g. \code{"sex"},
 \code{"length"}, \code{"species"}) to join into the detections.}

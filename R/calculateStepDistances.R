@@ -75,15 +75,15 @@
 
 
 calculateStepDistances <- function(data,
-                            land.shape = NULL,
-                            epsg.code = NULL,
-                            grid.resolution = 100,
-                            mov.directions = 16,
-                            id.col = NULL,
-                            lon.col = NULL,
-                            lat.col = NULL,
-                            cores = 1,
-                            verbose = TRUE){
+                                   id.col = NULL,
+                                   lon.col = NULL,
+                                   lat.col = NULL,
+                                   land.shape = NULL,
+                                   epsg.code = NULL,
+                                   grid.resolution = 100,
+                                   mov.directions = 16,
+                                   cores = 1,
+                                   verbose = TRUE){
 
   # The least-cost graph is a purely internal implementation detail: it is built on demand, used, and
   # discarded. Only the distance-enriched data (with its trajectories) is returned.

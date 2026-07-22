@@ -34,8 +34,8 @@ plotAssociations(
   standardize.edge.weights = TRUE,
   standardize.freqs = FALSE,
   main = NULL,
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -120,9 +120,9 @@ Larger values make all edges thicker, smaller values make them thinner.}
 
 \item{main}{Optional overall title drawn above the panel grid.}
 
-\item{cex}{Global expansion factor scaling all text (titles, node/edge labels, axes, legend). Defaults to 1.}
-
 \item{ncol}{Number of columns for the plot layout. Defaults to NULL.}
+
+\item{cex}{Global expansion factor scaling all text (titles, node/edge labels, axes, legend). Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

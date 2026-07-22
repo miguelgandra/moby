@@ -8,9 +8,9 @@ plotAbacus(
   data,
   id.col = NULL,
   datetime.col = NULL,
+  id.groups = NULL,
   tagging.dates = NULL,
   tag.durations = NULL,
-  id.groups = NULL,
   color.by = NULL,
   color.pal = NULL,
   discard.missing = FALSE,
@@ -45,15 +45,15 @@ plotAbacus(
 
 \item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
+\item{id.groups}{Optional named list of ID groups used to visually aggregate animals belonging to
+the same class (e.g. species, sex or age). Each element is a vector of IDs in that group.}
+
 \item{tagging.dates}{A POSIXct vector of tagging/release dates (single value or named by ID).
 Inherited from the \code{mobyData} metadata when available.}
 
 \item{tag.durations}{Optional numeric vector of estimated tag battery durations (in days), used
 to mark the estimated tag-expiry date of each animal. Either a single value (applied to all IDs)
 or a named vector matching the IDs in \code{id.col}.}
-
-\item{id.groups}{Optional named list of ID groups used to visually aggregate animals belonging to
-the same class (e.g. species, sex or age). Each element is a vector of IDs in that group.}
 
 \item{color.by}{Name of the column used to colour-code detections (e.g. station, habitat or a
 temporal class). If NULL, all detections are drawn in a single colour.}

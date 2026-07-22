@@ -6,14 +6,14 @@
 \usage{
 plotStationStats(
   data,
-  type = "detections",
-  value.scale = c("natural", "count", "proportion"),
   id.col = NULL,
   timebin.col = NULL,
   station.col = NULL,
-  aggregate.by = NULL,
   id.groups = NULL,
   group.comparisons = "all",
+  aggregate.by = NULL,
+  type = "detections",
+  value.scale = c("natural", "count", "proportion"),
   color.pal = NULL,
   background.color = "grey96",
   station.labels = c("names", "rotated", "numbered"),
@@ -33,26 +33,26 @@ plotStationStats(
 \arguments{
 \item{data}{A data frame containing animal detections with corresponding time-bins.}
 
-\item{type}{One or more statistics to plot (each drawn in its own panel row): \code{"detections"},
-\code{"average detections"}, \code{"individuals"}, \code{"co-occurrences"}. Defaults to \code{"detections"}.}
-
-\item{value.scale}{What the bar height encodes: \code{"natural"} (default; counts for count-based statistics,
-a proportion for \code{"average detections"}), \code{"count"}, or \code{"proportion"}.}
-
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
 \item{timebin.col}{Name of the column containing time bins (in POSIXct format). Defaults to \code{"timebin"}.}
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to \code{"station"}.}
 
-\item{aggregate.by}{Optional column name to summarise by (e.g. habitat or region); defaults to
-\code{station.col}. Each station must map to a single \code{aggregate.by} value.}
-
 \item{id.groups}{Optional named list of ID groups, used to split animals into classes (e.g.
 species); each becomes a panel column.}
 
 \item{group.comparisons}{For co-occurrences with \code{id.groups}: \code{"within"} (intra-group), \code{"between"}
 (inter-group pairs) or \code{"all"} (both). Defaults to \code{"all"}.}
+
+\item{aggregate.by}{Optional column name to summarise by (e.g. habitat or region); defaults to
+\code{station.col}. Each station must map to a single \code{aggregate.by} value.}
+
+\item{type}{One or more statistics to plot (each drawn in its own panel row): \code{"detections"},
+\code{"average detections"}, \code{"individuals"}, \code{"co-occurrences"}. Defaults to \code{"detections"}.}
+
+\item{value.scale}{What the bar height encodes: \code{"natural"} (default; counts for count-based statistics,
+a proportion for \code{"average detections"}), \code{"count"}, or \code{"proportion"}.}
 
 \item{color.pal}{Fill colours, one per \code{type}. If NULL, a colourblind-safe palette is used.}
 

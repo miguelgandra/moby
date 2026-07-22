@@ -6,26 +6,19 @@
 \usage{
 calculateLinearityIndex(
   data,
-  land.shape = NULL,
-  epsg.code = NULL,
   id.col = NULL,
   timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   dist.col = "dist_m",
+  land.shape = NULL,
+  epsg.code = NULL,
   ...
 )
 }
 \arguments{
 \item{data}{A data frame (or \code{\link{mobyData}}) of binned detections with stepwise
 distances, as returned by \code{\link{calculateStepDistances}}.}
-
-\item{land.shape}{Optional. A projected coastline/landmass layer (\code{sf} or convertible). When
-supplied, net displacements follow the shortest in-water path; otherwise linear (great-circle)
-distances are used.}
-
-\item{epsg.code}{Optional. Coordinate reference system used to project positions. If not
-supplied, the CRS is taken from \code{land.shape} (when available).}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
@@ -37,6 +30,13 @@ supplied, the CRS is taken from \code{land.shape} (when available).}
 
 \item{dist.col}{Name of the column containing the (stepwise) distance values, in metres.
 Defaults to \code{"dist_m"}.}
+
+\item{land.shape}{Optional. A projected coastline/landmass layer (\code{sf} or convertible). When
+supplied, net displacements follow the shortest in-water path; otherwise linear (great-circle)
+distances are used.}
+
+\item{epsg.code}{Optional. Coordinate reference system used to project positions. If not
+supplied, the CRS is taken from \code{land.shape} (when available).}
 
 \item{...}{Additional arguments passed to \code{\link{calculateStepDistances}} (e.g. \code{grid.resolution},
 \code{mov.directions}, \code{cores}), used when computing net displacements.}

@@ -56,11 +56,11 @@
 #' @export
 
 correctPositions <- function(data,
-                             spatial.layer,
-                             raster.type = "land",
-                             epsg.code = NULL,
                              lon.col = NULL,
                              lat.col=NULL,
+                             spatial.layer,
+                             epsg.code = NULL,
+                             raster.type = "land",
                              depth.threshold = 0,
                              max.distance.km = 50,
                              plot = FALSE,

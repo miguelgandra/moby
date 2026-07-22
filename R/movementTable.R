@@ -53,14 +53,14 @@
 
 movementTable <- function(data,
                           uds,
-                          land.shape = NULL,
-                          epsg.code = NULL,
-                          id.groups = NULL,
                           id.col = NULL,
                           timebin.col = NULL,
                           lon.col = NULL,
                           lat.col = NULL,
                           dist.col = "dist_m",
+                          id.groups = NULL,
+                          land.shape = NULL,
+                          epsg.code = NULL,
                           discard.missing = TRUE,
                           ...) {
 

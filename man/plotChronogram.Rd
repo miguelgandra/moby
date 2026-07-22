@@ -9,8 +9,8 @@ plotChronogram(
   id.col = NULL,
   timebin.col = NULL,
   station.col = NULL,
-  metric = "detections",
   split.by = NULL,
+  metric = "detections",
   style = "points",
   color.by = NULL,
   color.pal = NULL,
@@ -33,8 +33,8 @@ plotChronogram(
   main = NULL,
   legend = TRUE,
   legend.cols = NULL,
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -51,11 +51,11 @@ plotChronogram(
 
 \item{station.col}{Name of the column containing station/receiver IDs. Defaults to \code{"station"}.}
 
-\item{metric}{The metric to plot: one of \code{"detections"} (the default), \code{"individuals"} or
-\code{"co-occurrences"} (see Details for the co-occurrence definition and its caveats).}
-
 \item{split.by}{Optional column name; when supplied, a separate panel is drawn for each of its
 levels (e.g. species, life stage, habitat).}
+
+\item{metric}{The metric to plot: one of \code{"detections"} (the default), \code{"individuals"} or
+\code{"co-occurrences"} (see Details for the co-occurrence definition and its caveats).}
 
 \item{style}{\code{"points"} (metric encoded by point size) or \code{"raster"} (metric encoded by colour).}
 
@@ -114,9 +114,9 @@ group name when \code{split.by} is used, otherwise the metric); a character vect
 
 \item{legend.cols}{Number of columns for the \code{color.by} legend. If NULL, chosen automatically.}
 
-\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
-
 \item{ncol}{Number of columns in the panel layout. If NULL, panels are stacked (one column).}
+
+\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

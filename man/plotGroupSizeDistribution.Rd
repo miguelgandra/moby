@@ -10,8 +10,8 @@ plotGroupSizeDistribution(
   timebin.col = NULL,
   station.col = NULL,
   id.groups = NULL,
-  group.comparisons = "all",
   split.by = NULL,
+  group.comparisons = "all",
   levels.order = NULL,
   color.pal = NULL,
   background.color = "grey96",
@@ -20,8 +20,8 @@ plotGroupSizeDistribution(
   legend = TRUE,
   legend.pos = "topright",
   legend.horiz = FALSE,
-  cex = 1,
   ncol = 1,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -39,12 +39,12 @@ plotGroupSizeDistribution(
 
 \item{id.groups}{Optional named list of ID groups (e.g. species), each drawn in its own panel.}
 
-\item{group.comparisons}{For \code{id.groups}: \code{"within"} (intra-class), \code{"between"} (inter-class pairs)
-or \code{"all"} (both). Defaults to \code{"all"}.}
-
 \item{split.by}{Optional name of a time-bin variable (e.g. diel phase, season) by which to split
 each distribution into a stacked bar. If NULL (default), the distribution is computed over the
 whole study.}
+
+\item{group.comparisons}{For \code{id.groups}: \code{"within"} (intra-class), \code{"between"} (inter-class pairs)
+or \code{"all"} (both). Defaults to \code{"all"}.}
 
 \item{levels.order}{Optional integer vector giving the preferred stacking order of the \code{split.by}
 levels.}
@@ -64,9 +64,9 @@ NULL). If NULL, a colourblind-safe palette is used.}
 
 \item{legend.horiz}{Logical; draw the legend horizontally. Defaults to FALSE.}
 
-\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
-
 \item{ncol}{Number of columns in the panel layout. Defaults to 1.}
+
+\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

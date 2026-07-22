@@ -8,10 +8,10 @@ plotMaps(
   data,
   uds = NULL,
   animal.tracks = NULL,
-  id.groups = NULL,
   id.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  id.groups = NULL,
   land.shape = NULL,
   coastline = getOption("moby.coastline", TRUE),
   epsg.code = NULL,
@@ -40,8 +40,8 @@ plotMaps(
   scale.inset = 0.05,
   extent.factor = 1.1,
   main = NULL,
-  cex = 1,
   ncol = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -60,13 +60,13 @@ detected automatically.}
 are read from its \code{"trajectories"} attribute), or a pre-extracted list of per-individual
 linestring geometries.}
 
-\item{id.groups}{Optional named list of ID groups (one block of panels each).}
-
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
 \item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
 
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
+
+\item{id.groups}{Optional named list of ID groups (one block of panels each).}
 
 \item{land.shape}{Optional \code{sf} coastline/landmass polygon drawn over the background.}
 
@@ -135,9 +135,9 @@ Defaults to c(-0.08, 0).}
 
 \item{main}{Optional overall title above the panel grid.}
 
-\item{cex}{Global expansion factor for all plot text (ID labels, legends, scale bar). Defaults to 1.}
-
 \item{ncol}{Number of panel columns. If NULL, set from the number of individuals.}
+
+\item{cex}{Global expansion factor for all plot text (ID labels, legends, scale bar). Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

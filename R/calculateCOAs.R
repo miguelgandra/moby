@@ -43,9 +43,9 @@
 calculateCOAs <- function(data,
                           id.col = NULL,
                           timebin.col = NULL,
+                          station.col = NULL,
                           lon.col = NULL,
-                          lat.col = NULL,
-                          station.col = NULL){
+                          lat.col = NULL){
 
   ##############################################################################
   ## Initial checks ############################################################

@@ -6,12 +6,14 @@
 \usage{
 filterDetections(
   data,
-  tagging.dates = NULL,
-  cutoff.dates = NULL,
   id.col = NULL,
   datetime.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
+  land.shape = NULL,
+  epsg.code = NULL,
+  tagging.dates = NULL,
+  cutoff.dates = NULL,
   remove.duplicates = TRUE,
   nominal.delay = NULL,
   min.lag.factor = 30,
@@ -24,20 +26,12 @@ filterDetections(
   max.iterations = 20L,
   min.detections = 0,
   min.days = 0,
-  land.shape = NULL,
-  epsg.code = NULL,
   verbose = getOption("moby.verbose", TRUE),
   ...
 )
 }
 \arguments{
 \item{data}{A data frame (or \code{mobyData}) of raw animal detections.}
-
-\item{tagging.dates}{Optional POSIXct vector of tagging/release dates. Either a single value
-(applied to all individuals) or a named vector whose names match the animal IDs.}
-
-\item{cutoff.dates}{Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
-last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct vector keyed by \code{id.col}.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
@@ -46,6 +40,18 @@ last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct ve
 \item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
 
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
+
+\item{land.shape}{Optional. Coastline/landmass polygons (\code{sf}, or \verb{SpatialPolygons*}), enabling
+shortest in-water distances in the speed filter. Passed to \code{\link{calculateStepDistances}}.}
+
+\item{epsg.code}{Optional integer EPSG code of a projected (metre-based) CRS used to project
+positions for the speed filter.}
+
+\item{tagging.dates}{Optional POSIXct vector of tagging/release dates. Either a single value
+(applied to all individuals) or a named vector whose names match the animal IDs.}
+
+\item{cutoff.dates}{Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
+last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct vector keyed by \code{id.col}.}
 
 \item{remove.duplicates}{Logical; drop exact-duplicate records (same animal ID, timestamp and
 station) before any other filter. Defaults to TRUE.}
@@ -87,12 +93,6 @@ for unlimited.}
 \item{min.detections}{Discard individuals with fewer than this many surviving detections. 0 = off.}
 
 \item{min.days}{Discard individuals detected on fewer than this many distinct days. 0 = off.}
-
-\item{land.shape}{Optional. Coastline/landmass polygons (\code{sf}, or \verb{SpatialPolygons*}), enabling
-shortest in-water distances in the speed filter. Passed to \code{\link{calculateStepDistances}}.}
-
-\item{epsg.code}{Optional integer EPSG code of a projected (metre-based) CRS used to project
-positions for the speed filter.}
 
 \item{verbose}{Logical; print progress and the filtering summary. Defaults to
 \code{getOption("moby.verbose", TRUE)}.}

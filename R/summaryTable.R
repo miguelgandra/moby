@@ -101,19 +101,19 @@
 
 
 summaryTable <- function(data,
-                         tagging.dates = NULL,
-                         tag.durations = NULL,
                          id.metadata = NULL,
                          id.col = NULL,
                          datetime.col = NULL,
                          station.col = NULL,
+                         id.groups = NULL,
+                         tagging.dates = NULL,
+                         tag.durations = NULL,
                          sensor.cols = NULL,
                          sensor.titles = NULL,
                          residency.index = c("IR1", "IR2", "IR2/IR1"),
                          start.point = "release",
                          last.monitoring.date = NULL,
                          residency.by = NULL,
-                         id.groups = NULL,
                          error.stat = "sd") {
 
 

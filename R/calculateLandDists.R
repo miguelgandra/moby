@@ -38,14 +38,14 @@
 #' @export
 
 calculateLandDists <- function(data,
-                               land.shape,
-                               epsg.code = NULL,
-                               mov.threshold = 0.5,
                                id.col = NULL,
                                lon.col = NULL,
                                lat.col = NULL,
                                dist.col = NULL,
-                               grid.resolution = 100) {
+                               land.shape,
+                               epsg.code = NULL,
+                               grid.resolution = 100,
+                               mov.threshold = 0.5) {
 
   # --- 1. Initial Setup and Validation ---
   start.time <- Sys.time()

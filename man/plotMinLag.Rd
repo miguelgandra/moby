@@ -6,17 +6,17 @@
 \usage{
 plotMinLag(
   data,
-  nominal.delay = NULL,
-  factors = c(20, 30, 50),
   id.col = NULL,
   datetime.col = NULL,
   station.col = NULL,
+  nominal.delay = NULL,
+  factors = c(20, 30, 50),
   remove.duplicates = TRUE,
   bar.color = "#0072B2",
   background.color = "grey96",
   breaks = 40,
-  cex = 1,
   main = NULL,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -25,13 +25,6 @@ plotMinLag(
 }
 \arguments{
 \item{data}{A \code{mobyData} object or a data frame of detections.}
-
-\item{nominal.delay}{Transmitter nominal (mean) delay, in seconds. A single value applied to all
-individuals, or a vector named by \code{id.col} for mixed tag families. Read from the \code{mobyData}
-metadata (\code{nominal.delay}) when not supplied. Required: the diagnostic normalises \code{min_lag} by it.}
-
-\item{factors}{Reference threshold multipliers (of the nominal delay) to overlay on the plot and
-tabulate. Defaults to \code{c(20, 30, 50)}; the middle value is the \code{\link[=filterDetections]{filterDetections()}} default.}
 
 \item{id.col}{Name of the column with animal IDs. Resolved from the metadata / canonical default
 ("ID") when not supplied.}
@@ -42,6 +35,13 @@ metadata / canonical default ("datetime") when not supplied.}
 \item{station.col}{Name of the receiver/station column. Resolved from the metadata / canonical
 default ("station") when not supplied.}
 
+\item{nominal.delay}{Transmitter nominal (mean) delay, in seconds. A single value applied to all
+individuals, or a vector named by \code{id.col} for mixed tag families. Read from the \code{mobyData}
+metadata (\code{nominal.delay}) when not supplied. Required: the diagnostic normalises \code{min_lag} by it.}
+
+\item{factors}{Reference threshold multipliers (of the nominal delay) to overlay on the plot and
+tabulate. Defaults to \code{c(20, 30, 50)}; the middle value is the \code{\link[=filterDetections]{filterDetections()}} default.}
+
 \item{remove.duplicates}{Logical; drop exact-duplicate records (same ID, timestamp and station)
 before computing \code{min_lag}, matching the stage-0 behaviour of \code{\link[=filterDetections]{filterDetections()}}. Defaults to TRUE.}
 
@@ -51,9 +51,9 @@ before computing \code{min_lag}, matching the stage-0 behaviour of \code{\link[=
 
 \item{breaks}{Number of histogram bins on the log10 axis. Defaults to 40.}
 
-\item{cex}{Global expansion factor for labels. Defaults to 1.}
-
 \item{main}{Optional plot title.}
+
+\item{cex}{Global expansion factor for labels. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

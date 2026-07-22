@@ -15,12 +15,12 @@ checkDeployments(
   deployment.lat.col = "lat",
   deployment.deploy.col = "deploy",
   deployment.recover.col = "recover",
+  land.shape = NULL,
+  epsg.code = NULL,
   checks = "all",
   scope = c("all", "detected"),
   coord.tolerance = 500,
   gap.tolerance = 1,
-  land.shape = NULL,
-  epsg.code = NULL,
   land.tolerance = 500,
   verbose = TRUE
 )
@@ -53,6 +53,17 @@ uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{
 these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
 always refer to the detection dataset.}
 
+\item{land.shape}{Optional \code{sf} (or \verb{SpatialPolygons*}) polygon layer of landmasses. When
+supplied, the \code{"coordinates"} group additionally flags receiver positions that fall on land.
+Off by default; if \code{NULL}, it is taken from the \code{detections} \code{mobyData} metadata when present (i.e.
+from \code{as_moby(detections, land.shape = ...)}). The layer must carry a coordinate reference system;
+if it lacks one, or cannot be reconciled with the deployment coordinates, the on-land check is
+skipped with a message (the audit never aborts).}
+
+\item{epsg.code}{Optional EPSG code for the deployment coordinates, used only by the on-land check.
+Needed only when the coordinates are projected (not longitude/latitude); geographic coordinates are
+assumed to be WGS84.}
+
 \item{checks}{Character vector selecting which check groups to run (any of, or \code{"all"}, the
 default): \code{"dates"} (deploy/recover date integrity), \code{"overlaps"} (duplicate and overlapping
 deployment records), \code{"gaps"} (coverage gaps between consecutive deployments - often benign
@@ -78,17 +89,6 @@ Defaults to 500.}
 
 \item{gap.tolerance}{Numeric. Minimum gap (in days) between consecutive deployments of a
 receiver to report as a coverage gap. Defaults to 1.}
-
-\item{land.shape}{Optional \code{sf} (or \verb{SpatialPolygons*}) polygon layer of landmasses. When
-supplied, the \code{"coordinates"} group additionally flags receiver positions that fall on land.
-Off by default; if \code{NULL}, it is taken from the \code{detections} \code{mobyData} metadata when present (i.e.
-from \code{as_moby(detections, land.shape = ...)}). The layer must carry a coordinate reference system;
-if it lacks one, or cannot be reconciled with the deployment coordinates, the on-land check is
-skipped with a message (the audit never aborts).}
-
-\item{epsg.code}{Optional EPSG code for the deployment coordinates, used only by the on-land check.
-Needed only when the coordinates are projected (not longitude/latitude); geographic coordinates are
-assumed to be WGS84.}
 
 \item{land.tolerance}{Numeric. How far inside the coastline (in metres) a receiver position must
 lie to be reported as on land. This spares genuine near-shore receivers that a coarse coastline

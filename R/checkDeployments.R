@@ -171,23 +171,23 @@
 #' @export
 
 checkDeployments <- function(deployments,
-                          detections = NULL,
-                          id.col = NULL,
-                          datetime.col = NULL,
-                          station.col = NULL,
-                          deployment.station.col = "station",
-                          deployment.lon.col = "lon",
-                          deployment.lat.col = "lat",
-                          deployment.deploy.col = "deploy",
-                          deployment.recover.col = "recover",
-                          checks = "all",
-                          scope = c("all", "detected"),
-                          coord.tolerance = 500,
-                          gap.tolerance = 1,
-                          land.shape = NULL,
-                          epsg.code = NULL,
-                          land.tolerance = 500,
-                          verbose = TRUE) {
+                             detections = NULL,
+                             id.col = NULL,
+                             datetime.col = NULL,
+                             station.col = NULL,
+                             deployment.station.col = "station",
+                             deployment.lon.col = "lon",
+                             deployment.lat.col = "lat",
+                             deployment.deploy.col = "deploy",
+                             deployment.recover.col = "recover",
+                             land.shape = NULL,
+                             epsg.code = NULL,
+                             checks = "all",
+                             scope = c("all", "detected"),
+                             coord.tolerance = 500,
+                             gap.tolerance = 1,
+                             land.tolerance = 500,
+                             verbose = TRUE) {
 
   scope <- match.arg(scope)
   # the on-land check is opt-in: use an explicit land.shape, otherwise borrow one the user already

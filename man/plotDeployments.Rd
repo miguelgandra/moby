@@ -6,11 +6,11 @@
 \usage{
 plotDeployments(
   deployments,
-  row.by = "receiver",
-  group.by = NULL,
   events = NULL,
   deployment.deploy.col = "deploy",
   deployment.recover.col = "recover",
+  group.by = NULL,
+  row.by = "receiver",
   end = NULL,
   merge.gaps = 1,
   sort.by = c("group", "start", "name"),
@@ -40,12 +40,6 @@ plotDeployments(
 \item{deployments}{A receiver-deployment / station log (e.g. from \code{\link{importDeployments}}),
 with at least the \code{row.by} and \code{deployment.deploy.col} columns (and usually \code{deployment.recover.col}).}
 
-\item{row.by}{Name of the column defining the rows (the operating unit). Defaults to \code{"receiver"};
-set to \code{"station"} (or any column) to aggregate operating periods to a coarser unit.}
-
-\item{group.by}{Optional column giving a coarser grouping used to colour the rows and their labels
-(e.g. \code{"array"}, \code{"region"}). If NULL, all rows share \code{single.color}.}
-
 \item{events}{Optional data frame of point events to overlay, with a column named as \code{row.by} (the
 row key) and a date-time column (\code{time}, or the first POSIXct column). Study-neutral: taggings,
 servicing, downloads, etc.}
@@ -56,6 +50,12 @@ date-time columns in the receiver-deployment log (\code{deployments}). Default t
 uses other names (e.g. \code{deployment.deploy.col = "deploy_date"}). The \code{deployment.} prefix marks
 these as deployment-log columns, keeping them distinct from the bare \verb{*.col} arguments, which
 always refer to the detection dataset.}
+
+\item{group.by}{Optional column giving a coarser grouping used to colour the rows and their labels
+(e.g. \code{"array"}, \code{"region"}). If NULL, all rows share \code{single.color}.}
+
+\item{row.by}{Name of the column defining the rows (the operating unit). Defaults to \code{"receiver"};
+set to \code{"station"} (or any column) to aggregate operating periods to a coarser unit.}
 
 \item{end}{Optional study-end date-time used to close still-active deployments. If NULL, the latest
 date in the log is used.}

@@ -125,12 +125,14 @@
 #' @export
 
 filterDetections <- function(data,
-                             tagging.dates = NULL,
-                             cutoff.dates = NULL,
                              id.col = NULL,
                              datetime.col = NULL,
                              lon.col = NULL,
                              lat.col = NULL,
+                             land.shape = NULL,
+                             epsg.code = NULL,
+                             tagging.dates = NULL,
+                             cutoff.dates = NULL,
                              remove.duplicates = TRUE,
                              nominal.delay = NULL,
                              min.lag.factor = 30,
@@ -143,8 +145,6 @@ filterDetections <- function(data,
                              max.iterations = 20L,
                              min.detections = 0,
                              min.days = 0,
-                             land.shape = NULL,
-                             epsg.code = NULL,
                              verbose = getOption("moby.verbose", TRUE),
                              ...) {
 

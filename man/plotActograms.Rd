@@ -8,9 +8,9 @@ plotActograms(
   data,
   id.col = NULL,
   datetime.col = NULL,
+  id.groups = NULL,
   tagging.dates = NULL,
   tag.durations = NULL,
-  id.groups = NULL,
   discard.missing = TRUE,
   color.by = NULL,
   color.pal = NULL,
@@ -46,15 +46,15 @@ plotActograms(
 
 \item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
+\item{id.groups}{Optional named list of ID groups used to visually aggregate animals belonging to
+the same class (e.g. species, sex or age). Each element is a vector of IDs in that group.}
+
 \item{tagging.dates}{A POSIXct vector of tagging/release dates (single value or named by ID).
 Inherited from the \code{mobyData} metadata when available.}
 
 \item{tag.durations}{Optional numeric vector of estimated tag battery durations (in days), used to
 mark each animal's estimated tag-expiry date. Either a single value (applied to all IDs) or a
 named vector matching the IDs in \code{id.col}.}
-
-\item{id.groups}{Optional named list of ID groups used to visually aggregate animals belonging to
-the same class (e.g. species, sex or age). Each element is a vector of IDs in that group.}
 
 \item{discard.missing}{Logical. If TRUE (default), animals without detections are omitted; if
 FALSE, an empty panel is drawn for each.}

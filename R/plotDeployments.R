@@ -69,11 +69,11 @@
 #' @export
 
 plotDeployments <- function(deployments,
-                            row.by = "receiver",
-                            group.by = NULL,
                             events = NULL,
                             deployment.deploy.col = "deploy",
                             deployment.recover.col = "recover",
+                            group.by = NULL,
+                            row.by = "receiver",
                             end = NULL,
                             merge.gaps = 1,
                             sort.by = c("group", "start", "name"),

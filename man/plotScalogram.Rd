@@ -27,9 +27,9 @@ plotScalogram(
   min.days = NULL,
   date.format = NULL,
   main = NULL,
-  cex = 1,
   ncol = 1,
   cores = 1,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -89,12 +89,12 @@ translucent veil. The COI is excluded from the colour scale either way. Defaults
 
 \item{main}{Overall plot title. If NULL, generated from \code{variable}.}
 
-\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
-
 \item{ncol}{Number of panel columns. Defaults to 1.}
 
 \item{cores}{Number of CPU cores for the CWT computation (needs \pkg{parallel}, \pkg{doSNOW},
 \pkg{foreach} when > 1). Defaults to 1.}
+
+\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

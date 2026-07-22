@@ -7,12 +7,12 @@
 plotContours(
   data,
   variables,
+  id.col = NULL,
+  datetime.col = NULL,
+  split.by = NULL,
   var.titles = NULL,
   panel.titles = NULL,
   main = NULL,
-  split.by = NULL,
-  id.col = NULL,
-  datetime.col = NULL,
   agg.fun = function(x) mean(x, na.rm = TRUE),
   color.pal = NULL,
   time.interval = "hour",
@@ -30,12 +30,12 @@ plotContours(
   grid = TRUE,
   grid.color = adjustcolor("black", 0.1),
   na.color = grey(0.94),
-  cex = 1,
   legend = TRUE,
   sample.size = TRUE,
   sample.size.color = "auto",
   ncol = 1,
   disable.par = FALSE,
+  cex = 1,
   file = NULL,
   width = NULL,
   height = NULL,
@@ -48,6 +48,13 @@ plotContours(
 
 \item{variables}{Column name(s) of the continuous variable(s) to plot (one panel per variable).}
 
+\item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
+
+\item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
+
+\item{split.by}{Optional column name(s); a separate set of panels is drawn for each level (or
+combination of levels) - e.g. species, sex, life stage.}
+
 \item{var.titles}{Optional display names for the variables (e.g. "Depth (m)"). If NULL, the column
 names are used.}
 
@@ -56,13 +63,6 @@ group name when \code{split.by} is set, the variable name, or both when several 
 shown). Pass a character vector to override (recycled across panels), or FALSE to suppress them.}
 
 \item{main}{Optional overall title above the whole panel grid.}
-
-\item{split.by}{Optional column name(s); a separate set of panels is drawn for each level (or
-combination of levels) - e.g. species, sex, life stage.}
-
-\item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
-
-\item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
 \item{agg.fun}{Function used to aggregate values within each (id, time bin, date bin).
 Defaults to the mean.}
@@ -118,8 +118,6 @@ vs low values, supply a reversed \code{color.pal} (e.g. \code{rev(...)}). Defaul
 \item{na.color}{Background colour for cells with no data (e.g. months outside the monitoring
 period when \code{annual.cycle = TRUE}). Defaults to a very light grey.}
 
-\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
-
 \item{legend}{Logical; draw the colour-scale legend. Defaults to TRUE.}
 
 \item{sample.size}{Logical; annotate each panel with the number of individuals contributing
@@ -132,6 +130,8 @@ black and white according to the brightness of the fill behind it; any colour ca
 
 \item{disable.par}{Logical. If TRUE, the function does not set up its own multi-panel layout (so it
 can be embedded in a user-managed layout); \code{ncol} then has no effect. Defaults to FALSE.}
+
+\item{cex}{Global expansion factor for all plot text. Defaults to 1.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

@@ -104,12 +104,15 @@
 #' @export
 
 plotArray <- function(deployments,
+                      detections = NULL,
                       deployment.station.col = "station",
                       deployment.lon.col = "lon",
                       deployment.lat.col = "lat",
                       deployment.deploy.col = "deploy",
                       deployment.recover.col = "recover",
-                      detections = NULL,
+                      land.shape = NULL,
+                      coastline = getOption("moby.coastline", TRUE),
+                      epsg.code = NULL,
                       color.by = NULL,
                       status.at = NULL,
                       detection.range = NULL,
@@ -129,10 +132,7 @@ plotArray <- function(deployments,
                       pt.color = "black",
                       pt.bg = "white",
                       pt.lwd = 1,
-                      land.shape = NULL,
-                      coastline = getOption("moby.coastline", TRUE),
                       land.color = "gray50",
-                      epsg.code = NULL,
                       background.layer = NULL,
                       background.color = "#F3F7F7",
                       background.pal = NULL,
@@ -145,11 +145,11 @@ plotArray <- function(deployments,
                       legend = TRUE,
                       main = NULL,
                       cex = 1,
+                      verbose = getOption("moby.verbose", TRUE),
                       file = NULL,
                       width = NULL,
                       height = NULL,
-                      res = 300,
-                      verbose = getOption("moby.verbose", TRUE)) {
+                      res = 300) {
 
   #####################################################################################
   # Initial checks ####################################################################

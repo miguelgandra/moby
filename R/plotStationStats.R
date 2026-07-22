@@ -60,14 +60,14 @@
 
 
 plotStationStats <- function(data,
-                             type = "detections",
-                             value.scale = c("natural", "count", "proportion"),
                              id.col = NULL,
                              timebin.col = NULL,
                              station.col = NULL,
-                             aggregate.by = NULL,
                              id.groups = NULL,
                              group.comparisons = "all",
+                             aggregate.by = NULL,
+                             type = "detections",
+                             value.scale = c("natural", "count", "proportion"),
                              color.pal = NULL,
                              background.color = "grey96",
                              station.labels = c("names", "rotated", "numbered"),

@@ -13,11 +13,11 @@ as_moby(
   station.col = .mobyDefaults[["station.col"]],
   lon.col = .mobyDefaults[["lon.col"]],
   lat.col = .mobyDefaults[["lat.col"]],
+  id.groups = NULL,
+  land.shape = NULL,
   epsg.code = NULL,
   tagging.dates = NULL,
-  nominal.delay = NULL,
-  id.groups = NULL,
-  land.shape = NULL
+  nominal.delay = NULL
 )
 }
 \arguments{
@@ -35,6 +35,12 @@ as_moby(
 
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
 
+\item{id.groups}{Optional named list grouping IDs (e.g. by species, sex or life stage),
+used by many functions to compute metrics or draw plots independently per group.}
+
+\item{land.shape}{Optional \code{sf} (or \verb{SpatialPolygons*}) object representing landmasses,
+used by spatial functions (e.g. in-water distances, UD land clipping).}
+
 \item{epsg.code}{Optional integer EPSG code of a \strong{projected} (metre-based) coordinate
 reference system, used when projecting coordinates or computing distances/areas.}
 
@@ -47,12 +53,6 @@ value (applied to all individuals) or a named numeric vector whose names match t
 automatically by \code{\link{filterDetections}} to scale its short-interval (min_lag)
 false-detection filter. Usually populated for you by \code{\link{assignAnimalIDs}} when the tag
 table carries a delay column.}
-
-\item{id.groups}{Optional named list grouping IDs (e.g. by species, sex or life stage),
-used by many functions to compute metrics or draw plots independently per group.}
-
-\item{land.shape}{Optional \code{sf} (or \verb{SpatialPolygons*}) object representing landmasses,
-used by spatial functions (e.g. in-water distances, UD land clipping).}
 }
 \value{
 A \code{mobyData} object (a \code{data.frame} with a \code{"moby"} metadata attribute).

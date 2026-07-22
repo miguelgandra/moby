@@ -8,8 +8,8 @@ calculateAssociations(
   data,
   id.groups = NULL,
   subset = NULL,
-  metric = "simple-ratio",
   group.comparisons = "all",
+  metric = "simple-ratio",
   cores = 1,
   verbose = getOption("moby.verbose", TRUE)
 )
@@ -28,12 +28,12 @@ of column names, corresponding to variables contained in the data. In the case o
 multiple columns, their interaction is used for grouping. If left NULL,
 single overlap indices are calculated for the whole monitoring period.}
 
-\item{metric}{One of "simple-ratio" or "half-weight".}
-
 \item{group.comparisons}{Controls the type of comparisons to be run, when id.groups are defined.
 One of "within", "between" or "all". Useful to discard comparisons between individuals
 belonging to the same group or skip comparisons between different groups, when these are
 not required (less computing time). Defaults to "all".}
+
+\item{metric}{One of "simple-ratio" or "half-weight".}
 
 \item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
 means no parallel computing (single core).  If set to a value greater than 1,
