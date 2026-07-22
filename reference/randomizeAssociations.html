@@ -77,7 +77,7 @@ continuity correction is applied to avoid p-values of exactly 0 or 1).</p>
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">randomizeAssociations</span><span class="op">(</span></span>
-<span>  <span class="va">table</span>,</span>
+<span>  <span class="va">data</span>,</span>
 <span>  <span class="va">overlaps</span>,</span>
 <span>  constraint.by <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  iterations <span class="op">=</span> <span class="fl">1000</span>,</span>
@@ -94,7 +94,7 @@ continuity correction is applied to avoid p-values of exactly 0 or 1).</p>
     <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
 
 
-<dl><dt id="arg-table">table<a class="anchor" aria-label="anchor" href="#arg-table"></a></dt>
+<dl><dt id="arg-data">data<a class="anchor" aria-label="anchor" href="#arg-data"></a></dt>
 <dd><p>A data frame containing binned detections in the wide format
 (time bin x individual matrix, with values corresponding to the receiver/station with the
 highest number of detections), as returned by <code><a href="createWideTable.html">createWideTable</a></code>.</p></dd>
@@ -205,11 +205,11 @@ matrices, one per level of the subset variable.</p></dd>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)</span>
 <span class="r-in"><span><span class="va">assoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateAssociations.html">calculateAssociations</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating overlap - complete monitoring duration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.04 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.03 secs</span>
 <span class="r-in"><span><span class="co"># test the observed co-occurrences against a permutation null model</span></span></span>
 <span class="r-in"><span><span class="co"># (iterations kept low here for speed; use the default 1000 in practice)</span></span></span>
 <span class="r-in"><span><span class="va">rand</span> <span class="op">&lt;-</span> <span class="fu">randomizeAssociations</span><span class="op">(</span><span class="va">wide</span>, <span class="va">assoc</span>, iterations <span class="op">=</span> <span class="fl">100</span>, random.seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.17 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.15 secs</span>
 <span class="r-in"><span><span class="va">rand</span><span class="op">$</span><span class="va">summary</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   Type N dyads Mean interval (d) Mean overlap (%) Mean null distr (%) P-value</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1  All      28                77      0.47 ± 0.81         0.42 ± 0.09   0.515</span>

@@ -80,7 +80,7 @@ intervals</strong>; for classic kernel density (<code>method = "kde"</code>) it 
 <span>  <span class="va">ud</span>,</span>
 <span>  index <span class="op">=</span> <span class="st">"BA"</span>,</span>
 <span>  contour <span class="op">=</span> <span class="fl">95</span>,</span>
-<span>  level <span class="op">=</span> <span class="fl">0.95</span>,</span>
+<span>  conf.level <span class="op">=</span> <span class="fl">0.95</span>,</span>
 <span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
@@ -105,7 +105,7 @@ KDE-estimated UDs additionally <code>"UDOI"</code>, <code>"HR"</code>, <code>"PH
 in (0, 100]). Defaults to 95. Ignored for AKDE (which integrates the full UD).</p></dd>
 
 
-<dt id="arg-level">level<a class="anchor" aria-label="anchor" href="#arg-level"></a></dt>
+<dt id="arg-conf-level">conf.level<a class="anchor" aria-label="anchor" href="#arg-conf-level"></a></dt>
 <dd><p>AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
 Ignored for KDE (which provides no CIs).</p></dd>
 
@@ -139,12 +139,12 @@ membership of each animal and whether the pair is within or between groups.</p><
 
 </dl><p>When a single unit produces pairs, the estimator's own overlap matrix is attached as attribute
 <code>"matrix"</code> (symmetric except for the directional <code>HR</code>/<code>PHR</code> indices, which stay asymmetric);
-<code>"method"</code>, <code>"index"</code>, and <code>"contour"</code>/<code>"level"</code> record how it was computed.</p>
+<code>"method"</code>, <code>"index"</code>, and <code>"contour"</code>/<code>"conf.level"</code> record how it was computed.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
     <p>Available <code>index</code> values depend on how the UDs were estimated:</p><ul><li><p><strong>AKDE</strong> (<code>ctmm</code>): only <code>"BA"</code> (Bhattacharyya coefficient), reported with a
-lower/upper confidence interval at the requested <code>level</code>. This autocorrelation-aware estimate is
+lower/upper confidence interval at the requested <code>conf.level</code>. This autocorrelation-aware estimate is
 the recommended choice for tracking data.</p></li>
 <li><p><strong>KDE</strong> (<code>adehabitatHR</code>): <code>"BA"</code> (Bhattacharyya), <code>"UDOI"</code> (utilization
 distribution overlap index), <code>"HR"</code> (home-range area overlap), <code>"PHR"</code> (probability of

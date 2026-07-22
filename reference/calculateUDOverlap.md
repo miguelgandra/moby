@@ -26,7 +26,7 @@ calculateUDOverlap(
   ud,
   index = "BA",
   contour = 95,
-  level = 0.95,
+  conf.level = 0.95,
   id.groups = NULL,
   verbose = TRUE
 )
@@ -53,7 +53,7 @@ calculateUDOverlap(
   to (a value in (0, 100\]). Defaults to 95. Ignored for AKDE (which
   integrates the full UD).
 
-- level:
+- conf.level:
 
   AKDE only: the confidence level for the reported overlap CIs. Defaults
   to 0.95. Ignored for KDE (which provides no CIs).
@@ -96,16 +96,16 @@ directional indices `HR`/`PHR`:
 When a single unit produces pairs, the estimator's own overlap matrix is
 attached as attribute `"matrix"` (symmetric except for the directional
 `HR`/`PHR` indices, which stay asymmetric); `"method"`, `"index"`, and
-`"contour"`/`"level"` record how it was computed.
+`"contour"`/`"conf.level"` record how it was computed.
 
 ## Details
 
 Available `index` values depend on how the UDs were estimated:
 
 - **AKDE** (`ctmm`): only `"BA"` (Bhattacharyya coefficient), reported
-  with a lower/upper confidence interval at the requested `level`. This
-  autocorrelation-aware estimate is the recommended choice for tracking
-  data.
+  with a lower/upper confidence interval at the requested `conf.level`.
+  This autocorrelation-aware estimate is the recommended choice for
+  tracking data.
 
 - **KDE** (`adehabitatHR`): `"BA"` (Bhattacharyya), `"UDOI"`
   (utilization distribution overlap index), `"HR"` (home-range area

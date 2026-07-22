@@ -82,7 +82,7 @@ be estimated independently for different groups or time periods.</p>
 <span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  time.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -144,10 +144,12 @@ any portions of the estimated areas that overlap with landmasses.</p></dd>
 <dd><p>Name of the column containing animal IDs. Defaults to <code>"ID"</code>.</p></dd>
 
 
-<dt id="arg-time-col">time.col<a class="anchor" aria-label="anchor" href="#arg-time-col"></a></dt>
+<dt id="arg-timebin-col">timebin.col<a class="anchor" aria-label="anchor" href="#arg-timebin-col"></a></dt>
 <dd><p>Name of the POSIXct time column used by <code>method = "akde"</code> to model temporal
-autocorrelation. If <code>NULL</code>, the function uses the <code>mobyData</code> time-bin/date-time column and,
-failing that, a <code>"timebin"</code> or <code>"datetime"</code> column present in the data.</p></dd>
+autocorrelation. The canonical input is a time-binned series (e.g. the <code>timebin</code> column of
+<code><a href="calculateCOAs.html">calculateCOAs</a></code> output), but a raw date-time column is also accepted. If <code>NULL</code>, the
+function uses the <code>mobyData</code> time-bin (then date-time) column and, failing that, a <code>"timebin"</code> or
+<code>"datetime"</code> column present in the data.</p></dd>
 
 
 <dt id="arg-lon-col">lon.col<a class="anchor" aria-label="anchor" href="#arg-lon-col"></a></dt>
@@ -296,7 +298,7 @@ https://doi.org/10.1890/14-2010.1</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Estimating kernel utilization distributions [Raja clavata]...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 50% contours...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 95% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.63 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.51 secs</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 Dasyatis pastinaca D01    249         4.61        17.56</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 Dasyatis pastinaca D02    154         3.42        16.55</span>

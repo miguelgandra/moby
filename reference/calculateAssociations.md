@@ -25,7 +25,7 @@ for non-association when it was due to transmitter failure or death.
 
 ``` r
 calculateAssociations(
-  table,
+  data,
   id.groups = NULL,
   subset = NULL,
   metric = "simple-ratio",
@@ -37,7 +37,7 @@ calculateAssociations(
 
 ## Arguments
 
-- table:
+- data:
 
   A data frame containing binned detections in the wide format (time bin
   x individual matrix, with values corresponding to the receiver/station
@@ -55,7 +55,7 @@ calculateAssociations(
   If defined, overlaps are calculated independently for each level of
   this variable. This can either be a single column name (variable) or a
   vector of column names, corresponding to variables contained in the
-  table. In the case of multiple columns, their interaction is used for
+  data. In the case of multiple columns, their interaction is used for
   grouping. If left NULL, single overlap indices are calculated for the
   whole monitoring period.
 
@@ -193,7 +193,7 @@ wide <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.15 secs
+#> Total execution time: 0.12 secs
 assoc
 #> <mobyNetwork> association network
 #>   nodes: 8  |  edges: 28

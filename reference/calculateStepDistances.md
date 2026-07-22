@@ -160,6 +160,6 @@ rays_lc <- calculateStepDistances(rays[1:60, ], land.shape = land,
 #> Building least-cost graph (200m grid | 16 directions)
 #>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...
 #>   |                                                                              |======================================================================| 100%
-#> Total execution time: 0.31 secs 
+#> Total execution time: 0.26 secs 
 # }
 ```

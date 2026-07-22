@@ -25,7 +25,7 @@ calculateUDs(
   id.groups = NULL,
   land.shape = NULL,
   id.col = NULL,
-  time.col = NULL,
+  timebin.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   epsg.code = NULL,
@@ -93,12 +93,16 @@ calculateUDs(
 
   Name of the column containing animal IDs. Defaults to `"ID"`.
 
-- time.col:
+- timebin.col:
 
   Name of the POSIXct time column used by `method = "akde"` to model
-  temporal autocorrelation. If `NULL`, the function uses the `mobyData`
-  time-bin/date-time column and, failing that, a `"timebin"` or
-  `"datetime"` column present in the data.
+  temporal autocorrelation. The canonical input is a time-binned series
+  (e.g. the `timebin` column of
+  [`calculateCOAs`](https://miguelgandra.github.io/moby/reference/calculateCOAs.md)
+  output), but a raw date-time column is also accepted. If `NULL`, the
+  function uses the `mobyData` time-bin (then date-time) column and,
+  failing that, a `"timebin"` or `"datetime"` column present in the
+  data.
 
 - lon.col:
 
@@ -285,7 +289,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #> Estimating kernel utilization distributions [Raja clavata]...
 #> Calculating 50% contours...
 #> Calculating 95% contours...
-#> Total execution time: 0.63 secs
+#> Total execution time: 0.51 secs
 #>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)
 #> 1 Dasyatis pastinaca D01    249         4.61        17.56
 #> 2 Dasyatis pastinaca D02    154         3.42        16.55
