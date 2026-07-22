@@ -28,8 +28,8 @@ plotMaps(
   tracks.lty = 2,
   tracks.lwd = 0.2,
   plot.detections = TRUE,
-  pts.color = c("#009E73", "white", "#D55E00"),
-  pts.cex = c(1, 0.6, 1),
+  pt.color = c("#009E73", "white", "#D55E00"),
+  pt.cex = c(1, 0.6, 1),
   ud.legend = TRUE,
   title.color = "black",
   title.pos = "topleft",
@@ -108,10 +108,10 @@ no CI).}
 
 \item{plot.detections}{Logical; overlay detection points. Defaults to TRUE.}
 
-\item{pts.color}{Colour(s) for detection points: one colour, or three for the first / intermediate
+\item{pt.color}{Colour(s) for detection points: one colour, or three for the first / intermediate
 / last detection. Defaults to c("#009E73", "white", "#D55E00").}
 
-\item{pts.cex}{Size(s) for detection points: one value, or three for first / intermediate / last.
+\item{pt.cex}{Size(s) for detection points: one value, or three for first / intermediate / last.
 Defaults to c(1, 0.6, 1).}
 
 \item{ud.legend}{Logical; draw the home-range isopleth legend. Defaults to TRUE.}

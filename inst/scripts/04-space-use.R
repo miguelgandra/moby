@@ -33,5 +33,5 @@ id_groups <- mobyMeta(rays)$id.groups
 
 ## -----------------------------------------------------------------------------
 #| eval: false
-# movementTable(tracks, ud.results = kud, id.groups = id_groups)
+# movementTable(tracks, uds = kud, id.groups = id_groups)
 

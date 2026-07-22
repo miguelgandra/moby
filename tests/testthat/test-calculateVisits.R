@@ -27,12 +27,12 @@ test_that("a gap longer than max.gap splits one stay into two visits", {
   expect_equal(nrow(suppressMessages(calculateVisits(md, spatial.col = "site", max.gap = Inf))), 1L)  # disabled
 })
 
-test_that("max.gap.units are honoured", {
+test_that("max.gap.unit are honoured", {
   md <- visit_data(c(0, 1, 30, 31), rep("S1", 4))              # 29 h gap
   expect_equal(nrow(suppressMessages(calculateVisits(md, spatial.col = "site",
-                    max.gap = 1, max.gap.units = "days"))), 2L)          # 24 h < 29 h -> split
+                    max.gap = 1, max.gap.unit = "days"))), 2L)          # 24 h < 29 h -> split
   expect_equal(nrow(suppressMessages(calculateVisits(md, spatial.col = "site",
-                    max.gap = 2, max.gap.units = "days"))), 1L)          # 48 h > 29 h -> one visit
+                    max.gap = 2, max.gap.unit = "days"))), 1L)          # 48 h > 29 h -> one visit
 })
 
 test_that("visits are computed within id.groups", {

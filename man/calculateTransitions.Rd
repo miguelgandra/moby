@@ -11,7 +11,7 @@ calculateTransitions(
   datetime.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.units = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs")
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ built for each group (carried in the \code{group} column of the node/edge tables
 to \code{\link{calculateVisits}}); a longer absence ends a stay, so a later return counts as a new
 visit. Defaults to 48 (hours). Use \code{Inf} to segment on location changes only.}
 
-\item{max.gap.units}{Units of \code{max.gap}: one of \code{"hours"} (default), \code{"days"}, \code{"mins"}, \code{"secs"}.}
+\item{max.gap.unit}{Units of \code{max.gap}: one of \code{"hours"} (default), \code{"days"}, \code{"mins"}, \code{"secs"}.}
 }
 \value{
 A \code{\link{mobyNetwork}} object of type \code{"movement"}. Its rows are the directed

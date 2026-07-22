@@ -13,7 +13,7 @@ plotContours(
   split.by = NULL,
   id.col = NULL,
   datetime.col = NULL,
-  aggregate.fun = function(x) mean(x, na.rm = TRUE),
+  agg.fun = function(x) mean(x, na.rm = TRUE),
   color.pal = NULL,
   time.interval = "hour",
   date.interval = "month",
@@ -64,7 +64,7 @@ combination of levels) - e.g. species, sex, life stage.}
 
 \item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
-\item{aggregate.fun}{Function used to aggregate values within each (id, time bin, date bin).
+\item{agg.fun}{Function used to aggregate values within each (id, time bin, date bin).
 Defaults to the mean.}
 
 \item{color.pal}{Colours (or a palette function) for the contour fill. If NULL, viridis is used.}

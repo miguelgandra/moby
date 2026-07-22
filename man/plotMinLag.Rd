@@ -12,7 +12,7 @@ plotMinLag(
   datetime.col = NULL,
   station.col = NULL,
   remove.duplicates = TRUE,
-  color = "#0072B2",
+  bar.color = "#0072B2",
   background.color = "grey96",
   breaks = 40,
   cex = 1,
@@ -45,7 +45,7 @@ default ("station") when not supplied.}
 \item{remove.duplicates}{Logical; drop exact-duplicate records (same ID, timestamp and station)
 before computing \code{min_lag}, matching the stage-0 behaviour of \code{\link[=filterDetections]{filterDetections()}}. Defaults to TRUE.}
 
-\item{color}{Fill colour for the histogram. Defaults to a colourblind-safe blue.}
+\item{bar.color}{Fill colour for the histogram. Defaults to a colourblind-safe blue.}
 
 \item{background.color}{Panel background colour. Defaults to "grey96"; \code{NA} draws none.}
 

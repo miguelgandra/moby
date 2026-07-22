@@ -51,9 +51,9 @@
 #' no CI).
 #' @param tracks.color,tracks.lty,tracks.lwd Colour, line type and width of the movement trajectories.
 #' @param plot.detections Logical; overlay detection points. Defaults to TRUE.
-#' @param pts.color Colour(s) for detection points: one colour, or three for the first / intermediate
+#' @param pt.color Colour(s) for detection points: one colour, or three for the first / intermediate
 #' / last detection. Defaults to c("#009E73", "white", "#D55E00").
-#' @param pts.cex Size(s) for detection points: one value, or three for first / intermediate / last.
+#' @param pt.cex Size(s) for detection points: one value, or three for first / intermediate / last.
 #' Defaults to c(1, 0.6, 1).
 #' @param ud.legend Logical; draw the home-range isopleth legend. Defaults to TRUE.
 #' @param title.color Colour of the per-panel ID label. Defaults to "black".
@@ -106,8 +106,8 @@ plotMaps <- function(data,
                      tracks.lty = 2,
                      tracks.lwd = 0.2,
                      plot.detections = TRUE,
-                     pts.color = c("#009E73", "white", "#D55E00"),
-                     pts.cex = c(1, 0.6, 1),
+                     pt.color = c("#009E73", "white", "#D55E00"),
+                     pt.cex = c(1, 0.6, 1),
                      ud.legend = TRUE,
                      title.color = "black",
                      title.pos = "topleft",
@@ -223,8 +223,8 @@ plotMaps <- function(data,
     if (is.null(background.pal)) background.pal <- rev(.bathy_deep_pal(100)[c(30:100)])
     if (is.null(background.title)) background.title <- "Layer values"
   }
-  if (length(pts.color) == 1) pts.color <- rep(pts.color, 3)
-  if (length(pts.cex) == 1) pts.cex <- rep(pts.cex, 3)
+  if (length(pt.color) == 1) pt.color <- rep(pt.color, 3)
+  if (length(pt.cex) == 1) pt.cex <- rep(pt.cex, 3)
 
   # bounding box: union of positions and the UD extent, expanded
   bbox <- sf::st_bbox(coords)
@@ -331,9 +331,9 @@ plotMaps <- function(data,
       if (plot.detections && nrow(data_individual[[id]]) > 0) {
         id_coords <- coords[coords[[id.col]] == id, ]
         xy <- sf::st_coordinates(id_coords)
-        points(xy, pch = 21, bg = pts.color[2], cex = pts.cex[2], col = "gray15", lwd = 0.25)
-        points(xy[1, , drop = FALSE], pch = 21, bg = pts.color[1], cex = pts.cex[1], lwd = 0.25)
-        points(xy[nrow(xy), , drop = FALSE], pch = 21, bg = pts.color[3], cex = pts.cex[3], lwd = 0.25)
+        points(xy, pch = 21, bg = pt.color[2], cex = pt.cex[2], col = "gray15", lwd = 0.25)
+        points(xy[1, , drop = FALSE], pch = 21, bg = pt.color[1], cex = pt.cex[1], lwd = 0.25)
+        points(xy[nrow(xy), , drop = FALSE], pch = 21, bg = pt.color[3], cex = pt.cex[3], lwd = 0.25)
       }
 
       legend(title.pos, legend = id, inset = title.inset, cex = cex_title, text.col = title.color, bty = "n", text.font = 2)

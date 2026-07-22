@@ -11,7 +11,7 @@ calculateVisits(
   datetime.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.units = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs")
 )
 }
 \arguments{
@@ -32,7 +32,7 @@ group and the group is carried in the \code{group} column.}
 longer than this split the sequence into separate residence events. Defaults to 48 (hours). Use
 \code{Inf} to segment on location changes only.}
 
-\item{max.gap.units}{Units of \code{max.gap}: one of \code{"hours"} (default), \code{"days"}, \code{"mins"}, \code{"secs"}.}
+\item{max.gap.unit}{Units of \code{max.gap}: one of \code{"hours"} (default), \code{"days"}, \code{"mins"}, \code{"secs"}.}
 }
 \value{
 A data frame with one row per residence event (visit), ordered by group, individual and

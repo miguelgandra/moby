@@ -36,7 +36,7 @@
 #' @param plot.title Optional overall title above the whole panel.
 #' @param split.by Optional column name(s); a separate set of panels is drawn for each level (or
 #' combination of levels) - e.g. species, sex, life stage.
-#' @param aggregate.fun Function used to aggregate values within each (id, time bin, date bin).
+#' @param agg.fun Function used to aggregate values within each (id, time bin, date bin).
 #' Defaults to the mean.
 #' @param color.pal Colours (or a palette function) for the contour fill. If NULL, viridis is used.
 #' @param time.interval Bin width along the y-axis (hour of day), as a lubridate period string
@@ -103,7 +103,7 @@ plotContours <- function(data,
                          split.by = NULL,
                          id.col = NULL,
                          datetime.col = NULL,
-                         aggregate.fun = function(x) mean(x, na.rm=TRUE),
+                         agg.fun = function(x) mean(x, na.rm=TRUE),
                          color.pal = NULL,
                          time.interval = "hour",
                          date.interval = "month",
@@ -237,7 +237,7 @@ plotContours <- function(data,
   # combinations (much smaller than the full id x date x time x group crossing); the empty cells are
   # restored downstream because date/time remain factors with their complete level sets.
   agg <- stats::aggregate(data[, variables], by=list(data[, id.col], data$date_bin, data$time_bin, data[, split.by]),
-                          aggregate.fun, simplify=TRUE, drop=TRUE)
+                          agg.fun, simplify=TRUE, drop=TRUE)
   colnames(agg)[1:4] <- c("id", "date", "time", "group")
   colnames(agg)[5:ncol(agg)] <- variables
 

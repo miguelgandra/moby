@@ -27,7 +27,7 @@
 #' @param max.gap Maximum tolerated gap between successive detections within a single visit (passed
 #' to \code{\link{calculateVisits}}); a longer absence ends a stay, so a later return counts as a new
 #' visit. Defaults to 48 (hours). Use `Inf` to segment on location changes only.
-#' @param max.gap.units Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`, `"secs"`.
+#' @param max.gap.unit Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`, `"secs"`.
 #'
 #' @return A \code{\link{mobyNetwork}} object of type `"movement"`. Its rows are the directed
 #' edges with columns: `group`, `from`, `to`, `n_movements` (number of transitions),
@@ -58,7 +58,7 @@ calculateTransitions <- function(data,
                                  datetime.col = NULL,
                                  id.groups = NULL,
                                  max.gap = 48,
-                                 max.gap.units = c("hours", "days", "mins", "secs")) {
+                                 max.gap.unit = c("hours", "days", "mins", "secs")) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -76,10 +76,10 @@ calculateTransitions <- function(data,
 
   # residence events (and hence node residency + transit gaps) are segmented on max.gap: an absence
   # longer than this ends a stay, so a later return is a new visit rather than one continuous stay.
-  max.gap.units <- match.arg(max.gap.units)
-  max.gap.secs  <- .gapToSecs(max.gap, max.gap.units)
+  max.gap.unit <- match.arg(max.gap.unit)
+  max.gap.secs  <- .gapToSecs(max.gap, max.gap.unit)
   if (is.finite(max.gap.secs))
-    message("- Segmenting residence events with max.gap = ", max.gap, " ", max.gap.units,
+    message("- Segmenting residence events with max.gap = ", max.gap, " ", max.gap.unit,
             "; tune/justify per system (Inf = split on location change only).")
 
   # resolve (optional) node coordinates from the mobyData metadata / canonical defaults

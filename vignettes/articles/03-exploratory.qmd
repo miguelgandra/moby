@@ -96,7 +96,7 @@ table(rays$diel)
 rays$timebin <- getTimeBins(rays$datetime, interval = "60 mins")
 
 # one panel per species (split.by), points coloured by receiver
-plotChronogram(rays, sunriset.coords = mpa_coords, split.by = "species",
+plotChronogram(rays, coords = mpa_coords, split.by = "species",
                color.by = "station")
 ```
 

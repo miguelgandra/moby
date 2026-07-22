@@ -35,7 +35,7 @@
 #' @param max.gap Maximum tolerated gap between successive detections within a single visit. Absences
 #' longer than this split the sequence into separate residence events. Defaults to 48 (hours). Use
 #' `Inf` to segment on location changes only.
-#' @param max.gap.units Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`, `"secs"`.
+#' @param max.gap.unit Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`, `"secs"`.
 #'
 #' @return A data frame with one row per residence event (visit), ordered by group, individual and
 #' arrival time:
@@ -70,7 +70,7 @@ calculateVisits <- function(data,
                             datetime.col = NULL,
                             id.groups = NULL,
                             max.gap = 48,
-                            max.gap.units = c("hours", "days", "mins", "secs")) {
+                            max.gap.unit = c("hours", "days", "mins", "secs")) {
 
   ##############################################################################
   ## Validate ##################################################################
@@ -85,10 +85,10 @@ calculateVisits <- function(data,
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-  max.gap.units <- match.arg(max.gap.units)
-  max.gap.secs  <- .gapToSecs(max.gap, max.gap.units)
+  max.gap.unit <- match.arg(max.gap.unit)
+  max.gap.secs  <- .gapToSecs(max.gap, max.gap.unit)
   if (is.finite(max.gap.secs))
-    message("- Defining residence events with max.gap = ", max.gap, " ", max.gap.units,
+    message("- Defining residence events with max.gap = ", max.gap, " ", max.gap.unit,
             " (a longer absence starts a new visit); tune/justify per system.")
 
   # group label per row (single "all" group unless id.groups is supplied)

@@ -38,7 +38,7 @@
 #'   default ("station") when not supplied.
 #' @param remove.duplicates Logical; drop exact-duplicate records (same ID, timestamp and station)
 #'   before computing `min_lag`, matching the stage-0 behaviour of [filterDetections()]. Defaults to TRUE.
-#' @param color Fill colour for the histogram. Defaults to a colourblind-safe blue.
+#' @param bar.color Fill colour for the histogram. Defaults to a colourblind-safe blue.
 #' @param background.color Panel background colour. Defaults to "grey96"; `NA` draws none.
 #' @param breaks Number of histogram bins on the log10 axis. Defaults to 40.
 #' @param cex Global expansion factor for labels. Defaults to 1.
@@ -65,7 +65,7 @@ plotMinLag <- function(data,
                        datetime.col = NULL,
                        station.col = NULL,
                        remove.duplicates = TRUE,
-                       color = "#0072B2",
+                       bar.color = "#0072B2",
                        background.color = "grey96",
                        breaks = 40,
                        cex = 1,
@@ -176,7 +176,7 @@ plotMinLag <- function(data,
        cex.lab = 1.1 * cex, cex.axis = cex, cex.main = 1.2 * cex)
   if (!is.na(background.color))
     rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = background.color, border = NA)
-  rect(h$breaks[-length(h$breaks)], 0, h$breaks[-1], h$counts, col = adjustcolor(color, 0.7), border = NA)
+  rect(h$breaks[-length(h$breaks)], 0, h$breaks[-1], h$counts, col = adjustcolor(bar.color, 0.7), border = NA)
 
   # log x-axis at human-readable multipliers of the nominal delay
   ticks <- c(0.1, 0.3, 1, 3, 10, 30, 100, 300, 1000, 3000, 10000)
