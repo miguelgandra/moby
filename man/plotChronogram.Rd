@@ -29,6 +29,7 @@ plotChronogram(
   highlight.isolated = FALSE,
   shared.scale = FALSE,
   shared.dates = TRUE,
+  panel.titles = NULL,
   main = NULL,
   legend = TRUE,
   legend.cols = NULL,
@@ -103,9 +104,11 @@ levels on top so they are not hidden behind denser clusters. Defaults to FALSE.}
 
 \item{shared.dates}{Use a common date range across panels. Defaults to TRUE.}
 
-\item{main}{Panel title(s). If NULL (default), titles are generated automatically (the group name
-when \code{split.by} is used, otherwise the metric); a character vector overrides them (recycled across
-panels); FALSE omits titles.}
+\item{panel.titles}{Per-panel title(s). If NULL (default), titles are generated automatically (the
+group name when \code{split.by} is used, otherwise the metric); a character vector overrides them
+(recycled across panels); FALSE omits them.}
+
+\item{main}{Optional overall title above the whole panel grid.}
 
 \item{legend}{Logical; draw the legend(s). Defaults to TRUE.}
 

@@ -8,8 +8,8 @@ plotContours(
   data,
   variables,
   var.titles = NULL,
+  panel.titles = NULL,
   main = NULL,
-  plot.title = NULL,
   split.by = NULL,
   id.col = NULL,
   datetime.col = NULL,
@@ -51,11 +51,11 @@ plotContours(
 \item{var.titles}{Optional display names for the variables (e.g. "Depth (m)"). If NULL, the column
 names are used.}
 
-\item{main}{Panel title(s). If NULL (default), each panel is titled automatically (the group name
-when \code{split.by} is set, the variable name, or both when several variables and groups are shown).
-Pass a character vector to override (recycled across panels), or FALSE to suppress panel titles.}
+\item{panel.titles}{Per-panel title(s). If NULL (default), each panel is titled automatically (the
+group name when \code{split.by} is set, the variable name, or both when several variables and groups are
+shown). Pass a character vector to override (recycled across panels), or FALSE to suppress them.}
 
-\item{plot.title}{Optional overall title above the whole panel.}
+\item{main}{Optional overall title above the whole panel grid.}
 
 \item{split.by}{Optional column name(s); a separate set of panels is drawn for each level (or
 combination of levels) - e.g. species, sex, life stage.}

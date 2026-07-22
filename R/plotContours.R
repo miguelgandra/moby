@@ -30,10 +30,10 @@
 #' @param variables Column name(s) of the continuous variable(s) to plot (one panel per variable).
 #' @param var.titles Optional display names for the variables (e.g. "Depth (m)"). If NULL, the column
 #' names are used.
-#' @param main Panel title(s). If NULL (default), each panel is titled automatically (the group name
-#' when `split.by` is set, the variable name, or both when several variables and groups are shown).
-#' Pass a character vector to override (recycled across panels), or FALSE to suppress panel titles.
-#' @param plot.title Optional overall title above the whole panel.
+#' @param panel.titles Per-panel title(s). If NULL (default), each panel is titled automatically (the
+#' group name when `split.by` is set, the variable name, or both when several variables and groups are
+#' shown). Pass a character vector to override (recycled across panels), or FALSE to suppress them.
+#' @param main Optional overall title above the whole panel grid.
 #' @param split.by Optional column name(s); a separate set of panels is drawn for each level (or
 #' combination of levels) - e.g. species, sex, life stage.
 #' @param agg.fun Function used to aggregate values within each (id, time bin, date bin).
@@ -98,8 +98,8 @@
 plotContours <- function(data,
                          variables,
                          var.titles = NULL,
+                         panel.titles = NULL,
                          main = NULL,
-                         plot.title = NULL,
                          split.by = NULL,
                          id.col = NULL,
                          datetime.col = NULL,
@@ -299,7 +299,7 @@ plotContours <- function(data,
     rows <- ceiling(nplots / ncol)
     par(mfrow=c(rows, ncol), mgp=c(2.2, 0.6, 0),
         mai=c(0.78, 0.7, 0.45, right_in),
-        oma=c(0, 0, if(!is.null(plot.title)) 1.4 else 0, 0))
+        oma=c(0, 0, if(!is.null(main)) 1.4 else 0, 0))
   }
 
 
@@ -344,8 +344,8 @@ plotContours <- function(data,
       # panel title: user override (recycled / FALSE), else group and/or variable name
       vt <- if(!is.null(var.titles)) var.titles[v] else var
       grp <- paste0(toupper(substring(groups[i], 1, 1)), substring(groups[i], 2))
-      plot_title <- if(!is.null(main)){
-                      if(isFALSE(main)) "" else main[((p - 1) %% length(main)) + 1]
+      plot_title <- if(!is.null(panel.titles)){
+                      if(isFALSE(panel.titles)) "" else panel.titles[((p - 1) %% length(panel.titles)) + 1]
                     }else if(faceted && multivar){
                       paste0(grp, " - ", vt)
                     }else if(faceted){
@@ -412,7 +412,7 @@ plotContours <- function(data,
     }
   }
 
-  if(!is.null(plot.title)) mtext(plot.title, side=3, cex=1.25*cex, font=2, line=-0.5, outer=TRUE)
+  if(!is.null(main)) mtext(main, side=3, cex=1.25*cex, font=2, line=-0.5, outer=TRUE)
 
   invisible(NULL)
 }

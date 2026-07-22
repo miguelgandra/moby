@@ -63,9 +63,10 @@
 #' levels on top so they are not hidden behind denser clusters. Defaults to FALSE.
 #' @param shared.scale Use a common metric (colour/size) scale across panels. Defaults to FALSE.
 #' @param shared.dates Use a common date range across panels. Defaults to TRUE.
-#' @param main Panel title(s). If NULL (default), titles are generated automatically (the group name
-#' when `split.by` is used, otherwise the metric); a character vector overrides them (recycled across
-#' panels); FALSE omits titles.
+#' @param panel.titles Per-panel title(s). If NULL (default), titles are generated automatically (the
+#' group name when `split.by` is used, otherwise the metric); a character vector overrides them
+#' (recycled across panels); FALSE omits them.
+#' @param main Optional overall title above the whole panel grid.
 #' @param legend Logical; draw the legend(s). Defaults to TRUE.
 #' @param legend.cols Number of columns for the `color.by` legend. If NULL, chosen automatically.
 #' @param cex Global expansion factor for all plot text. Defaults to 1.
@@ -108,6 +109,7 @@ plotChronogram <- function(data,
                            highlight.isolated = FALSE,
                            shared.scale = FALSE,
                            shared.dates = TRUE,
+                           panel.titles = NULL,
                            main = NULL,
                            legend = TRUE,
                            legend.cols = NULL,
@@ -303,6 +305,7 @@ plotChronogram <- function(data,
 
   plot_grid <- matrix(seq_len(nplots), ncol=ncol, byrow=TRUE)
   graphics::layout(plot_grid)
+  par(oma = c(0, 0, if(!is.null(main)) 2 else 0, 0))   # outer strip for the overall title
   bottom_plots <- as.numeric(plot_grid)
   right_plots  <- apply(plot_grid, 1, min, na.rm=TRUE)
   # bottom: x-title close to labels; top roomier so stacked panels get a touch more vertical separation
@@ -332,8 +335,8 @@ plotChronogram <- function(data,
     plot_data <- plot_data_list[[i]]
     template  <- plot_template[[i]]
     # panel title: user override (recycled / FALSE), else the group (split.by) or the metric
-    plot_title <- if(!is.null(main)){
-                    if(isFALSE(main)) NULL else main[((i - 1) %% length(main)) + 1]
+    plot_title <- if(!is.null(panel.titles)){
+                    if(isFALSE(panel.titles)) NULL else panel.titles[((i - 1) %% length(panel.titles)) + 1]
                   }else if(!is.null(split.by)){
                     paste0(toupper(substring(groups[i], 1, 1)), substring(groups[i], 2))
                   }else{
@@ -527,6 +530,8 @@ plotChronogram <- function(data,
       }
     }
   }
+
+  if(!is.null(main)) mtext(main, side=3, outer=TRUE, font=2, cex=cex_main, line=0.2)
 
   invisible(NULL)
 }
