@@ -15,3 +15,17 @@ test_that("calculateCOAs on a plain data frame returns a plain data frame", {
   expect_false(is_moby(res))
   expect_true(all(c("ID", "timebin", "lon", "lat", "detections", "stations") %in% names(res)))
 })
+
+test_that("calculateCOAs tolerates an all-NA extra column (e.g. an empty sensor field)", {
+  # position-only tags carry an empty sensor column; the dynamic per-column aggregation must not drop
+  # every time bin (regression: aggregate()'s default na.omit -> "no rows to aggregate")
+  plain <- as.data.frame(rays); attr(plain, "moby") <- NULL
+  plain$sensor_value <- NA_real_          # all-NA numeric
+  plain$sensor_unit  <- NA_character_     # all-NA character
+  res <- suppressWarnings(suppressMessages(calculateCOAs(
+    plain, id.col = "ID", timebin.col = "timebin", lon.col = "lon", lat.col = "lat", station.col = "station")))
+  expect_gt(nrow(res), 0)
+  expect_true(all(c("ID", "timebin", "lon", "lat", "detections", "sensor_value") %in% names(res)))
+  expect_true(all(is.nan(res$sensor_value)))   # all-NA numeric collapses to NaN, bin retained
+  expect_true(all(res$sensor_unit == ""))      # all-NA character concatenates to ""
+})

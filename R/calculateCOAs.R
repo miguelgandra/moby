@@ -72,8 +72,11 @@ calculateCOAs <- function(data,
   formula1 <- as.formula(paste(sprintf("cbind(%s, %s)", lon.col, lat.col), sprintf("~ %s + %s", id.col, timebin.col)))
   coas <- stats::aggregate(formula1, data=data, mean, na.rm=TRUE, na.action=na.pass)
   # count the number of detections for each ID and time bin
+  # (na.action=na.pass throughout, matching the coordinate aggregate above, so a time bin is never
+  # dropped because one of the aggregated columns happens to be all-NA - e.g. an empty sensor column
+  # on position-only tags)
   formula2 <- as.formula(paste("detections", sprintf("~ %s + %s", id.col, timebin.col)))
-  detections <- stats::aggregate(formula2, data=data, length)
+  detections <- stats::aggregate(formula2, data=data, length, na.action=na.pass)
 
   # list data frames to merge
   data_list <- list(coas, detections)
@@ -81,7 +84,7 @@ calculateCOAs <- function(data,
   # count the number of unique stations visited per time bin
   if(!is.null(station.col)){
     formula3 <- as.formula(paste(station.col, sprintf("~ %s + %s", id.col, timebin.col)))
-    stations <- stats::aggregate(formula3, data=data, function(x) length(unique(x)))
+    stations <- stats::aggregate(formula3, data=data, function(x) length(unique(x)), na.action=na.pass)
     colnames(stations)[3] <- "stations"
     data_list <- c(data_list, list(stations))
   }
@@ -92,14 +95,15 @@ calculateCOAs <- function(data,
   if (length(remaining_cols) > 0) {
     for (col in remaining_cols) {
       if (is.numeric(data[[col]])) {
-        # aggregate numeric columns by mean
+        # aggregate numeric columns by mean (all-NA groups collapse to NaN rather than dropping the bin)
         formula_numeric <- as.formula(paste(col, sprintf("~ %s + %s", id.col, timebin.col)))
-        numeric_mean <- stats::aggregate(formula_numeric, data = data, mean, na.rm = TRUE)
+        numeric_mean <- stats::aggregate(formula_numeric, data = data, mean, na.rm = TRUE, na.action = na.pass)
         data_list <- c(data_list, list(numeric_mean))
       } else {
-        # aggregate character or factor columns by concatenating unique values
+        # aggregate character or factor columns by concatenating unique (non-NA) values
         formula_char <- as.formula(paste(col, sprintf("~ %s + %s", id.col, timebin.col)))
-        char_concat <- stats::aggregate(formula_char, data = data, function(x) paste(unique(x), collapse = "|"))
+        char_concat <- stats::aggregate(formula_char, data = data,
+                                        function(x) paste(unique(x[!is.na(x)]), collapse = "|"), na.action = na.pass)
         data_list <- c(data_list, list(char_concat))
       }
     }
