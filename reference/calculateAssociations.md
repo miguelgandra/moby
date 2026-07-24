@@ -193,7 +193,7 @@ wide <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.15 secs
+#> Total execution time: 0.14 secs
 assoc
 #> <mobyNetwork> association network
 #>   nodes: 8  |  edges: 28

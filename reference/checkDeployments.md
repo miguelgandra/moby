@@ -32,6 +32,7 @@ checkDeployments(
   coord.tolerance = 500,
   gap.tolerance = 1,
   land.tolerance = 500,
+  min.active.days = NULL,
   verbose = TRUE
 )
 ```
@@ -148,6 +149,16 @@ checkDeployments(
   coordinate-entry errors (swapped lon/lat, a sign flip) fall kilometres
   inland and are still flagged. Defaults to 500.
 
+- min.active.days:
+
+  Optional numeric. When set, stations whose **total operational
+  time** - the sum of their deployment windows in days, so servicing
+  gaps do not inflate it - falls below this value are flagged as
+  `"Short monitoring duration"`. Off by default (`NULL`); there is no
+  universal threshold (it is study-specific). The flag is
+  **report-only**: it never removes anything. See the Details for why
+  deletion is a deliberate, bias-prone choice best left to the analyst.
+
 - verbose:
 
   Logical; print a summary to the console. Defaults to TRUE.
@@ -187,6 +198,23 @@ detections are consistent with the deployment history, including unknown
 receivers, detections outside deployment periods, and station
 mismatches.
 
+Setting `min.active.days` additionally flags stations monitored for less
+than that total operational duration. This is offered as a **flag
+only**: excluding low-effort receivers is a common way to reduce
+monitoring-effort heterogeneity, but it is a deliberate,
+analysis-specific decision, not a QC fix. Deleting short-duration
+stations can trade one bias for others - short-lived stations are rarely
+random in space or time (a peripheral or late-added array, a station
+lost to a storm in a high-use habitat), so their removal can bias
+space-use extent, residency and network structure, and erase seasonal
+signal. It is usually preferable to *account for* effort (e.g. the
+effort-normalised residency indices from
+[`calculateResidency`](https://miguelgandra.github.io/moby/reference/calculateResidency.md))
+than to delete data. The flag surfaces the candidates and their cost
+(duration, and detections/individuals held when `detections` is
+supplied) so the choice can be made explicitly; `checkDeployments()`
+never removes them.
+
 ## See also
 
 [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md),
@@ -215,4 +243,12 @@ checkDeployments(rays_deployments, detections = rays, scope = "detected")
 #> <mobyQC> deployment metadata quality-control report
 #>   6 deployment records | 6 receivers | 6 stations
 #>   No issues flagged.
+
+# additionally flag (never remove) stations monitored for under ~6 months
+checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
+#> <mobyQC> deployment metadata quality-control report
+#>   6 deployment records | 6 receivers | 6 stations
+#>   6 issue(s) flagged:
+#>     - Short monitoring duration        6
+#>   Inspect $report for details.
 ```

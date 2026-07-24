@@ -85,6 +85,7 @@ input data. Reported issues can then be reviewed and, where appropriate, resolve
 <span>  coord.tolerance <span class="op">=</span> <span class="fl">500</span>,</span>
 <span>  gap.tolerance <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  land.tolerance <span class="op">=</span> <span class="fl">500</span>,</span>
+<span>  min.active.days <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -186,6 +187,14 @@ overlaps by a small margin; gross coordinate-entry errors (swapped lon/lat, a si
 kilometres inland and are still flagged. Defaults to 500.</p></dd>
 
 
+<dt id="arg-min-active-days">min.active.days<a class="anchor" aria-label="anchor" href="#arg-min-active-days"></a></dt>
+<dd><p>Optional numeric. When set, stations whose <strong>total operational time</strong> - the
+sum of their deployment windows in days, so servicing gaps do not inflate it - falls below this
+value are flagged as <code>"Short monitoring duration"</code>. Off by default (<code>NULL</code>); there is no universal
+threshold (it is study-specific). The flag is <strong>report-only</strong>: it never removes anything. See the
+Details for why deletion is a deliberate, bias-prone choice best left to the analyst.</p></dd>
+
+
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
 <dd><p>Logical; print a summary to the console. Defaults to TRUE.</p></dd>
 
@@ -216,6 +225,16 @@ longitude/latitude, a wrong sign, a decimal typo).</p>
 <p>When detections are provided, the function additionally checks whether detections are consistent
 with the deployment history, including unknown receivers, detections outside deployment periods,
 and station mismatches.</p>
+<p>Setting <code>min.active.days</code> additionally flags stations monitored for less than that total operational
+duration. This is offered as a <strong>flag only</strong>: excluding low-effort receivers is a common way to
+reduce monitoring-effort heterogeneity, but it is a deliberate, analysis-specific decision, not a
+QC fix. Deleting short-duration stations can trade one bias for others - short-lived stations are
+rarely random in space or time (a peripheral or late-added array, a station lost to a storm in a
+high-use habitat), so their removal can bias space-use extent, residency and network structure, and
+erase seasonal signal. It is usually preferable to <em>account for</em> effort (e.g. the effort-normalised
+residency indices from <code><a href="calculateResidency.html">calculateResidency</a></code>) than to delete data. The flag surfaces the
+candidates and their cost (duration, and detections/individuals held when <code>detections</code> is supplied)
+so the choice can be made explicitly; <code>checkDeployments()</code> never removes them.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
@@ -243,6 +262,14 @@ and station mismatches.</p>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyQC&gt; deployment metadata quality-control report</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   6 deployment records | 6 receivers | 6 stations</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   No issues flagged.</span>
+<span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># additionally flag (never remove) stations monitored for under ~6 months</span></span></span>
+<span class="r-in"><span><span class="fu">checkDeployments</span><span class="op">(</span><span class="va">rays_deployments</span>, detections <span class="op">=</span> <span class="va">rays</span>, min.active.days <span class="op">=</span> <span class="fl">30</span> <span class="op">*</span> <span class="fl">6</span><span class="op">)</span></span></span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyQC&gt; deployment metadata quality-control report</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6 deployment records | 6 receivers | 6 stations</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   6 issue(s) flagged:</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>     - Short monitoring duration        6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Inspect $report for details.</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>
