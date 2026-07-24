@@ -138,7 +138,8 @@ station) before any other filter. Defaults to TRUE.</p></dd>
 <dd><p>Transmitter nominal (mean) delay, in seconds, used to scale the min_lag
 false-detection window. A single value applied to all individuals, or a named numeric vector keyed
 by <code>id.col</code> (for mixed tag families). Read from the <code>mobyData</code> metadata (<code>nominal.delay</code>) when not
-supplied. <code>NULL</code> (and no metadata) disables the false-detection filter.</p></dd>
+supplied. When <code>NULL</code> (and absent from metadata) the adaptive min_lag filter is off, but a fixed
+<code>min.lag.threshold</code> still enables it.</p></dd>
 
 
 <dt id="arg-min-lag-factor">min.lag.factor<a class="anchor" aria-label="anchor" href="#arg-min-lag-factor"></a></dt>
@@ -148,14 +149,18 @@ default suits a given dataset.</p></dd>
 
 
 <dt id="arg-min-lag-threshold">min.lag.threshold<a class="anchor" aria-label="anchor" href="#arg-min-lag-threshold"></a></dt>
-<dd><p>Optional. Set the min_lag threshold directly (in seconds), overriding
-<code>min.lag.factor * nominal.delay</code>.</p></dd>
+<dd><p>Optional. Set the min_lag threshold directly, in seconds, selecting the
+per-receiver <em>fixed</em>-window mode (see the ‘Isolation-based filtering’ section). Enables
+the filter on its own (no <code>nominal.delay</code> needed) and applies to every tag, including foreign IDs
+absent from <code>nominal.delay</code>; when both are supplied it overrides <code>min.lag.factor * nominal.delay</code>.</p></dd>
 
 
 <dt id="arg-isolation-window">isolation.window<a class="anchor" aria-label="anchor" href="#arg-isolation-window"></a></dt>
 <dd><p>Optional residency / sporadic-visitor filter (in hours): a detection is
 removed when the gap to BOTH temporal neighbours exceeds this window. <code>NULL</code> (default) or <code>FALSE</code>
-disables it. This is a coverage tool, NOT a false-detection filter (use <code>nominal.delay</code> for that).</p></dd>
+disables it. This is the whole-array counterpart of the per-receiver <code>min_lag</code> filter, and
+complementary to it (see the ‘Isolation-based filtering’ section); it is a residency /
+coverage check, NOT a false-detection filter (use <code>nominal.delay</code> for that).</p></dd>
 
 
 <dt id="arg-max-speed">max.speed<a class="anchor" aria-label="anchor" href="#arg-max-speed"></a></dt>
@@ -232,7 +237,7 @@ timestamp and station) are dropped up front so they cannot slip past the other f
 to the nearest other detection of the <em>same tag on the same receiver</em>; a detection whose
 min_lag exceeds <code>min.lag.factor * nominal.delay</code> (default 30x the transmitter nominal delay), or
 that has no same-receiver companion at all, is treated as a spurious (code-collision) decode.
-Requires <code>nominal.delay</code>; off otherwise.</p></li>
+Enabled by <code>nominal.delay</code> (adaptive window) or <code>min.lag.threshold</code> (fixed window); off otherwise.</p></li>
 <li><p><strong>Isolation</strong> (<code>isolation.window</code>): an optional residency / sporadic-visitor tool that
 removes a detection when the time gap to BOTH temporal neighbours (across the whole array)
 exceeds the window. This is NOT a false-detection filter and is off by default.</p></li>
@@ -250,6 +255,36 @@ distances rather than straight lines. <code>nominal.delay</code> and <code>max.s
 to all individuals or a named numeric vector keyed by <code>id.col</code> (for mixed tag families or
 multi-species datasets); <code>nominal.delay</code> is additionally read from the <code>mobyData</code> metadata when not
 supplied.</p>
+    </div>
+    <div class="section level2">
+    <h2 id="isolation-based-filtering">Isolation-based filtering<a class="anchor" aria-label="anchor" href="#isolation-based-filtering"></a></h2>
+
+
+<p>Two of the filters above, <code>min_lag</code> and <code>isolation.window</code>, are the same underlying operation: a
+both-sides temporal-isolation test that flags a detection whose nearest companion, on each side,
+lies further away than a window. They differ on two axes.</p>
+<p><strong>Spatial scale</strong> (the primary distinction). <code>min_lag</code> works <em>per receiver</em> – "is this
+detection corroborated on <em>this</em> receiver?" – the scale at which spurious code-collision
+decodes actually occur. <code>isolation.window</code> works <em>across the whole array</em> – "does the
+individual have <em>any</em> other detection, anywhere, within the window?" – a residency /
+coverage question.</p>
+<p><strong>Window definition</strong>. <code>min_lag</code> uses a window that adapts to tag transmission timing
+(<code>min.lag.factor * nominal.delay</code>, about 1 h for a 120 s tag), or a fixed value via
+<code>min.lag.threshold</code>. <code>isolation.window</code> uses a fixed window in hours. A transmission-scaled window
+is only meaningful per receiver; array-wide gaps are governed by animal movement, so hours is the
+natural unit there.</p>
+<table class="table table"><tr><td></td><td><strong>per receiver</strong> (min_lag)</td><td><strong>whole array</strong> (isolation.window)</td></tr><tr><td><strong>adaptive window</strong></td><td>default (min.lag.factor)</td><td>–</td></tr><tr><td><strong>fixed window</strong></td><td>min.lag.threshold</td><td>isolation.window</td></tr></table><p>(The per-receiver filter is enabled by supplying either <code>nominal.delay</code> – for the adaptive window
+– or <code>min.lag.threshold</code> – for the fixed window, in seconds. If both are given, the fixed
+<code>min.lag.threshold</code> takes precedence and applies to every tag.)</p>
+<p><strong>They are complementary, not alternatives.</strong> A typical workflow applies <code>min_lag</code> first, as
+routine cleaning (removing spurious decodes), and <em>then</em> – optionally – <code>isolation.window</code>
+as a residency check (flagging animals seen only in sporadic one-off blips). Neither replaces the
+other: use <code>min_lag</code> whenever a <code>nominal.delay</code> is available, and add <code>isolation.window</code> when you
+also want to screen for biologically unsupported presence.</p>
+<p><em>Coming from ATfiltR?</em> <code>min_lag</code> corresponds to <code>findSolo(per.receiver = TRUE)</code> and
+<code>isolation.window</code> to <code>findSolo(per.receiver = FALSE)</code>. moby deliberately uses a different natural
+window at each scale (transmission-scaled per receiver, fixed hours array-wide), so do not carry a
+single hours value across the two.</p>
     </div>
     <div class="section level2">
     <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
@@ -274,7 +309,7 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-in"><span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) to enable it.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 0 (0%) from a total of 1643</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • Duplicates: 0 (0%) from 0 individual(s)</span>
@@ -311,13 +346,25 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 8</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.03 secs</span>
 <span class="r-in"><span></span></span>
+<span class="r-in"><span><span class="co"># or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)</span></span></span>
+<span class="r-in"><span><span class="va">filtered2b</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">rays</span>, min.lag.threshold <span class="op">=</span> <span class="fl">3600</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
+<span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 87 (5%) from a total of 1643</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Duplicates: 0 (0%) from 0 individual(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Before tagging: 0 (0%) from 0 individual(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • False detection: 87 (5%) from 8 individual(s)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.03 secs</span>
+<span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># add a movement-speed filter (slower: computes step distances); on a 3-animal subset</span></span></span>
 <span class="r-in"><span><span class="va">sub</span> <span class="op">&lt;-</span> <span class="va">rays</span><span class="op">[</span><span class="va">rays</span><span class="op">$</span><span class="va">ID</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">rays</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">filtered3</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">sub</span>, max.speed <span class="op">=</span> <span class="fl">5</span>, speed.unit <span class="op">=</span> <span class="st">"km/h"</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) to enable it.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Applying speed filter...</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 0 (0%) from a total of 563</span>
@@ -326,7 +373,7 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • Speed: 0 (0%) from 0 individual(s)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • flagged for review (overspeed, retained): 9</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 2.32 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 1.58 secs</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

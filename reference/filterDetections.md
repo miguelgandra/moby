@@ -95,8 +95,9 @@ filterDetections(
   min_lag false-detection window. A single value applied to all
   individuals, or a named numeric vector keyed by `id.col` (for mixed
   tag families). Read from the `mobyData` metadata (`nominal.delay`)
-  when not supplied. `NULL` (and no metadata) disables the
-  false-detection filter.
+  when not supplied. When `NULL` (and absent from metadata) the adaptive
+  min_lag filter is off, but a fixed `min.lag.threshold` still enables
+  it.
 
 - min.lag.factor:
 
@@ -108,15 +109,22 @@ filterDetections(
 
 - min.lag.threshold:
 
-  Optional. Set the min_lag threshold directly (in seconds), overriding
+  Optional. Set the min_lag threshold directly, in seconds, selecting
+  the per-receiver *fixed*-window mode (see the ‘Isolation-based
+  filtering’ section). Enables the filter on its own (no `nominal.delay`
+  needed) and applies to every tag, including foreign IDs absent from
+  `nominal.delay`; when both are supplied it overrides
   `min.lag.factor * nominal.delay`.
 
 - isolation.window:
 
   Optional residency / sporadic-visitor filter (in hours): a detection
   is removed when the gap to BOTH temporal neighbours exceeds this
-  window. `NULL` (default) or `FALSE` disables it. This is a coverage
-  tool, NOT a false-detection filter (use `nominal.delay` for that).
+  window. `NULL` (default) or `FALSE` disables it. This is the
+  whole-array counterpart of the per-receiver `min_lag` filter, and
+  complementary to it (see the ‘Isolation-based filtering’ section); it
+  is a residency / coverage check, NOT a false-detection filter (use
+  `nominal.delay` for that).
 
 - max.speed:
 
@@ -212,7 +220,8 @@ controlling argument is left at its "off" value):
     whose min_lag exceeds `min.lag.factor * nominal.delay` (default 30x
     the transmitter nominal delay), or that has no same-receiver
     companion at all, is treated as a spurious (code-collision) decode.
-    Requires `nominal.delay`; off otherwise.
+    Enabled by `nominal.delay` (adaptive window) or `min.lag.threshold`
+    (fixed window); off otherwise.
 
 5.  **Isolation** (`isolation.window`): an optional residency /
     sporadic-visitor tool that removes a detection when the time gap to
@@ -240,6 +249,52 @@ shortest in-water (least-cost) distances rather than straight lines.
 individuals or a named numeric vector keyed by `id.col` (for mixed tag
 families or multi-species datasets); `nominal.delay` is additionally
 read from the `mobyData` metadata when not supplied.
+
+## Isolation-based filtering
+
+Two of the filters above, `min_lag` and `isolation.window`, are the same
+underlying operation: a both-sides temporal-isolation test that flags a
+detection whose nearest companion, on each side, lies further away than
+a window. They differ on two axes.
+
+**Spatial scale** (the primary distinction). `min_lag` works *per
+receiver* – "is this detection corroborated on *this* receiver?" – the
+scale at which spurious code-collision decodes actually occur.
+`isolation.window` works *across the whole array* – "does the individual
+have *any* other detection, anywhere, within the window?" – a residency
+/ coverage question.
+
+**Window definition**. `min_lag` uses a window that adapts to tag
+transmission timing (`min.lag.factor * nominal.delay`, about 1 h for a
+120 s tag), or a fixed value via `min.lag.threshold`. `isolation.window`
+uses a fixed window in hours. A transmission-scaled window is only
+meaningful per receiver; array-wide gaps are governed by animal
+movement, so hours is the natural unit there.
+
+|  |  |  |
+|----|----|----|
+|  | **per receiver** (min_lag) | **whole array** (isolation.window) |
+| **adaptive window** | default (min.lag.factor) | – |
+| **fixed window** | min.lag.threshold | isolation.window |
+
+(The per-receiver filter is enabled by supplying either `nominal.delay`
+– for the adaptive window – or `min.lag.threshold` – for the fixed
+window, in seconds. If both are given, the fixed `min.lag.threshold`
+takes precedence and applies to every tag.)
+
+**They are complementary, not alternatives.** A typical workflow applies
+`min_lag` first, as routine cleaning (removing spurious decodes), and
+*then* – optionally – `isolation.window` as a residency check (flagging
+animals seen only in sporadic one-off blips). Neither replaces the
+other: use `min_lag` whenever a `nominal.delay` is available, and add
+`isolation.window` when you also want to screen for biologically
+unsupported presence.
+
+*Coming from ATfiltR?* `min_lag` corresponds to
+`findSolo(per.receiver = TRUE)` and `isolation.window` to
+`findSolo(per.receiver = FALSE)`. moby deliberately uses a different
+natural window at each scale (transmission-scaled per receiver, fixed
+hours array-wide), so do not carry a single hours value across the two.
 
 ## References
 
@@ -269,7 +324,7 @@ data(rays)
 filtered <- filterDetections(rays)
 #> Filtering detections
 #> Warning: - 'id.col' converted to factor.
-#> - No 'nominal.delay' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) to enable it.
+#> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.
 #> Applying detection filters...
 #> Detections removed = 0 (0%) from a total of 1643
 #>   • Duplicates: 0 (0%) from 0 individual(s)
@@ -306,13 +361,25 @@ filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
 #> Individuals fully discarded = 0 from a total of 8
 #> Total execution time: 0.03 secs
 
+# or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)
+filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
+#> Filtering detections
+#> Warning: - 'id.col' converted to factor.
+#> Applying detection filters...
+#> Detections removed = 87 (5%) from a total of 1643
+#>   • Duplicates: 0 (0%) from 0 individual(s)
+#>   • Before tagging: 0 (0%) from 0 individual(s)
+#>   • False detection: 87 (5%) from 8 individual(s)
+#> Individuals fully discarded = 0 from a total of 8
+#> Total execution time: 0.03 secs
+
 # \donttest{
 # add a movement-speed filter (slower: computes step distances); on a 3-animal subset
 sub <- rays[rays$ID %in% head(levels(factor(rays$ID)), 3), ]
 filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #> Filtering detections
 #> Warning: - 'id.col' converted to factor.
-#> - No 'nominal.delay' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) to enable it.
+#> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.
 #> Applying detection filters...
 #> Applying speed filter...
 #> Detections removed = 0 (0%) from a total of 563
@@ -321,6 +388,6 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #>   • Speed: 0 (0%) from 0 individual(s)
 #>   • flagged for review (overspeed, retained): 9
 #> Individuals fully discarded = 0 from a total of 3
-#> Total execution time: 2.32 secs
+#> Total execution time: 1.58 secs
 # }
 ```
