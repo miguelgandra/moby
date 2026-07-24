@@ -59,18 +59,23 @@ station) before any other filter. Defaults to TRUE.}
 \item{nominal.delay}{Transmitter nominal (mean) delay, in seconds, used to scale the min_lag
 false-detection window. A single value applied to all individuals, or a named numeric vector keyed
 by \code{id.col} (for mixed tag families). Read from the \code{mobyData} metadata (\code{nominal.delay}) when not
-supplied. \code{NULL} (and no metadata) disables the false-detection filter.}
+supplied. When \code{NULL} (and absent from metadata) the adaptive min_lag filter is off, but a fixed
+\code{min.lag.threshold} still enables it.}
 
 \item{min.lag.factor}{Multiplier defining the min_lag threshold as \code{min.lag.factor * nominal.delay}
 (in seconds). Defaults to 30 (Pincock 2012 rule of thumb). Use \code{\link[=plotMinLag]{plotMinLag()}} to check whether this
 default suits a given dataset.}
 
-\item{min.lag.threshold}{Optional. Set the min_lag threshold directly (in seconds), overriding
-\code{min.lag.factor * nominal.delay}.}
+\item{min.lag.threshold}{Optional. Set the min_lag threshold directly, in seconds, selecting the
+per-receiver \emph{fixed}-window mode (see the \sQuote{Isolation-based filtering} section). Enables
+the filter on its own (no \code{nominal.delay} needed) and applies to every tag, including foreign IDs
+absent from \code{nominal.delay}; when both are supplied it overrides \code{min.lag.factor * nominal.delay}.}
 
 \item{isolation.window}{Optional residency / sporadic-visitor filter (in hours): a detection is
 removed when the gap to BOTH temporal neighbours exceeds this window. \code{NULL} (default) or \code{FALSE}
-disables it. This is a coverage tool, NOT a false-detection filter (use \code{nominal.delay} for that).}
+disables it. This is the whole-array counterpart of the per-receiver \code{min_lag} filter, and
+complementary to it (see the \sQuote{Isolation-based filtering} section); it is a residency /
+coverage check, NOT a false-detection filter (use \code{nominal.delay} for that).}
 
 \item{max.speed}{Maximum plausible swim speed. A single value applied to all individuals, or a named
 numeric vector keyed by \code{id.col} (for multi-species / size-specific limits). \code{NULL} disables the
@@ -130,7 +135,7 @@ timestamp and station) are dropped up front so they cannot slip past the other f
 to the nearest other detection of the \emph{same tag on the same receiver}; a detection whose
 min_lag exceeds \code{min.lag.factor * nominal.delay} (default 30x the transmitter nominal delay), or
 that has no same-receiver companion at all, is treated as a spurious (code-collision) decode.
-Requires \code{nominal.delay}; off otherwise.
+Enabled by \code{nominal.delay} (adaptive window) or \code{min.lag.threshold} (fixed window); off otherwise.
 \item \strong{Isolation} (\code{isolation.window}): an optional residency / sporadic-visitor tool that
 removes a detection when the time gap to BOTH temporal neighbours (across the whole array)
 exceeds the window. This is NOT a false-detection filter and is off by default.
@@ -151,6 +156,45 @@ to all individuals or a named numeric vector keyed by \code{id.col} (for mixed t
 multi-species datasets); \code{nominal.delay} is additionally read from the \code{mobyData} metadata when not
 supplied.
 }
+\section{Isolation-based filtering}{
+
+Two of the filters above, \code{min_lag} and \code{isolation.window}, are the same underlying operation: a
+both-sides temporal-isolation test that flags a detection whose nearest companion, on each side,
+lies further away than a window. They differ on two axes.
+
+\strong{Spatial scale} (the primary distinction). \code{min_lag} works \emph{per receiver} -- "is this
+detection corroborated on \emph{this} receiver?" -- the scale at which spurious code-collision
+decodes actually occur. \code{isolation.window} works \emph{across the whole array} -- "does the
+individual have \emph{any} other detection, anywhere, within the window?" -- a residency /
+coverage question.
+
+\strong{Window definition}. \code{min_lag} uses a window that adapts to tag transmission timing
+(\code{min.lag.factor * nominal.delay}, about 1 h for a 120 s tag), or a fixed value via
+\code{min.lag.threshold}. \code{isolation.window} uses a fixed window in hours. A transmission-scaled window
+is only meaningful per receiver; array-wide gaps are governed by animal movement, so hours is the
+natural unit there.
+
+\tabular{lll}{
+\tab \strong{per receiver} (min_lag) \tab \strong{whole array} (isolation.window) \cr
+\strong{adaptive window} \tab default (min.lag.factor) \tab -- \cr
+\strong{fixed window} \tab min.lag.threshold \tab isolation.window \cr
+}
+(The per-receiver filter is enabled by supplying either \code{nominal.delay} -- for the adaptive window
+-- or \code{min.lag.threshold} -- for the fixed window, in seconds. If both are given, the fixed
+\code{min.lag.threshold} takes precedence and applies to every tag.)
+
+\strong{They are complementary, not alternatives.} A typical workflow applies \code{min_lag} first, as
+routine cleaning (removing spurious decodes), and \emph{then} -- optionally -- \code{isolation.window}
+as a residency check (flagging animals seen only in sporadic one-off blips). Neither replaces the
+other: use \code{min_lag} whenever a \code{nominal.delay} is available, and add \code{isolation.window} when you
+also want to screen for biologically unsupported presence.
+
+\emph{Coming from ATfiltR?} \code{min_lag} corresponds to \code{findSolo(per.receiver = TRUE)} and
+\code{isolation.window} to \code{findSolo(per.receiver = FALSE)}. moby deliberately uses a different natural
+window at each scale (transmission-scaled per receiver, fixed hours array-wide), so do not carry a
+single hours value across the two.
+}
+
 \examples{
 data(rays)
 # default: only the temporal bounds are applied (tagging dates read from the mobyData metadata)
@@ -160,6 +204,9 @@ head(filtered$data_discarded[, c("ID", "datetime", "reason")])
 
 # enable the short-interval false-detection filter (needs the transmitter nominal delay)
 filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
+
+# or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)
+filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
 
 \donttest{
 # add a movement-speed filter (slower: computes step distances); on a 3-animal subset

@@ -69,6 +69,33 @@ test_that("min_lag removes an uncorroborated lone decode and is off without nomi
   expect_equal(nrow(suppressWarnings(suppressMessages(filterDetections(md)))$data_discarded), 1L)
 })
 
+test_that("min.lag.threshold enables a standalone fixed per-receiver window (no nominal.delay)", {
+  d <- rbind(
+    data.frame(ID = "F", datetime = as.POSIXct("2023-06-01 00:00", tz = "UTC") + (0:5) * 60,
+               lon = Alon, lat = 37, station = "SA"),                       # corroborated burst at SA
+    data.frame(ID = "F", datetime = as.POSIXct("2023-06-01 01:00", tz = "UTC"),
+               lon = Blon, lat = 37, station = "SB"))                       # lone decode at SB
+  d$ID <- factor(d$ID)
+
+  # a fixed threshold alone (no nominal.delay supplied or in metadata) enables the min_lag filter
+  r <- suppressWarnings(suppressMessages(filterDetections(d, tagging.dates = tg, min.lag.threshold = 3600)))
+  expect_equal(nrow(r$data), 6L)
+  expect_match(r$data_discarded$reason, "min_lag > 3600 s")
+
+  # a fixed threshold applies to every tag, including a foreign ID absent from a partial nominal.delay
+  d2 <- rbind(d, data.frame(ID = "G", datetime = as.POSIXct("2023-06-01 05:00", tz = "UTC"),
+                            lon = Blon, lat = 37, station = "SC"))          # lone decode from a foreign tag
+  d2$ID <- factor(d2$ID)
+  tg2 <- as.POSIXct(c(F = "2023-01-01", G = "2023-01-01"), tz = "UTC")
+  rG <- suppressWarnings(suppressMessages(
+    filterDetections(d2, tagging.dates = tg2, nominal.delay = c(F = 120), min.lag.threshold = 3600)))
+  expect_true(all(c("F", "G") %in% as.character(rG$data_discarded$ID)))
+
+  # validation: a non-positive threshold is rejected
+  expect_error(suppressMessages(filterDetections(d, tagging.dates = tg, min.lag.threshold = -5)),
+               "min.lag.threshold")
+})
+
 test_that("the isolation filter is off by default and removes both-sided isolated detections when set", {
   d <- data.frame(ID = "F", datetime = as.POSIXct("2023-06-01", tz = "UTC") + c(0, 1, 49, 97, 98) * 3600,
                   lon = Alon, lat = 37, station = "SA"); d$ID <- factor(d$ID)

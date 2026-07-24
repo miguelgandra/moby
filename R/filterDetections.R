@@ -22,7 +22,7 @@
 #'     to the nearest other detection of the \emph{same tag on the same receiver}; a detection whose
 #'     min_lag exceeds `min.lag.factor * nominal.delay` (default 30x the transmitter nominal delay), or
 #'     that has no same-receiver companion at all, is treated as a spurious (code-collision) decode.
-#'     Requires `nominal.delay`; off otherwise.
+#'     Enabled by `nominal.delay` (adaptive window) or `min.lag.threshold` (fixed window); off otherwise.
 #'   \item \strong{Isolation} (`isolation.window`): an optional residency / sporadic-visitor tool that
 #'     removes a detection when the time gap to BOTH temporal neighbours (across the whole array)
 #'     exceeds the window. This is NOT a false-detection filter and is off by default.
@@ -43,6 +43,43 @@
 #' multi-species datasets); `nominal.delay` is additionally read from the `mobyData` metadata when not
 #' supplied.
 #'
+#' @section Isolation-based filtering:
+#' Two of the filters above, `min_lag` and `isolation.window`, are the same underlying operation: a
+#' both-sides temporal-isolation test that flags a detection whose nearest companion, on each side,
+#' lies further away than a window. They differ on two axes.
+#'
+#' \strong{Spatial scale} (the primary distinction). `min_lag` works \emph{per receiver} -- "is this
+#' detection corroborated on \emph{this} receiver?" -- the scale at which spurious code-collision
+#' decodes actually occur. `isolation.window` works \emph{across the whole array} -- "does the
+#' individual have \emph{any} other detection, anywhere, within the window?" -- a residency /
+#' coverage question.
+#'
+#' \strong{Window definition}. `min_lag` uses a window that adapts to tag transmission timing
+#' (`min.lag.factor * nominal.delay`, about 1 h for a 120 s tag), or a fixed value via
+#' `min.lag.threshold`. `isolation.window` uses a fixed window in hours. A transmission-scaled window
+#' is only meaningful per receiver; array-wide gaps are governed by animal movement, so hours is the
+#' natural unit there.
+#'
+#' \tabular{lll}{
+#'    \tab \strong{per receiver} (min_lag) \tab \strong{whole array} (isolation.window) \cr
+#'   \strong{adaptive window} \tab default (min.lag.factor) \tab -- \cr
+#'   \strong{fixed window} \tab min.lag.threshold \tab isolation.window \cr
+#' }
+#' (The per-receiver filter is enabled by supplying either `nominal.delay` -- for the adaptive window
+#' -- or `min.lag.threshold` -- for the fixed window, in seconds. If both are given, the fixed
+#' `min.lag.threshold` takes precedence and applies to every tag.)
+#'
+#' \strong{They are complementary, not alternatives.} A typical workflow applies `min_lag` first, as
+#' routine cleaning (removing spurious decodes), and \emph{then} -- optionally -- `isolation.window`
+#' as a residency check (flagging animals seen only in sporadic one-off blips). Neither replaces the
+#' other: use `min_lag` whenever a `nominal.delay` is available, and add `isolation.window` when you
+#' also want to screen for biologically unsupported presence.
+#'
+#' \emph{Coming from ATfiltR?} `min_lag` corresponds to `findSolo(per.receiver = TRUE)` and
+#' `isolation.window` to `findSolo(per.receiver = FALSE)`. moby deliberately uses a different natural
+#' window at each scale (transmission-scaled per receiver, fixed hours array-wide), so do not carry a
+#' single hours value across the two.
+#'
 #' @inheritParams as_moby
 #' @param data A data frame (or `mobyData`) of raw animal detections.
 #' @param cutoff.dates Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
@@ -52,15 +89,20 @@
 #' @param nominal.delay Transmitter nominal (mean) delay, in seconds, used to scale the min_lag
 #' false-detection window. A single value applied to all individuals, or a named numeric vector keyed
 #' by `id.col` (for mixed tag families). Read from the `mobyData` metadata (`nominal.delay`) when not
-#' supplied. `NULL` (and no metadata) disables the false-detection filter.
+#' supplied. When `NULL` (and absent from metadata) the adaptive min_lag filter is off, but a fixed
+#' `min.lag.threshold` still enables it.
 #' @param min.lag.factor Multiplier defining the min_lag threshold as `min.lag.factor * nominal.delay`
 #' (in seconds). Defaults to 30 (Pincock 2012 rule of thumb). Use [plotMinLag()] to check whether this
 #' default suits a given dataset.
-#' @param min.lag.threshold Optional. Set the min_lag threshold directly (in seconds), overriding
-#' `min.lag.factor * nominal.delay`.
+#' @param min.lag.threshold Optional. Set the min_lag threshold directly, in seconds, selecting the
+#' per-receiver \emph{fixed}-window mode (see the \sQuote{Isolation-based filtering} section). Enables
+#' the filter on its own (no `nominal.delay` needed) and applies to every tag, including foreign IDs
+#' absent from `nominal.delay`; when both are supplied it overrides `min.lag.factor * nominal.delay`.
 #' @param isolation.window Optional residency / sporadic-visitor filter (in hours): a detection is
 #' removed when the gap to BOTH temporal neighbours exceeds this window. `NULL` (default) or `FALSE`
-#' disables it. This is a coverage tool, NOT a false-detection filter (use `nominal.delay` for that).
+#' disables it. This is the whole-array counterpart of the per-receiver `min_lag` filter, and
+#' complementary to it (see the \sQuote{Isolation-based filtering} section); it is a residency /
+#' coverage check, NOT a false-detection filter (use `nominal.delay` for that).
 #' @param max.speed Maximum plausible swim speed. A single value applied to all individuals, or a named
 #' numeric vector keyed by `id.col` (for multi-species / size-specific limits). `NULL` disables the
 #' speed filter.
@@ -115,6 +157,9 @@
 #'
 #' # enable the short-interval false-detection filter (needs the transmitter nominal delay)
 #' filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
+#'
+#' # or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)
+#' filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
 #'
 #' \donttest{
 #' # add a movement-speed filter (slower: computes step distances); on a 3-animal subset
@@ -175,6 +220,11 @@ filterDetections <- function(data,
   if (!isFALSE(isolation.window) && !is.null(isolation.window) &&
       (!is.numeric(isolation.window) || length(isolation.window) != 1 || is.na(isolation.window) || isolation.window < 0))
     .mobyAbort("'isolation.window' must be a single non-negative number (hours), NULL, or FALSE.")
+  if (!is.null(min.lag.threshold) &&
+      (!is.numeric(min.lag.threshold) || length(min.lag.threshold) != 1 || is.na(min.lag.threshold) || min.lag.threshold <= 0))
+    .mobyAbort("'min.lag.threshold' must be a single positive number (seconds), or NULL.")
+  if (!is.numeric(min.lag.factor) || length(min.lag.factor) != 1 || is.na(min.lag.factor) || min.lag.factor <= 0)
+    .mobyAbort("'min.lag.factor' must be a single positive number.")
   if (!is.numeric(min.corroboration) || length(min.corroboration) != 1 || is.na(min.corroboration) || min.corroboration < 1)
     .mobyAbort("'min.corroboration' must be a single integer >= 1.")
   min.corroboration <- as.integer(min.corroboration)
@@ -193,12 +243,18 @@ filterDetections <- function(data,
   nfish <- nlevels(data[, id.col])
   all_ids <- levels(data[, id.col])
 
-  # per-ID nominal.delay (min_lag): tolerant of unknown tags (NA -> skip that individual)
+  # min_lag false-detection filter: enabled by a scaled window (nominal.delay) OR a fixed window
+  # (min.lag.threshold, delay-independent). A fixed threshold applies to every ID (including foreign
+  # tags absent from nominal.delay); the scaled window is tolerant of unknown tags (NA -> skip that
+  # individual).
+  fixed_minlag <- !is.null(min.lag.threshold)
   do_minlag <- FALSE
-  if (!is.null(nominal.delay)) {
-    cp <- .checkAnimalParams(nominal.delay, "Nominal delay", expected_class = "numeric", data, id.col, allow.missing = TRUE)
-    if (!is.null(cp$errors)) .mobyAbort(paste(cp$errors, collapse = "\n"))
-    nominal.delay <- cp$vector
+  if (!is.null(nominal.delay) || fixed_minlag) {
+    if (!is.null(nominal.delay)) {
+      cp <- .checkAnimalParams(nominal.delay, "Nominal delay", expected_class = "numeric", data, id.col, allow.missing = TRUE)
+      if (!is.null(cp$errors)) .mobyAbort(paste(cp$errors, collapse = "\n"))
+      nominal.delay <- cp$vector
+    }
     do_minlag <- TRUE
     if (!station_col %in% names(data)) {
       .mobyWarn("The min_lag false-detection filter needs a station/receiver column ('", station_col,
@@ -206,8 +262,9 @@ filterDetections <- function(data,
       do_minlag <- FALSE
     }
   } else {
-    .mobyInform("- No 'nominal.delay' supplied or found in metadata: the min_lag false-detection ",
-                "filter is OFF. Supply the transmitter nominal delay (s) to enable it.", verbose = verbose)
+    .mobyInform("- No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag ",
+                "false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive ",
+                "window, or a fixed 'min.lag.threshold' (s), to enable it.", verbose = verbose)
   }
 
   # per-ID max.speed (speed filter): strict (all IDs must be covered by a named vector)
@@ -301,9 +358,10 @@ filterDetections <- function(data,
       }
     }
 
-    # (3) false-detection (min_lag), per receiver, scaled to the nominal delay
-    if (do_minlag && !is.na(nominal.delay[i]) && nrow(sub) > 0) {
-      thr <- if (!is.null(min.lag.threshold)) min.lag.threshold else min.lag.factor * nominal.delay[i]
+    # (3) false-detection (min_lag), per receiver: fixed window (applies to every ID) or scaled to
+    # the per-ID nominal delay (IDs with an unknown delay are skipped)
+    if (do_minlag && nrow(sub) > 0 && (fixed_minlag || !is.na(nominal.delay[i]))) {
+      thr <- if (fixed_minlag) min.lag.threshold else min.lag.factor * nominal.delay[i]
       fl <- .minLagFlags(as.numeric(sub[, datetime.col]), as.character(sub[[station_col]]), thr)
       if (any(fl)) {
         r <- sub[fl, ]; r$reason <- paste0("false detection (min_lag > ", round(thr), " s)")
