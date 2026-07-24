@@ -145,6 +145,36 @@ test_that("on-land check dedups by (station, position) so a moved receiver is st
   expect_equal(sum(r$type == "Coordinates on land"), 1L)    # the on-land position, not masked by the at-sea one
 })
 
+test_that("min.active.days flags short-effort stations (gap-aware, report-only, opt-in)", {
+  # station A: two 15-day deployments 5 months apart -> 30 OPERATIONAL days (not the ~200-day span);
+  # station B: one 300-day deployment.
+  dep <- data.frame(
+    receiver = c("R1", "R1", "R2"), station = c("A", "A", "B"),
+    lon = c(-9, -9, -8.9), lat = c(38, 38, 38.1),
+    deploy  = as.POSIXct(c("2023-01-01", "2023-06-20", "2023-01-01"), tz = "UTC"),
+    recover = as.POSIXct(c("2023-01-16", "2023-07-05", "2023-11-01"), tz = "UTC"))
+  det <- data.frame(receiver = c("R1", "R1", "R2"), ID = c("f1", "f2", "f1"),
+                    datetime = as.POSIXct(c("2023-01-05", "2023-01-06", "2023-02-01"), tz = "UTC"),
+                    station = c("A", "A", "B"))
+
+  r <- checkDeployments(dep, detections = det, min.active.days = 180, verbose = FALSE)$report
+  sd <- r[r$type == "Short monitoring duration", ]
+  expect_setequal(sd$station, "A")               # gap-aware: A=30 operational days < 180; B=304 not flagged
+  expect_match(sd$details, "30 day")             # summed windows, not the calendar span
+  expect_equal(sd$n_detections, 2L)              # impact reported when detections supplied
+  expect_equal(sd$n_individuals, 2L)
+
+  # opt-in: no threshold -> no such rows; and nothing is ever removed (report-only)
+  expect_false("Short monitoring duration" %in% checkDeployments(dep, verbose = FALSE)$report$type)
+
+  # threshold below A's duration -> A no longer flagged
+  expect_false("A" %in% checkDeployments(dep, min.active.days = 20, verbose = FALSE
+                 )$report$station[checkDeployments(dep, min.active.days = 20, verbose = FALSE)$report$type == "Short monitoring duration"])
+
+  expect_error(checkDeployments(dep, min.active.days = -5, verbose = FALSE), "positive number")
+  expect_error(checkDeployments(dep, min.active.days = c(1, 2), verbose = FALSE), "positive number")
+})
+
 test_that("on-land check auto-resolves land.shape from the detections mobyData, and fails soft without a CRS", {
   skip_if_not_installed("sf")
   sq <- qc_land_square()

@@ -22,6 +22,7 @@ checkDeployments(
   coord.tolerance = 500,
   gap.tolerance = 1,
   land.tolerance = 500,
+  min.active.days = NULL,
   verbose = TRUE
 )
 }
@@ -95,6 +96,12 @@ lie to be reported as on land. This spares genuine near-shore receivers that a c
 overlaps by a small margin; gross coordinate-entry errors (swapped lon/lat, a sign flip) fall
 kilometres inland and are still flagged. Defaults to 500.}
 
+\item{min.active.days}{Optional numeric. When set, stations whose \strong{total operational time} - the
+sum of their deployment windows in days, so servicing gaps do not inflate it - falls below this
+value are flagged as \code{"Short monitoring duration"}. Off by default (\code{NULL}); there is no universal
+threshold (it is study-specific). The flag is \strong{report-only}: it never removes anything. See the
+Details for why deletion is a deliberate, bias-prone choice best left to the analyst.}
+
 \item{verbose}{Logical; print a summary to the console. Defaults to TRUE.}
 }
 \value{
@@ -126,6 +133,17 @@ longitude/latitude, a wrong sign, a decimal typo).
 When detections are provided, the function additionally checks whether detections are consistent
 with the deployment history, including unknown receivers, detections outside deployment periods,
 and station mismatches.
+
+Setting \code{min.active.days} additionally flags stations monitored for less than that total operational
+duration. This is offered as a \strong{flag only}: excluding low-effort receivers is a common way to
+reduce monitoring-effort heterogeneity, but it is a deliberate, analysis-specific decision, not a
+QC fix. Deleting short-duration stations can trade one bias for others - short-lived stations are
+rarely random in space or time (a peripheral or late-added array, a station lost to a storm in a
+high-use habitat), so their removal can bias space-use extent, residency and network structure, and
+erase seasonal signal. It is usually preferable to \emph{account for} effort (e.g. the effort-normalised
+residency indices from \code{\link{calculateResidency}}) than to delete data. The flag surfaces the
+candidates and their cost (duration, and detections/individuals held when \code{detections} is supplied)
+so the choice can be made explicitly; \code{checkDeployments()} never removes them.
 }
 \examples{
 # quality-control a receiver-deployment log
@@ -137,6 +155,9 @@ checkDeployments(rays_deployments, detections = rays)
 
 # restrict the metadata checks to receivers that actually recorded detections
 checkDeployments(rays_deployments, detections = rays, scope = "detected")
+
+# additionally flag (never remove) stations monitored for under ~6 months
+checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
 
 }
 \seealso{

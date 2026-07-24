@@ -99,6 +99,17 @@
 #' with the deployment history, including unknown receivers, detections outside deployment periods,
 #' and station mismatches.
 #'
+#' Setting `min.active.days` additionally flags stations monitored for less than that total operational
+#' duration. This is offered as a **flag only**: excluding low-effort receivers is a common way to
+#' reduce monitoring-effort heterogeneity, but it is a deliberate, analysis-specific decision, not a
+#' QC fix. Deleting short-duration stations can trade one bias for others - short-lived stations are
+#' rarely random in space or time (a peripheral or late-added array, a station lost to a storm in a
+#' high-use habitat), so their removal can bias space-use extent, residency and network structure, and
+#' erase seasonal signal. It is usually preferable to *account for* effort (e.g. the effort-normalised
+#' residency indices from \code{\link{calculateResidency}}) than to delete data. The flag surfaces the
+#' candidates and their cost (duration, and detections/individuals held when `detections` is supplied)
+#' so the choice can be made explicitly; `checkDeployments()` never removes them.
+#'
 #' @param deployments A receiver-deployment data frame, e.g. from \code{\link{importDeployments}},
 #' with a `receiver` column plus station, deployment / recovery date-times and (optionally)
 #' longitude / latitude. Those columns may carry non-canonical names, resolved via the
@@ -145,6 +156,11 @@
 #' lie to be reported as on land. This spares genuine near-shore receivers that a coarse coastline
 #' overlaps by a small margin; gross coordinate-entry errors (swapped lon/lat, a sign flip) fall
 #' kilometres inland and are still flagged. Defaults to 500.
+#' @param min.active.days Optional numeric. When set, stations whose **total operational time** - the
+#' sum of their deployment windows in days, so servicing gaps do not inflate it - falls below this
+#' value are flagged as `"Short monitoring duration"`. Off by default (`NULL`); there is no universal
+#' threshold (it is study-specific). The flag is **report-only**: it never removes anything. See the
+#' Details for why deletion is a deliberate, bias-prone choice best left to the analyst.
 #' @param verbose Logical; print a summary to the console. Defaults to TRUE.
 #'
 #' @return An object of class `mobyQC`: a list with
@@ -168,6 +184,9 @@
 #' # restrict the metadata checks to receivers that actually recorded detections
 #' checkDeployments(rays_deployments, detections = rays, scope = "detected")
 #'
+#' # additionally flag (never remove) stations monitored for under ~6 months
+#' checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
+#'
 #' @export
 
 checkDeployments <- function(deployments,
@@ -187,9 +206,13 @@ checkDeployments <- function(deployments,
                              coord.tolerance = 500,
                              gap.tolerance = 1,
                              land.tolerance = 500,
+                             min.active.days = NULL,
                              verbose = TRUE) {
 
   scope <- match.arg(scope)
+  if (!is.null(min.active.days) && (!is.numeric(min.active.days) || length(min.active.days) != 1 ||
+                                    is.na(min.active.days) || min.active.days <= 0))
+    stop("'min.active.days' must be a single positive number (or NULL).", call. = FALSE)
   # the on-land check is opt-in: use an explicit land.shape, otherwise borrow one the user already
   # declared on the detections mobyData (as_moby(det, land.shape = ...)). Never required.
   if (is.null(land.shape) && !is.null(detections)) land.shape <- attr(detections, "moby")$land.shape
@@ -230,6 +253,7 @@ checkDeployments <- function(deployments,
 
   report <- list()
   add <- function(r) report[[length(report) + 1]] <<- r
+  station_impact <- NULL   # per-station detection tally, filled by the detection block for the short-duration flag
 
   # Scope of the metadata-internal checks (dates / overlaps / coordinates / gaps). With
   # scope = "detected" they run only on receivers that appear in the detections, i.e. that recorded
@@ -404,6 +428,11 @@ checkDeployments <- function(deployments,
     det_time <- det[[datetime.col]]
     det_id <- if (id.col %in% colnames(det)) as.character(det[[id.col]]) else as.character(det$receiver)
 
+    # per-station detection tally (so the short-duration flag can show what removing a station costs)
+    if (any(!is.na(det_station)))
+      station_impact <- list(n_det = tapply(seq_along(det_station), trimws(det_station), length),
+                             n_ind = tapply(det_id, trimws(det_station), function(x) length(unique(x))))
+
     # match each detection to a valid receiver+station+time window
     matched <- rep(FALSE, nrow(det))
     for (i in seq_len(nrow(dep))) {
@@ -448,6 +477,35 @@ checkDeployments <- function(deployments,
                    n_detections = nrow(rows), n_individuals = length(unique(rows$id)),
                    details = "Detections not matched to any valid deployment window."))
       }
+    }
+  }
+
+  ##############################################################################
+  ## Short monitoring duration (opt-in) ########################################
+  ##############################################################################
+
+  # Flag stations whose total OPERATIONAL time - the sum of their deployment windows, so servicing
+  # gaps do not inflate it - falls below min.active.days. Report-only by design: short-effort stations
+  # are removed in some workflows to reduce effort heterogeneity, but deletion trades that bias for
+  # others (lost spatial/seasonal coverage, selection effects, network artefacts), so the choice must
+  # be the user's, made deliberately - not a side effect of an audit. The row reports the actual
+  # duration and, when detections are supplied, how many detections/individuals the station holds.
+  if (!is.null(min.active.days)) {
+    active_days <- as.numeric(difftime(dep_scope$recover_clean, dep_scope$deploy, units = "days"))
+    dur_by_station <- tapply(active_days, dep_scope$station, sum, na.rm = TRUE)
+    short <- names(dur_by_station)[!is.na(dur_by_station) & dur_by_station < min.active.days]
+    for (st in short) {
+      rows <- dep_scope[dep_scope$station == st, , drop = FALSE]
+      nd <- if (!is.null(station_impact) && st %in% names(station_impact$n_det)) as.integer(station_impact$n_det[[st]]) else NA_integer_
+      ni <- if (!is.null(station_impact) && st %in% names(station_impact$n_ind)) as.integer(station_impact$n_ind[[st]]) else NA_integer_
+      add(.qcRow("Short monitoring duration", paste(unique(rows$receiver), collapse = " | "), st,
+                 first = min(rows$deploy, na.rm = TRUE), last = max(rows$recover_clean, na.rm = TRUE),
+                 n_detections = nd, n_individuals = ni,
+                 details = sprintf(paste0("Active for %.0f day(s) across %d deployment(s), below the %s-day ",
+                                          "threshold. Consider whether removing it is appropriate for your ",
+                                          "analysis (it can bias space use, residency and networks; effort-aware ",
+                                          "analysis is often preferable to deletion)."),
+                                   dur_by_station[[st]], nrow(rows), format(min.active.days))))
     }
   }
 
