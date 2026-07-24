@@ -21,8 +21,9 @@ importTags(
 
 \item{tz}{Time zone used to parse the tagging date. Defaults to \code{"UTC"}.}
 
-\item{col.map}{Optional named list overriding/extending the \code{source} preset (e.g.
-\code{list(transmitter = "Tag", tagging_date = "Deployed")}).}
+\item{col.map}{Optional named list mapping canonical tag fields to the column name(s) in \code{x},
+merged over (and extending) the \code{source} preset. See \link{moby_import_schema} for the full list of tag
+fields and examples.}
 
 \item{datetime.format}{Optional explicit \code{strptime} format for the tagging-date column.}
 
@@ -55,5 +56,6 @@ head(tags)
 
 }
 \seealso{
+\code{\link{moby_import_schema}} for the canonical field list;
 \code{\link{assignAnimalIDs}}, \code{\link{importDetections}}
 }

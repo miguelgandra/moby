@@ -181,6 +181,102 @@
 }
 
 
+#' Canonical column names for the moby import functions
+#'
+#' @description The import functions [importDetections()], [importTags()] and [importDeployments()]
+#' read a raw export and rename its columns onto a small, fixed set of *canonical* field names, so the
+#' rest of moby always sees the same layout whatever the source system was. The `col.map` argument is
+#' how you declare that mapping for a non-standard file: a named list of
+#' `canonical_field = "your column name"`. For the built-in `source` presets (`"vue"`, `"glatos"`,
+#' `"otn"`, `"etn"`, ...) the mapping is filled in for you, so `col.map` only needs the fields a preset
+#' missed.
+#'
+#' Column matching is *tolerant*: names are compared ignoring case, spaces and punctuation, so
+#' `"Station Name"`, `"station.name"` and `"STATION_NAME"` all match the canonical `station`. A field
+#' may list several candidate names, and the first one present is used:
+#' `list(lon = c("Longitude", "deploy_longitude"))`.
+#'
+#' Only a handful of fields are **required**; every other field is optional and is simply absent
+#' downstream if you do not supply it (functions that need a missing field say so when you call them).
+#'
+#' @section Detection fields — `importDetections()`:
+#' | Field | Description | Required |
+#' |---|---|---|
+#' | `datetime` | Detection timestamp, parsed to POSIXct (see `datetime.format`) | **yes** |
+#' | `transmitter` | Full tag/transmitter code — the key used to join tag metadata | **yes** (or `ID`) |
+#' | `ID` | Animal identifier | no — set from `transmitter` if absent |
+#' | `transmitter_codespace` | Code space; joined as `codespace-transmitter` when both are present | no |
+#' | `transmitter_name` | Human-readable tag name | no |
+#' | `receiver` | Receiver serial / ID | no |
+#' | `station` | Receiver station name | no |
+#' | `lon`, `lat` | Coordinates (coerced to numeric) | no |
+#' | `sensor_value`, `sensor_unit` | Sensor reading and its unit | no |
+#'
+#' If `ID` is absent it is initialised from `transmitter` (with a message); assign true animal IDs
+#' afterwards with [assignAnimalIDs()].
+#'
+#' @section Tag fields — `importTags()`:
+#' | Field | Description | Required |
+#' |---|---|---|
+#' | `transmitter` | Full tag code — the key joined to detections | **yes** |
+#' | `ID` | Animal identifier | no — derived from `serial`/`transmitter` if absent |
+#' | `serial` | Tag serial number | no |
+#' | `tagging_date` | Release / tagging date (POSIXct) | no |
+#' | `nominal_delay` | Transmitter mean delay, seconds (scales the min_lag filter) | no |
+#' | `min_delay`, `max_delay` | Delay range; `nominal_delay` is set to their midpoint when it is absent | no |
+#' | `species`, `sex`, `length`, `weight`, `tagging_location` | Biometrics / metadata | no |
+#'
+#' @section Deployment fields — `importDeployments()`:
+#' | Field | Description | Required |
+#' |---|---|---|
+#' | `receiver` | Receiver serial / ID | **yes** |
+#' | `station` | Station name | **yes** |
+#' | `deploy` | Deployment date-time (POSIXct) | **yes** |
+#' | `recover` | Recovery date-time (POSIXct); open (ongoing) deployments are handled downstream | no |
+#' | `lon`, `lat` | Receiver coordinates (numeric) | no |
+#' | `depth` | Station / bottom depth | no |
+#'
+#' @section What happens when an optional field is omitted:
+#' \itemize{
+#'   \item No `ID` — initialised from `transmitter`; attach real animal IDs with [assignAnimalIDs()].
+#'   \item No `station` / `lon` / `lat`, but a `receiver` is present — [matchDeployments()] can
+#'     back-fill them from the deployment log.
+#'   \item No `receiver` — deployment matching ([matchDeployments()], [checkDeployments()]) is
+#'     unavailable.
+#'   \item No coordinates at all — the import still succeeds, but spatial functions (COAs, maps, step
+#'     distances) error when you later call them.
+#'   \item No `nominal_delay` (and no `min_delay`/`max_delay`) — the min_lag false-detection filter in
+#'     [filterDetections()] stays off unless you set `min.lag.threshold` (see that function's
+#'     \sQuote{Isolation-based filtering} section).
+#' }
+#'
+#' @section Worked `col.map` examples:
+#' ```r
+#' # 1. A non-standard VUE export where the transmitter is split across two columns
+#' importDetections(file, source = "vue",
+#'                  col.map = list(transmitter_codespace = "Code.Space",
+#'                                 transmitter = "ID", receiver = "Receiver.Name"))
+#'
+#' # 2. A GLATOS data frame already loaded in R — the preset handles it, no col.map needed
+#' importDetections(glatos_df, source = "glatos")
+#'
+#' # 3. A plain generic CSV with your own column names
+#' importDetections(file, source = "generic",
+#'                  col.map = list(ID = "animal", datetime = "time_utc", station = "site",
+#'                                 lon = "x", lat = "y", transmitter = "tag"))
+#'
+#' # 4. A tag database that stores a delay RANGE rather than a nominal delay
+#' importTags(file, source = "generic",
+#'            col.map = list(transmitter = "Codespace", tagging_date = "Tagdeployed",
+#'                           min_delay = "Minoff_sec", max_delay = "Maxoff_sec"))
+#' ```
+#'
+#' @seealso [importDetections()], [importTags()], [importDeployments()], [assignAnimalIDs()],
+#' [matchDeployments()], [as_moby()]
+#' @name moby_import_schema
+NULL
+
+
 #' Import and harmonise acoustic detection data
 #'
 #' @description Reads acoustic-telemetry detections from a range of common sources and
@@ -196,9 +292,9 @@
 #' For `"generic"`, supply `col.map`.
 #' @param tz Time zone used to parse date-times. Defaults to `"UTC"` (the convention for
 #' GLATOS/OTN/ETN); set explicitly for VUE/VDAT exports recorded in another zone.
-#' @param col.map Optional named list mapping canonical fields (`datetime`, `transmitter`,
-#' `receiver`, `station`, `lon`, `lat`, `ID`, `sensor_value`, `sensor_unit`, ...) to the column
-#' name(s) in `x`. Merged over (and overriding) the chosen `source` preset.
+#' @param col.map Optional named list mapping canonical fields to the column name(s) in `x`, merged
+#' over (and overriding) the chosen `source` preset. See [moby_import_schema] for the full list of
+#' detection fields, which are required, and worked examples.
 #' @param datetime.format Optional explicit `strptime` format for the datetime column; if
 #' `NULL`, common layouts are auto-detected.
 #' @param keep.extra Logical; retain source columns that were not mapped to a canonical field.
@@ -209,7 +305,8 @@
 #' has no animal identifier, `ID` is initialised from `transmitter` (assign true animal IDs
 #' later by joining tag metadata).
 #'
-#' @seealso \code{\link{importDeployments}}, \code{\link{checkDeployments}}, \code{\link{as_moby}}
+#' @seealso \code{\link{moby_import_schema}} for the canonical field list;
+#' \code{\link{importDeployments}}, \code{\link{checkDeployments}}, \code{\link{as_moby}}
 #' @examples
 #' # harmonise a generic-layout detection CSV via an explicit column map
 #' csv <- system.file("extdata", "rays_detections.csv", package = "moby")
@@ -282,14 +379,16 @@ importDetections <- function(x,
 #' `etn::get_acoustic_deployments()`).
 #' @param source One of `"vue"`, `"glatos"`, `"otn"`, `"etn"` or `"generic"`.
 #' @param tz Time zone used to parse deploy/recover date-times. Defaults to `"UTC"`.
-#' @param col.map Optional named list mapping canonical fields (`receiver`, `station`, `lon`,
-#' `lat`, `deploy`, `recover`, `depth`) to source column name(s); merged over the `source` preset.
+#' @param col.map Optional named list mapping canonical deployment fields to source column name(s),
+#' merged over the `source` preset. See [moby_import_schema] for the full list of deployment fields
+#' and which are required.
 #' @param datetime.format Optional explicit `strptime` format for the deploy/recover columns.
 #'
 #' @return A data frame with columns `receiver`, `station`, `lon`, `lat`, `deploy` (POSIXct),
 #' `recover` (POSIXct) and, where available, `depth`; sorted by receiver and deployment date.
 #'
-#' @seealso \code{\link{importDetections}}, \code{\link{checkDeployments}}
+#' @seealso \code{\link{moby_import_schema}} for the canonical field list;
+#' \code{\link{importDetections}}, \code{\link{checkDeployments}}
 #' @examples
 #' # read a raw ETN deployment export and harmonise it
 #' csv <- system.file("extdata", "rays_deployments.csv", package = "moby")
@@ -393,8 +492,9 @@ importDeployments <- function(x,
 #' `etn::get_tags()` / `etn::get_animals()`).
 #' @param source One of `"vue"`, `"glatos"`, `"otn"`, `"etn"` or `"generic"`.
 #' @param tz Time zone used to parse the tagging date. Defaults to `"UTC"`.
-#' @param col.map Optional named list overriding/extending the `source` preset (e.g.
-#' `list(transmitter = "Tag", tagging_date = "Deployed")`).
+#' @param col.map Optional named list mapping canonical tag fields to the column name(s) in `x`,
+#' merged over (and extending) the `source` preset. See [moby_import_schema] for the full list of tag
+#' fields and examples.
 #' @param datetime.format Optional explicit `strptime` format for the tagging-date column.
 #' @param keep.extra Logical; retain unmapped source columns. Defaults to `TRUE` so that
 #' additional biometric fields are preserved.
@@ -402,7 +502,8 @@ importDeployments <- function(x,
 #' @return A data frame with at least `transmitter` and (when available) `ID`, `tagging_date`
 #' (POSIXct), `nominal_delay` (seconds) and biometric columns.
 #'
-#' @seealso \code{\link{assignAnimalIDs}}, \code{\link{importDetections}}
+#' @seealso \code{\link{moby_import_schema}} for the canonical field list;
+#' \code{\link{assignAnimalIDs}}, \code{\link{importDetections}}
 #' @examples
 #' # harmonise a tag-metadata table (here the bundled 'rays_tags' data frame)
 #' tags <- importTags(rays_tags, source = "generic",

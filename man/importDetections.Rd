@@ -23,9 +23,9 @@ For \code{"generic"}, supply \code{col.map}.}
 \item{tz}{Time zone used to parse date-times. Defaults to \code{"UTC"} (the convention for
 GLATOS/OTN/ETN); set explicitly for VUE/VDAT exports recorded in another zone.}
 
-\item{col.map}{Optional named list mapping canonical fields (\code{datetime}, \code{transmitter},
-\code{receiver}, \code{station}, \code{lon}, \code{lat}, \code{ID}, \code{sensor_value}, \code{sensor_unit}, ...) to the column
-name(s) in \code{x}. Merged over (and overriding) the chosen \code{source} preset.}
+\item{col.map}{Optional named list mapping canonical fields to the column name(s) in \code{x}, merged
+over (and overriding) the chosen \code{source} preset. See \link{moby_import_schema} for the full list of
+detection fields, which are required, and worked examples.}
 
 \item{datetime.format}{Optional explicit \code{strptime} format for the datetime column; if
 \code{NULL}, common layouts are auto-detected.}
@@ -59,5 +59,6 @@ head(det)
 
 }
 \seealso{
+\code{\link{moby_import_schema}} for the canonical field list;
 \code{\link{importDeployments}}, \code{\link{checkDeployments}}, \code{\link{as_moby}}
 }

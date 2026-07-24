@@ -20,8 +20,9 @@ importDeployments(
 
 \item{tz}{Time zone used to parse deploy/recover date-times. Defaults to \code{"UTC"}.}
 
-\item{col.map}{Optional named list mapping canonical fields (\code{receiver}, \code{station}, \code{lon},
-\code{lat}, \code{deploy}, \code{recover}, \code{depth}) to source column name(s); merged over the \code{source} preset.}
+\item{col.map}{Optional named list mapping canonical deployment fields to source column name(s),
+merged over the \code{source} preset. See \link{moby_import_schema} for the full list of deployment fields
+and which are required.}
 
 \item{datetime.format}{Optional explicit \code{strptime} format for the deploy/recover columns.}
 }
@@ -42,5 +43,6 @@ head(deployments)
 
 }
 \seealso{
+\code{\link{moby_import_schema}} for the canonical field list;
 \code{\link{importDetections}}, \code{\link{checkDeployments}}
 }
