@@ -48,8 +48,9 @@ column arguments.
 }
 \description{
 Reads acoustic-telemetry detections from a range of common sources and
-harmonises them into a single consistent schema, returning a \code{\link{mobyData}} object
-ready for the rest of the \code{moby} workflow. Supported sources are Innovasea/VEMCO VUE
+harmonises them into a single consistent schema - moby's canonical column names, with
+date-times parsed - ready to be turned into a \code{\link{mobyData}} by
+\code{\link{assignAnimalIDs}} / \code{\link{as_moby}}. Supported sources are Innovasea/VEMCO VUE
 exports, Innovasea VDAT/Fathom \code{DET.csv} files, and detection extracts from the GLATOS,
 OTN and ETN (\code{etn} package) systems. A \code{generic} mode plus a user-supplied \code{col.map}
 handle non-standard layouts.
