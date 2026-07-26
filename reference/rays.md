@@ -95,11 +95,20 @@ mobyMeta(rays)$id.groups        # the two-species grouping
 #> [1] "D01" "D02" "D03" "D04"
 #> 
 head(rays)
-#> <mobyData> 6 records x 9 columns
-#>   individuals: 1  (id.col = 'ID')
-#>   period: 2023-04-08 15:05:10 to 2023-04-09 12:54:09 (tz = UTC)
-#>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'
-#>   metadata: epsg=32629, tagging.dates (8), id.groups (2)
+#>    ID            datetime station    lon    lat            species  receiver
+#> 1 D01 2023-04-08 15:05:10    ST03 -8.996 38.456 Dasyatis pastinaca VR2W-1003
+#> 2 D01 2023-04-08 15:14:59    ST03 -8.996 38.456 Dasyatis pastinaca VR2W-1003
+#> 3 D01 2023-04-08 15:52:10    ST03 -8.996 38.456 Dasyatis pastinaca VR2W-1003
+#> 4 D01 2023-04-08 16:51:29    ST03 -8.996 38.456 Dasyatis pastinaca VR2W-1003
+#> 5 D01 2023-04-08 16:51:56    ST03 -8.996 38.456 Dasyatis pastinaca VR2W-1003
+#> 6 D01 2023-04-09 12:54:09    ST06 -8.990 38.442 Dasyatis pastinaca VR2W-1006
+#>      transmitter             timebin
+#> 1 A69-1602-30005 2023-04-08 15:00:00
+#> 2 A69-1602-30005 2023-04-08 15:00:00
+#> 3 A69-1602-30005 2023-04-08 15:00:00
+#> 4 A69-1602-30005 2023-04-08 16:00:00
+#> 5 A69-1602-30005 2023-04-08 16:00:00
+#> 6 A69-1602-30005 2023-04-09 12:00:00
 
 # the accompanying raw tables
 head(rays_detections)           # harmonised detections (plain data frame)

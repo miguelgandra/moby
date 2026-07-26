@@ -34,6 +34,9 @@ as_moby(
   tagging.dates = NULL,
   nominal.delay = NULL
 )
+
+# S3 method for class 'mobyData'
+print(x, preview = 3L, width = getOption("width"), ...)
 ```
 
 ## Arguments
@@ -107,6 +110,16 @@ as_moby(
   [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
   when the tag table carries a delay column.
 
+- preview:
+
+  Number of leading rows shown under the summary. Defaults to 3; `0`
+  prints the summary only.
+
+- width:
+
+  Console width used to lay the summary out. Defaults to
+  `getOption("width")`.
+
 ## Value
 
 A `mobyData` object (a `data.frame` with a `"moby"` metadata attribute).
@@ -139,11 +152,20 @@ df <- data.frame(
 md <- as_moby(df, tagging.dates = as.POSIXct("2023-01-01", tz = "UTC"))
 #> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.
 md
-#> <mobyData> 3 records x 5 columns
-#>   individuals: 2  (id.col = 'ID')
-#>   period: 2023-01-01 to 2023-01-01 01:00:00 (tz = UTC)
-#>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'
-#>   metadata: tagging.dates (1)
+#> ── <mobyData> ──────────────────────────────────────────────────────────────────
+#> 
+#> overview   3 detections · 2 individuals · 5 variables
+#> period     2023-01-01 → 2023-01-01 (1.0 hours, tz = UTC)
+#> space      2 stations · lon [-8.20, -8.00] · lat [37.00, 37.10]
+#> metadata   tagging.dates (1)
+#> 
+#> Preview (first 3 rows)
+#>   ID            datetime  lon  lat station
+#> 1  A 2023-01-01 00:00:00 -8.1 37.0      R1
+#> 2  A 2023-01-01 01:00:00 -8.2 37.1      R2
+#> 3  B 2023-01-01 00:00:00 -8.0 37.0      R1
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 
 # add or update metadata later
 md <- as_moby(md, id.groups = list(grp1 = c("A", "B")))

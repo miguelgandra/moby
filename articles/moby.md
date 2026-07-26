@@ -44,10 +44,19 @@ df <- data.frame(
 md <- as_moby(df)
 #> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin, lon, lat.
 md
-#> <mobyData> 3 records x 3 columns
-#>   individuals: 2  (id.col = 'ID')
-#>   period: 2023-06-01 to 2023-06-01 01:00:00 (tz = UTC)
-#>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'
+#> ── <mobyData> ──────────────────────────────────────────────────────────────────
+#> 
+#> overview   3 detections · 2 individuals · 3 variables
+#> period     2023-06-01 → 2023-06-01 (1.0 hours, tz = UTC)
+#> space      2 stations
+#> 
+#> Preview (first 3 rows)
+#>   ID            datetime station
+#> 1  A 2023-06-01 00:00:00      R1
+#> 2  A 2023-06-01 01:00:00      R2
+#> 3  B 2023-06-01 00:00:00      R1
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 ```
 
 ## A small example dataset

@@ -120,10 +120,20 @@ to time-bins without detections) should be kept or discarded. Defaults to false.
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Interpolating distances</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">interp</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyData&gt; 6 records x 11 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   individuals: 1  (id.col = 'ID')</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   metadata: epsg=32629, tagging.dates (8), id.groups (2)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>               timebin  ID    lon    lat detections stations station</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 2023-04-08 15:00:00 D01 -8.996 38.456          3        1    ST03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 2023-04-08 16:00:00 D01 -8.996 38.456          2        1    ST03</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 2023-04-08 17:00:00 D01     NA     NA          0        0    &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 2023-04-08 18:00:00 D01     NA     NA          0        0    &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 2023-04-08 19:00:00 D01     NA     NA          0        0    &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 2023-04-08 20:00:00 D01     NA     NA          0        0    &lt;NA&gt;</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>              species  receiver    transmitter   dist_m</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 Dasyatis pastinaca VR2W-1003 A69-1602-30005  0.00000</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 Dasyatis pastinaca VR2W-1003 A69-1602-30005 81.99792</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3               &lt;NA&gt;      &lt;NA&gt; A69-1602-30005       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4               &lt;NA&gt;      &lt;NA&gt; A69-1602-30005       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5               &lt;NA&gt;      &lt;NA&gt; A69-1602-30005       NA</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6               &lt;NA&gt;      &lt;NA&gt; A69-1602-30005       NA</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

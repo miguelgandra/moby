@@ -92,7 +92,10 @@ inherits the rest, making it easy to add metadata (e.g. <code>tagging.dates</cod
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span></span>
-<span><span class="op">)</span></span></code></pre></div>
+<span><span class="op">)</span></span>
+<span></span>
+<span><span class="co"># S3 method for class 'mobyData'</span></span>
+<span><span class="fu"><a href="https://rdrr.io/r/base/print.html" class="external-link">print</a></span><span class="op">(</span><span class="va">x</span>, preview <span class="op">=</span> <span class="fl">3L</span>, width <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"width"</span><span class="op">)</span>, <span class="va">...</span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -155,6 +158,15 @@ automatically by <code><a href="filterDetections.html">filterDetections</a></cod
 false-detection filter. Usually populated for you by <code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code> when the tag
 table carries a delay column.</p></dd>
 
+
+<dt id="arg-preview">preview<a class="anchor" aria-label="anchor" href="#arg-preview"></a></dt>
+<dd><p>Number of leading rows shown under the summary. Defaults to 3; <code>0</code> prints the
+summary only.</p></dd>
+
+
+<dt id="arg-width">width<a class="anchor" aria-label="anchor" href="#arg-width"></a></dt>
+<dd><p>Console width used to lay the summary out. Defaults to <code>getOption("width")</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -182,11 +194,20 @@ with <code>as_moby()</code>.</p></div>
 <span class="r-in"><span><span class="va">md</span> <span class="op">&lt;-</span> <span class="fu">as_moby</span><span class="op">(</span><span class="va">df</span>, tagging.dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="st">"2023-01-01"</span>, tz <span class="op">=</span> <span class="st">"UTC"</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.</span>
 <span class="r-in"><span><span class="va">md</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyData&gt; 3 records x 5 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   individuals: 2  (id.col = 'ID')</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   period: 2023-01-01 to 2023-01-01 01:00:00 (tz = UTC)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   metadata: tagging.dates (1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;mobyData&gt; ──────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> overview   3 detections · 2 individuals · 5 variables</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> period     2023-01-01 → 2023-01-01 (1.0 hours, tz = UTC)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> space      2 stations · lon [-8.20, -8.00] · lat [37.00, 37.10]</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> metadata   tagging.dates (1)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Preview (first 3 rows)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ID            datetime  lon  lat station</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1  A 2023-01-01 00:00:00 -8.1 37.0      R1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2  A 2023-01-01 01:00:00 -8.2 37.1      R2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3  B 2023-01-01 00:00:00 -8.0 37.0      R1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># add or update metadata later</span></span></span>
 <span class="r-in"><span><span class="va">md</span> <span class="op">&lt;-</span> <span class="fu">as_moby</span><span class="op">(</span><span class="va">md</span>, id.groups <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>grp1 <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"A"</span>, <span class="st">"B"</span><span class="op">)</span><span class="op">)</span><span class="op">)</span></span></span>

@@ -68,8 +68,18 @@ interp <- interpolateDistances(tracks)
 #> Interpolating distances
 #>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
 head(interp)
-#> <mobyData> 6 records x 11 columns
-#>   individuals: 1  (id.col = 'ID')
-#>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'
-#>   metadata: epsg=32629, tagging.dates (8), id.groups (2)
+#>               timebin  ID    lon    lat detections stations station
+#> 1 2023-04-08 15:00:00 D01 -8.996 38.456          3        1    ST03
+#> 2 2023-04-08 16:00:00 D01 -8.996 38.456          2        1    ST03
+#> 3 2023-04-08 17:00:00 D01     NA     NA          0        0    <NA>
+#> 4 2023-04-08 18:00:00 D01     NA     NA          0        0    <NA>
+#> 5 2023-04-08 19:00:00 D01     NA     NA          0        0    <NA>
+#> 6 2023-04-08 20:00:00 D01     NA     NA          0        0    <NA>
+#>              species  receiver    transmitter   dist_m
+#> 1 Dasyatis pastinaca VR2W-1003 A69-1602-30005  0.00000
+#> 2 Dasyatis pastinaca VR2W-1003 A69-1602-30005 81.99792
+#> 3               <NA>      <NA> A69-1602-30005       NA
+#> 4               <NA>      <NA> A69-1602-30005       NA
+#> 5               <NA>      <NA> A69-1602-30005       NA
+#> 6               <NA>      <NA> A69-1602-30005       NA
 ```

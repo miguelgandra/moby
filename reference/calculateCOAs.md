@@ -97,8 +97,18 @@ coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
 #> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: datetime.
 head(coas)
-#> <mobyData> 6 records x 10 columns
-#>   individuals: 3  (id.col = 'ID')
-#>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'
-#>   metadata: epsg=32629, tagging.dates (8), id.groups (2)
+#>    ID             timebin    lon    lat detections stations station
+#> 1 D02 2023-04-02 17:00:00 -9.008 38.464          3        1    ST02
+#> 2 D02 2023-04-02 19:00:00 -9.008 38.464          3        1    ST02
+#> 3 D02 2023-04-02 20:00:00 -9.008 38.464          4        1    ST02
+#> 4 R04 2023-04-03 09:00:00 -8.985 38.466          1        1    ST04
+#> 5 R04 2023-04-03 10:00:00 -8.985 38.466          1        1    ST04
+#> 6 D04 2023-04-05 21:00:00 -8.996 38.456          1        1    ST03
+#>              species  receiver    transmitter
+#> 1 Dasyatis pastinaca VR2W-1002 A69-1602-30006
+#> 2 Dasyatis pastinaca VR2W-1002 A69-1602-30006
+#> 3 Dasyatis pastinaca VR2W-1002 A69-1602-30006
+#> 4       Raja clavata VR2W-1004 A69-1602-30004
+#> 5       Raja clavata VR2W-1004 A69-1602-30004
+#> 6 Dasyatis pastinaca VR2W-1003 A69-1602-30008
 ```

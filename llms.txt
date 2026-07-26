@@ -118,11 +118,21 @@ license.
 ## Data model
 
 - [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
+  [`print(`*`<mobyData>`*`)`](https://miguelgandra.github.io/moby/reference/as_moby.md)
   : Create a moby telemetry dataset
+
 - [`mobyMeta()`](https://miguelgandra.github.io/moby/reference/mobyMeta.md)
   : Retrieve mobyData metadata
+
 - [`is_moby()`](https://miguelgandra.github.io/moby/reference/is_moby.md)
   : Check whether an object is a mobyData dataset
+
+- [`head(`*`<mobyData>`*`)`](https://miguelgandra.github.io/moby/reference/head.mobyData.md)
+  [`tail(`*`<mobyData>`*`)`](https://miguelgandra.github.io/moby/reference/head.mobyData.md)
+  :
+
+  Return the first or last rows of a `mobyData`
+
 - [`rays`](https://miguelgandra.github.io/moby/reference/rays.md)
   [`rays_detections`](https://miguelgandra.github.io/moby/reference/rays.md)
   [`rays_tags`](https://miguelgandra.github.io/moby/reference/rays.md)
