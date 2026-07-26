@@ -58,9 +58,15 @@ can follow every tutorial without supplying your own data.
 - **Help pages** — every function is documented, e.g. `?filterDetections`, `?calculateUDs`.
 
 <p align="center">
-  <img src="man/figures/moby-pipeline.svg" width="100%"
-       alt="moby first-stage pipeline: the ten preparation functions grouped into five roles — read, enrich, clean and bin, declare — with checkDeployments on a separate read-only rail; essential steps marked in teal, optional ones in ochre.">
+  <img src="man/figures/moby-pipeline.svg" width="820"
+       alt="moby data preparation in five stages: import, validate, enrich, clean and bin, declare — producing a mobyData object that feeds the analysis pathways. Essential steps are marked in teal, optional ones in ochre.">
 </p>
+
+Only two of those steps have teeth: `assignAnimalIDs()` (without it `filterDetections()` has no tagging
+dates and stops) and `filterDetections()` itself. Everything else is a convenience you can skip by
+supplying the columns or metadata yourself — every function also accepts an ordinary data frame.
+`?moby_pipeline` has the full table of consequences, the two ordering rules, and the return-shape traps
+worth knowing.
 
 ## Citation
 
