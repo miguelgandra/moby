@@ -110,6 +110,10 @@ print(x, preview = 3L, width = getOption("width"), ...)
   [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
   when the tag table carries a delay column.
 
+- x:
+
+  A `mobyData` object.
+
 - preview:
 
   Number of leading rows shown under the summary. Defaults to 3; `0`
@@ -119,6 +123,10 @@ print(x, preview = 3L, width = getOption("width"), ...)
 
   Console width used to lay the summary out. Defaults to
   `getOption("width")`.
+
+- ...:
+
+  Ignored.
 
 ## Value
 

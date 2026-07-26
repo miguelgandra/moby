@@ -80,12 +80,22 @@ own data.
 - **Getting started** —
   [`vignette("moby")`](https://miguelgandra.github.io/moby/articles/moby.md)
   (the *Introduction to moby* article).
+- **Which step do I need?** —
+  [`?moby_pipeline`](https://miguelgandra.github.io/moby/reference/moby_pipeline.md)
+  maps the preparation functions onto five roles, says which are
+  essential and which are optional conveniences, and gives the two
+  ordering rules that matter.
 - **Tutorials** — step-by-step workflows under the website’s *Articles*
   tab: importing data, quality control, exploratory analysis, space use
   & home ranges, movement networks, and association networks.
 - **Help pages** — every function is documented,
   e.g. [`?filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md),
   [`?calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md).
+
+![moby first-stage pipeline: the ten preparation functions grouped into
+five roles — read, enrich, clean and bin, declare — with
+checkDeployments on a separate read-only rail; essential steps marked in
+teal, optional ones in ochre.](reference/figures/moby-pipeline.svg)
 
 ## Citation
 

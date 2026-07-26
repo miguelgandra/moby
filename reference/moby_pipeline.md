@@ -12,6 +12,11 @@ memorise. Two things are true throughout, and both simplify the picture:
 - Only the *enrich* and *clean* roles change your data. The audit role
   cannot.
 
+![The ten preparation functions grouped into five roles: read, enrich,
+clean and bin, and declare, with checkDeployments on a separate
+read-only rail. Essential steps are marked in teal, optional ones in
+ochre.](figures/moby-pipeline.svg)
+
 ## The five roles
 
 - **1. Read** -
