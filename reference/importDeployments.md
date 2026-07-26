@@ -35,9 +35,10 @@ importDeployments(
 
 - col.map:
 
-  Optional named list mapping canonical fields (`receiver`, `station`,
-  `lon`, `lat`, `deploy`, `recover`, `depth`) to source column name(s);
-  merged over the `source` preset.
+  Optional named list mapping canonical deployment fields to source
+  column name(s), merged over the `source` preset. See
+  [moby_import_schema](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+  for the full list of deployment fields and which are required.
 
 - datetime.format:
 
@@ -51,6 +52,8 @@ receiver and deployment date.
 
 ## See also
 
+[`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+for the canonical field list;
 [`importDetections`](https://miguelgandra.github.io/moby/reference/importDetections.md),
 [`checkDeployments`](https://miguelgandra.github.io/moby/reference/checkDeployments.md)
 

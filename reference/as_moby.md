@@ -114,7 +114,16 @@ A `mobyData` object (a `data.frame` with a `"moby"` metadata attribute).
 ## See also
 
 [`mobyMeta`](https://miguelgandra.github.io/moby/reference/mobyMeta.md),
-[`is_moby`](https://miguelgandra.github.io/moby/reference/is_moby.md)
+[`is_moby`](https://miguelgandra.github.io/moby/reference/is_moby.md).
+To read a raw export from a receiver system (or a table whose columns
+need renaming and whose date-times need parsing) before declaring it
+here, see
+[`importDetections`](https://miguelgandra.github.io/moby/reference/importDetections.md)
+and
+[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md);
+the ‘Which function do I use?’ section of
+[`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+contrasts importing with `as_moby()`.
 
 ## Examples
 

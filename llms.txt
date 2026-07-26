@@ -131,6 +131,8 @@ license.
 
 ## Import, quality control & curation
 
+- [`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+  : Canonical column names for the moby import functions
 - [`importDetections()`](https://miguelgandra.github.io/moby/reference/importDetections.md)
   : Import and harmonise acoustic detection data
 - [`importDeployments()`](https://miguelgandra.github.io/moby/reference/importDeployments.md)

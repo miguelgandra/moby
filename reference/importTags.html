@@ -89,8 +89,9 @@ detection dataset.</p>
 
 
 <dt id="arg-col-map">col.map<a class="anchor" aria-label="anchor" href="#arg-col-map"></a></dt>
-<dd><p>Optional named list overriding/extending the <code>source</code> preset (e.g.
-<code>list(transmitter = "Tag", tagging_date = "Deployed")</code>).</p></dd>
+<dd><p>Optional named list mapping canonical tag fields to the column name(s) in <code>x</code>,
+merged over (and extending) the <code>source</code> preset. See <a href="moby_import_schema.html">moby_import_schema</a> for the full list of tag
+fields and examples.</p></dd>
 
 
 <dt id="arg-datetime-format">datetime.format<a class="anchor" aria-label="anchor" href="#arg-datetime-format"></a></dt>
@@ -116,7 +117,8 @@ false-detection filter, so carrying it through here means that filter can be ena
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code>, <code><a href="importDetections.html">importDetections</a></code></p></div>
+    <div class="dont-index"><p><code><a href="moby_import_schema.html">moby_import_schema</a></code> for the canonical field list;
+<code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code>, <code><a href="importDetections.html">importDetections</a></code></p></div>
     </div>
 
     <div class="section level2">

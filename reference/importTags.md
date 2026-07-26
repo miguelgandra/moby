@@ -38,8 +38,10 @@ importTags(
 
 - col.map:
 
-  Optional named list overriding/extending the `source` preset (e.g.
-  `list(transmitter = "Tag", tagging_date = "Deployed")`).
+  Optional named list mapping canonical tag fields to the column name(s)
+  in `x`, merged over (and extending) the `source` preset. See
+  [moby_import_schema](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+  for the full list of tag fields and examples.
 
 - datetime.format:
 
@@ -67,6 +69,8 @@ carrying it through here means that filter can be enabled automatically.
 
 ## See also
 
+[`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+for the canonical field list;
 [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md),
 [`importDetections`](https://miguelgandra.github.io/moby/reference/importDetections.md)
 

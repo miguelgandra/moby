@@ -94,9 +94,9 @@ GLATOS/OTN/ETN); set explicitly for VUE/VDAT exports recorded in another zone.</
 
 
 <dt id="arg-col-map">col.map<a class="anchor" aria-label="anchor" href="#arg-col-map"></a></dt>
-<dd><p>Optional named list mapping canonical fields (<code>datetime</code>, <code>transmitter</code>,
-<code>receiver</code>, <code>station</code>, <code>lon</code>, <code>lat</code>, <code>ID</code>, <code>sensor_value</code>, <code>sensor_unit</code>, ...) to the column
-name(s) in <code>x</code>. Merged over (and overriding) the chosen <code>source</code> preset.</p></dd>
+<dd><p>Optional named list mapping canonical fields to the column name(s) in <code>x</code>, merged
+over (and overriding) the chosen <code>source</code> preset. See <a href="moby_import_schema.html">moby_import_schema</a> for the full list of
+detection fields, which are required, and worked examples.</p></dd>
 
 
 <dt id="arg-datetime-format">datetime.format<a class="anchor" aria-label="anchor" href="#arg-datetime-format"></a></dt>
@@ -111,14 +111,22 @@ Defaults to <code>FALSE</code>.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A <code><a href="as_moby.html">mobyData</a></code> object with harmonised columns
-(<code>ID</code>, <code>datetime</code>, <code>transmitter</code>, <code>receiver</code>, <code>station</code>, <code>lon</code>, <code>lat</code>, ...). When the source
-has no animal identifier, <code>ID</code> is initialised from <code>transmitter</code> (assign true animal IDs
-later by joining tag metadata).</p>
+    <p>A data frame with harmonised columns (<code>ID</code>, <code>datetime</code>, <code>transmitter</code>, <code>receiver</code>,
+<code>station</code>, <code>lon</code>, <code>lat</code>, ...), sorted by animal and time. When the source has no animal
+identifier, <code>ID</code> is initialised from <code>transmitter</code> (assign true animal IDs afterwards with
+<code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code>).</p>
+<p>This is a <em>harmonised table</em>, not yet a <code><a href="as_moby.html">mobyData</a></code>: importing reshapes columns, it
+does not attach study metadata. Turn it into a <code>mobyData</code> with <code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code>
+(animal IDs, tagging dates, nominal delays) and/or <code><a href="as_moby.html">as_moby</a></code> (<code>id.groups</code>, CRS, land
+layer) - see the ‘Which function do I use?’ section of <code><a href="moby_import_schema.html">moby_import_schema</a></code>.
+Because the output already uses moby's canonical column names, those functions need no explicit
+column arguments.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
-    <div class="dont-index"><p><code><a href="importDeployments.html">importDeployments</a></code>, <code><a href="checkDeployments.html">checkDeployments</a></code>, <code><a href="as_moby.html">as_moby</a></code></p></div>
+    <div class="dont-index"><p><code><a href="moby_import_schema.html">moby_import_schema</a></code> for the canonical field list and how importing relates
+to <code><a href="as_moby.html">as_moby</a></code>; <code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code>, <code><a href="importDeployments.html">importDeployments</a></code>,
+<code><a href="checkDeployments.html">checkDeployments</a></code>, <code><a href="as_moby.html">as_moby</a></code></p></div>
     </div>
 
     <div class="section level2">
@@ -130,12 +138,14 @@ later by joining tag metadata).</p>
 <span class="r-in"><span>                                       station <span class="op">=</span> <span class="st">"station_name"</span>, lon <span class="op">=</span> <span class="st">"deploy_longitude"</span>,</span></span>
 <span class="r-in"><span>                                       lat <span class="op">=</span> <span class="st">"deploy_latitude"</span>, receiver <span class="op">=</span> <span class="st">"receiver_id"</span>,</span></span>
 <span class="r-in"><span>                                       transmitter <span class="op">=</span> <span class="st">"transmitter"</span><span class="op">)</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">det</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyData&gt; 6 records x 7 columns</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   individuals: 1  (id.col = 'ID')</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   period: 2023-04-08 15:05:10 to 2023-04-09 12:54:09 (tz = UTC)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>    ID            datetime    transmitter  receiver station    lon    lat</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 1 D01 2023-04-08 15:05:10 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 2 D01 2023-04-08 15:14:59 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 3 D01 2023-04-08 15:52:10 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 4 D01 2023-04-08 16:51:29 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 5 D01 2023-04-08 16:51:56 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> 6 D01 2023-04-09 12:54:09 A69-1602-30005 VR2W-1006    ST06 -8.990 38.442</span>
 <span class="r-in"><span></span></span>
 </code></pre></div>
     </div>

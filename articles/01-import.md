@@ -37,15 +37,13 @@ detections_csv <- system.file("extdata", "rays_detections.csv", package = "moby"
 
 The raw file uses source-specific column names (`animal_id`,
 `timestamp`, `station_name`, …). The generic importer maps them onto
-moby’s canonical names.
+moby’s canonical names — and parses the date-times for you, so there is
+no need to convert them beforehand.
 
 ``` r
 
-raw <- read.csv(detections_csv, stringsAsFactors = FALSE)
-raw$timestamp <- as.POSIXct(raw$timestamp, tz = "UTC")
-
 detections <- importDetections(
-  raw,
+  detections_csv,
   source = "generic",
   col.map = list(
     ID          = "animal_id",
@@ -62,7 +60,21 @@ detections <- importDetections(
 >
 > moby also ships dedicated importers for common sources —
 > `importDetections(source = "vue")`, `"vdat"`, `"glatos"`, `"otn"`,
-> `"etn"` — so you usually do **not** need to hand-map columns.
+> `"etn"` — so you usually do **not** need to hand-map columns. See
+> [`?moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+> for every canonical field and which ones are required.
+
+> **Importing reshapes;
+> [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
+> declares**
+>
+> [`importDetections()`](https://miguelgandra.github.io/moby/reference/importDetections.md)
+> returns a **plain data frame** in moby’s canonical layout — it renames
+> columns, parses dates and derives `ID`, but attaches no study
+> metadata. Steps 2 and 3 below turn it into a `mobyData`. If your table
+> is *already* tidy (your own column names, dates already parsed), skip
+> the importer and go straight to
+> [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md).
 
 ## 2. Attach tag / animal metadata
 

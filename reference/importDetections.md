@@ -44,10 +44,11 @@ importDetections(
 
 - col.map:
 
-  Optional named list mapping canonical fields (`datetime`,
-  `transmitter`, `receiver`, `station`, `lon`, `lat`, `ID`,
-  `sensor_value`, `sensor_unit`, ...) to the column name(s) in `x`.
-  Merged over (and overriding) the chosen `source` preset.
+  Optional named list mapping canonical fields to the column name(s) in
+  `x`, merged over (and overriding) the chosen `source` preset. See
+  [moby_import_schema](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+  for the full list of detection fields, which are required, and worked
+  examples.
 
 - datetime.format:
 
@@ -61,14 +62,31 @@ importDetections(
 
 ## Value
 
-A [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md)
-object with harmonised columns (`ID`, `datetime`, `transmitter`,
-`receiver`, `station`, `lon`, `lat`, ...). When the source has no animal
-identifier, `ID` is initialised from `transmitter` (assign true animal
-IDs later by joining tag metadata).
+A data frame with harmonised columns (`ID`, `datetime`, `transmitter`,
+`receiver`, `station`, `lon`, `lat`, ...), sorted by animal and time.
+When the source has no animal identifier, `ID` is initialised from
+`transmitter` (assign true animal IDs afterwards with
+[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)).
+
+This is a *harmonised table*, not yet a
+[`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md):
+importing reshapes columns, it does not attach study metadata. Turn it
+into a `mobyData` with
+[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+(animal IDs, tagging dates, nominal delays) and/or
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md)
+(`id.groups`, CRS, land layer) - see the ‘Which function do I use?’
+section of
+[`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md).
+Because the output already uses moby's canonical column names, those
+functions need no explicit column arguments.
 
 ## See also
 
+[`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
+for the canonical field list and how importing relates to
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md);
+[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md),
 [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md),
 [`checkDeployments`](https://miguelgandra.github.io/moby/reference/checkDeployments.md),
 [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md)
@@ -83,10 +101,12 @@ det <- importDetections(csv, source = "generic",
                                        station = "station_name", lon = "deploy_longitude",
                                        lat = "deploy_latitude", receiver = "receiver_id",
                                        transmitter = "transmitter"))
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.
 head(det)
-#> <mobyData> 6 records x 7 columns
-#>   individuals: 1  (id.col = 'ID')
-#>   period: 2023-04-08 15:05:10 to 2023-04-09 12:54:09 (tz = UTC)
-#>   columns: datetime.col='datetime', timebin.col='timebin', station.col='station', lon.col='lon', lat.col='lat'
+#>    ID            datetime    transmitter  receiver station    lon    lat
+#> 1 D01 2023-04-08 15:05:10 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456
+#> 2 D01 2023-04-08 15:14:59 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456
+#> 3 D01 2023-04-08 15:52:10 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456
+#> 4 D01 2023-04-08 16:51:29 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456
+#> 5 D01 2023-04-08 16:51:56 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456
+#> 6 D01 2023-04-09 12:54:09 A69-1602-30005 VR2W-1006    ST06 -8.990 38.442
 ```

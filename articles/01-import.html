@@ -103,14 +103,11 @@
 </div>
 </section><section class="level2"><h2 id="read-and-harmonise-the-detections">1. Read and harmonise the detections<a class="anchor" aria-label="anchor" href="#read-and-harmonise-the-detections"></a>
 </h2>
-<p>The raw file uses source-specific column names (<code>animal_id</code>, <code>timestamp</code>, <code>station_name</code>, …). The generic importer maps them onto moby’s canonical names.</p>
+<p>The raw file uses source-specific column names (<code>animal_id</code>, <code>timestamp</code>, <code>station_name</code>, …). The generic importer maps them onto moby’s canonical names — and parses the date-times for you, so there is no need to convert them beforehand.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb2"><pre class="downlit sourceCode r">
-<code class="sourceCode R"><span><span class="va">raw</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/utils/read.table.html" class="external-link">read.csv</a></span><span class="op">(</span><span class="va">detections_csv</span>, stringsAsFactors <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span>
-<span><span class="va">raw</span><span class="op">$</span><span class="va">timestamp</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/as.POSIXlt.html" class="external-link">as.POSIXct</a></span><span class="op">(</span><span class="va">raw</span><span class="op">$</span><span class="va">timestamp</span>, tz <span class="op">=</span> <span class="st">"UTC"</span><span class="op">)</span></span>
-<span></span>
-<span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importDetections.html">importDetections</a></span><span class="op">(</span></span>
-<span>  <span class="va">raw</span>,</span>
+<code class="sourceCode R"><span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importDetections.html">importDetections</a></span><span class="op">(</span></span>
+<span>  <span class="va">detections_csv</span>,</span>
 <span>  source <span class="op">=</span> <span class="st">"generic"</span>,</span>
 <span>  col.map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span></span>
 <span>    ID          <span class="op">=</span> <span class="st">"animal_id"</span>,</span>
@@ -125,7 +122,13 @@
 <div>
 <blockquote>
 <p><strong>Tip</strong></p>
-<p>moby also ships dedicated importers for common sources — <code>importDetections(source = "vue")</code>, <code>"vdat"</code>, <code>"glatos"</code>, <code>"otn"</code>, <code>"etn"</code> — so you usually do <strong>not</strong> need to hand-map columns.</p>
+<p>moby also ships dedicated importers for common sources — <code>importDetections(source = "vue")</code>, <code>"vdat"</code>, <code>"glatos"</code>, <code>"otn"</code>, <code>"etn"</code> — so you usually do <strong>not</strong> need to hand-map columns. See <code><a href="../reference/moby_import_schema.html">?moby_import_schema</a></code> for every canonical field and which ones are required.</p>
+</blockquote>
+</div>
+<div>
+<blockquote>
+<p><strong>Importing reshapes; <code><a href="../reference/as_moby.html">as_moby()</a></code> declares</strong></p>
+<p><code><a href="../reference/importDetections.html">importDetections()</a></code> returns a <strong>plain data frame</strong> in moby’s canonical layout — it renames columns, parses dates and derives <code>ID</code>, but attaches no study metadata. Steps 2 and 3 below turn it into a <code>mobyData</code>. If your table is <em>already</em> tidy (your own column names, dates already parsed), skip the importer and go straight to <code><a href="../reference/as_moby.html">as_moby()</a></code>.</p>
 </blockquote>
 </div>
 </section><section class="level2"><h2 id="attach-tag-animal-metadata">2. Attach tag / animal metadata<a class="anchor" aria-label="anchor" href="#attach-tag-animal-metadata"></a>
