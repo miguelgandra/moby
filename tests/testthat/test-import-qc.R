@@ -358,3 +358,48 @@ test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections 
   md_off <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, set.nominal.delay = FALSE)))
   expect_null(mobyMeta(md_off)$nominal.delay)
 })
+
+test_that(".matchTransmitter refuses ambiguous and cross-code-space fallbacks", {
+  # legitimate fallback: tag table stores the bare code
+  expect_equal(as.integer(.matchTransmitter("A69-1602-111", "111")), 1L)
+  expect_equal(as.integer(.matchTransmitter("A69-1602-111", "A69-1602-111")), 1L)
+  # a shared number under a DIFFERENT code space is a different transmitter: never assign it,
+  # otherwise another project's animal is silently attributed to one of yours
+  m <- .matchTransmitter("A69-9999-111", "A69-1602-111")
+  expect_true(is.na(as.integer(m)))
+  expect_equal(attr(m, "codespace_clash"), "A69-9999-111")
+  # a sensor tag transmitting on several code spaces resolves exactly, when each code is listed
+  both <- c("A69-1303-59473", "A69-9002-59473")
+  expect_equal(as.integer(.matchTransmitter(both, both)), c(1L, 2L))
+  # the same number on two tags is ambiguous -> left unmatched rather than resolved arbitrarily
+  expect_true(is.na(as.integer(.matchTransmitter("A69-1602-111", c("A69-1303-111", "A69-9002-111")))))
+})
+
+test_that("assignAnimalIDs and matchDeployments commute", {
+  det <- as.data.frame(rays)[, c("ID", "datetime", "station", "lon", "lat", "transmitter", "receiver")]
+  tags <- unique(data.frame(transmitter = det$transmitter, ID = as.character(det$ID),
+                            tagging_date = as.POSIXct("2023-01-01", tz = "UTC"), nominal_delay = 120))
+  detp <- det; detp$ID <- factor(detp$transmitter)
+  # strand one animal on a receiver missing from the deployment log, so drop.unmatched removes all
+  # of its detections
+  victim <- as.character(det$ID)[1]
+  detp$receiver[det$ID == victim] <- "GHOST-RX"
+  keep <- setdiff(unique(detp$receiver), "GHOST-RX")
+  dep <- data.frame(receiver = keep, station = paste0("ST", seq_along(keep)), lon = -9, lat = 38.4,
+                    deploy = as.POSIXct("2023-01-01", tz = "UTC"),
+                    recover = as.POSIXct("2023-12-01", tz = "UTC"))
+
+  quiet <- function(e) suppressWarnings(suppressMessages(e))
+  a <- quiet(matchDeployments(quiet(assignAnimalIDs(detp, tags)), dep, drop.unmatched = TRUE, verbose = FALSE))
+  b <- quiet(assignAnimalIDs(quiet(matchDeployments(detp, dep, drop.unmatched = TRUE, verbose = FALSE)), tags))
+
+  expect_equal(nrow(a), nrow(b))
+  expect_equal(nlevels(a$ID), nlevels(b$ID))
+  # no phantom animal: an ID level with zero surviving detections
+  expect_equal(sum(table(a$ID) == 0), 0L)
+  expect_equal(sum(table(b$ID) == 0), 0L)
+  # per-animal metadata is filtered to the animals that remain, whichever order was used
+  expect_equal(length(mobyMeta(a)$tagging.dates), length(mobyMeta(b)$tagging.dates))
+  expect_equal(length(mobyMeta(a)$nominal.delay), length(mobyMeta(b)$nominal.delay))
+  expect_false(victim %in% levels(a$ID))
+})

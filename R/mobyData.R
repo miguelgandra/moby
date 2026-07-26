@@ -241,6 +241,26 @@ mobyMeta <- function(x) attr(x, "moby")
   invisible(NULL)
 }
 
+# Keep the ID factor and the per-animal metadata in step with the rows that are actually present.
+# Used after a step that DISCARDS detections: without it, an animal that loses all of its detections
+# survives as an empty factor level (and a stale tagging.date / nominal.delay entry), which downstream
+# per-individual loops then treat as a real animal with no data. Applying it also makes such steps
+# commute - e.g. matching deployments before or after assigning animal IDs gives the same object.
+.syncIDs <- function(data, id.col, meta) {
+  if (!is.null(id.col) && id.col %in% colnames(data) && is.factor(data[[id.col]]))
+    data[[id.col]] <- droplevels(data[[id.col]])
+  present <- if (!is.null(id.col) && id.col %in% colnames(data))
+    as.character(unique(data[[id.col]])) else character(0)
+  for (nm in c("tagging.dates", "nominal.delay")) {
+    v <- meta[[nm]]
+    if (!is.null(v) && !is.null(names(v))) {
+      keep <- names(v) %in% present
+      meta[[nm]] <- if (any(keep)) v[keep] else NULL
+    }
+  }
+  list(data = data, meta = meta)
+}
+
 # What does one row of this object represent? Decided from the columns, never from a stored label:
 # moby already answers this question by column presence elsewhere (summaryTable() sums a 'detections'
 # count column when present, else assumes one detection per row), and columns cannot go stale the way

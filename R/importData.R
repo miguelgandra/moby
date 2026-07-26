@@ -594,29 +594,67 @@ importTags <- function(x,
 }
 
 
-# tolerant transmitter matching: exact first, then by trailing numeric code
+# Tolerant transmitter matching: exact string first, then the trailing numeric code.
+#
+# The numeric fallback exists for tag tables that store the bare code ("111") rather than the full
+# string ("A69-1602-111"). It deliberately does NOT fire when both sides carry a code space and those
+# code spaces DISAGREE: "A69-9999-111" and "A69-1602-111" are different transmitters, and matching
+# them on the shared suffix would silently attribute another project's animal to one of yours.
+# A tag that legitimately transmits on several code spaces (e.g. a Vemco V16P sensor tag) should list
+# each of its codes as a row of the tag table, all mapped to the same animal ID; exact matching then
+# resolves them, and assignAnimalIDs() reports any code that needs adding. Numeric codes shared by
+# more than one tag are likewise left unmatched rather than resolved arbitrarily.
 .matchTransmitter <- function(det_tx, tag_tx) {
   idx <- match(det_tx, tag_tx)
+  clash <- character(0)
   na <- is.na(idx)
   if (any(na)) {
-    det_num <- sub(".*[-_ ]([0-9]+)$", "\\1", det_tx)
-    tag_num <- sub(".*[-_ ]([0-9]+)$", "\\1", tag_tx)
-    idx2 <- match(det_num, tag_num)
-    idx[na] <- idx2[na]
+    num   <- function(x) sub(".*[-_ ]([0-9]+)$", "\\1", x)
+    space <- function(x) ifelse(grepl("[-_ ][0-9]+$", x), sub("[-_ ][0-9]+$", "", x), NA_character_)
+    det_num <- num(det_tx);   tag_num <- num(tag_tx)
+    det_cs  <- space(det_tx); tag_cs  <- space(tag_tx)
+    # only numeric codes unique within the tag table are eligible for the fallback
+    ambiguous <- tag_num %in% tag_num[duplicated(tag_num)]
+    cand <- match(det_num, replace(tag_num, ambiguous, NA_character_))
+    # reject a candidate whose code space is known on both sides and differs
+    bad <- !is.na(cand) & !is.na(det_cs) & !is.na(tag_cs[cand]) & det_cs != tag_cs[cand]
+    clash <- unique(det_tx[na & bad])
+    cand[bad] <- NA_integer_
+    idx[na] <- cand[na]
   }
+  attr(idx, "codespace_clash") <- clash
   idx
 }
 
 
 #' Assign animal IDs (and tagging dates) to detections from tag metadata
 #'
-#' @description Joins tag metadata (see \code{\link{importTags}}) to a detection dataset on the
-#' transmitter code, assigning each detection an animal `ID`. Matching is tolerant: it first
-#' tries the full transmitter string and then falls back to the trailing numeric code (so
-#' `"A69-1602-111"` matches a tag stored as `"111"`). When the tag table carries tagging dates,
-#' these are attached to the returned \code{\link{mobyData}} object's metadata (and can flow
-#' automatically into functions such as \code{\link{filterDetections}} and
-#' \code{\link{summaryTable}}). Optional biometric columns can be joined in as well.
+#' @description Resolves the transmitter codes in a detection dataset to the animals that carried
+#' them, using a tag table (see \code{\link{importTags}}). This is more than a column join: several
+#' transmitter codes can map to the same animal, and the function also derives the per-animal
+#' metadata - tagging dates and transmitter nominal delays - that later steps such as
+#' \code{\link{filterDetections}} and \code{\link{summaryTable}} read automatically. Optional
+#' biometric columns can be joined in as well.
+#'
+#' @details
+#' \strong{Why several codes can mean one animal.} Most often this is because a single physical
+#' transmitter emits on more than one code space: sensor tags (for example depth-sensing Vemco V16P
+#' transmitters) report their identity and their sensor data under different code spaces, so one tag
+#' appears in the detection file under two or more transmitter codes. Animals genuinely carrying
+#' several transmitters at once are uncommon; the other routine case is an animal that was recaptured
+#' and re-tagged, so its history spans consecutive tags. List each code as its own row of `tags`,
+#' mapped to the same animal `ID`, and all of them resolve to that animal.
+#'
+#' \strong{Matching.} The full transmitter string is matched first. A trailing-numeric fallback then
+#' covers tag tables that store the bare code (so `"A69-1602-111"` matches a tag stored as `"111"`).
+#' The fallback is deliberately conservative: a detection whose code space differs from the candidate
+#' tag's is left unmatched rather than assigned, because `"A69-9999-111"` and `"A69-1602-111"` are
+#' different transmitters and guessing would attribute another project's animal to yours. Such codes
+#' are reported, so you can add them to `tags` if they are further code spaces of your own tags.
+#'
+#' \strong{Where it sits in the pipeline.} This step is independent of
+#' \code{\link{matchDeployments}}: one resolves transmitters to animals, the other resolves receivers
+#' to deployment windows, and they key on different columns. Either order gives the same result.
 #'
 #' @param detections A detection dataset (`mobyData` or data frame) with a transmitter column.
 #' @param tags A harmonised tag table from \code{\link{importTags}} (or a data frame with at
@@ -680,9 +718,21 @@ assignAnimalIDs <- function(detections,
   tg$ID <- as.character(tg$ID)
 
   idx <- .matchTransmitter(as.character(det[[transmitter.col]]), as.character(tg$transmitter))
+  clash <- attr(idx, "codespace_clash")
   n_unmatched <- sum(is.na(idx))
   if (n_unmatched > 0) {
     warning(paste0("- ", n_unmatched, " detection(s) had a transmitter not found in 'tags'; their ID is NA."), call. = FALSE)
+  }
+  # codes that share a tag's numeric part but sit in a different code space are left unmatched on
+  # purpose: they are either another project's tags, or a further code space of one of your own tags
+  # (common with sensor transmitters). Only the user can tell which, so name them.
+  if (length(clash) > 0) {
+    message("Note: ", length(clash), " transmitter code(s) match a tag's number but a different code ",
+            "space, so they were NOT assigned: ", paste(utils::head(clash, 5), collapse = ", "),
+            if (length(clash) > 5) ", ..." else "",
+            ". If these are further code spaces of your own transmitters (e.g. a sensor tag ",
+            "transmitting on more than one code space), add each code as a row of 'tags' mapped to ",
+            "the same animal ID.")
   }
 
   det[[id.col]] <- factor(tg$ID[idx])

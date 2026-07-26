@@ -667,10 +667,17 @@ matchDeployments <- function(detections,
                                     n_filled, sum(det$coord_mismatch, na.rm = TRUE), coord.tolerance))
   }
 
-  if (drop.unmatched) det <- det[matched, , drop = FALSE]
+  base_meta <- if (!is.null(prev_meta)) prev_meta else list()
+  if (drop.unmatched) {
+    det <- det[matched, , drop = FALSE]
+    # discarding detections can leave an animal with none: drop its now-empty ID level and the
+    # matching metadata entries, so this step gives the same result whether it runs before or after
+    # assignAnimalIDs()
+    synced <- .syncIDs(det, .resolveArgs(detections, list(id.col = NULL))$id.col, base_meta)
+    det <- synced$data; base_meta <- synced$meta
+  }
   rownames(det) <- NULL
 
-  base_meta <- if (!is.null(prev_meta)) prev_meta else list()
   do.call(as_moby, c(list(det), base_meta))
 }
 
