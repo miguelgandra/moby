@@ -58,7 +58,11 @@
 #' @return A `mobyData` object (a `data.frame` with a `"moby"` metadata attribute).
 #'
 #' @aliases mobyData
-#' @seealso \code{\link{mobyMeta}}, \code{\link{is_moby}}
+#' @seealso \code{\link{mobyMeta}}, \code{\link{is_moby}}. To read a raw export from a receiver
+#' system (or a table whose columns need renaming and whose date-times need parsing) before declaring
+#' it here, see \code{\link{importDetections}} and \code{\link{assignAnimalIDs}}; the
+#' \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}} contrasts importing
+#' with `as_moby()`.
 #'
 #' @examples
 #' df <- data.frame(

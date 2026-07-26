@@ -8,11 +8,14 @@ vue_detections <- function() {
     "Latitude" = c(37.0, 37.0, 37.1), "Longitude" = c(-8.0, -8.0, -8.1))
 }
 
-test_that("importDetections harmonises a VUE export into a mobyData", {
+test_that("importDetections harmonises a VUE export into a canonical data frame", {
   f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
   write.csv(vue_detections(), f, row.names = FALSE)
   d <- importDetections(f, source = "vue")
-  expect_true(is_moby(d))
+  # importing reshapes only: it returns a plain data frame (as importTags/importDeployments do), and
+  # as_moby()/assignAnimalIDs() are what attach metadata
+  expect_false(is_moby(d))
+  expect_s3_class(d, "data.frame")
   expect_true(all(c("ID", "datetime", "transmitter", "receiver", "station", "lon", "lat") %in% colnames(d)))
   expect_s3_class(d$datetime, "POSIXct")
   expect_true(is.numeric(d$lon))
@@ -42,9 +45,33 @@ test_that("importDetections supports generic col.map and missing optional fields
   raw <- data.frame(when = "2023-06-01 00:00:00", tag = "T1", rec = "R1")
   d <- importDetections(raw, source = "generic",
                         col.map = list(datetime = "when", transmitter = "tag", receiver = "rec"))
-  expect_true(is_moby(d))
+  expect_false(is_moby(d))
   expect_equal(as.character(d$ID), "T1")
   expect_false("lon" %in% colnames(d))  # absent optional field degrades gracefully
+})
+
+test_that("an imported table flows into as_moby()/assignAnimalIDs() with no column arguments", {
+  # the payoff of canonical names: the harmonised data frame needs no explicit *.col arguments
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  write.csv(vue_detections(), f, row.names = FALSE)
+  det <- importDetections(f, source = "vue")
+
+  md <- suppressMessages(as_moby(det))
+  expect_true(is_moby(md))
+  meta <- mobyMeta(md)
+  expect_equal(meta$id.col, "ID")
+  expect_equal(meta$datetime.col, "datetime")
+  expect_equal(meta$station.col, "station")
+
+  # assignAnimalIDs() also accepts the plain imported frame and returns a mobyData
+  tags <- data.frame(transmitter = c("A69-1602-111", "A69-1602-222"), ID = c("shark1", "shark2"),
+                     tagging_date = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
+                     nominal_delay = c(120, 120))
+  out <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags)))
+  expect_true(is_moby(out))
+  expect_setequal(as.character(unique(out$ID)), c("shark1", "shark2"))
+  expect_false(is.null(mobyMeta(out)$tagging.dates))
+  expect_false(is.null(mobyMeta(out)$nominal.delay))
 })
 
 test_that("importDeployments produces the canonical deployment schema", {

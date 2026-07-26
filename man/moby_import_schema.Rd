@@ -80,6 +80,34 @@ distances) error when you later call them.
 }
 }
 
+\section{Which function do I use?}{
+
+The import functions and \code{\link[=as_moby]{as_moby()}} do different jobs and are normally used \strong{in sequence}, not
+as alternatives:\tabular{lll}{
+    \tab \code{\link[=importDetections]{importDetections()}} etc. \tab \code{\link[=as_moby]{as_moby()}} \cr
+   \strong{Job} \tab \emph{Reshape} a raw export into moby's canonical layout \tab \emph{Declare} a tidy table as a \code{mobyData} \cr
+   \strong{Does} \tab renames columns, parses date-times, derives \code{ID} \tab records which column plays which role; attaches metadata \cr
+   \strong{Column names} \tab replaced by canonical names \tab kept as they are (\code{id.col = "animal_id"} is fine) \cr
+   \strong{Carries} \tab nothing — returns a plain data frame \tab \code{id.groups}, \code{tagging.dates}, \code{nominal.delay}, CRS, land layer \cr
+   \strong{Use when} \tab data comes from a receiver system, or its columns/dates need fixing \tab your table is already tidy, or you are attaching study metadata \cr
+}
+
+
+Roughly: importing is to \code{\link[=as_moby]{as_moby()}} what \code{read.csv()} is to \code{data.frame()} — a reader, then a
+constructor. The usual pipeline runs both:
+
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{det <- importDetections(file, source = "vue")      # 1. reshape  -> data frame
+det <- assignAnimalIDs(det, tags)                  # 2. join tags -> mobyData (IDs, delays, dates)
+det <- as_moby(det, id.groups = groups,            # 3. annotate  -> add the rest
+               epsg.code = 3395, land.shape = coast)
+}\if{html}{\out{</div>}}
+
+If you \strong{already have a tidy data frame in R} (your own column names, date-times already parsed),
+skip the importers and call \code{\link[=as_moby]{as_moby()}} directly — it keeps your names and can carry the full
+metadata. Reach for \code{source = "generic"} only when you also want the reshaping: canonical renaming,
+date parsing and \code{ID} derivation.
+}
+
 \section{Worked \code{col.map} examples}{
 
 

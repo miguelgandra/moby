@@ -6,11 +6,8 @@ detections_csv <- system.file("extdata", "rays_detections.csv", package = "moby"
 
 ## -----------------------------------------------------------------------------
 #| eval: false
-# raw <- read.csv(detections_csv, stringsAsFactors = FALSE)
-# raw$timestamp <- as.POSIXct(raw$timestamp, tz = "UTC")
-# 
 # detections <- importDetections(
-#   raw,
+#   detections_csv,
 #   source = "generic",
 #   col.map = list(
 #     ID          = "animal_id",

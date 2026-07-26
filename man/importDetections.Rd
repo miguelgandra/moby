@@ -34,10 +34,17 @@ detection fields, which are required, and worked examples.}
 Defaults to \code{FALSE}.}
 }
 \value{
-A \code{\link{mobyData}} object with harmonised columns
-(\code{ID}, \code{datetime}, \code{transmitter}, \code{receiver}, \code{station}, \code{lon}, \code{lat}, ...). When the source
-has no animal identifier, \code{ID} is initialised from \code{transmitter} (assign true animal IDs
-later by joining tag metadata).
+A data frame with harmonised columns (\code{ID}, \code{datetime}, \code{transmitter}, \code{receiver},
+\code{station}, \code{lon}, \code{lat}, ...), sorted by animal and time. When the source has no animal
+identifier, \code{ID} is initialised from \code{transmitter} (assign true animal IDs afterwards with
+\code{\link{assignAnimalIDs}}).
+
+This is a \emph{harmonised table}, not yet a \code{\link{mobyData}}: importing reshapes columns, it
+does not attach study metadata. Turn it into a \code{mobyData} with \code{\link{assignAnimalIDs}}
+(animal IDs, tagging dates, nominal delays) and/or \code{\link{as_moby}} (\code{id.groups}, CRS, land
+layer) - see the \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}}.
+Because the output already uses moby's canonical column names, those functions need no explicit
+column arguments.
 }
 \description{
 Reads acoustic-telemetry detections from a range of common sources and
@@ -59,6 +66,7 @@ head(det)
 
 }
 \seealso{
-\code{\link{moby_import_schema}} for the canonical field list;
-\code{\link{importDeployments}}, \code{\link{checkDeployments}}, \code{\link{as_moby}}
+\code{\link{moby_import_schema}} for the canonical field list and how importing relates
+to \code{\link{as_moby}}; \code{\link{assignAnimalIDs}}, \code{\link{importDeployments}},
+\code{\link{checkDeployments}}, \code{\link{as_moby}}
 }

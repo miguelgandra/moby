@@ -250,6 +250,33 @@
 #'     \sQuote{Isolation-based filtering} section).
 #' }
 #'
+#' @section Which function do I use?:
+#' The import functions and [as_moby()] do different jobs and are normally used **in sequence**, not
+#' as alternatives:
+#'
+#' | | [importDetections()] etc. | [as_moby()] |
+#' |---|---|---|
+#' | **Job** | *Reshape* a raw export into moby's canonical layout | *Declare* a tidy table as a `mobyData` |
+#' | **Does** | renames columns, parses date-times, derives `ID` | records which column plays which role; attaches metadata |
+#' | **Column names** | replaced by canonical names | kept as they are (`id.col = "animal_id"` is fine) |
+#' | **Carries** | nothing — returns a plain data frame | `id.groups`, `tagging.dates`, `nominal.delay`, CRS, land layer |
+#' | **Use when** | data comes from a receiver system, or its columns/dates need fixing | your table is already tidy, or you are attaching study metadata |
+#'
+#' Roughly: importing is to [as_moby()] what `read.csv()` is to `data.frame()` — a reader, then a
+#' constructor. The usual pipeline runs both:
+#'
+#' ```r
+#' det <- importDetections(file, source = "vue")      # 1. reshape  -> data frame
+#' det <- assignAnimalIDs(det, tags)                  # 2. join tags -> mobyData (IDs, delays, dates)
+#' det <- as_moby(det, id.groups = groups,            # 3. annotate  -> add the rest
+#'                epsg.code = 3395, land.shape = coast)
+#' ```
+#'
+#' If you **already have a tidy data frame in R** (your own column names, date-times already parsed),
+#' skip the importers and call [as_moby()] directly — it keeps your names and can carry the full
+#' metadata. Reach for `source = "generic"` only when you also want the reshaping: canonical renaming,
+#' date parsing and `ID` derivation.
+#'
 #' @section Worked `col.map` examples:
 #' ```r
 #' # 1. A non-standard VUE export where the transmitter is split across two columns
@@ -300,13 +327,21 @@ NULL
 #' @param keep.extra Logical; retain source columns that were not mapped to a canonical field.
 #' Defaults to `FALSE`.
 #'
-#' @return A \code{\link{mobyData}} object with harmonised columns
-#' (`ID`, `datetime`, `transmitter`, `receiver`, `station`, `lon`, `lat`, ...). When the source
-#' has no animal identifier, `ID` is initialised from `transmitter` (assign true animal IDs
-#' later by joining tag metadata).
+#' @return A data frame with harmonised columns (`ID`, `datetime`, `transmitter`, `receiver`,
+#' `station`, `lon`, `lat`, ...), sorted by animal and time. When the source has no animal
+#' identifier, `ID` is initialised from `transmitter` (assign true animal IDs afterwards with
+#' \code{\link{assignAnimalIDs}}).
 #'
-#' @seealso \code{\link{moby_import_schema}} for the canonical field list;
-#' \code{\link{importDeployments}}, \code{\link{checkDeployments}}, \code{\link{as_moby}}
+#' This is a *harmonised table*, not yet a \code{\link{mobyData}}: importing reshapes columns, it
+#' does not attach study metadata. Turn it into a `mobyData` with \code{\link{assignAnimalIDs}}
+#' (animal IDs, tagging dates, nominal delays) and/or \code{\link{as_moby}} (`id.groups`, CRS, land
+#' layer) - see the \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}}.
+#' Because the output already uses moby's canonical column names, those functions need no explicit
+#' column arguments.
+#'
+#' @seealso \code{\link{moby_import_schema}} for the canonical field list and how importing relates
+#' to \code{\link{as_moby}}; \code{\link{assignAnimalIDs}}, \code{\link{importDeployments}},
+#' \code{\link{checkDeployments}}, \code{\link{as_moby}}
 #' @examples
 #' # harmonise a generic-layout detection CSV via an explicit column map
 #' csv <- system.file("extdata", "rays_detections.csv", package = "moby")
@@ -364,8 +399,7 @@ importDetections <- function(x,
   out <- out[order(out$ID, out$datetime), , drop = FALSE]
   rownames(out) <- NULL
 
-  as_moby(out, id.col = "ID", datetime.col = "datetime", station.col = "station",
-          lon.col = "lon", lat.col = "lat")
+  out
 }
 
 
