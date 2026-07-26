@@ -110,7 +110,6 @@ data(rays)
 # build per-time-bin tracks with stepwise distances
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: datetime.
 tracks <- calculateStepDistances(coas, verbose = FALSE)
 
 if (requireNamespace("adehabitatHR", quietly = TRUE)) {
@@ -132,7 +131,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #> Estimating kernel utilization distributions [Raja clavata]...
 #> Calculating 50% contours...
 #> Calculating 95% contours...
-#> Total execution time: 0.63 secs
+#> Total execution time: 0.66 secs
 #> Interpolating distances
 #>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
 #>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI

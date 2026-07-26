@@ -139,7 +139,6 @@ tagging dates and biometric columns attached). Detections whose transmitter is a
 <span class="r-in"><span><span class="co"># detections carrying the tagged rays' transmitters</span></span></span>
 <span class="r-in"><span><span class="va">det</span> <span class="op">&lt;-</span> <span class="va">rays_detections</span><span class="op">[</span><span class="va">rays_detections</span><span class="op">$</span><span class="va">transmitter</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="va">rays_tags</span><span class="op">$</span><span class="va">transmitter</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">det</span> <span class="op">&lt;-</span> <span class="fu">assignAnimalIDs</span><span class="op">(</span><span class="va">det</span>, <span class="va">tags</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="va">det</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] "D01" "D02" "D03" "D04" "R01" "R02" "R03" "R04"</span>
 <span class="r-in"><span></span></span>

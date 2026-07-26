@@ -150,7 +150,6 @@ df <- data.frame(
   station = c("R1", "R2", "R1")
 )
 md <- as_moby(df, tagging.dates = as.POSIXct("2023-01-01", tz = "UTC"))
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.
 md
 #> ── <mobyData> ──────────────────────────────────────────────────────────────────
 #> 
@@ -169,5 +168,4 @@ md
 
 # add or update metadata later
 md <- as_moby(md, id.groups = list(grp1 = c("A", "B")))
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.
 ```

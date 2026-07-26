@@ -1,13 +1,16 @@
 # Import and harmonise acoustic detection data
 
 Reads acoustic-telemetry detections from a range of common sources and
-harmonises them into a single consistent schema, returning a
+harmonises them into a single consistent schema - moby's canonical
+column names, with date-times parsed - ready to be turned into a
 [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md)
-object ready for the rest of the `moby` workflow. Supported sources are
-Innovasea/VEMCO VUE exports, Innovasea VDAT/Fathom `DET.csv` files, and
-detection extracts from the GLATOS, OTN and ETN (`etn` package) systems.
-A `generic` mode plus a user-supplied `col.map` handle non-standard
-layouts.
+by
+[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+/ [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md).
+Supported sources are Innovasea/VEMCO VUE exports, Innovasea VDAT/Fathom
+`DET.csv` files, and detection extracts from the GLATOS, OTN and ETN
+(`etn` package) systems. A `generic` mode plus a user-supplied `col.map`
+handle non-standard layouts.
 
 ## Usage
 

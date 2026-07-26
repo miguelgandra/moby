@@ -42,7 +42,6 @@ df <- data.frame(
   station = c("R1", "R2", "R1")
 )
 md <- as_moby(df)
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin, lon, lat.
 md
 #> ── <mobyData> ──────────────────────────────────────────────────────────────────
 #> 

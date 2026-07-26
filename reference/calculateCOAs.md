@@ -95,7 +95,6 @@ data(rays)
 # calculate Centers of Activity (one position per ID and time bin)
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: datetime.
 head(coas)
 #>    ID             timebin    lon    lat detections stations station
 #> 1 D02 2023-04-02 17:00:00 -9.008 38.464          3        1    ST02

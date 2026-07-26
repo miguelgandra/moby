@@ -122,7 +122,6 @@ coordinates differ beyond `coord.tolerance`).
 matched <- matchDeployments(rays_detections, rays_deployments, station.col = "station")
 #> matchDeployments: 1643/1643 detections matched a deployment window (0 unmatched).
 #>    0 coordinate(s) back-filled from metadata; 0 coordinate mismatch(es) > 500.
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.
 table(matched$deployment_matched)
 #> 
 #> TRUE 

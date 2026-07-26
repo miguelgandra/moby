@@ -104,7 +104,6 @@ data(rays)
 # build per-time-bin tracks with stepwise distances
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: datetime.
 tracks <- calculateStepDistances(coas, verbose = FALSE)
 
 # movement directness per individual (net displacement / total path length)

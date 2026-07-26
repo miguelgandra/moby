@@ -157,7 +157,6 @@ path length, in metres) and <code>linearity_index</code> (their ratio, between 0
 <span class="r-in"><span><span class="co"># build per-time-bin tracks with stepwise distances</span></span></span>
 <span class="r-in"><span><span class="va">coas</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateCOAs.html">calculateCOAs</a></span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: datetime.</span>
 <span class="r-in"><span><span class="va">tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateStepDistances.html">calculateStepDistances</a></span><span class="op">(</span><span class="va">coas</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># movement directness per individual (net displacement / total path length)</span></span></span>

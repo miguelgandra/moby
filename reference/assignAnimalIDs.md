@@ -96,7 +96,6 @@ tags <- importTags(rays_tags, source = "generic",
 # detections carrying the tagged rays' transmitters
 det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
 det <- assignAnimalIDs(det, tags)
-#> Note: the following mapped column(s) are not present in the data and will only matter for functions that use them: timebin.
 levels(det$ID)
 #> [1] "D01" "D02" "D03" "D04" "R01" "R02" "R03" "R04"
 ```
