@@ -150,3 +150,30 @@ test_that("print.mobyData labels rows correctly and recovers the true detection 
   expect_match(det, "1,643 detections")
   expect_false(grepl("positions", det, fixed = TRUE))
 })
+
+test_that("as_moby only flags absent columns the caller actually asked for", {
+  d <- as.data.frame(rays)[, c("ID", "datetime", "lon", "lat", "station")]   # no timebin column
+  # a canonical default nobody requested is moby's guess: its absence is normal, not worth a note
+  expect_silent(as_moby(d))
+  # but an explicitly supplied name that is missing is a likely typo -> still reported
+  expect_message(as_moby(as.data.frame(rays), station.col = "statoin"), "statoin")
+  expect_message(as_moby(d, timebin.col = "tb"), "tb")
+  # a non-default name carried over from previous metadata is still checked
+  md <- suppressMessages(as_moby(as.data.frame(rays), station.col = "station"))
+  attr(md, "moby")$station.col <- "site"
+  expect_message(as_moby(md, epsg.code = 4326), "site")
+})
+
+test_that("calculateCOAs actually drops the datetime role it documents dropping", {
+  coas <- suppressWarnings(suppressMessages(calculateCOAs(rays)))
+  # regression: omitting datetime.col from the as_moby() call was not enough - the constructor
+  # re-applied its canonical default, leaving metadata pointing at a non-existent column
+  expect_null(mobyMeta(coas)$datetime.col)
+  expect_false("datetime" %in% colnames(coas))
+  # and computing COAs is now quiet (it previously emitted a spurious 'datetime' missing-column note)
+  expect_silent(suppressWarnings(calculateCOAs(rays)))
+  # the rest of the metadata is still carried forward
+  expect_equal(mobyMeta(coas)$epsg.code, mobyMeta(rays)$epsg.code)
+  expect_equal(mobyMeta(coas)$timebin.col, "timebin")
+  expect_equal(.mobyRowNoun(coas), "positions")
+})

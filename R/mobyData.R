@@ -161,8 +161,14 @@ as_moby <- function(data,
     stop(paste0("\n", paste0("- ", errors, collapse = "\n")), call. = FALSE)
   }
 
-  # informational note about which mapped columns are present (helps catch typos early)
-  mapped <- c(meta$datetime.col, meta$timebin.col, meta$station.col, meta$lon.col, meta$lat.col)
+  # informational note about mapped columns that are absent (helps catch typos early) - but only for
+  # roles the caller actually asked for, i.e. supplied explicitly or carried over with a non-default
+  # name. A canonical default nobody requested is just moby's guess, and its absence is normal (a
+  # dataset has no 'timebin' column until getTimeBins() has been run), so flagging it is pure noise.
+  role_cols <- c("datetime.col", "timebin.col", "station.col", "lon.col", "lat.col")
+  asked <- vapply(role_cols, function(nm)
+    nm %in% supplied || !identical(unname(meta[[nm]]), unname(.mobyDefaults[[nm]])), logical(1))
+  mapped <- unlist(meta[role_cols[asked]], use.names = FALSE)
   missing_cols <- setdiff(mapped, colnames(data))
   if (length(missing_cols) > 0) {
     message("Note: the following mapped column(s) are not present in the data and will only ",
