@@ -57,10 +57,14 @@ automatically by \code{\link{filterDetections}} to scale its short-interval (min
 false-detection filter. Usually populated for you by \code{\link{assignAnimalIDs}} when the tag
 table carries a delay column.}
 
+\item{x}{A \code{mobyData} object.}
+
 \item{preview}{Number of leading rows shown under the summary. Defaults to 3; \code{0} prints the
 summary only.}
 
 \item{width}{Console width used to lay the summary out. Defaults to \code{getOption("width")}.}
+
+\item{...}{Ignored.}
 }
 \value{
 A \code{mobyData} object (a \code{data.frame} with a \code{"moby"} metadata attribute).

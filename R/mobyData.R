@@ -284,9 +284,11 @@ mobyMeta <- function(x) attr(x, "moby")
 }
 
 
+#' @param x A `mobyData` object.
 #' @param preview Number of leading rows shown under the summary. Defaults to 3; `0` prints the
 #' summary only.
 #' @param width Console width used to lay the summary out. Defaults to `getOption("width")`.
+#' @param ... Ignored.
 #' @rdname as_moby
 #' @export
 print.mobyData <- function(x, preview = 3L, width = getOption("width"), ...) {

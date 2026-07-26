@@ -14,6 +14,10 @@
 #'   \item Only the \emph{enrich} and \emph{clean} roles change your data. The audit role cannot.
 #' }
 #'
+#' \figure{moby-pipeline.svg}{options: width="100%" alt="The ten preparation functions grouped into five
+#' roles: read, enrich, clean and bin, and declare, with checkDeployments on a separate read-only rail.
+#' Essential steps are marked in teal, optional ones in ochre."}
+#'
 #' @section The five roles:
 #' \describe{
 #'   \item{\strong{1. Read} - \code{\link{importDetections}}, \code{\link{importTags}},

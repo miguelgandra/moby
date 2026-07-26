@@ -52,8 +52,15 @@ can follow every tutorial without supplying your own data.
 
 - **Package website** — function reference and articles: <https://miguelgandra.github.io/moby/>
 - **Getting started** — `vignette("moby")` (the *Introduction to moby* article).
+- **Which step do I need?** — `?moby_pipeline` maps the preparation functions onto five roles, says which
+  are essential and which are optional conveniences, and gives the two ordering rules that matter.
 - **Tutorials** — step-by-step workflows under the website's *Articles* tab: importing data, quality control, exploratory analysis, space use & home ranges, movement networks, and association networks.
 - **Help pages** — every function is documented, e.g. `?filterDetections`, `?calculateUDs`.
+
+<p align="center">
+  <img src="man/figures/moby-pipeline.svg" width="100%"
+       alt="moby first-stage pipeline: the ten preparation functions grouped into five roles — read, enrich, clean and bin, declare — with checkDeployments on a separate read-only rail; essential steps marked in teal, optional ones in ochre.">
+</p>
 
 ## Citation
 

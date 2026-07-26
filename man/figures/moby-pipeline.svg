@@ -1,0 +1,163 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 600" width="1200" height="600"
+     font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
+     role="img" aria-label="moby first-stage pipeline: the ten preparation functions grouped into five roles - read, enrich, clean and bin, declare, plus a read-only audit - showing which are essential and which optional">
+  <title>moby first-stage pipeline</title>
+  <desc>The preparation functions grouped into five roles. Read (importDetections, importDeployments, importTags) harmonises any source and is optional. Enrich (assignAnimalIDs, matchDeployments) folds the side tables into the detections and is order-free. Clean and bin (filterDetections, correctPositions, getTimeBins) makes the data analysis-ready. Declare (as_moby) attaches study metadata. checkDeployments sits on a separate read-only rail because it never modifies data.</desc>
+
+  <defs>
+    <marker id="parw" viewBox="0 0 10 10" refX="8.5" refY="5" markerWidth="6.5" markerHeight="6.5" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#5b6b7f"/>
+    </marker>
+    <filter id="pcardshadow" x="-6%" y="-6%" width="112%" height="116%">
+      <feDropShadow dx="0" dy="1.5" stdDeviation="2.4" flood-color="#243447" flood-opacity="0.11"/>
+    </filter>
+  </defs>
+
+  <!-- opaque panel so the figure reads identically in light and dark themes -->
+  <rect x="0" y="0" width="1200" height="600" rx="12" fill="#ffffff" stroke="#e6eaf0" stroke-width="1"/>
+
+  <!-- ==================== header ==================== -->
+  <text x="24" y="34" font-size="13.5" font-weight="700" fill="#2d3748" letter-spacing="0.3">moby · FIRST-STAGE PIPELINE</text>
+  <text x="24" y="52" font-size="10" font-style="italic" fill="#94a3b8">ten preparation functions, five roles — every one of them also accepts an ordinary data frame</text>
+
+  <!-- status legend -->
+  <circle cx="836" cy="30" r="3.4" fill="#2F7E8C"/>
+  <text x="846" y="34" font-size="9.5" fill="#576372">essential</text>
+  <circle cx="912" cy="30" r="3.4" fill="#AD7132"/>
+  <text x="922" y="34" font-size="9.5" fill="#576372">optional</text>
+  <circle cx="984" cy="30" r="3.4" fill="#64748b"/>
+  <text x="994" y="34" font-size="9.5" fill="#576372">read-only · never modifies data</text>
+
+  <!-- ==================== band 1 — the linear flow ==================== -->
+
+  <!-- RAW DATA -->
+  <rect x="24" y="76" width="170" height="176" rx="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" filter="url(#pcardshadow)"/>
+  <text x="37" y="97" font-size="12" font-weight="700" fill="#475569" letter-spacing="0.3">RAW DATA</text>
+  <text x="37" y="113" font-size="9.5" font-style="italic" fill="#94a3b8">three parallel sources</text>
+  <text x="37" y="136" font-size="10.5" fill="#475569">• detection export</text>
+  <text x="37" y="155" font-size="10.5" fill="#475569">• receiver log</text>
+  <text x="37" y="174" font-size="10.5" fill="#475569">• tag / animal metadata</text>
+  <text x="37" y="205" font-size="9" fill="#b8c0cc">VUE · VDAT · GLATOS</text>
+  <text x="37" y="219" font-size="9" fill="#b8c0cc">OTN · ETN · generic</text>
+  <text x="37" y="240" font-size="9" font-style="italic" fill="#b0b9c6">?moby_import_schema</text>
+
+  <line x1="198" y1="164" x2="220" y2="164" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#parw)"/>
+
+  <!-- 1 · READ -->
+  <rect x="224" y="76" width="222" height="176" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#pcardshadow)"/>
+  <text x="237" y="97" font-size="12" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">1 · READ</text>
+  <text x="237" y="113" font-size="9.5" font-style="italic" fill="#94a3b8">harmonise any source</text>
+  <circle cx="242" cy="133" r="3.2" fill="#AD7132"/>
+  <text x="252" y="137" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDetections()</text>
+  <circle cx="242" cy="152" r="3.2" fill="#AD7132"/>
+  <text x="252" y="156" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDeployments()</text>
+  <circle cx="242" cy="171" r="3.2" fill="#AD7132"/>
+  <text x="252" y="175" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importTags()</text>
+  <text x="237" y="205" font-size="9" fill="#9aa5b4">→ canonical columns, parsed dates</text>
+  <text x="237" y="222" font-size="9" fill="#9aa5b4">→ plain data frames</text>
+  <text x="237" y="240" font-size="9" font-style="italic" fill="#b0b9c6">skip if your table is already tidy</text>
+
+  <line x1="450" y1="164" x2="472" y2="164" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#parw)"/>
+
+  <!-- 2 · ENRICH -->
+  <rect x="476" y="76" width="238" height="176" rx="9" fill="#f4f6f9" stroke="#b9c4d3" stroke-width="1.2" filter="url(#pcardshadow)"/>
+  <text x="489" y="97" font-size="12" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">2 · ENRICH</text>
+  <text x="489" y="113" font-size="9.5" font-style="italic" fill="#94a3b8">fold the side tables in — order-free</text>
+  <circle cx="494" cy="133" r="3.2" fill="#2F7E8C"/>
+  <text x="504" y="137" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">assignAnimalIDs()</text>
+  <text x="504" y="151" font-size="8.5" fill="#9aa5b4">transmitters → animals; brings</text>
+  <text x="504" y="163" font-size="8.5" fill="#9aa5b4">tagging dates &amp; nominal delays</text>
+  <circle cx="494" cy="181" r="3.2" fill="#AD7132"/>
+  <text x="504" y="185" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()</text>
+  <text x="504" y="199" font-size="8.5" fill="#9aa5b4">detections → deployment windows;</text>
+  <text x="504" y="211" font-size="8.5" fill="#9aa5b4">back-fills station &amp; coordinates</text>
+  <text x="489" y="240" font-size="9" font-style="italic" fill="#b0b9c6">keys differ (transmitter vs receiver)</text>
+
+  <line x1="718" y1="164" x2="740" y2="164" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#parw)"/>
+
+  <!-- 3 · CLEAN & BIN -->
+  <rect x="744" y="76" width="222" height="176" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#pcardshadow)"/>
+  <text x="757" y="97" font-size="12" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">3 · CLEAN &amp; BIN</text>
+  <text x="757" y="113" font-size="9.5" font-style="italic" fill="#94a3b8">becomes analysis-ready</text>
+  <circle cx="762" cy="133" r="3.2" fill="#2F7E8C"/>
+  <text x="772" y="137" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">filterDetections()</text>
+  <circle cx="762" cy="152" r="3.2" fill="#AD7132"/>
+  <text x="772" y="156" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">correctPositions()</text>
+  <circle cx="762" cy="171" r="3.2" fill="#AD7132"/>
+  <text x="772" y="175" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">getTimeBins()</text>
+  <text x="757" y="205" font-size="9" fill="#9aa5b4">→ removes and reshapes records</text>
+  <text x="757" y="222" font-size="9" fill="#9aa5b4">→ none returns the object itself</text>
+  <text x="757" y="240" font-size="9" font-style="italic" fill="#b0b9c6">take $data; assign the bin column</text>
+
+  <line x1="970" y1="164" x2="992" y2="164" stroke="#5b6b7f" stroke-width="1.7" marker-end="url(#parw)"/>
+
+  <!-- 4 · DECLARE -->
+  <rect x="996" y="76" width="180" height="176" rx="9" fill="#eef2f7" stroke="#9aa5b4" stroke-width="1.4" filter="url(#pcardshadow)"/>
+  <text x="1009" y="97" font-size="12" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">4 · DECLARE</text>
+  <text x="1009" y="113" font-size="9.5" font-style="italic" fill="#94a3b8">any time — idempotent</text>
+  <circle cx="1014" cy="133" r="3.2" fill="#AD7132"/>
+  <text x="1024" y="137" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">as_moby()</text>
+  <text x="1009" y="160" font-size="9" fill="#9aa5b4">the only route to:</text>
+  <text x="1009" y="176" font-size="9" fill="#576372">id.groups</text>
+  <text x="1009" y="190" font-size="9" fill="#576372">epsg.code</text>
+  <text x="1009" y="204" font-size="9" fill="#576372">land.shape</text>
+  <rect x="1009" y="216" width="154" height="26" rx="6" fill="#ffffff" stroke="#2F7E8C" stroke-width="1.4"/>
+  <text x="1019" y="233" font-size="10.5" font-weight="600" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2F7E8C">mobyData</text>
+
+  <!-- ==================== band 2 — the read-only audit rail ==================== -->
+  <rect x="224" y="272" width="742" height="80" rx="9" fill="#fbfcfd" stroke="#b0b9c6" stroke-width="1.2" stroke-dasharray="5 4"/>
+  <circle cx="242" cy="294" r="3.4" fill="#64748b"/>
+  <text x="252" y="298" font-size="11.5" font-weight="700" fill="#475569" letter-spacing="0.3">AUDIT · READ-ONLY</text>
+  <text x="400" y="298" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">checkDeployments()</text>
+  <text x="252" y="317" font-size="9.5" fill="#576372">Validates the receiver log — coverage gaps, overlaps, duplicate stations, impossible or on-land coordinates,</text>
+  <text x="252" y="331" font-size="9.5" fill="#576372">short effort — and cross-checks detections against it. Returns a report and modifies nothing.</text>
+  <text x="252" y="345" font-size="9" font-style="italic" fill="#94a3b8">A loop, not a step: audit → correct → re-audit. Run it before matchDeployments(drop.unmatched = TRUE).</text>
+
+  <!-- dashed tie from the audit rail up to the deployment-log source -->
+  <path d="M 224 312 L 150 312 L 150 258" fill="none" stroke="#b0b9c6" stroke-width="1.2" stroke-dasharray="4 4"/>
+
+  <!-- ==================== band 3 — rules and traps ==================== -->
+
+  <!-- two ordering rules -->
+  <rect x="24" y="376" width="376" height="196" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1.2"/>
+  <text x="40" y="400" font-size="11" font-weight="700" fill="#475569" letter-spacing="0.3">THE ONLY TWO ORDERING RULES</text>
+  <text x="40" y="424" font-size="10" font-weight="600" fill="#2d3748">1 · Audit before you delete.</text>
+  <text x="40" y="440" font-size="9.5" fill="#576372">checkDeployments() is read-only, so it has no fixed</text>
+  <text x="40" y="454" font-size="9.5" fill="#576372">slot. The one position that matters: before</text>
+  <text x="40" y="468" font-size="9.5" fill="#576372">matchDeployments(drop.unmatched = TRUE), which</text>
+  <text x="40" y="482" font-size="9.5" fill="#576372">removes the records four of its five detection-side</text>
+  <text x="40" y="496" font-size="9.5" fill="#576372">checks rely on.</text>
+  <text x="40" y="520" font-size="10" font-weight="600" fill="#2d3748">2 · Enrich before you filter.</text>
+  <text x="40" y="536" font-size="9.5" fill="#576372">filterDetections() needs the tagging dates that</text>
+  <text x="40" y="550" font-size="9.5" fill="#576372">assignAnimalIDs() supplies. The two enrich steps</text>
+  <text x="40" y="564" font-size="9.5" fill="#576372">themselves may run in either order.</text>
+
+  <!-- what is actually essential -->
+  <rect x="412" y="376" width="376" height="196" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1.2"/>
+  <text x="428" y="400" font-size="11" font-weight="700" fill="#475569" letter-spacing="0.3">WHAT IS ACTUALLY ESSENTIAL</text>
+  <circle cx="433" cy="422" r="3.2" fill="#2F7E8C"/>
+  <text x="443" y="426" font-size="9.5" fill="#576372">Only two steps have teeth. Skip</text>
+  <text x="443" y="440" font-size="9.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">assignAnimalIDs()</text>
+  <text x="443" y="454" font-size="9.5" fill="#576372">and filterDetections() stops with an error, because</text>
+  <text x="443" y="468" font-size="9.5" fill="#576372">no tagging dates are attached; the min_lag</text>
+  <text x="443" y="482" font-size="9.5" fill="#576372">false-detection filter is unavailable too.</text>
+  <circle cx="433" cy="502" r="3.2" fill="#AD7132"/>
+  <text x="443" y="506" font-size="9.5" fill="#576372">Everything else is safe to skip: you simply supply</text>
+  <text x="443" y="520" font-size="9.5" fill="#576372">the columns and metadata yourself, or forgo what</text>
+  <text x="443" y="534" font-size="9.5" fill="#576372">that step would have provided.</text>
+  <text x="428" y="558" font-size="9" font-style="italic" fill="#b0b9c6">Full table of consequences: ?moby_pipeline</text>
+
+  <!-- three traps -->
+  <rect x="800" y="376" width="376" height="196" rx="9" fill="#ffffff" stroke="#e6eaf0" stroke-width="1.2"/>
+  <text x="816" y="400" font-size="11" font-weight="700" fill="#475569" letter-spacing="0.3">THREE EASY TRAPS</text>
+  <text x="816" y="424" font-size="9.5" fill="#576372">Invisible from the signatures:</text>
+  <text x="816" y="446" font-size="9.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">filterDetections()</text>
+  <text x="816" y="460" font-size="9.5" fill="#576372">and correctPositions() return <tspan font-weight="600">lists</tspan> —</text>
+  <text x="816" y="474" font-size="9.5" fill="#576372">take $data, or the next call fails.</text>
+  <text x="816" y="496" font-size="9.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">getTimeBins()</text>
+  <text x="816" y="510" font-size="9.5" fill="#576372">returns a <tspan font-weight="600">vector</tspan> — assign it to a column.</text>
+  <text x="816" y="532" font-size="9.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">assignAnimalIDs()</text>
+  <text x="816" y="546" font-size="9.5" fill="#576372">leaves <tspan font-weight="600">NA</tspan> IDs for transmitters absent from</text>
+  <text x="816" y="560" font-size="9.5" fill="#576372">your tag table — remove them, or they ride along.</text>
+
+</svg>
