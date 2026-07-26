@@ -108,6 +108,24 @@ detections <- matchDeployments(rays_detections, deployments,
                                station.col = "station")
 ```
 
+Then attach the tag metadata, exactly as in [module
+01](https://miguelgandra.github.io/moby/articles/01-import.md). This is
+what makes the next step short:
+[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+derives each animal’s tagging date and transmitter nominal delay and
+stores them on the object, so
+[`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
+does not have to be told them.
+
+``` r
+
+tags <- importTags(rays_tags, source = "generic",
+                   col.map = list(ID = "ID", tagging_date = "tagging_date"))
+detections <- assignAnimalIDs(detections, tags)
+
+mobyMeta(detections)$tagging.dates   # already attached
+```
+
 ## 5. Filter spurious detections
 
 [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
@@ -120,21 +138,35 @@ filter (`isolation.window`, off by default), and an
 **unrealistic-speed** filter. Removed detections are returned in
 `data_discarded` with a `reason`; nothing is deleted silently.
 
+Note what is *not* in the call below: no column arguments and no tagging
+dates — they travel with the object, so only the filter settings
+themselves need naming.
+
 ``` r
 
 filtered <- filterDetections(
-  rays_detections,
-  id.col        = "ID",
-  datetime.col  = "datetime",
-  lon.col       = "lon", lat.col = "lat",
-  tagging.dates = setNames(rays_tags$tagging_date, rays_tags$ID),
-  nominal.delay = 120,         # s; enables the short-interval false-detection filter (~30x delay)
-  max.speed     = 2,           # m/s; great-circle distances (no land.shape needed)
-  speed.unit    = "m/s"
+  detections,
+  max.speed  = 2,            # m/s; great-circle distances (no land.shape needed)
+  speed.unit = "m/s"
 )
 filtered                        # a printable <mobyFilter> summary
 clean <- filtered$data          # the cleaned detections (with a qc_flag column)
 ```
+
+> **Note**
+>
+> The short-interval false-detection filter needs a transmitter nominal
+> delay, which this example tag table does not carry — so it stays off
+> here. When your tag export has a delay (or a min/max delay range),
+> [`importTags()`](https://miguelgandra.github.io/moby/reference/importTags.md)
+> picks it up and
+> [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+> attaches it per animal, and the filter then runs with no extra
+> arguments. You can also pass `nominal.delay` directly, or set a fixed
+> per-receiver window with `min.lag.threshold` when the delay is
+> unknown. See
+> [`?filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md),
+> section *Isolation-based filtering*.
 
 ## 6. Bin detections into regular intervals
 

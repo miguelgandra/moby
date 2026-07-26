@@ -145,29 +145,40 @@
 <code class="sourceCode R"><span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchDeployments.html">matchDeployments</a></span><span class="op">(</span><span class="va">rays_detections</span>, <span class="va">deployments</span>,</span>
 <span>                               station.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></code></pre></div>
 </div>
+<p>Then attach the tag metadata, exactly as in <a href="01-import.html">module 01</a>. This is what makes the next step short: <code><a href="../reference/assignAnimalIDs.html">assignAnimalIDs()</a></code> derives each animal’s tagging date and transmitter nominal delay and stores them on the object, so <code><a href="../reference/filterDetections.html">filterDetections()</a></code> does not have to be told them.</p>
+<div class="cell">
+<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<code class="sourceCode R"><span><span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importTags.html">importTags</a></span><span class="op">(</span><span class="va">rays_tags</span>, source <span class="op">=</span> <span class="st">"generic"</span>,</span>
+<span>                   col.map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="st">"ID"</span>, tagging_date <span class="op">=</span> <span class="st">"tagging_date"</span><span class="op">)</span><span class="op">)</span></span>
+<span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assignAnimalIDs.html">assignAnimalIDs</a></span><span class="op">(</span><span class="va">detections</span>, <span class="va">tags</span><span class="op">)</span></span>
+<span></span>
+<span><span class="fu"><a href="../reference/mobyMeta.html">mobyMeta</a></span><span class="op">(</span><span class="va">detections</span><span class="op">)</span><span class="op">$</span><span class="va">tagging.dates</span>   <span class="co"># already attached</span></span></code></pre></div>
+</div>
 </section><section class="level2"><h2 id="filter-spurious-detections">5. Filter spurious detections<a class="anchor" aria-label="anchor" href="#filter-spurious-detections"></a>
 </h2>
 <p><code><a href="../reference/filterDetections.html">filterDetections()</a></code> applies a sequence of opt-in quality-control criteria: exact-duplicate removal, detections before tagging or after a cut-off, a per-receiver short-interval <strong>false-detection filter</strong> (<code>nominal.delay</code>, scaled to the transmitter delay — the standard code-collision filter of Pincock 2012 / Simpfendorfer et al. 2015), an optional residency/isolation filter (<code>isolation.window</code>, off by default), and an <strong>unrealistic-speed</strong> filter. Removed detections are returned in <code>data_discarded</code> with a <code>reason</code>; nothing is deleted silently.</p>
+<p>Note what is <em>not</em> in the call below: no column arguments and no tagging dates — they travel with the object, so only the filter settings themselves need naming.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/filterDetections.html">filterDetections</a></span><span class="op">(</span></span>
-<span>  <span class="va">rays_detections</span>,</span>
-<span>  id.col        <span class="op">=</span> <span class="st">"ID"</span>,</span>
-<span>  datetime.col  <span class="op">=</span> <span class="st">"datetime"</span>,</span>
-<span>  lon.col       <span class="op">=</span> <span class="st">"lon"</span>, lat.col <span class="op">=</span> <span class="st">"lat"</span>,</span>
-<span>  tagging.dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">rays_tags</span><span class="op">$</span><span class="va">tagging_date</span>, <span class="va">rays_tags</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span>,</span>
-<span>  nominal.delay <span class="op">=</span> <span class="fl">120</span>,         <span class="co"># s; enables the short-interval false-detection filter (~30x delay)</span></span>
-<span>  max.speed     <span class="op">=</span> <span class="fl">2</span>,           <span class="co"># m/s; great-circle distances (no land.shape needed)</span></span>
-<span>  speed.unit    <span class="op">=</span> <span class="st">"m/s"</span></span>
+<span>  <span class="va">detections</span>,</span>
+<span>  max.speed  <span class="op">=</span> <span class="fl">2</span>,            <span class="co"># m/s; great-circle distances (no land.shape needed)</span></span>
+<span>  speed.unit <span class="op">=</span> <span class="st">"m/s"</span></span>
 <span><span class="op">)</span></span>
 <span><span class="va">filtered</span>                        <span class="co"># a printable &lt;mobyFilter&gt; summary</span></span>
 <span><span class="va">clean</span> <span class="op">&lt;-</span> <span class="va">filtered</span><span class="op">$</span><span class="va">data</span>          <span class="co"># the cleaned detections (with a qc_flag column)</span></span></code></pre></div>
+</div>
+<div>
+<blockquote>
+<p><strong>Note</strong></p>
+<p>The short-interval false-detection filter needs a transmitter nominal delay, which this example tag table does not carry — so it stays off here. When your tag export has a delay (or a min/max delay range), <code><a href="../reference/importTags.html">importTags()</a></code> picks it up and <code><a href="../reference/assignAnimalIDs.html">assignAnimalIDs()</a></code> attaches it per animal, and the filter then runs with no extra arguments. You can also pass <code>nominal.delay</code> directly, or set a fixed per-receiver window with <code>min.lag.threshold</code> when the delay is unknown. See <code><a href="../reference/filterDetections.html">?filterDetections</a></code>, section <em>Isolation-based filtering</em>.</p>
+</blockquote>
 </div>
 </section><section class="level2"><h2 id="bin-detections-into-regular-intervals">6. Bin detections into regular intervals<a class="anchor" aria-label="anchor" href="#bin-detections-into-regular-intervals"></a>
 </h2>
 <p>Most downstream analyses operate on regular <strong>time bins</strong> rather than raw detections.</p>
 <div class="cell">
-<div class="sourceCode cell-code" id="cb9"><pre class="downlit sourceCode r">
+<div class="sourceCode cell-code" id="cb10"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">clean</span><span class="op">$</span><span class="va">timebin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getTimeBins.html">getTimeBins</a></span><span class="op">(</span><span class="va">clean</span><span class="op">$</span><span class="va">datetime</span>, interval <span class="op">=</span> <span class="st">"1 hour"</span><span class="op">)</span></span></code></pre></div>
 </div>
 <div>

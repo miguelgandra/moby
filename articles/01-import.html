@@ -140,26 +140,26 @@
 <span></span>
 <span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assignAnimalIDs.html">assignAnimalIDs</a></span><span class="op">(</span><span class="va">detections</span>, <span class="va">tags</span><span class="op">)</span></span></code></pre></div>
 </div>
+<p><code><a href="../reference/assignAnimalIDs.html">assignAnimalIDs()</a></code> resolves transmitter codes to animals — several codes can belong to one animal, typically because a sensor tag transmits on more than one code space — and it <strong>derives per-animal metadata</strong> from the tag table: tagging dates, and transmitter nominal delays where present. Those are attached to the returned object, so you do not pass them again later: <code><a href="../reference/filterDetections.html">filterDetections()</a></code> picks them up on its own.</p>
+<div>
+<blockquote>
+<p><strong>Tip</strong></p>
+<p>This step is independent of <code><a href="../reference/matchDeployments.html">matchDeployments()</a></code> (module 02): one resolves transmitters to animals, the other resolves receivers to deployment windows. Either order gives the same result.</p>
+</blockquote>
+</div>
 </section><section class="level2"><h2 id="build-the-mobydata-object">3. Build the <code>mobyData</code> object<a class="anchor" aria-label="anchor" href="#build-the-mobydata-object"></a>
 </h2>
 <p>A <code>mobyData</code> <em>is</em> a data frame, but it carries metadata (column mapping, tagging dates, <code>id.groups</code>) as an attribute, so you don’t repeat those arguments on every call.</p>
+<p>The object returned above is already a <code>mobyData</code> with its column roles and tagging dates attached. Call <code><a href="../reference/as_moby.html">as_moby()</a></code> to add what only you can supply — here the species grouping (and, when you have them, a projected CRS and a coastline). Because the columns already use moby’s canonical names, no column arguments are needed.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb4"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="co"># one named list element per species -&gt; drives per-species outputs everywhere</span></span>
 <span><span class="va">id_groups</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/split.html" class="external-link">split</a></span><span class="op">(</span><span class="va">rays_tags</span><span class="op">$</span><span class="va">ID</span>, <span class="va">rays_tags</span><span class="op">$</span><span class="va">species</span><span class="op">)</span></span>
 <span></span>
-<span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_moby.html">as_moby</a></span><span class="op">(</span></span>
-<span>  <span class="va">detections</span>,</span>
-<span>  id.col        <span class="op">=</span> <span class="st">"ID"</span>,</span>
-<span>  datetime.col  <span class="op">=</span> <span class="st">"datetime"</span>,</span>
-<span>  station.col   <span class="op">=</span> <span class="st">"station"</span>,</span>
-<span>  lon.col       <span class="op">=</span> <span class="st">"lon"</span>,</span>
-<span>  lat.col       <span class="op">=</span> <span class="st">"lat"</span>,</span>
-<span>  tagging.dates <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/stats/setNames.html" class="external-link">setNames</a></span><span class="op">(</span><span class="va">rays_tags</span><span class="op">$</span><span class="va">tagging_date</span>, <span class="va">rays_tags</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span>,</span>
-<span>  id.groups     <span class="op">=</span> <span class="va">id_groups</span></span>
-<span><span class="op">)</span></span>
+<span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_moby.html">as_moby</a></span><span class="op">(</span><span class="va">detections</span>, id.groups <span class="op">=</span> <span class="va">id_groups</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/mobyMeta.html">mobyMeta</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span>   <span class="co"># inspect the attached metadata</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/mobyMeta.html">mobyMeta</a></span><span class="op">(</span><span class="va">dataset</span><span class="op">)</span>   <span class="co"># tagging dates are already there, from assignAnimalIDs()</span></span>
+<span><span class="va">dataset</span>             <span class="co"># the print method summarises what is attached</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="recap-whats-next">Recap &amp; what’s next<a class="anchor" aria-label="anchor" href="#recap-whats-next"></a>
 </h2>

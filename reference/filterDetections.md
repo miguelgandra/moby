@@ -359,7 +359,7 @@ filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
 #>   • Before tagging: 0 (0%) from 0 individual(s)
 #>   • False detection: 87 (5%) from 8 individual(s)
 #> Individuals fully discarded = 0 from a total of 8
-#> Total execution time: 0.04 secs
+#> Total execution time: 0.03 secs
 
 # or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)
 filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
@@ -371,7 +371,7 @@ filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
 #>   • Before tagging: 0 (0%) from 0 individual(s)
 #>   • False detection: 87 (5%) from 8 individual(s)
 #> Individuals fully discarded = 0 from a total of 8
-#> Total execution time: 0.04 secs
+#> Total execution time: 0.03 secs
 
 # \donttest{
 # add a movement-speed filter (slower: computes step distances); on a 3-animal subset
@@ -388,6 +388,6 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #>   • Speed: 0 (0%) from 0 individual(s)
 #>   • flagged for review (overspeed, retained): 9
 #> Individuals fully discarded = 0 from a total of 3
-#> Total execution time: 2.11 secs
+#> Total execution time: 1.70 secs
 # }
 ```
