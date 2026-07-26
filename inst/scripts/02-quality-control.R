@@ -41,15 +41,19 @@ data(rays_tags)
 
 ## -----------------------------------------------------------------------------
 #| eval: false
+# tags <- importTags(rays_tags, source = "generic",
+#                    col.map = list(ID = "ID", tagging_date = "tagging_date"))
+# detections <- assignAnimalIDs(detections, tags)
+# 
+# mobyMeta(detections)$tagging.dates   # already attached
+
+
+## -----------------------------------------------------------------------------
+#| eval: false
 # filtered <- filterDetections(
-#   rays_detections,
-#   id.col        = "ID",
-#   datetime.col  = "datetime",
-#   lon.col       = "lon", lat.col = "lat",
-#   tagging.dates = setNames(rays_tags$tagging_date, rays_tags$ID),
-#   nominal.delay = 120,         # s; enables the short-interval false-detection filter (~30x delay)
-#   max.speed     = 2,           # m/s; great-circle distances (no land.shape needed)
-#   speed.unit    = "m/s"
+#   detections,
+#   max.speed  = 2,            # m/s; great-circle distances (no land.shape needed)
+#   speed.unit = "m/s"
 # )
 # filtered                        # a printable <mobyFilter> summary
 # clean <- filtered$data          # the cleaned detections (with a qc_flag column)

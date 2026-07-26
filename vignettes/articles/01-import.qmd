@@ -80,28 +80,36 @@ tags <- importTags(rays_tags, source = "generic",
 detections <- assignAnimalIDs(detections, tags)
 ```
 
+`assignAnimalIDs()` resolves transmitter codes to animals — several codes can belong to one animal,
+typically because a sensor tag transmits on more than one code space — and it **derives per-animal
+metadata** from the tag table: tagging dates, and transmitter nominal delays where present. Those are
+attached to the returned object, so you do not pass them again later: `filterDetections()` picks them
+up on its own.
+
+::: {.callout-tip}
+This step is independent of `matchDeployments()` (module 02): one resolves transmitters to animals,
+the other resolves receivers to deployment windows. Either order gives the same result.
+:::
+
 ## 3. Build the `mobyData` object
 
 A `mobyData` *is* a data frame, but it carries metadata (column mapping, tagging dates, `id.groups`)
 as an attribute, so you don't repeat those arguments on every call.
+
+The object returned above is already a `mobyData` with its column roles and tagging dates attached.
+Call `as_moby()` to add what only you can supply — here the species grouping (and, when you have
+them, a projected CRS and a coastline). Because the columns already use moby's canonical names, no
+column arguments are needed.
 
 ```{r}
 #| eval: false
 # one named list element per species -> drives per-species outputs everywhere
 id_groups <- split(rays_tags$ID, rays_tags$species)
 
-dataset <- as_moby(
-  detections,
-  id.col        = "ID",
-  datetime.col  = "datetime",
-  station.col   = "station",
-  lon.col       = "lon",
-  lat.col       = "lat",
-  tagging.dates = setNames(rays_tags$tagging_date, rays_tags$ID),
-  id.groups     = id_groups
-)
+dataset <- as_moby(detections, id.groups = id_groups)
 
-mobyMeta(dataset)   # inspect the attached metadata
+mobyMeta(dataset)   # tagging dates are already there, from assignAnimalIDs()
+dataset             # the print method summarises what is attached
 ```
 
 ## Recap & what's next

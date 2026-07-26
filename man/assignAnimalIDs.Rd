@@ -44,13 +44,32 @@ tagging dates and biometric columns attached). Detections whose transmitter is a
 \code{tags} keep \code{NA} IDs (with a warning).
 }
 \description{
-Joins tag metadata (see \code{\link{importTags}}) to a detection dataset on the
-transmitter code, assigning each detection an animal \code{ID}. Matching is tolerant: it first
-tries the full transmitter string and then falls back to the trailing numeric code (so
-\code{"A69-1602-111"} matches a tag stored as \code{"111"}). When the tag table carries tagging dates,
-these are attached to the returned \code{\link{mobyData}} object's metadata (and can flow
-automatically into functions such as \code{\link{filterDetections}} and
-\code{\link{summaryTable}}). Optional biometric columns can be joined in as well.
+Resolves the transmitter codes in a detection dataset to the animals that carried
+them, using a tag table (see \code{\link{importTags}}). This is more than a column join: several
+transmitter codes can map to the same animal, and the function also derives the per-animal
+metadata - tagging dates and transmitter nominal delays - that later steps such as
+\code{\link{filterDetections}} and \code{\link{summaryTable}} read automatically. Optional
+biometric columns can be joined in as well.
+}
+\details{
+\strong{Why several codes can mean one animal.} Most often this is because a single physical
+transmitter emits on more than one code space: sensor tags (for example depth-sensing Vemco V16P
+transmitters) report their identity and their sensor data under different code spaces, so one tag
+appears in the detection file under two or more transmitter codes. Animals genuinely carrying
+several transmitters at once are uncommon; the other routine case is an animal that was recaptured
+and re-tagged, so its history spans consecutive tags. List each code as its own row of \code{tags},
+mapped to the same animal \code{ID}, and all of them resolve to that animal.
+
+\strong{Matching.} The full transmitter string is matched first. A trailing-numeric fallback then
+covers tag tables that store the bare code (so \code{"A69-1602-111"} matches a tag stored as \code{"111"}).
+The fallback is deliberately conservative: a detection whose code space differs from the candidate
+tag's is left unmatched rather than assigned, because \code{"A69-9999-111"} and \code{"A69-1602-111"} are
+different transmitters and guessing would attribute another project's animal to yours. Such codes
+are reported, so you can add them to \code{tags} if they are further code spaces of your own tags.
+
+\strong{Where it sits in the pipeline.} This step is independent of
+\code{\link{matchDeployments}}: one resolves transmitters to animals, the other resolves receivers
+to deployment windows, and they key on different columns. Either order gives the same result.
 }
 \examples{
 # join tag metadata to detections to assign animal IDs (and tagging dates)
