@@ -92,10 +92,23 @@ own data.
   e.g. [`?filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md),
   [`?calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md).
 
-![moby first-stage pipeline: the ten preparation functions grouped into
-five roles — read, enrich, clean and bin, declare — with
-checkDeployments on a separate read-only rail; essential steps marked in
-teal, optional ones in ochre.](reference/figures/moby-pipeline.svg)
+![moby data preparation in five stages: import, validate, enrich, clean
+and bin, declare — producing a mobyData object that feeds the analysis
+pathways. Essential steps are marked in teal, optional ones in
+ochre.](reference/figures/moby-pipeline.svg)
+
+Only two of those steps have teeth:
+[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+(without it
+[`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
+has no tagging dates and stops) and
+[`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
+itself. Everything else is a convenience you can skip by supplying the
+columns or metadata yourself — every function also accepts an ordinary
+data frame.
+[`?moby_pipeline`](https://miguelgandra.github.io/moby/reference/moby_pipeline.md)
+has the full table of consequences, the two ordering rules, and the
+return-shape traps worth knowing.
 
 ## Citation
 
