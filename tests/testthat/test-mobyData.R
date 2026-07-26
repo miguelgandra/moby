@@ -62,3 +62,91 @@ test_that("as_moby stores, validates and inherits nominal.delay", {
   expect_error(as_moby(d, nominal.delay = -5), "nominal.delay")
   expect_error(as_moby(d, nominal.delay = "fast"), "nominal.delay")
 })
+
+test_that("print.mobyData shows the summary sections, including nominal.delay", {
+  d <- as_moby(as.data.frame(rays), nominal.delay = 120)
+  out <- paste(capture.output(print(d)), collapse = "\n")
+  expect_match(out, "<mobyData>")
+  expect_match(out, "overview\\s+1,643 detections")     # thousands separator
+  expect_match(out, "8 individuals")
+  expect_match(out, "9 variables")                      # 'variables', not 'columns'
+  expect_match(out, "period\\s+2023-04-02")
+  expect_match(out, "space\\s+6 stations")
+  expect_match(out, "lon \\[-9\\.02, -8\\.97\\]")
+  # regression: nominal.delay was previously never displayed
+  expect_match(out, "nominal.delay \\(1\\)")
+  expect_match(out, "tagging.dates \\(8\\)")
+  expect_match(out, "EPSG: 32629")
+  # preview: 3 rows by default, showing every variable
+  expect_match(out, "Preview \\(first 3 rows\\)")
+  for (v in colnames(rays)) expect_match(out, v, fixed = TRUE)
+})
+
+test_that("print.mobyData preview is controllable and degrades gracefully", {
+  expect_false(any(grepl("Preview", capture.output(print(rays, preview = 0)))))
+  expect_match(paste(capture.output(print(rays, preview = 1)), collapse = "\n"),
+               "Preview \\(first 1 row\\)")
+  # no rows / no optional roles -> the corresponding sections are simply omitted
+  expect_no_error(capture.output(print(rays[0, ])))
+  minimal <- suppressMessages(as_moby(data.frame(
+    ID = factor("a"), datetime = as.POSIXct("2024-01-01", tz = "UTC"))))
+  out <- paste(capture.output(print(minimal)), collapse = "\n")
+  expect_false(grepl("space", out))
+  expect_false(grepl("metadata", out))
+})
+
+test_that("print.mobyData falls back to ASCII glyphs off UTF-8", {
+  g <- .mobyGlyphs()
+  expect_true(all(c("rule", "sep", "arrow") %in% names(g)))
+  # whichever locale the tests run in, the glyphs must be single-purpose and non-empty
+  expect_true(all(nzchar(unlist(g))))
+  # the ASCII branch must be pure ASCII (what a non-UTF-8 console receives)
+  ascii <- list(rule = "-", sep = "|", arrow = "->")
+  expect_false(any(grepl("[^ -~]", unlist(ascii))))
+})
+
+test_that("head()/tail() return data frame rows, while '[' keeps the mobyData", {
+  h <- head(rays, 3)
+  expect_s3_class(h, "data.frame")
+  expect_false(is_moby(h))                       # rows print as rows, not as a summary
+  expect_equal(nrow(h), 3L)
+  expect_equal(ncol(h), ncol(rays))              # every variable retained
+  expect_identical(h, head(as.data.frame(rays), 3))
+
+  t3 <- tail(rays, 3)
+  expect_s3_class(t3, "data.frame")
+  expect_false(is_moby(t3))
+  expect_identical(t3, tail(as.data.frame(rays), 3))   # keeps original row numbering
+
+  # '[' remains the metadata-preserving way to subset
+  sub <- rays[1:100, ]
+  expect_true(is_moby(sub))
+  expect_identical(mobyMeta(sub)$id.groups, mobyMeta(rays)$id.groups)
+})
+
+test_that(".mobyRowNoun classifies rows from columns, not from a stored label", {
+  coas <- suppressWarnings(suppressMessages(calculateCOAs(rays)))
+  expect_equal(.mobyRowNoun(rays), "detections")          # one row per decode (has a datetime column)
+  expect_equal(.mobyRowNoun(coas), "positions")           # rows are time bins carrying detection counts
+  expect_equal(.mobyRowNoun(coas[1:5, ]), "positions")    # survives subsetting
+  # growth case: a position table with extra columns (step distances / tracks) needs no new clause
+  coas2 <- coas; coas2$dist_m <- 1
+  expect_equal(.mobyRowNoun(coas2), "positions")
+  # unrecognised shapes fall back to the generic noun rather than guessing
+  bare <- suppressMessages(as_moby(data.frame(ID = factor("a"), lon = 1, lat = 2)))
+  expect_equal(.mobyRowNoun(bare), "records")
+})
+
+test_that("print.mobyData labels rows correctly and recovers the true detection count", {
+  coas <- suppressWarnings(suppressMessages(calculateCOAs(rays)))
+  out <- paste(capture.output(print(coas, preview = 0)), collapse = "\n")
+  # regression: this line previously read "794 detections", contradicting the object's own
+  # 'detections' column and understating the real count by half
+  expect_match(out, "794 positions")
+  expect_match(out, "1,643 detections")
+  expect_false(grepl("794 detections", out, fixed = TRUE))
+  # a detection table keeps the domain noun and gains no spurious second count
+  det <- paste(capture.output(print(rays, preview = 0)), collapse = "\n")
+  expect_match(det, "1,643 detections")
+  expect_false(grepl("positions", det, fixed = TRUE))
+})

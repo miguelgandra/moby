@@ -3,6 +3,7 @@
 \name{as_moby}
 \alias{as_moby}
 \alias{mobyData}
+\alias{print.mobyData}
 \title{Create a moby telemetry dataset}
 \usage{
 as_moby(
@@ -19,6 +20,8 @@ as_moby(
   tagging.dates = NULL,
   nominal.delay = NULL
 )
+
+\method{print}{mobyData}(x, preview = 3L, width = getOption("width"), ...)
 }
 \arguments{
 \item{data}{A data frame of detections (one row per detection, or per binned record).}
@@ -53,6 +56,11 @@ value (applied to all individuals) or a named numeric vector whose names match t
 automatically by \code{\link{filterDetections}} to scale its short-interval (min_lag)
 false-detection filter. Usually populated for you by \code{\link{assignAnimalIDs}} when the tag
 table carries a delay column.}
+
+\item{preview}{Number of leading rows shown under the summary. Defaults to 3; \code{0} prints the
+summary only.}
+
+\item{width}{Console width used to lay the summary out. Defaults to \code{getOption("width")}.}
 }
 \value{
 A \code{mobyData} object (a \code{data.frame} with a \code{"moby"} metadata attribute).

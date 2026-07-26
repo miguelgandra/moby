@@ -205,32 +205,164 @@ is_moby <- function(x) inherits(x, "mobyData")
 mobyMeta <- function(x) attr(x, "moby")
 
 
-#' @export
-print.mobyData <- function(x, ...) {
-  meta <- attr(x, "moby")
-  cat("<mobyData>", nrow(x), "records x", ncol(x), "columns\n")
-  if (!is.null(meta)) {
-    id <- meta$id.col
-    n_ids <- if (!is.null(id) && id %in% colnames(x)) length(unique(x[[id]])) else NA
-    cat("  individuals: ", if (is.na(n_ids)) "?" else n_ids,
-        "  (id.col = '", meta$id.col, "')\n", sep = "")
-    dt <- meta$datetime.col
-    if (!is.null(dt) && dt %in% colnames(x) && inherits(x[[dt]], "POSIXct")) {
-      rng <- range(x[[dt]], na.rm = TRUE)
-      cat("  period: ", format(rng[1]), " to ", format(rng[2]),
-          " (tz = ", .dataTZ(x[[dt]]), ")\n", sep = "")
-    }
-    mapped <- unlist(meta[c("datetime.col", "timebin.col", "station.col", "lon.col", "lat.col")])
-    cat("  columns: ", paste(sprintf("%s='%s'", names(mapped), mapped), collapse = ", "), "\n", sep = "")
-    extras <- c()
-    if (!is.null(meta$epsg.code))    extras <- c(extras, paste0("epsg=", meta$epsg.code))
-    if (!is.null(meta$tagging.dates)) extras <- c(extras, paste0("tagging.dates (", length(meta$tagging.dates), ")"))
-    if (!is.null(meta$id.groups))    extras <- c(extras, paste0("id.groups (", length(meta$id.groups), ")"))
-    if (!is.null(meta$land.shape))   extras <- c(extras, "land.shape")
-    if (length(extras) > 0) cat("  metadata: ", paste(extras, collapse = ", "), "\n", sep = "")
+# glyphs used by print.mobyData, with ASCII fallbacks for non-UTF-8 consoles (Windows in a legacy
+# locale would otherwise render mojibake)
+.mobyGlyphs <- function() {
+  # \u escapes keep this file pure ASCII (so it behaves identically whatever locale R starts in)
+  if (isTRUE(l10n_info()$`UTF-8`)) list(rule = "\u2500", sep = "\u00b7", arrow = "\u2192")
+  else                             list(rule = "-",      sep = "|",      arrow = "->")
+}
+
+# thousands-separated integer, locale-independent
+.fmtCount <- function(n) formatC(n, format = "d", big.mark = ",")
+
+# pack items onto lines at item boundaries (never leaving a separator stranded at a line start)
+.packItems <- function(items, sep, avail) {
+  lines <- character(0); cur <- ""
+  for (it in items) {
+    cand <- if (nzchar(cur)) paste0(cur, " ", sep, " ", it) else it
+    if (nchar(cand) > avail && nzchar(cur)) { lines <- c(lines, cur); cur <- it } else cur <- cand
   }
+  if (nzchar(cur)) lines <- c(lines, cur)
+  lines
+}
+
+# emit "label      value", with continuation lines aligned under the value column
+.mobyField <- function(label, lines, indent = 11L) {
+  if (length(lines) == 0) return(invisible(NULL))
+  cat(formatC(label, width = -indent), lines[1], "\n", sep = "")
+  for (l in lines[-1]) cat(strrep(" ", indent), l, "\n", sep = "")
+  invisible(NULL)
+}
+
+# What does one row of this object represent? Decided from the columns, never from a stored label:
+# moby already answers this question by column presence elsewhere (summaryTable() sums a 'detections'
+# count column when present, else assumes one detection per row), and columns cannot go stale the way
+# a declared type would when an object is transformed. Unrecognised shapes fall back to "records".
+.mobyRowNoun <- function(x) {
+  meta <- attr(x, "moby"); cn <- colnames(x)
+  # raw/filtered detections: one row per decode, so a datetime column is present
+  if (!is.null(meta$datetime.col) && meta$datetime.col %in% cn) return("detections")
+  # aggregated positions (COAs, tracks): rows are time bins carrying a detection COUNT
+  if ("detections" %in% cn && is.numeric(x[["detections"]])) return("positions")
+  "records"
+}
+
+# human-readable span between two times
+.fmtDuration <- function(from, to) {
+  d <- as.numeric(difftime(to, from, units = "days"))
+  if (!is.finite(d)) return(NA_character_)
+  if (d >= 365)    sprintf("%.1f years", d / 365.25)
+  else if (d >= 1) sprintf("%.0f day%s", d, if (round(d) == 1) "" else "s")
+  else             sprintf("%.1f hours", d * 24)
+}
+
+
+#' @param preview Number of leading rows shown under the summary. Defaults to 3; `0` prints the
+#' summary only.
+#' @param width Console width used to lay the summary out. Defaults to `getOption("width")`.
+#' @rdname as_moby
+#' @export
+print.mobyData <- function(x, preview = 3L, width = getOption("width"), ...) {
+
+  meta <- attr(x, "moby")
+  g <- .mobyGlyphs()
+  w <- max(40L, min(as.integer(width), 100L))
+
+  # ---- header rule -----------------------------------------------------------------------------
+  hdr <- paste0(strrep(g$rule, 2), " <mobyData> ")
+  cat(hdr, strrep(g$rule, max(0L, w - nchar(hdr))), "\n\n", sep = "")
+
+  # ---- overview --------------------------------------------------------------------------------
+  noun <- .mobyRowNoun(x)
+  id <- meta$id.col
+  n_ids <- if (!is.null(id) && id %in% colnames(x)) length(unique(stats::na.omit(x[[id]]))) else NA_integer_
+  # a position table knows how many detections it was aggregated from - report both, so the row count
+  # is never mistaken for the detection count
+  n_det <- if (noun == "positions") sum(x[["detections"]], na.rm = TRUE) else NA_real_
+  overview <- c(paste(.fmtCount(nrow(x)), noun),
+                if (is.finite(n_det) && n_det > 0) paste(.fmtCount(round(n_det)), "detections"),
+                if (!is.na(n_ids)) paste(.fmtCount(n_ids), "individuals"),
+                paste(.fmtCount(ncol(x)), "variables"))
+  .mobyField("overview", .packItems(overview, g$sep, w - 11L))
+
+  # ---- period ----------------------------------------------------------------------------------
+  dt <- meta$datetime.col
+  if (!is.null(dt) && dt %in% colnames(x) && inherits(x[[dt]], "POSIXct") &&
+      any(!is.na(x[[dt]]))) {
+    rng <- range(x[[dt]], na.rm = TRUE)
+    dur <- .fmtDuration(rng[1], rng[2])
+    span <- paste0(format(rng[1], "%Y-%m-%d"), " ", g$arrow, " ", format(rng[2], "%Y-%m-%d"))
+    qual <- paste(c(dur, paste0("tz = ", .dataTZ(x[[dt]]))), collapse = ", ")
+    .mobyField("period", paste0(span, " (", qual, ")"))
+  }
+
+  # ---- space -----------------------------------------------------------------------------------
+  st <- meta$station.col
+  space <- character(0)
+  if (!is.null(st) && st %in% colnames(x))
+    space <- c(space, paste(.fmtCount(length(unique(stats::na.omit(x[[st]])))), "stations"))
+  for (ax in c("lon", "lat")) {
+    cc <- meta[[paste0(ax, ".col")]]
+    if (!is.null(cc) && cc %in% colnames(x) && is.numeric(x[[cc]]) && any(!is.na(x[[cc]]))) {
+      r <- range(x[[cc]], na.rm = TRUE)
+      space <- c(space, sprintf("%s [%.2f, %.2f]", ax, r[1], r[2]))
+    }
+  }
+  .mobyField("space", .packItems(space, g$sep, w - 11L))
+
+  # ---- metadata (only what is actually attached) -----------------------------------------------
+  extras <- c(
+    if (!is.null(meta$tagging.dates)) paste0("tagging.dates (", length(meta$tagging.dates), ")"),
+    if (!is.null(meta$nominal.delay)) paste0("nominal.delay (", length(meta$nominal.delay), ")"),
+    if (!is.null(meta$id.groups))     paste0("id.groups (", length(meta$id.groups), ")"),
+    if (!is.null(meta$epsg.code))     paste0("EPSG: ", meta$epsg.code),
+    if (!is.null(meta$land.shape))    "land.shape")
+  .mobyField("metadata", .packItems(extras, g$sep, w - 11L))
+
+  # ---- preview ---------------------------------------------------------------------------------
+  preview <- as.integer(preview)
+  if (!is.na(preview) && preview > 0L && nrow(x) > 0L && ncol(x) > 0L) {
+    n <- min(preview, nrow(x))
+    cat("\nPreview (first ", n, if (n == 1L) " row)" else " rows)", "\n", sep = "")
+    # print as a plain data.frame: shows every variable and wraps to the console width, so nothing
+    # is silently hidden
+    print(utils::head(as.data.frame(x), n))
+  }
+
+  cat("\n", strrep(g$rule, w), "\n", sep = "")
   invisible(x)
 }
+
+
+#' Return the first or last rows of a `mobyData`
+#'
+#' @description `head()` and `tail()` behave as they do for any data frame: they return the first
+#' (or last) `n` rows of the detection table for inspection. They return a plain `data.frame`, so
+#' the rows print as rows - the study metadata summary is what \code{print()} on the `mobyData`
+#' itself is for.
+#'
+#' To subset a dataset and *keep* it a `mobyData` (metadata and all), use `[` instead:
+#' `x[1:100, ]`.
+#'
+#' @param x A \code{\link{mobyData}} object.
+#' @param n Number of rows. Defaults to 6, as for \code{utils::head}.
+#' @param ... Further arguments passed to \code{utils::head} / \code{utils::tail}.
+#'
+#' @return A `data.frame` of the first (or last) `n` rows.
+#'
+#' @seealso \code{\link{as_moby}}, \code{\link{mobyMeta}}
+#' @examples
+#' data(rays)
+#' head(rays, 3)      # rows, like any data frame
+#' dim(rays[1:100, ]) # '[' keeps the mobyData class and its metadata
+#'
+#' @export
+head.mobyData <- function(x, n = 6L, ...) utils::head(as.data.frame(x), n = n, ...)
+
+#' @rdname head.mobyData
+#' @export
+tail.mobyData <- function(x, n = 6L, ...) utils::tail(as.data.frame(x), n = n, ...)
 
 
 #' @export

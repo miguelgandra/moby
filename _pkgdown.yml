@@ -27,7 +27,7 @@ navbar:
 
 reference:
 - title: Data model
-  contents: [as_moby, mobyData, mobyMeta, is_moby, rays]
+  contents: [as_moby, mobyData, mobyMeta, is_moby, head.mobyData, rays]
 - title: Import, quality control & curation
   contents: [moby_import_schema, importDetections, importDeployments, importTags, checkDeployments,
              matchDeployments, plotArray, assignAnimalIDs, filterDetections, plotMinLag]
