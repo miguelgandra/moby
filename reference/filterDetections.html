@@ -307,15 +307,15 @@ Fish Biology and Fisheries, 24:199-218.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="co"># default: only the temporal bounds are applied (tagging dates read from the mobyData metadata)</span></span></span>
 <span class="r-in"><span><span class="va">filtered</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 0 (0%) from a total of 1643</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Duplicates: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Before tagging: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.02 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,643 detections retained (0 removed, 0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
 <span class="r-in"><span><span class="va">filtered</span>                     <span class="co"># prints the summary</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyFilter&gt; filtered acoustic detections</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   1643 retained | 0 removed</span>
@@ -336,44 +336,50 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># enable the short-interval false-detection filter (needs the transmitter nominal delay)</span></span></span>
 <span class="r-in"><span><span class="va">filtered2</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">rays</span>, nominal.delay <span class="op">=</span> <span class="fl">120</span><span class="op">)</span>   <span class="co"># 120 s tags</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 87 (5%) from a total of 1643</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Duplicates: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Before tagging: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • False detection: 87 (5%) from 8 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.03 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filtering criteria</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • min_lag  3,600 s (30 × nominal delay)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,556 detections retained (87 removed, 5%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)</span></span></span>
 <span class="r-in"><span><span class="va">filtered2b</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">rays</span>, min.lag.threshold <span class="op">=</span> <span class="fl">3600</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 87 (5%) from a total of 1643</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Duplicates: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Before tagging: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • False detection: 87 (5%) from 8 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 8</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.03 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filtering criteria</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • min_lag  3,600 s (fixed window)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,556 detections retained (87 removed, 5%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># add a movement-speed filter (slower: computes step distances); on a 3-animal subset</span></span></span>
 <span class="r-in"><span><span class="va">sub</span> <span class="op">&lt;-</span> <span class="va">rays</span><span class="op">[</span><span class="va">rays</span><span class="op">$</span><span class="va">ID</span> <span class="op"><a href="https://rdrr.io/r/base/match.html" class="external-link">%in%</a></span> <span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/levels.html" class="external-link">levels</a></span><span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/factor.html" class="external-link">factor</a></span><span class="op">(</span><span class="va">rays</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span><span class="op">)</span>, <span class="fl">3</span><span class="op">)</span>, <span class="op">]</span></span></span>
 <span class="r-in"><span><span class="va">filtered3</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">sub</span>, max.speed <span class="op">=</span> <span class="fl">5</span>, speed.unit <span class="op">=</span> <span class="st">"km/h"</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Filtering detections</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Applying detection filters...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Applying speed filter...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Detections removed = 0 (0%) from a total of 563</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Duplicates: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Before tagging: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Speed: 0 (0%) from 0 individual(s)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • flagged for review (overspeed, retained): 9</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Individuals fully discarded = 0 from a total of 3</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 2.02 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 563 detections · 3 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filtering criteria</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • speed  5 km/h (great-circle)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 563 detections retained (0 removed, 0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 9 flagged for review (over-speed, retained)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ⏱ runtime: 1.7s</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

@@ -322,15 +322,15 @@ to check the min_lag threshold empirically.
 data(rays)
 # default: only the temporal bounds are applied (tagging dates read from the mobyData metadata)
 filtered <- filterDetections(rays)
-#> Filtering detections
 #> Warning: - 'id.col' converted to factor.
 #> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.
-#> Applying detection filters...
-#> Detections removed = 0 (0%) from a total of 1643
-#>   • Duplicates: 0 (0%) from 0 individual(s)
-#>   • Before tagging: 0 (0%) from 0 individual(s)
-#> Individuals fully discarded = 0 from a total of 8
-#> Total execution time: 0.02 secs
+#> ── filterDetections() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Removing spurious detections
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> ✔ 1,643 detections retained (0 removed, 0%)
+#> → Breakdown by filter: print() the result
 filtered                     # prints the summary
 #> <mobyFilter> filtered acoustic detections
 #>   1643 retained | 0 removed
@@ -351,43 +351,49 @@ head(filtered$data_discarded[, c("ID", "datetime", "reason")])
 
 # enable the short-interval false-detection filter (needs the transmitter nominal delay)
 filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
-#> Filtering detections
 #> Warning: - 'id.col' converted to factor.
-#> Applying detection filters...
-#> Detections removed = 87 (5%) from a total of 1643
-#>   • Duplicates: 0 (0%) from 0 individual(s)
-#>   • Before tagging: 0 (0%) from 0 individual(s)
-#>   • False detection: 87 (5%) from 8 individual(s)
-#> Individuals fully discarded = 0 from a total of 8
-#> Total execution time: 0.03 secs
+#> ── filterDetections() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Removing spurious detections
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Filtering criteria
+#>   • min_lag  3,600 s (30 × nominal delay)
+#> 
+#> ✔ 1,556 detections retained (87 removed, 5%)
+#> → Breakdown by filter: print() the result
 
 # or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)
 filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
-#> Filtering detections
 #> Warning: - 'id.col' converted to factor.
-#> Applying detection filters...
-#> Detections removed = 87 (5%) from a total of 1643
-#>   • Duplicates: 0 (0%) from 0 individual(s)
-#>   • Before tagging: 0 (0%) from 0 individual(s)
-#>   • False detection: 87 (5%) from 8 individual(s)
-#> Individuals fully discarded = 0 from a total of 8
-#> Total execution time: 0.03 secs
+#> ── filterDetections() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Removing spurious detections
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Filtering criteria
+#>   • min_lag  3,600 s (fixed window)
+#> 
+#> ✔ 1,556 detections retained (87 removed, 5%)
+#> → Breakdown by filter: print() the result
 
 # \donttest{
 # add a movement-speed filter (slower: computes step distances); on a 3-animal subset
 sub <- rays[rays$ID %in% head(levels(factor(rays$ID)), 3), ]
 filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
-#> Filtering detections
 #> Warning: - 'id.col' converted to factor.
 #> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.
-#> Applying detection filters...
-#> Applying speed filter...
-#> Detections removed = 0 (0%) from a total of 563
-#>   • Duplicates: 0 (0%) from 0 individual(s)
-#>   • Before tagging: 0 (0%) from 0 individual(s)
-#>   • Speed: 0 (0%) from 0 individual(s)
-#>   • flagged for review (overspeed, retained): 9
-#> Individuals fully discarded = 0 from a total of 3
-#> Total execution time: 2.02 secs
+#> ── filterDetections() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Removing spurious detections
+#> • Input: 563 detections · 3 individuals
+#> 
+#> → Filtering criteria
+#>   • speed  5 km/h (great-circle)
+#> 
+#> ✔ 563 detections retained (0 removed, 0%)
+#> ! 9 flagged for review (over-speed, retained)
+#> → Breakdown by filter: print() the result
+#> ⏱ runtime: 1.7s
 # }
 ```
