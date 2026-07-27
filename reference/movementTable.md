@@ -124,14 +124,18 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
   # publication-ready movement metrics table (one row per animal + mean +/- SE)
   movementTable(tracks, uds = kud)
 }
-#> Grouping data by: id.groups
-#> Estimating kernel utilization distributions [Dasyatis pastinaca]...
-#> Calculating 50% contours...
-#> Calculating 95% contours...
-#> Estimating kernel utilization distributions [Raja clavata]...
-#> Calculating 50% contours...
-#> Calculating 95% contours...
-#> Total execution time: 0.63 secs
+#> ── calculateUDs() ────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating utilization distributions
+#> • Input: 794 positions · 8 individuals
+#> 
+#> → Method
+#>   • estimator  kernel density (KDE)
+#>   • bandwidth  500 m
+#>   • contours   50% · 95%
+#>   • grouping   id.groups
+#> 
+#> ✔ 8 utilization distributions estimated
 #> Interpolating distances
 #>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
 #>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI

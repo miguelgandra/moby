@@ -282,14 +282,18 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
   kud$summary_table
 }
 #> Warning: - 'id.col' converted to factor.
-#> Grouping data by: id.groups
-#> Estimating kernel utilization distributions [Dasyatis pastinaca]...
-#> Calculating 50% contours...
-#> Calculating 95% contours...
-#> Estimating kernel utilization distributions [Raja clavata]...
-#> Calculating 50% contours...
-#> Calculating 95% contours...
-#> Total execution time: 0.64 secs
+#> ── calculateUDs() ────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating utilization distributions
+#> • Input: 1,643 positions · 8 individuals
+#> 
+#> → Method
+#>   • estimator  kernel density (KDE)
+#>   • bandwidth  500 m
+#>   • contours   50% · 95%
+#>   • grouping   id.groups
+#> 
+#> ✔ 8 utilization distributions estimated
 #>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)
 #> 1 Dasyatis pastinaca D01    249         4.61        17.56
 #> 2 Dasyatis pastinaca D02    154         3.42        16.55

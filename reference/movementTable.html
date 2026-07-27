@@ -165,14 +165,18 @@ detections for each individual (e.g., <code>grid.resolution</code>, <code>mov.di
 <span class="r-in"><span>  <span class="co"># publication-ready movement metrics table (one row per animal + mean +/- SE)</span></span></span>
 <span class="r-in"><span>  <span class="fu">movementTable</span><span class="op">(</span><span class="va">tracks</span>, uds <span class="op">=</span> <span class="va">kud</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Grouping data by: id.groups</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Estimating kernel utilization distributions [Dasyatis pastinaca]...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 50% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 95% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Estimating kernel utilization distributions [Raja clavata]...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 50% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating 95% contours...</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.63 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateUDs()</span> ────────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Estimating utilization distributions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 794 positions · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • estimator  kernel density (KDE)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • bandwidth  500 m</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • contours   50% · 95%</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • grouping   id.groups</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 utilization distributions estimated</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Interpolating distances</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI</span>
