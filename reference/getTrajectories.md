@@ -36,7 +36,7 @@ rays_dist <- calculateStepDistances(rays)
 #> Warning: - 'id.col' converted to factor.
 #>   |                                                                              |                                                                      |   0%Calculating linear paths between consecutive positions...
 #>   |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
-#> Total execution time: 0.06 secs 
+#> Total execution time: 0.07 secs 
 traj <- getTrajectories(rays_dist)
 length(traj)
 #> [1] 8

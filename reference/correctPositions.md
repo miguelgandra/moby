@@ -130,11 +130,18 @@ land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
   c(-8.99, 38.44), c(-8.96, 38.44), c(-8.96, 38.47),
   c(-8.99, 38.47), c(-8.99, 38.44)))), crs = 4326))
 corrected <- correctPositions(rays[1:50, ], spatial.layer = land)
-#> Relocating positions on land to the nearest marine cell
-#> Points relocated: 23
-#> Mean relocation distance: 133 m (0 m — 436 m)
-#> Total execution time: 0.31 secs
-#> Warning: Coordinates were initially in a geographic CRS. They have been projected for spatial processing and converted back to geographic coordinates.
+#> ── correctPositions() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Relocating positions that fall on land
+#> • Input: 50 positions · 23 on land
+#> 
+#> → Relocation criteria
+#>   • layer          land polygons (sf)
+#>   • search radius  50 km
+#>   • projection     EPSG:32629 (reprojected for processing)
+#> 
+#> ✔ 23 positions relocated
+#> ℹ Mean distance: 133 m (0-436 m)
 attr(corrected, "points.relocated")
 #> [1] 23
 head(corrected$summary)
