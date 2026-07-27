@@ -584,7 +584,9 @@ matchDeployments <- function(detections,
                              fill.coords = TRUE,
                              fill.station = TRUE,
                              drop.unmatched = FALSE,
-                             verbose = TRUE) {
+                             verbose = getOption("moby.verbose", TRUE)) {
+
+  start.time <- Sys.time()
 
   args <- .resolveArgs(detections, list(datetime.col = datetime.col, station.col = station.col,
                                         lon.col = lon.col, lat.col = lat.col))
@@ -615,9 +617,27 @@ matchDeployments <- function(detections,
   det_time <- det[[datetime.col]]
   det_station <- if (station.col %in% colnames(det)) as.character(det[[station.col]]) else rep(NA_character_, nrow(det))
 
-  # choose the deployment row for each detection, preferring a station-name match
+  # ---- header ---------------------------------------------------------------------------------
+  # Criteria carry the choices that decide the OUTCOME: the window rule, the tolerance that defines a
+  # coordinate disagreement, whether values are back-filled, and - most consequential - what happens
+  # to detections that match no window.
+  crit <- c("window" = "receiver + time within [deploy, recover]")
+  if (dep_has_coords) crit["coord tolerance"] <- paste0(coord.tolerance, " m")
+  bf <- c(if (fill.station) "station", if (fill.coords && dep_has_coords) "coordinates")
+  if (length(bf) > 0) crit["back-fill"] <- paste0(paste(bf, collapse = " and "), " from the log")
+  crit["unmatched"] <- if (drop.unmatched) "dropped" else "retained, flagged in deployment_matched"
+
+  .mobyHeader("matchDeployments()", "Matching detections to receiver deployment windows",
+              input = paste0(.fmtN(nrow(det)), " detections ", .mobyGlyph("mid"), " ",
+                             .fmtN(nrow(dep)), " deployment records"),
+              criteria = crit, criteria.label = "Matching criteria", verbose = verbose)
+
+  # choose the deployment row for each detection, preferring a station-name match.
+  # One pass per deployment row over all detections, so the cost grows with their product (~23 s on
+  # 915k detections x 968 deployments): worth a progress bar, which cli hides on quick runs.
   dep_idx <- rep(NA_integer_, nrow(det))
   station_matched <- rep(FALSE, nrow(det))
+  pb <- .progressBar(nrow(dep), verbose, name = "Scanning deployment windows")
   for (i in seq_len(nrow(dep))) {
     in_win <- det$receiver == dep$receiver[i] & det_time >= dep$deploy[i] & det_time <= dep$recover_clean[i]
     in_win[is.na(in_win)] <- FALSE
@@ -625,7 +645,9 @@ matchDeployments <- function(detections,
     assign_now <- in_win & (is.na(dep_idx) | (st_match & !station_matched))
     dep_idx[assign_now] <- i
     station_matched[assign_now] <- st_match[assign_now]
+    .progressSet(pb, i)
   }
+  .progressEnd(pb)
 
   matched <- !is.na(dep_idx)
   det$deployment_matched <- matched
@@ -660,11 +682,28 @@ matchDeployments <- function(detections,
     det[[station.col]][need_st] <- meta_station[need_st]
   }
 
+  # ---- outcome: zero counts are suppressed, so a clean run collapses to a single line ----------
   if (verbose) {
-    cat(sprintf("matchDeployments: %d/%d detections matched a deployment window (%d unmatched).\n",
-                sum(matched), nrow(det), sum(!matched)))
-    if (dep_has_coords) cat(sprintf("   %d coordinate(s) back-filled from metadata; %d coordinate mismatch(es) > %g.\n",
-                                    n_filled, sum(det$coord_mismatch, na.rm = TRUE), coord.tolerance))
+    n_match <- sum(matched); n_unmatch <- sum(!matched)
+    n_mismatch <- sum(det$coord_mismatch, na.rm = TRUE)
+    pct <- if (nrow(det) > 0) sprintf(" (%.0f%%)", n_match / nrow(det) * 100) else ""
+    .mobyBlank(verbose)
+    .mobyOk(.fmtN(n_match), " detections matched", pct, verbose = verbose)
+    if (n_unmatch > 0) {
+      # dropping deletes data, so it warrants attention; retaining merely flags it
+      if (drop.unmatched)
+        .mobyAttention(.fmtN(n_unmatch), " outside any deployment window - dropped", verbose = verbose)
+      else
+        .mobyNote(.fmtN(n_unmatch), " outside any deployment window - retained and flagged",
+                  verbose = verbose)
+    }
+    # the log and the export disagreeing is worth a look; back-filling is the requested behaviour
+    if (n_mismatch > 0)
+      .mobyAttention(.fmtN(n_mismatch), " coordinate mismatches > ", coord.tolerance, " m",
+                     verbose = verbose)
+    if (n_filled > 0)
+      .mobyNote(.fmtN(n_filled), " coordinates back-filled from the log", verbose = verbose)
+    .mobyRuntime(start.time, verbose, min.secs = 1)
   }
 
   base_meta <- if (!is.null(prev_meta)) prev_meta else list()

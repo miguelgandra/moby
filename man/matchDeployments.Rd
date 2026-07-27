@@ -20,7 +20,7 @@ matchDeployments(
   fill.coords = TRUE,
   fill.station = TRUE,
   drop.unmatched = FALSE,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
