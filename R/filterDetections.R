@@ -198,7 +198,6 @@ filterDetections <- function(data,
   ##############################################################################
 
   start.time <- Sys.time()
-  .printConsole("Filtering detections", verbose = verbose)
 
   land_shape_expr <- deparse(substitute(land.shape))
   prev_meta <- attr(data, "moby")
@@ -331,9 +330,35 @@ filterDetections <- function(data,
   ## Stages 1-5: per-individual temporal / short-interval filters ##############
   ##############################################################################
 
-  .printConsole("Applying detection filters...", verbose = verbose)
+  # ---- header: what is being done, at what scale, under which criteria -------------------------
+  # Only choices that change what the analysis MEANS belong in 'criteria' (thresholds, limits).
+  # Cosmetic arguments, and anything print.mobyFilter() already reports, are deliberately left out.
+  crit <- c()
+  if (do_minlag) {
+    crit["min_lag"] <- if (fixed_minlag) paste0(.fmtN(round(min.lag.threshold)), " s (fixed window)")
+      else paste0(.fmtN(round(min.lag.factor * stats::median(nominal.delay, na.rm = TRUE))), " s (",
+                  min.lag.factor, " ", .mobyGlyph("times"), " nominal delay)")
+  }
+  if (!isFALSE(isolation.window) && !is.null(isolation.window))
+    crit["isolation"] <- paste0(isolation.window, " h (whole array)")
+  if (do_speed) {
+    # max.speed may be a named per-individual vector: report one value, or the range when they differ
+    sp <- suppressWarnings(range(max.speed, na.rm = TRUE))
+    sp_txt <- if (!all(is.finite(sp))) "per individual"
+              else if (isTRUE(all.equal(sp[1], sp[2]))) format(sp[1])
+              else paste0(format(sp[1]), "-", format(sp[2]))
+    crit["speed"] <- paste0(sp_txt, " ", speed.unit,
+                            if (!is.null(land.shape)) " (least-cost)" else " (great-circle)")
+  }
+  if (min.detections > 0) crit["min detections"] <- .fmtN(min.detections)
+  if (min.days > 0)       crit["min days"] <- .fmtN(min.days)
+
+  .mobyHeader("filterDetections()", "Removing spurious detections",
+              input = paste0(.fmtN(n_total), " detections ", .mobyGlyph("mid"), " ", .fmtN(nfish), " individuals"),
+              criteria = crit, criteria.label = "Filtering criteria", verbose = verbose)
+
   data_individual <- split(data, f = data[, id.col], drop = FALSE)
-  pb <- .progressBar(nfish, verbose)
+  pb <- .progressBar(nfish, verbose, name = "Filtering individuals")
 
   for (i in seq_len(nfish)) {
     sub <- data_individual[[i]]
@@ -396,7 +421,6 @@ filterDetections <- function(data,
 
   shielded_ids <- integer(0)
   if (do_speed && nrow(data_filtered) > 0) {
-    .printConsole("Applying speed filter...", verbose = verbose)
     # build the least-cost graph ONCE, over the full set of surviving positions, and reuse it for every
     # call the speed filter makes below (a graph rebuilt from a small subset would span only that
     # subset's bounding box, silently degrading longer paths to straight lines)
@@ -499,30 +523,25 @@ filterDetections <- function(data,
   filter_summary[["Total removed"]] <- paste0(n_removed_ind, " (", pct, "%)")
   filter_summary[["Total removed"]][n_removed_ind == 0 | n_individual == 0] <- "-"
 
-  # console summary
+  # ---- outcome: one line answering "did it work / what changed". The per-stage and per-individual
+  # breakdown belongs to print.mobyFilter(), so it is deliberately not repeated here.
   if (verbose) {
     n_removed_total <- if (is.null(all_disc)) 0L else nrow(all_disc)
     pct_total <- if (n_total > 0) sprintf("%.0f", n_removed_total / n_total * 100) else "0"
-    .mobyInform("Detections removed = ", n_removed_total, " (", pct_total, "%) from a total of ", n_total,
-                verbose = verbose)
-    fmt_pct <- function(n) { p <- if (n_total > 0) n / n_total * 100 else 0
-      if (n > 0 && p < 0.5) " (<1%)" else sprintf(" (%.0f%%)", p) }
-    stage_run <- c(Duplicates = isTRUE(remove.duplicates), "Before tagging" = TRUE,
-                   "After cut-off" = !is.null(cutoff.dates), "False detection" = do_minlag,
-                   Isolated = (!isFALSE(isolation.window) && !is.null(isolation.window)),
-                   Speed = do_speed, "Min detections" = min.detections > 0, "Min days" = min.days > 0)
-    for (st in stage_order[stage_run[stage_order]]) {
-      n <- sum(removed_mat[, st]); ids_st <- sum(removed_mat[, st] > 0)
-      .mobyInform("  \u2022 ", st, ": ", n, fmt_pct(n), " from ", ids_st, " individual(s)", verbose = verbose)
-    }
     n_flagged <- sum(data_filtered$qc_flag == "overspeed_review")
-    if (n_flagged > 0)
-      .mobyInform("  \u2022 flagged for review (overspeed, retained): ", n_flagged, verbose = verbose)
     ids_discarded <- sum(n_individual > 0 & table(factor(data_filtered[, id.col], levels = all_ids)) == 0)
-    .mobyInform("Individuals fully discarded = ", ids_discarded, " from a total of ",
-                sum(n_individual > 0), verbose = verbose)
+
+    .mobyBlank(verbose)
+    .mobyOk(.fmtN(nrow(data_filtered)), " detections retained (", .fmtN(n_removed_total),
+            " removed, ", pct_total, "%)", verbose = verbose)
+    # attention lines are for things worth a second look - not merely for a non-zero count
+    if (n_flagged > 0)
+      .mobyAttention(.fmtN(n_flagged), " flagged for review (over-speed, retained)", verbose = verbose)
+    if (ids_discarded > 0)
+      .mobyAttention(.fmtN(ids_discarded), " individual(s) left with no detections", verbose = verbose)
+    .mobyArrow("Breakdown by filter: print() the result", verbose = verbose)
   }
-  .reportRuntime(start.time, verbose)
+  .mobyRuntime(start.time, verbose, min.secs = 1)
 
   # re-attach mobyData metadata so the filtered detections stay chainable
   if (!is.null(prev_meta)) {

@@ -239,7 +239,7 @@ correctPositions <- function(data,
   results <- vector("list", nrow(pointsOnLand))
 
   # initialize progress bar (NULL when quiet / non-interactive)
-  pb <- .progressBar(nrow(pointsOnLand), verbose, min=1)
+  pb <- .progressBar(nrow(pointsOnLand), verbose, name = "Relocating points")
 
 
   ###########################################################
@@ -271,7 +271,7 @@ correctPositions <- function(data,
       `%dopar%` <- foreach::`%dopar%`
 
       # set progress bar options (only when a bar is active)
-      opts <- if (!is.null(pb)) list(progress = function(n) setTxtProgressBar(pb, n)) else list()
+      opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
 
       # perform parallel computation over each individual's data using foreach
       results <- foreach::foreach(i=seq_len(nrow(pointsOnLand)), .options.snow=opts, .packages=c("sf"),

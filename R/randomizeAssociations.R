@@ -493,7 +493,7 @@ randomizeAssociations <- function(data,
     cl <- parallel::makeCluster(cores); doSNOW::registerDoSNOW(cl)
     on.exit(parallel::stopCluster(cl), add = TRUE)
     pb <- .progressBar(length(sizes), verbose)
-    opts <- if (!is.null(pb)) list(progress = function(n) setTxtProgressBar(pb, n)) else list()
+    opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
     parts <- foreach::foreach(k = seq_along(sizes), .options.snow = opts, .options.RNG = random.seed,
                               .export = c("precompute", "iterate"), .packages = "moby") %dorng% {
       pc <- precompute(sub, ids, timebin.col, start_dates, end_dates, pairwise_combinations,

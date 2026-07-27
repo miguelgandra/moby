@@ -241,7 +241,7 @@ calculateAssociations <- function(data,
       doSNOW::registerDoSNOW(cl)
 
       # set progress bar (only when a bar is active)
-      opts <- if (!is.null(pb)) list(progress = function(n) setTxtProgressBar(pb, n)) else list()
+      opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
 
       # calculate pairwise overlaps (multi-core)
       results[[i]] <- foreach::foreach(
@@ -325,7 +325,7 @@ calculateAssociations <- function(data,
 .pairwiseOverlap <- function(p, progressbar=NULL, args=NULL) {
 
   # update progress bar
-  if (!is.null(progressbar)) setTxtProgressBar(progressbar, p)
+  if (!is.null(progressbar)) .progressSet(progressbar, p)
 
   # assign variables (needed for parallelization)
   if (!is.null(args)) list2env(args, envir = environment())
