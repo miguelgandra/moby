@@ -191,6 +191,21 @@ randomizeAssociations <- function(data,
 
   # generate all pairwise combinations
   pairwise_combinations <- combn(seq_len(n_ids), 2)
+
+  # ---- header ---------------------------------------------------------------------------------
+  # For a permutation test the parameters ARE the method: they decide whether an association is
+  # called non-random, so they belong on screen rather than only in the returned attributes.
+  crit <- c(iterations = .fmtN(iterations))
+  if (!is.null(constraint.by)) crit["constraint"] <- paste(constraint.by, collapse = " + ")
+  crit["alternative"] <- alternative[1]
+  crit["adjustment"]  <- p.adjust.method
+  crit["conf. level"] <- format(conf.level)
+  if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
+
+  .mobyHeader("randomizeAssociations()", "Testing associations against a null model",
+              input = paste0(.fmtN(n_ids), " individuals ", .mobyGlyph("mid"), " ",
+                             .fmtN(ncol(pairwise_combinations)), " dyads"),
+              criteria = crit, criteria.label = "Permutation test", verbose = verbose)
   unique_pairs <- apply(pairwise_combinations, 2, function(x) paste(complete_ids[x], collapse="-"))
   n_pairs <- length(unique_pairs)
 
@@ -217,8 +232,7 @@ randomizeAssociations <- function(data,
 
     # build the [pairs x iterations] null-overlap matrix (rows = unique_pairs). The serial engine is
     # bit-identical to the previous implementation; cores > 1 splits the iterations across workers.
-    if (!is.null(subset)) .mobyInform("Running permutations - ", names(subset_list$data)[s], verbose = verbose)
-    else if (cores > 1 && s == 1) .mobyInform("Starting parallel computation: ", cores, " cores", verbose = verbose)
+    if (!is.null(subset)) .mobyNote("Permuting subset: ", names(subset_list$data)[s], verbose = verbose)
 
     null_mat <- .nullOverlapMatrix(subset_table, complete_ids, timebin.col, start_dates, end_dates,
                                    pairwise_combinations, unique_pairs, id.groups, group.comparisons,
@@ -358,8 +372,21 @@ randomizeAssociations <- function(data,
       final_results <- out
     }
 
-    # print run time
-    .reportRuntime(start.time, verbose)
+    # ---- outcome: the test's actual finding, which nothing reported before ----------------------
+    if (verbose) {
+      sm <- final_results$summary
+      n_dyads <- suppressWarnings(sum(as.numeric(sm[["N dyads"]]), na.rm = TRUE))
+      above <- suppressWarnings(sum(as.numeric(sm[["Pairs > Random"]]), na.rm = TRUE))
+      below <- suppressWarnings(sum(as.numeric(sm[["Pairs < Random"]]), na.rm = TRUE))
+      nonsig <- suppressWarnings(sum(as.numeric(sm[["Pairs Non Sig"]]), na.rm = TRUE))
+      .mobyBlank(verbose)
+      if (is.finite(n_dyads)) .mobyOk(.fmtN(n_dyads), " dyads tested", verbose = verbose)
+      if (all(is.finite(c(above, below, nonsig))))
+        .mobyNote(.fmtN(above), " above random ", .mobyGlyph("mid"), " ", .fmtN(below),
+                  " below random ", .mobyGlyph("mid"), " ", .fmtN(nonsig), " non-significant",
+                  verbose = verbose)
+    }
+    .mobyRuntime(start.time, verbose, min.secs = 1)
 
     # assemble final list and add attributes
     attr(final_results, 'ids') <- complete_ids
@@ -479,7 +506,7 @@ randomizeAssociations <- function(data,
   if (cores == 1L) {
     pc <- .nullPrecompute(sub, ids, timebin.col, start_dates, end_dates, pairwise_combinations,
                           id.groups, group.comparisons, metric)
-    pb <- .progressBar(iterations, verbose)
+    pb <- .progressBar(iterations, verbose, name = "Permuting")
     null_mat <- .nullIterateChunk(pc, iterations, pb)
     .progressEnd(pb)
   } else {
@@ -492,8 +519,13 @@ randomizeAssociations <- function(data,
     `%dorng%` <- doRNG::`%dorng%`
     cl <- parallel::makeCluster(cores); doSNOW::registerDoSNOW(cl)
     on.exit(parallel::stopCluster(cl), add = TRUE)
-    pb <- .progressBar(length(sizes), verbose)
-    opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
+    # doSNOW fires its callback once per foreach TASK, and there is one task per core - so a bar
+    # totalling length(sizes) showed only 'cores' updates (4 ticks for a 1000-iteration run). Total
+    # the bar in ITERATIONS instead and advance by the cumulative chunk size: the same number of
+    # updates, but honest units and a usable ETA, at no extra compute.
+    pb <- .progressBar(iterations, verbose, name = "Permuting")
+    cum <- cumsum(sizes)
+    opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, cum[n])) else list()
     parts <- foreach::foreach(k = seq_along(sizes), .options.snow = opts, .options.RNG = random.seed,
                               .export = c("precompute", "iterate"), .packages = "moby") %dorng% {
       pc <- precompute(sub, ids, timebin.col, start_dates, end_dates, pairwise_combinations,
