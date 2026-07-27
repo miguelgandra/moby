@@ -99,7 +99,20 @@ trans <- calculateTransitions(rays, spatial.col = "station")
 # test each transition against a within-individual permutation null
 # (iterations kept low here for speed; use the default 1000 in practice)
 rand <- randomizeTransitions(trans, iterations = 100, random.seed = 1)
-#> Running 100 permutations across 2 group(s)...
+#> ── randomizeTransitions() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Testing movement transitions against a null model
+#> • Input: 58 edges · 2 groups
+#> 
+#> → Permutation test
+#>   • iterations   100
+#>   • alternative  two.sided
+#>   • adjustment   fdr
+#>   • conf. level  0.95
+#>   • seed         1
+#> 
+#> ✔ 58 edges tested
+#> ℹ 0 above random · 0 below random · 58 non-significant
 head(rand$edges)
 #>                       group from   to n_movements mean_null   p_value
 #> Raja clavata.1 Raja clavata ST01 ST02           1      1.39 1.0000000
