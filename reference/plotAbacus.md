@@ -38,6 +38,7 @@ plotAbacus(
   background.color = "grey96",
   legend.cols = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -205,6 +206,11 @@ plotAbacus(
   legend and the top band). Detection point size is controlled
   separately via `pt.cex`. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -272,35 +278,22 @@ across datasets and graphics devices of differing dimensions.
 # (release dates are read from the mobyData metadata)
 plotAbacus(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── plotAbacus() ──────────────────────────────────────────────────────── moby ──
 #> 
-#> Abacus plot
-#> ------------------------------------------------------
-#>   Individuals:     8 (2 groups)
-#>   Detections:      1,643
-#>   Period:          2023-04-01 to 2023-06-30 (90 d)
-#>   Points:          cex 1.00
-#>   Date axis:       auto -> weekly ("%d %b")
-#>   Top band:        "%Y"
-#>   Shading:         seasonal
-#>   Legend:          1 col
-#> ------------------------------------------------------
+#> ℹ Drawing detection timelines per individual
+#> • Individuals: 8 (2 groups)
+#> • Detections:  1,643
+#> • Period:      2023-04-01 to 2023-06-30 (90 d)
 
 
 # colour the detections by receiver station
 plotAbacus(rays, color.by = "station")
 #> Warning: - 'id.col' converted to factor.
 #> Warning: - 'color.by' variable converted to factor.
+#> ── plotAbacus() ──────────────────────────────────────────────────────── moby ──
 #> 
-#> Abacus plot
-#> ------------------------------------------------------
-#>   Individuals:     8 (2 groups)
-#>   Detections:      1,643
-#>   Period:          2023-04-01 to 2023-06-30 (90 d)
-#>   Colour:          station (6 levels)
-#>   Points:          cex 1.00
-#>   Date axis:       auto -> weekly ("%d %b")
-#>   Top band:        "%Y"
-#>   Shading:         seasonal
-#>   Legend:          1 col
-#> ------------------------------------------------------
+#> ℹ Drawing detection timelines per individual
+#> • Individuals: 8 (2 groups)
+#> • Detections:  1,643
+#> • Period:      2023-04-01 to 2023-06-30 (90 d)
 ```

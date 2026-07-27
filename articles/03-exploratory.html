@@ -131,18 +131,12 @@
 <div class="sourceCode cell-code" id="cb3"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotAbacus.html">plotAbacus</a></span><span class="op">(</span><span class="va">rays</span>, id.groups <span class="op">=</span> <span class="va">id_groups</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: - 'id.col' converted to factor.</span></span>
+<span><span class="co">#&gt; ── plotAbacus() ──────────────────────────────────────────────────────── moby ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Abacus plot</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span>
-<span><span class="co">#&gt;   Individuals:     8 (2 groups)</span></span>
-<span><span class="co">#&gt;   Detections:      1,643</span></span>
-<span><span class="co">#&gt;   Period:          2023-04-01 to 2023-06-30 (90 d)</span></span>
-<span><span class="co">#&gt;   Points:          cex 1.00</span></span>
-<span><span class="co">#&gt;   Date axis:       auto -&gt; weekly ("%d %b")</span></span>
-<span><span class="co">#&gt;   Top band:        "%Y"</span></span>
-<span><span class="co">#&gt;   Shading:         seasonal</span></span>
-<span><span class="co">#&gt;   Legend:          1 col</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span></code></pre></div>
+<span><span class="co">#&gt; ℹ Drawing detection timelines per individual</span></span>
+<span><span class="co">#&gt; • Individuals: 8 (2 groups)</span></span>
+<span><span class="co">#&gt; • Detections:  1,643</span></span>
+<span><span class="co">#&gt; • Period:      2023-04-01 to 2023-06-30 (90 d)</span></span></code></pre></div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure><p><img src="03-exploratory_files/figure-html/unnamed-chunk-4-1.png" class="quarto-figure quarto-figure-center" width="864"></p>
@@ -158,15 +152,15 @@
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotStationStats.html">plotStationStats</a></span><span class="op">(</span><span class="va">rays</span>, type <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"detections"</span>, <span class="st">"individuals"</span><span class="op">)</span>, id.groups <span class="op">=</span> <span class="va">id_groups</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: - 'id.col' converted to factor.</span></span>
 <span><span class="co">#&gt; Warning: - Converting 'station.col' to factor.</span></span>
+<span><span class="co">#&gt; ── plotStationStats() ────────────────────────────────────────────────── moby ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Station statistics</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span>
-<span><span class="co">#&gt;   Statistics:      detections, individuals</span></span>
-<span><span class="co">#&gt;   Aggregate:       station (6 levels)</span></span>
-<span><span class="co">#&gt;   Individuals:     8</span></span>
-<span><span class="co">#&gt;   Groups:          2 (all -&gt; 3 series)</span></span>
-<span><span class="co">#&gt;   Bar height:      counts (share for avg. detections)</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span></code></pre></div>
+<span><span class="co">#&gt; ℹ Summarising detection statistics per receiver location</span></span>
+<span><span class="co">#&gt; • Individuals: 8</span></span>
+<span><span class="co">#&gt; • Aggregate:   station (6 levels)</span></span>
+<span><span class="co">#&gt; • Groups:      2 (all -&gt; 3 series)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; → Method</span></span>
+<span><span class="co">#&gt;   • Statistics  detections, individuals</span></span></code></pre></div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure><p><img src="03-exploratory_files/figure-html/unnamed-chunk-5-1.png" class="quarto-figure quarto-figure-center" width="864"></p>
@@ -198,20 +192,18 @@
 <span>               color.by <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: - 'id.col' converted to factor.</span></span>
 <span><span class="co">#&gt; Warning: - 'color.by' variable converted to factor.</span></span>
+<span><span class="co">#&gt; ── plotChronogram() ──────────────────────────────────────────────────── moby ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Chronogram</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span>
-<span><span class="co">#&gt;   Individuals:     8</span></span>
-<span><span class="co">#&gt;   Detections:      1,643</span></span>
-<span><span class="co">#&gt;   Period:          2023-04-02 to 2023-06-30 (88 d)</span></span>
-<span><span class="co">#&gt;   Time bin:        60 min</span></span>
-<span><span class="co">#&gt;   Metric:          detections</span></span>
-<span><span class="co">#&gt;   Split by:        species (2 groups)</span></span>
-<span><span class="co">#&gt;   Style:           points</span></span>
-<span><span class="co">#&gt;   Colour:          station (categorical)</span></span>
-<span><span class="co">#&gt;   Diel:            4 lines</span></span>
-<span><span class="co">#&gt;   Date axis:       auto</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span></code></pre></div>
+<span><span class="co">#&gt; ℹ Mapping activity across hour of day and date</span></span>
+<span><span class="co">#&gt; • Individuals: 8</span></span>
+<span><span class="co">#&gt; • Detections:  1,643</span></span>
+<span><span class="co">#&gt; • Period:      2023-04-02 to 2023-06-30 (88 d)</span></span>
+<span><span class="co">#&gt; • Time bin:    60 min</span></span>
+<span><span class="co">#&gt; • Split by:    species (2 groups)</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; → Method</span></span>
+<span><span class="co">#&gt;   • Metric  detections</span></span>
+<span><span class="co">#&gt;   • Diel    4 lines</span></span></code></pre></div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure><p><img src="03-exploratory_files/figure-html/unnamed-chunk-7-1.png" class="quarto-figure quarto-figure-center" width="864"></p>
@@ -233,15 +225,16 @@
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="fu"><a href="../reference/plotPeriodogram.html">plotPeriodogram</a></span><span class="op">(</span><span class="va">binned</span>, id.col <span class="op">=</span> <span class="st">"ID"</span>, timebin.col <span class="op">=</span> <span class="st">"timebin"</span>, id.groups <span class="op">=</span> <span class="va">id_groups</span><span class="op">)</span></span>
 <span><span class="co">#&gt; Warning: - 'id.col' converted to factor.</span></span>
+<span><span class="co">#&gt; ── plotPeriodogram() ─────────────────────────────────────────────────── moby ──</span></span>
 <span><span class="co">#&gt; </span></span>
-<span><span class="co">#&gt; Detection periodogram</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span>
-<span><span class="co">#&gt;   Individuals:     8 of 8 (min.days filter)</span></span>
-<span><span class="co">#&gt;   Sampling:        dt = 60 min</span></span>
-<span><span class="co">#&gt;   Method:          FFT periodogram; detrend: none</span></span>
-<span><span class="co">#&gt;   Period range:    2.0-96.0 h</span></span>
-<span><span class="co">#&gt;   Dominant peak:   0 tidal, 1 diel, 7 other</span></span>
-<span><span class="co">#&gt; ------------------------------------------------------</span></span></code></pre></div>
+<span><span class="co">#&gt; ℹ Scanning each individual's detection series for dominant cyclic rhythms</span></span>
+<span><span class="co">#&gt; • Individuals:   8 of 8 (min.days filter)</span></span>
+<span><span class="co">#&gt; • Sampling:      dt = 60 min</span></span>
+<span><span class="co">#&gt; • Dominant peak: 0 tidal, 1 diel, 7 other</span></span>
+<span><span class="co">#&gt; </span></span>
+<span><span class="co">#&gt; → Spectral estimation</span></span>
+<span><span class="co">#&gt;   • Method        FFT periodogram; detrend: none</span></span>
+<span><span class="co">#&gt;   • Period range  2.0-96.0 h</span></span></code></pre></div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure><p><img src="03-exploratory_files/figure-html/unnamed-chunk-9-1.png" class="quarto-figure quarto-figure-center" width="864"></p>
@@ -254,26 +247,27 @@
 <div class="sourceCode cell-code" id="cb9"><pre class="sourceCode r"><code class="sourceCode r"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a><span class="fu">plotScalogram</span>(binned[binned<span class="sc">$</span>ID <span class="sc">%in%</span> id_groups[[<span class="dv">1</span>]], ],</span>
 <span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>              <span class="at">variable =</span> <span class="st">"detections"</span>, <span class="at">id.col =</span> <span class="st">"ID"</span>, <span class="at">timebin.col =</span> <span class="st">"timebin"</span>, <span class="at">ncol =</span> <span class="dv">2</span>)</span>
 <span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Warning: - 'id.col' converted to factor.</span></span>
-<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; Wavelet scalogram</span></span>
-<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------</span></span>
-<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Individuals:     4 of 4 (min.days filter)</span></span>
-<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Sampling:        dt = 60 min</span></span>
-<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Wavelet:         MORLET; power: log</span></span>
-<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Pre-processing:  gaps: zero; detrend: none</span></span>
-<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   Period range:    3-48 h</span></span>
-<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ------------------------------------------------------</span></span>
-<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
-<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
-<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="er">|</span>                                                                      <span class="er">|</span>   <span class="dv">0</span>%</span>
-<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
-<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="er">|==================</span>                                                    <span class="er">|</span>  <span class="dv">25</span>%</span>
-<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
-<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="er">|===================================</span>                                   <span class="er">|</span>  <span class="dv">50</span>%</span>
-<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
-<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="er">|====================================================</span>                  <span class="er">|</span>  <span class="dv">75</span>%</span>
-<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
-<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="er">|======================================================================|</span> <span class="dv">100</span>%</span></code></pre></div>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ── plotScalogram() ───────────────────────────────────────────────────── moby ──</span></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-6"><a href="#cb9-6" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; ℹ Resolving how rhythms in 'detections' strengthen and shift through time</span></span>
+<span id="cb9-7"><a href="#cb9-7" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; • Individuals: 4 of 4 (min.days filter)</span></span>
+<span id="cb9-8"><a href="#cb9-8" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; • Sampling:    dt = 60 min</span></span>
+<span id="cb9-9"><a href="#cb9-9" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-10"><a href="#cb9-10" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; → Method</span></span>
+<span id="cb9-11"><a href="#cb9-11" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   • Wavelet         MORLET; power: log</span></span>
+<span id="cb9-12"><a href="#cb9-12" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   • Pre-processing  gaps: zero; detrend: none</span></span>
+<span id="cb9-13"><a href="#cb9-13" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt;   • Period range    3-48 h</span></span>
+<span id="cb9-14"><a href="#cb9-14" aria-hidden="true" tabindex="-1"></a><span class="co">#&gt; </span></span>
+<span id="cb9-15"><a href="#cb9-15" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
+<span id="cb9-16"><a href="#cb9-16" aria-hidden="true" tabindex="-1"></a>  <span class="er">|</span>                                                                      <span class="er">|</span>   <span class="dv">0</span>%</span>
+<span id="cb9-17"><a href="#cb9-17" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
+<span id="cb9-18"><a href="#cb9-18" aria-hidden="true" tabindex="-1"></a>  <span class="er">|==================</span>                                                    <span class="er">|</span>  <span class="dv">25</span>%</span>
+<span id="cb9-19"><a href="#cb9-19" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
+<span id="cb9-20"><a href="#cb9-20" aria-hidden="true" tabindex="-1"></a>  <span class="er">|===================================</span>                                   <span class="er">|</span>  <span class="dv">50</span>%</span>
+<span id="cb9-21"><a href="#cb9-21" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
+<span id="cb9-22"><a href="#cb9-22" aria-hidden="true" tabindex="-1"></a>  <span class="er">|====================================================</span>                  <span class="er">|</span>  <span class="dv">75</span>%</span>
+<span id="cb9-23"><a href="#cb9-23" aria-hidden="true" tabindex="-1"></a>  <span class="sc">|</span>                                                                            </span>
+<span id="cb9-24"><a href="#cb9-24" aria-hidden="true" tabindex="-1"></a>  <span class="er">|======================================================================|</span> <span class="dv">100</span>%</span></code></pre></div>
 <div class="cell-output-display">
 <div class="quarto-figure quarto-figure-center">
 <figure><p><img src="03-exploratory_files/figure-html/unnamed-chunk-10-1.png" class="quarto-figure quarto-figure-center" width="864"></p>

@@ -87,6 +87,7 @@ wrapper around <code><a href="https://rdrr.io/pkg/wavScalogram/man/cwt_wst.html"
 <span>  ncol <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  cores <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -205,6 +206,11 @@ translucent veil. The COI is excluded from the colour scale either way. Defaults
 <dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of what was plotted. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
+
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
 <dd><p>Optional output file. If <code>NULL</code> (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a
@@ -270,15 +276,16 @@ tools for time series analysis. The R Journal, 14(2), 164-185.</p>
 <span class="r-in"><span>                timebin.col <span class="op">=</span> <span class="st">"timebin"</span>, ncol <span class="op">=</span> <span class="fl">2</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Wavelet scalogram</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Individuals:     4 of 4 (min.days filter)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Sampling:        dt = 60 min</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Wavelet:         MORLET; power: log</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Pre-processing:  gaps: zero; detrend: none</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Period range:    3-48 h</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">plotScalogram()</span> ───────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Resolving how rhythms in 'detections' strengthen and shift through time</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Individuals: 4 of 4 (min.days filter)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Sampling:    dt = 60 min</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Wavelet         MORLET; power: log</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Pre-processing  gaps: zero; detrend: none</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Period range    3-48 h</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |==================                                                    |  25%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================================                  |  75%  |                                                                              |======================================================================| 100%</span>
 <span class="r-plt img"><img src="plotScalogram-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

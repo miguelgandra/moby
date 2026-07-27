@@ -19,6 +19,7 @@ plotAssociationMatrix(
   discard.missing = TRUE,
   main = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -77,6 +78,11 @@ plotAssociationMatrix(
   Global expansion factor for all text (cell labels and legend).
   Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -128,27 +134,27 @@ wide  <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.03 secs
+#> Total execution time: 0.04 secs
 rand  <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
-#> Total execution time: 0.21 secs
+#> Total execution time: 0.25 secs
 plotAssociationMatrix(rand)
+#> ── plotAssociationMatrix() ───────────────────────────────────────────── moby ──
 #> 
-#> Association matrix
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Metric:          simple-ratio
-#>   Display:         significance
-#>   Significant:     0 positive, 0 negative, 28 ns
-#> ------------------------------------------------------
+#> ℹ Drawing the pairwise association matrix across individuals
+#> • Individuals: 8
+#> • Significant: 0 positive, 0 negative, 28 ns
+#> 
+#> → Method
+#>   • Metric  simple-ratio
 
 plotAssociationMatrix(rand, type = "mean overlap")
+#> ── plotAssociationMatrix() ───────────────────────────────────────────── moby ──
 #> 
-#> Association matrix
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Metric:          simple-ratio
-#>   Display:         mean overlap
-#> ------------------------------------------------------
+#> ℹ Drawing the pairwise association matrix across individuals
+#> • Individuals: 8
+#> 
+#> → Method
+#>   • Metric  simple-ratio
 
 # }
 ```

@@ -63,6 +63,7 @@ plotMovements(
   main = NULL,
   ncol = 1,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -254,6 +255,11 @@ plotMovements(
   Global expansion factor scaling every text element (titles, node/edge
   labels, scale bar, legend). Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -306,13 +312,13 @@ net <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
 #> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
 plotMovements(net, epsg.code = 32629, coastline = FALSE)   # coastline = TRUE draws a coastline
+#> ── plotMovements() ───────────────────────────────────────────────────── moby ──
 #> 
-#> Movement network
-#> ------------------------------------------------------
-#>   Nodes / edges:   6 sites, 58 edges
-#>   Groups:          2
-#>   Edge metric:     movements
-#>   Projection:      projected (EPSG:32629)
-#>   Scale bar:       1 km
-#> ------------------------------------------------------
+#> ℹ Drawing the network of movements between sites
+#> • Nodes/edges: 6 sites, 58 edges
+#> • Groups:      2
+#> 
+#> → Method
+#>   • Edge metric  movements
+#>   • Projection   projected (EPSG:32629)
 ```

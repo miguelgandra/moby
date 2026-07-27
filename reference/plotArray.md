@@ -324,28 +324,29 @@ deployment status and detection flag). Called mainly for its side effect
 # geographic quick look (no projection needed), with 800 m nominal detection ranges
 plotArray(rays_deployments, detection.range = 800, label = TRUE)
 
+#> ── plotArray() ───────────────────────────────────────────────────────── moby ──
 #> 
-#> Receiver array
-#> ------------------------------------------------------
-#>   Stations:        6 (6 receivers)
-#>   Projection:      geographic (lon/lat)
-#>   Spacing (NN):    median 1.5 km (range 1.4 km-1.9 km)
-#>   Detection range: 800 m
-#> ------------------------------------------------------
+#> ℹ Mapping the receiver array layout
+#> • Stations:     6 (6 receivers)
+#> • Spacing (NN): median 1.5 km (range 1.4 km-1.9 km)
+#> 
+#> → Method
+#>   • projection       geographic (lon/lat)
+#>   • detection range  800 m
 
 # \donttest{
 # projected map with an automatic coastline and the array footprint
 plotArray(rays_deployments, epsg.code = 32629, detection.range = 800,
           hull = TRUE, coastline = FALSE)
 
+#> ── plotArray() ───────────────────────────────────────────────────────── moby ──
 #> 
-#> Receiver array
-#> ------------------------------------------------------
-#>   Stations:        6 (6 receivers)
-#>   Projection:      projected (EPSG:32629)
-#>   Spacing (NN):    median 1.5 km (range 1.4 km-1.9 km)
-#>   Detection range: 800 m
-#>   Scale bar:       2 km
-#> ------------------------------------------------------
+#> ℹ Mapping the receiver array layout
+#> • Stations:     6 (6 receivers)
+#> • Spacing (NN): median 1.5 km (range 1.4 km-1.9 km)
+#> 
+#> → Method
+#>   • projection       projected (EPSG:32629)
+#>   • detection range  800 m
 # }
 ```

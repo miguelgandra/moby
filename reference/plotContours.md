@@ -44,6 +44,7 @@ plotContours(
   ncol = 1,
   disable.par = FALSE,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -224,6 +225,11 @@ plotContours(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -291,15 +297,14 @@ the layout stays consistent across datasets and graphics devices.
 plotContours(rays, variables = "lat", var.titles = "Latitude",
              coords = c(-9, 38.4))
 #> Warning: - 'id.col' converted to factor.
+#> ── plotContours() ────────────────────────────────────────────────────── moby ──
 #> 
-#> Contour plot
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Variables:       lat
-#>   Period:          2023-04-02 to 2023-06-30 (88 d)
-#>   Binning:         hour x month
-#>   Time axis:       true extent
-#>   Diel:            4 lines
-#>   Scale:           per panel
-#> ------------------------------------------------------
+#> ℹ Mapping continuous values across hour-of-day and date
+#> • Individuals: 8
+#> • Variables:   lat
+#> • Period:      2023-04-02 to 2023-06-30 (88 d)
+#> 
+#> → Method
+#>   • binning  hour x month
+#>   • diel     4 lines
 ```

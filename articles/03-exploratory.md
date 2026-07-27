@@ -70,18 +70,12 @@ tag attrition.
 
 plotAbacus(rays, id.groups = id_groups)
 #> Warning: - 'id.col' converted to factor.
+#> ── plotAbacus() ──────────────────────────────────────────────────────── moby ──
 #> 
-#> Abacus plot
-#> ------------------------------------------------------
-#>   Individuals:     8 (2 groups)
-#>   Detections:      1,643
-#>   Period:          2023-04-01 to 2023-06-30 (90 d)
-#>   Points:          cex 1.00
-#>   Date axis:       auto -> weekly ("%d %b")
-#>   Top band:        "%Y"
-#>   Shading:         seasonal
-#>   Legend:          1 col
-#> ------------------------------------------------------
+#> ℹ Drawing detection timelines per individual
+#> • Individuals: 8 (2 groups)
+#> • Detections:  1,643
+#> • Period:      2023-04-01 to 2023-06-30 (90 d)
 ```
 
 ![](03-exploratory_files/figure-html/unnamed-chunk-4-1.png)
@@ -97,15 +91,15 @@ Columns split the animals by species.
 plotStationStats(rays, type = c("detections", "individuals"), id.groups = id_groups)
 #> Warning: - 'id.col' converted to factor.
 #> Warning: - Converting 'station.col' to factor.
+#> ── plotStationStats() ────────────────────────────────────────────────── moby ──
 #> 
-#> Station statistics
-#> ------------------------------------------------------
-#>   Statistics:      detections, individuals
-#>   Aggregate:       station (6 levels)
-#>   Individuals:     8
-#>   Groups:          2 (all -> 3 series)
-#>   Bar height:      counts (share for avg. detections)
-#> ------------------------------------------------------
+#> ℹ Summarising detection statistics per receiver location
+#> • Individuals: 8
+#> • Aggregate:   station (6 levels)
+#> • Groups:      2 (all -> 3 series)
+#> 
+#> → Method
+#>   • Statistics  detections, individuals
 ```
 
 ![](03-exploratory_files/figure-html/unnamed-chunk-5-1.png)
@@ -139,20 +133,18 @@ plotChronogram(rays, coords = mpa_coords, split.by = "species",
                color.by = "station")
 #> Warning: - 'id.col' converted to factor.
 #> Warning: - 'color.by' variable converted to factor.
+#> ── plotChronogram() ──────────────────────────────────────────────────── moby ──
 #> 
-#> Chronogram
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Detections:      1,643
-#>   Period:          2023-04-02 to 2023-06-30 (88 d)
-#>   Time bin:        60 min
-#>   Metric:          detections
-#>   Split by:        species (2 groups)
-#>   Style:           points
-#>   Colour:          station (categorical)
-#>   Diel:            4 lines
-#>   Date axis:       auto
-#> ------------------------------------------------------
+#> ℹ Mapping activity across hour of day and date
+#> • Individuals: 8
+#> • Detections:  1,643
+#> • Period:      2023-04-02 to 2023-06-30 (88 d)
+#> • Time bin:    60 min
+#> • Split by:    species (2 groups)
+#> 
+#> → Method
+#>   • Metric  detections
+#>   • Diel    4 lines
 ```
 
 ![](03-exploratory_files/figure-html/unnamed-chunk-7-1.png)
@@ -182,15 +174,16 @@ bands are shaded and the dominant peak is marked.
 
 plotPeriodogram(binned, id.col = "ID", timebin.col = "timebin", id.groups = id_groups)
 #> Warning: - 'id.col' converted to factor.
+#> ── plotPeriodogram() ─────────────────────────────────────────────────── moby ──
 #> 
-#> Detection periodogram
-#> ------------------------------------------------------
-#>   Individuals:     8 of 8 (min.days filter)
-#>   Sampling:        dt = 60 min
-#>   Method:          FFT periodogram; detrend: none
-#>   Period range:    2.0-96.0 h
-#>   Dominant peak:   0 tidal, 1 diel, 7 other
-#> ------------------------------------------------------
+#> ℹ Scanning each individual's detection series for dominant cyclic rhythms
+#> • Individuals:   8 of 8 (min.days filter)
+#> • Sampling:      dt = 60 min
+#> • Dominant peak: 0 tidal, 1 diel, 7 other
+#> 
+#> → Spectral estimation
+#>   • Method        FFT periodogram; detrend: none
+#>   • Period range  2.0-96.0 h
 ```
 
 ![](03-exploratory_files/figure-html/unnamed-chunk-9-1.png)
@@ -203,15 +196,16 @@ species:
 plotScalogram(binned[binned$ID %in% id_groups[[1]], ],
               variable = "detections", id.col = "ID", timebin.col = "timebin", ncol = 2)
 #> Warning: - 'id.col' converted to factor.
+#> ── plotScalogram() ───────────────────────────────────────────────────── moby ──
 #> 
-#> Wavelet scalogram
-#> ------------------------------------------------------
-#>   Individuals:     4 of 4 (min.days filter)
-#>   Sampling:        dt = 60 min
-#>   Wavelet:         MORLET; power: log
-#>   Pre-processing:  gaps: zero; detrend: none
-#>   Period range:    3-48 h
-#> ------------------------------------------------------
+#> ℹ Resolving how rhythms in 'detections' strengthen and shift through time
+#> • Individuals: 4 of 4 (min.days filter)
+#> • Sampling:    dt = 60 min
+#> 
+#> → Method
+#>   • Wavelet         MORLET; power: log
+#>   • Pre-processing  gaps: zero; detrend: none
+#>   • Period range    3-48 h
 #> 
   |                                                                            
   |                                                                      |   0%

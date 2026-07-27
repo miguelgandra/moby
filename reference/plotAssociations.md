@@ -46,6 +46,7 @@ plotAssociations(
   main = NULL,
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -214,6 +215,11 @@ plotAssociations(
   Global expansion factor scaling all text (titles, node/edge labels,
   axes, legend). Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -270,19 +276,19 @@ wide  <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.03 secs
+#> Total execution time: 0.04 secs
 if (requireNamespace("qgraph", quietly = TRUE)) {
   plotAssociations(assoc)
 }
+#> ── plotAssociations() ────────────────────────────────────────────────── moby ──
 #> 
-#> Association network
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Comparisons:     All
-#>   Metric:          association index
-#>   Total dyads:     28
-#>   Shows:           network
-#> ------------------------------------------------------
+#> ℹ Mapping pairwise overlaps between individuals
+#> • Individuals: 8
+#> • Comparisons: All
+#> • Total dyads: 28
+#> 
+#> → Method
+#>   • Metric  association index
 
 
 # Overlay the null-model histogram from a permutation test
@@ -291,16 +297,16 @@ if (requireNamespace("qgraph", quietly = TRUE)) {
   rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
   plotAssociations(assoc, rand)
 }
-#> Total execution time: 0.17 secs
+#> Total execution time: 0.20 secs
+#> ── plotAssociations() ────────────────────────────────────────────────── moby ──
 #> 
-#> Association network
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Comparisons:     All
-#>   Metric:          simple-ratio
-#>   Total dyads:     28
-#>   Shows:           network + null-model histogram
-#> ------------------------------------------------------
+#> ℹ Mapping pairwise overlaps between individuals
+#> • Individuals: 8
+#> • Comparisons: All
+#> • Total dyads: 28
+#> 
+#> → Method
+#>   • Metric  simple-ratio
 
 # }
 ```

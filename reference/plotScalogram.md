@@ -39,6 +39,7 @@ plotScalogram(
   ncol = 1,
   cores = 1,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -164,6 +165,11 @@ plotScalogram(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -240,15 +246,16 @@ if (requireNamespace("wavScalogram", quietly = TRUE)) {
                 timebin.col = "timebin", ncol = 2)
 }
 #> Warning: - 'id.col' converted to factor.
+#> ── plotScalogram() ───────────────────────────────────────────────────── moby ──
 #> 
-#> Wavelet scalogram
-#> ------------------------------------------------------
-#>   Individuals:     4 of 4 (min.days filter)
-#>   Sampling:        dt = 60 min
-#>   Wavelet:         MORLET; power: log
-#>   Pre-processing:  gaps: zero; detrend: none
-#>   Period range:    3-48 h
-#> ------------------------------------------------------
+#> ℹ Resolving how rhythms in 'detections' strengthen and shift through time
+#> • Individuals: 4 of 4 (min.days filter)
+#> • Sampling:    dt = 60 min
+#> 
+#> → Method
+#>   • Wavelet         MORLET; power: log
+#>   • Pre-processing  gaps: zero; detrend: none
+#>   • Period range    3-48 h
 #>   |                                                                              |                                                                      |   0%  |                                                                              |==================                                                    |  25%  |                                                                              |===================================                                   |  50%  |                                                                              |====================================================                  |  75%  |                                                                              |======================================================================| 100%
 
 # }

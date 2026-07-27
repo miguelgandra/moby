@@ -30,6 +30,7 @@ plotStationStats(
   xlab = NULL,
   legend = TRUE,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -131,6 +132,11 @@ plotStationStats(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -193,13 +199,13 @@ inch units, so it stays consistent across datasets and graphics devices.
 plotStationStats(rays, type = c("detections", "individuals"))
 #> Warning: - 'id.col' converted to factor.
 #> Warning: - Converting 'station.col' to factor.
+#> ── plotStationStats() ────────────────────────────────────────────────── moby ──
 #> 
-#> Station statistics
-#> ------------------------------------------------------
-#>   Statistics:      detections, individuals
-#>   Aggregate:       station (6 levels)
-#>   Individuals:     8
-#>   Groups:          2 (all -> 3 series)
-#>   Bar height:      counts (share for avg. detections)
-#> ------------------------------------------------------
+#> ℹ Summarising detection statistics per receiver location
+#> • Individuals: 8
+#> • Aggregate:   station (6 levels)
+#> • Groups:      2 (all -> 3 series)
+#> 
+#> → Method
+#>   • Statistics  detections, individuals
 ```

@@ -43,6 +43,7 @@ plotChronogram(
   legend.cols = NULL,
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -208,6 +209,11 @@ plotChronogram(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -277,33 +283,31 @@ layout stays consistent across datasets and graphics devices.
 # chronogram of detections with the diel cycle overlaid
 plotChronogram(rays, coords = c(-9, 38.4))
 #> Warning: - 'id.col' converted to factor.
+#> ── plotChronogram() ──────────────────────────────────────────────────── moby ──
 #> 
-#> Chronogram
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Detections:      1,643
-#>   Period:          2023-04-02 to 2023-06-30 (88 d)
-#>   Time bin:        60 min
-#>   Metric:          detections
-#>   Style:           points
-#>   Diel:            4 lines
-#>   Date axis:       auto
-#> ------------------------------------------------------
+#> ℹ Mapping activity across hour of day and date
+#> • Individuals: 8
+#> • Detections:  1,643
+#> • Period:      2023-04-02 to 2023-06-30 (88 d)
+#> • Time bin:    60 min
+#> 
+#> → Method
+#>   • Metric  detections
+#>   • Diel    4 lines
 
 
 # without the diel overlay (no coordinates required)
 plotChronogram(rays, diel.lines = 0)
 #> Warning: - 'id.col' converted to factor.
+#> ── plotChronogram() ──────────────────────────────────────────────────── moby ──
 #> 
-#> Chronogram
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Detections:      1,643
-#>   Period:          2023-04-02 to 2023-06-30 (88 d)
-#>   Time bin:        60 min
-#>   Metric:          detections
-#>   Style:           points
-#>   Diel:            off
-#>   Date axis:       auto
-#> ------------------------------------------------------
+#> ℹ Mapping activity across hour of day and date
+#> • Individuals: 8
+#> • Detections:  1,643
+#> • Period:      2023-04-02 to 2023-06-30 (88 d)
+#> • Time bin:    60 min
+#> 
+#> → Method
+#>   • Metric  detections
+#>   • Diel    off
 ```

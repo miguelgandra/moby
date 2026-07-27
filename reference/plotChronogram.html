@@ -95,6 +95,7 @@ is drawn for each group (e.g. species).</p>
 <span>  legend.cols <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -242,6 +243,11 @@ group name when <code>split.by</code> is used, otherwise the metric); a characte
 <dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of what was plotted. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
+
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
 <dd><p>Optional output file. If <code>NULL</code> (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a
@@ -298,35 +304,33 @@ stays consistent across datasets and graphics devices.</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># chronogram of detections with the diel cycle overlaid</span></span></span>
 <span class="r-in"><span><span class="fu">plotChronogram</span><span class="op">(</span><span class="va">rays</span>, coords <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9</span>, <span class="fl">38.4</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chronogram</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Individuals:     8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Detections:      1,643</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Period:          2023-04-02 to 2023-06-30 (88 d)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Time bin:        60 min</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Metric:          detections</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Style:           points</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Diel:            4 lines</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Date axis:       auto</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">plotChronogram()</span> ──────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Mapping activity across hour of day and date</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Individuals: 8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Detections:  1,643</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Period:      2023-04-02 to 2023-06-30 (88 d)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Time bin:    60 min</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Metric  detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Diel    4 lines</span>
 <span class="r-plt img"><img src="plotChronogram-1.png" alt="" width="700" height="433"></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># without the diel overlay (no coordinates required)</span></span></span>
 <span class="r-in"><span><span class="fu">plotChronogram</span><span class="op">(</span><span class="va">rays</span>, diel.lines <span class="op">=</span> <span class="fl">0</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Chronogram</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Individuals:     8</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Detections:      1,643</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Period:          2023-04-02 to 2023-06-30 (88 d)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Time bin:        60 min</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Metric:          detections</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Style:           points</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Diel:            off</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Date axis:       auto</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">plotChronogram()</span> ──────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Mapping activity across hour of day and date</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Individuals: 8</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Detections:  1,643</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Period:      2023-04-02 to 2023-06-30 (88 d)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Time bin:    60 min</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Metric  detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Diel    off</span>
 <span class="r-plt img"><img src="plotChronogram-2.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>

@@ -83,6 +83,7 @@ points), and, optionally, annotates a design-appropriate group comparison test.<
 <span>  main <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  ncol <span class="op">=</span> <span class="fl">2</span>,</span>
 <span>  cex <span class="op">=</span> <span class="fl">1</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  file <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  width <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  height <span class="op">=</span> <span class="cn">NULL</span>,</span>
@@ -185,6 +186,11 @@ values are plotted while the test still uses complete blocks.</p></dd>
 <dd><p>Global expansion factor for all plot text. Defaults to 1.</p></dd>
 
 
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of what was plotted. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
+
 <dt id="arg-file">file<a class="anchor" aria-label="anchor" href="#arg-file"></a></dt>
 <dd><p>Optional output file. If <code>NULL</code> (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a
@@ -252,15 +258,16 @@ aggregated by <code>agg.fun</code> (mean by default).</p>
 <span class="r-in"><span><span class="fu">plotMetricComparison</span><span class="op">(</span><span class="va">res</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"IR1"</span>, <span class="st">"IR2"</span><span class="op">)</span>, split.by <span class="op">=</span> <span class="st">"species"</span>,</span></span>
 <span class="r-in"><span>                     paired <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>Converting 'split.by' to a factor.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Metric comparison</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Metrics:         IR1, IR2</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Grouping:        species (independent groups): Dasyatis pastinaca, Raja clavata</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Test:            Mann-Whitney; correction: holm</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Incomplete:      8/8 individuals dropped (max 100%); complete-case only</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ! large data loss - non-detection may be informative; consider a mixed model.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> ------------------------------------------------------</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">plotMetricComparison()</span> ────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Comparing per-individual metrics across group levels</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Metrics:    IR1, IR2</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Groups:     species (independent groups): Dasyatis pastinaca, Raja clavata</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Incomplete: 8/8 individuals dropped (max 100%); complete-case only</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • Test  Mann-Whitney; correction: holm</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> large data loss - non-detection may be informative; consider a mixed model.</span>
 <span class="r-plt img"><img src="plotMetricComparison-1.png" alt="" width="700" height="433"></span>
 </code></pre></div>
     </div>

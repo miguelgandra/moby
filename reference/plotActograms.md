@@ -42,6 +42,7 @@ plotActograms(
   legend.cols = NULL,
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -191,6 +192,11 @@ plotActograms(
   Global expansion factor applied to all plot text. Point size is
   controlled separately via `pt.cex`. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -245,14 +251,13 @@ axis is taken from the data.
 # (coordinates are required to compute sunrise/sunset times)
 plotActograms(rays, coords = c(-9, 38.4))
 #> Warning: - 'id.col' converted to factor.
+#> ── plotActograms() ───────────────────────────────────────────────────── moby ──
 #> 
-#> Actogram plot
-#> ------------------------------------------------------
-#>   Individuals:     8 (2 groups)
-#>   Detections:      1,643
-#>   Period:          2023-04-01 to 2023-06-30 (90 d)
-#>   Diel:            2 lines
-#>   Date axis:       auto -> weekly ("%d %b")
-#>   Legend:          none
-#> ------------------------------------------------------
+#> ℹ Drawing per-individual detections by time of day
+#> • Individuals: 8 (2 groups)
+#> • Detections:  1,643
+#> • Period:      2023-04-01 to 2023-06-30 (90 d)
+#> 
+#> → Method
+#>   • diel  2 lines
 ```

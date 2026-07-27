@@ -47,6 +47,7 @@ plotMaps(
   main = NULL,
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -231,6 +232,11 @@ plotMaps(
 
   Global expansion factor for all plot text (ID labels, legends, scale
   bar). Defaults to 1.
+
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 - file:
 

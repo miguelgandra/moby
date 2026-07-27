@@ -59,32 +59,33 @@ wide <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.03 secs
+#> Total execution time: 0.04 secs
 if (requireNamespace("qgraph", quietly = TRUE)) {
   plot(assoc)
 }
+#> ── plotAssociations() ────────────────────────────────────────────────── moby ──
 #> 
-#> Association network
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Comparisons:     All
-#>   Metric:          association index
-#>   Total dyads:     28
-#>   Shows:           network
-#> ------------------------------------------------------
+#> ℹ Mapping pairwise overlaps between individuals
+#> • Individuals: 8
+#> • Comparisons: All
+#> • Total dyads: 28
+#> 
+#> → Method
+#>   • Metric  association index
 
 # movement network (transitions between locations)
 trans <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
 #> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
 plot(trans)
+#> ── plotMovements() ───────────────────────────────────────────────────── moby ──
 #> 
-#> Movement network
-#> ------------------------------------------------------
-#>   Nodes / edges:   6 sites, 58 edges
-#>   Groups:          2
-#>   Edge metric:     movements
-#>   Projection:      force-directed (no map)
-#> ------------------------------------------------------
+#> ℹ Drawing the network of movements between sites
+#> • Nodes/edges: 6 sites, 58 edges
+#> • Groups:      2
+#> 
+#> → Method
+#>   • Edge metric  movements
+#>   • Projection   force-directed (no map)
 
 ```

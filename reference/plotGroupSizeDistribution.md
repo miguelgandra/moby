@@ -33,6 +33,7 @@ plotGroupSizeDistribution(
   legend.horiz = FALSE,
   ncol = 1,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -119,6 +120,11 @@ plotGroupSizeDistribution(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -176,13 +182,12 @@ consistent across datasets and graphics devices.
 # Frequency of co-occurring group sizes (one panel per ID group in 'rays')
 plotGroupSizeDistribution(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── plotGroupSizeDistribution() ───────────────────────────────────────── moby ──
 #> 
-#> Co-occurring group-size distribution
-#> ------------------------------------------------------
-#>   Individuals:     8
-#>   Time bins:       2,130
-#>   Groups:          2 (all -> 3 series)
-#>   Group sizes:     2 to 2
-#>   Co-occurrences:  23
-#> ------------------------------------------------------
+#> ℹ Tallying how many individuals were detected together per time bin
+#> • Individuals:    8
+#> • Time bins:      2,130
+#> • Groups:         2 (all -> 3 series)
+#> • Group sizes:    2 to 2
+#> • Co-occurrences: 23
 ```

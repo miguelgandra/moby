@@ -33,6 +33,7 @@ plotMetricComparison(
   main = NULL,
   ncol = 2,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -139,6 +140,11 @@ plotMetricComparison(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -220,13 +226,14 @@ res$species <- rays_tags$species[match(res$ID, rays_tags$ID)]
 plotMetricComparison(res, metrics = c("IR1", "IR2"), split.by = "species",
                      paired = FALSE)
 #> Warning: Converting 'split.by' to a factor.
+#> ── plotMetricComparison() ────────────────────────────────────────────── moby ──
 #> 
-#> Metric comparison
-#> ------------------------------------------------------
-#>   Metrics:         IR1, IR2
-#>   Grouping:        species (independent groups): Dasyatis pastinaca, Raja clavata
-#>   Test:            Mann-Whitney; correction: holm
-#>   Incomplete:      8/8 individuals dropped (max 100%); complete-case only
-#>   ! large data loss - non-detection may be informative; consider a mixed model.
-#> ------------------------------------------------------
+#> ℹ Comparing per-individual metrics across group levels
+#> • Metrics:    IR1, IR2
+#> • Groups:     species (independent groups): Dasyatis pastinaca, Raja clavata
+#> • Incomplete: 8/8 individuals dropped (max 100%); complete-case only
+#> 
+#> → Method
+#>   • Test  Mann-Whitney; correction: holm
+#> ! large data loss - non-detection may be informative; consider a mixed model.
 ```

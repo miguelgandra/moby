@@ -30,6 +30,7 @@ plotPeriodogram(
   background.color = "grey96",
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -120,6 +121,11 @@ plotPeriodogram(
 
   Global expansion factor for all plot text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -183,13 +189,14 @@ binned <- aggregate(list(detections = rep(1L, nrow(rays))),
                     by = list(ID = rays$ID, timebin = rays$timebin), FUN = sum)
 plotPeriodogram(binned, id.col = "ID", timebin.col = "timebin")
 #> Warning: - 'id.col' converted to factor.
+#> ── plotPeriodogram() ─────────────────────────────────────────────────── moby ──
 #> 
-#> Detection periodogram
-#> ------------------------------------------------------
-#>   Individuals:     8 of 8 (min.days filter)
-#>   Sampling:        dt = 60 min
-#>   Method:          FFT periodogram; detrend: none
-#>   Period range:    2.0-96.0 h
-#>   Dominant peak:   0 tidal, 1 diel, 7 other
-#> ------------------------------------------------------
+#> ℹ Scanning each individual's detection series for dominant cyclic rhythms
+#> • Individuals:   8 of 8 (min.days filter)
+#> • Sampling:      dt = 60 min
+#> • Dominant peak: 0 tidal, 1 diel, 7 other
+#> 
+#> → Spectral estimation
+#>   • Method        FFT periodogram; detrend: none
+#>   • Period range  2.0-96.0 h
 ```

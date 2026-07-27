@@ -41,6 +41,7 @@ plotDeployments(
   legend = NULL,
   main = "Periods of operation",
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -167,6 +168,11 @@ plotDeployments(
 
   Global expansion factor for all text. Defaults to 1.
 
+- verbose:
+
+  Logical; print a summary of what was plotted. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - file:
 
   Optional output file. If `NULL` (the default), the figure is drawn on
@@ -221,12 +227,11 @@ labels and legend), matching the rest of the plotting family.
 ``` r
 # receiver operating-period timeline from the deployment log
 plotDeployments(rays_deployments)
+#> ── plotDeployments() ─────────────────────────────────────────────────── moby ──
 #> 
-#> Deployment timeline
-#> ------------------------------------------------------
-#>   Rows:            6 (by receiver)
-#>   Deployments:     6
-#>   Span:            2023-03-25 to 2023-07-05
-#>   Receiver-days:   613
-#> ------------------------------------------------------
+#> ℹ Drawing operating-period timelines from the deployment log
+#> • Rows:          6 (by receiver)
+#> • Deployments:   6
+#> • Span:          2023-03-25 to 2023-07-05
+#> • Receiver-days: 613
 ```
