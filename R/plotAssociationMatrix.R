@@ -26,6 +26,8 @@
 #' @param discard.missing Logical; drop rows/columns with no valid pairwise interactions. Defaults to TRUE.
 #' @param main Optional overall title.
 #' @param cex Global expansion factor for all text (cell labels and legend). Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, the id x id matrix of plotted values (significance labels or overlap percentages).
@@ -51,6 +53,7 @@ plotAssociationMatrix <- function(random.results,
                                   discard.missing = TRUE,
                                   main = NULL,
                                   cex = 1,
+                                  verbose = getOption("moby.verbose", TRUE),
                                   file = NULL,
                                   width = NULL,
                                   height = NULL,
@@ -159,8 +162,18 @@ plotAssociationMatrix <- function(random.results,
                      crowd.unit = "individuals")
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
-  .printAssociationMatrixSummary(n_ids = n_ids, type = type, mat = result_matrix,
-                                 metric = attributes(random.results)$metric)
+  matrix_metric <- attributes(random.results)$metric
+  header_facts <- c(Individuals = .fmtN(n_ids))
+  if(type == "significance"){
+    v <- unlist(result_matrix)
+    header_facts["Significant"] <- sprintf("%d positive, %d negative, %d ns",
+                                           sum(v == "+", na.rm = TRUE), sum(v == "-", na.rm = TRUE),
+                                           sum(v == "ns", na.rm = TRUE))
+  }
+  .mobyHeader("plotAssociationMatrix()", "Drawing the pairwise association matrix across individuals",
+              facts = header_facts,
+              criteria = c(Metric = if(is.null(matrix_metric)) "association index" else matrix_metric),
+              verbose = verbose)
 
   ##############################################################################
   # Cell colours ###############################################################
@@ -244,22 +257,6 @@ plotAssociationMatrix <- function(random.results,
   digits <- if(all(is.na(decimals))) 0 else max(0, max(decimals, na.rm = TRUE))
   fmt <- paste0("%.", digits, "f")
   list(labs1 = sprintf(fmt, vars1), labs2 = sprintf(fmt, vars2))
-}
-
-#' @keywords internal
-#' @noRd
-.printAssociationMatrixSummary <- function(n_ids, type, mat, metric){
-  kv <- .kv
-  .summaryOpen("Association matrix")
-  kv("Individuals", n_ids)
-  kv("Metric", if(is.null(metric)) "association index" else metric)
-  kv("Display", type)
-  if(type == "significance"){
-    v <- unlist(mat)
-    kv("Significant", sprintf("%d positive, %d negative, %d ns",
-                              sum(v == "+", na.rm = TRUE), sum(v == "-", na.rm = TRUE), sum(v == "ns", na.rm = TRUE)))
-  }
-  .summaryClose()
 }
 
 #######################################################################################################

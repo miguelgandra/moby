@@ -32,6 +32,7 @@ plotActograms(
   legend.cols = NULL,
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -112,6 +113,9 @@ single individual, 2 otherwise).}
 
 \item{cex}{Global expansion factor applied to all plot text. Point size is controlled separately
 via \code{pt.cex}. Defaults to 1.}
+
+\item{verbose}{Logical; print a summary of what was plotted. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

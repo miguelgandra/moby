@@ -48,6 +48,8 @@
 #' @param legend Logical; when `station.labels = "numbered"`, draw the number-to-name key. Defaults
 #' to TRUE.
 #' @param cex Global expansion factor for all plot text. Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further arguments passed to \code{\link[graphics]{barplot}}.
 #'
@@ -77,6 +79,7 @@ plotStationStats <- function(data,
                              xlab = NULL,
                              legend = TRUE,
                              cex = 1,
+                             verbose = getOption("moby.verbose", TRUE),
                              file = NULL,
                              width = NULL,
                              height = NULL,
@@ -193,9 +196,15 @@ plotStationStats <- function(data,
   # Console summary ####################################################################
   ######################################################################################
 
-  .printStationStatsSummary(type=type, aggregate.by=aggregate.by, n_loc=length(loc_levels),
-                            n_ids=nlevels(data[, id.col]), id.groups=id.groups, n_series=n_series,
-                            group.comparisons=group.comparisons, scale=value.scale)
+  facts <- c("Individuals" = .fmtN(nlevels(data[, id.col])),
+             "Aggregate"   = sprintf("%s (%d levels)", aggregate.by, length(loc_levels)))
+  if(!is.null(id.groups))
+    facts <- c(facts, "Groups" = sprintf("%d (%s -> %d series)", length(id.groups),
+                                         group.comparisons, n_series))
+  .mobyHeader("plotStationStats()", "Summarising detection statistics per receiver location",
+              facts = facts,
+              criteria = c("Statistics" = paste(type, collapse=", ")),
+              verbose = verbose)
 
 
   ######################################################################################
@@ -380,24 +389,6 @@ plotStationStats <- function(data,
   as.numeric(table(factor(events, levels=all_levels)))
 }
 
-
-#######################################################################################################
-## Console summary (internal) #########################################################################
-#######################################################################################################
-
-#' @keywords internal
-#' @noRd
-.printStationStatsSummary <- function(type, aggregate.by, n_loc, n_ids, id.groups, n_series,
-                                      group.comparisons, scale){
-  kv <- .kv
-  .summaryOpen("Station statistics")
-  kv("Statistics", paste(type, collapse=", "))
-  kv("Aggregate", sprintf("%s (%d levels)", aggregate.by, n_loc))
-  kv("Individuals", format(n_ids, big.mark=","))
-  if(!is.null(id.groups)) kv("Groups", sprintf("%d (%s -> %d series)", length(id.groups), group.comparisons, n_series))
-  kv("Bar height", if(scale == "natural") "counts (share for avg. detections)" else scale)
-  .summaryClose()
-}
 
 #######################################################################################################
 #######################################################################################################

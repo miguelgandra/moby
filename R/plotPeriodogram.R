@@ -42,6 +42,8 @@
 #' @param background.color Panel background colour. Defaults to "grey96".
 #' @param cex Global expansion factor for all plot text. Defaults to 1.
 #' @param ncol Number of panel columns. If NULL, set from the number of individuals.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, a tidy data frame with one row per individual: the dominant period (h), its
@@ -73,6 +75,7 @@ plotPeriodogram <- function(data,
                             background.color = "grey96",
                             ncol = NULL,
                             cex = 1,
+                            verbose = getOption("moby.verbose", TRUE),
                             file = NULL,
                             width = NULL,
                             height = NULL,
@@ -156,8 +159,21 @@ plotPeriodogram <- function(data,
                band = band_of(p$dom_period), stringsAsFactors = FALSE)
   }))
 
-  .printPeriodogramSummary(n_ids = n_ind, n_total = built$n_total, dt = built$dt, method = method,
-                           detrend = detrend, period.range = period.range, results = results)
+  n_tidal <- sum(results$band == "tidal", na.rm = TRUE)
+  n_diel  <- sum(results$band == "diel", na.rm = TRUE)
+  .mobyHeader("plotPeriodogram()",
+              "Scanning each individual's detection series for dominant cyclic rhythms",
+              facts = c(
+                "Individuals"   = sprintf("%d of %d (min.days filter)", n_ind, built$n_total),
+                "Sampling"      = sprintf("dt = %g min", built$dt),
+                "Dominant peak" = sprintf("%d tidal, %d diel, %d other", n_tidal, n_diel,
+                                          n_ind - n_tidal - n_diel)),
+              criteria = c(
+                "Method"       = sprintf("%s; detrend: %s",
+                                         if(method == "lomb") "Lomb-Scargle" else "FFT periodogram",
+                                         detrend),
+                "Period range" = sprintf("%.1f-%.1f h", period.range[1], period.range[2])),
+              criteria.label = "Spectral estimation", verbose = verbose)
 
   tidal <- c(6, 12.4); diel <- c(22, 26)
   for(i in seq_len(nplots)){
@@ -224,20 +240,6 @@ plotPeriodogram <- function(data,
   list(period = period_h, power = power, fap = fap,
        dom_period = if(length(power)) period_h[dom] else NA_real_,
        dom_power  = if(length(power)) power[dom] else NA_real_)
-}
-
-#' @keywords internal
-#' @noRd
-.printPeriodogramSummary <- function(n_ids, n_total, dt, method, detrend, period.range, results){
-  kv <- .kv
-  .summaryOpen("Detection periodogram")
-  kv("Individuals", sprintf("%d of %d (min.days filter)", n_ids, n_total))
-  kv("Sampling", sprintf("dt = %g min", dt))
-  kv("Method", sprintf("%s; detrend: %s", if(method == "lomb") "Lomb-Scargle" else "FFT periodogram", detrend))
-  kv("Period range", sprintf("%.1f-%.1f h", period.range[1], period.range[2]))
-  nt <- sum(results$band == "tidal", na.rm = TRUE); nd <- sum(results$band == "diel", na.rm = TRUE)
-  kv("Dominant peak", sprintf("%d tidal, %d diel, %d other", nt, nd, n_ids - nt - nd))
-  .summaryClose()
 }
 
 ##################################################################################################

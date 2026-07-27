@@ -68,6 +68,8 @@
 #' @param main Optional overall title above the panel grid.
 #' @param cex Global expansion factor for all plot text (ID labels, legends, scale bar). Defaults to 1.
 #' @param ncol Number of panel columns. If NULL, set from the number of individuals.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, a tidy data frame with one row per mapped individual: the isopleth level, the
@@ -120,6 +122,7 @@ plotMaps <- function(data,
                      main = NULL,
                      ncol = NULL,
                      cex = 1,
+                     verbose = getOption("moby.verbose", TRUE),
                      file = NULL,
                      width = NULL,
                      height = NULL,
@@ -279,9 +282,9 @@ plotMaps <- function(data,
   data_individual <- split(data, f = factor(data[, id.col]), drop = FALSE)
   results <- data.frame()
   .printMapsSummary(n_ids = length(ids), n_total = n_before, n_discarded = length(missing_individuals),
-                    has_kud = has_ud, has_tracks = !is.null(animal.tracks),
+                    has_kud = has_ud,
                     epsg = if (inherits(epsg.code, "crs") && !is.na(epsg.code$epsg)) epsg.code$epsg else NA,
-                    ud.contour = ud.contour, scale.km = scale.km)
+                    ud.contour = ud.contour, verbose = verbose)
 
   ##############################################################################
   ## Draw panels ###############################################################
@@ -385,15 +388,19 @@ plotMaps <- function(data,
 
 #' @keywords internal
 #' @noRd
-.printMapsSummary <- function(n_ids, n_total, n_discarded, has_kud, has_tracks, epsg, ud.contour, scale.km) {
-  kv <- .kv
-  .summaryOpen("Home-range maps")
-  kv("Individuals", sprintf("%d of %d%s", n_ids, n_total, if (n_discarded > 0) sprintf(" (%d discarded, < 5 detections)", n_discarded) else ""))
-  kv("Layers", sprintf("UD: %s; tracks: %s", if (has_kud) "yes" else "no", if (has_tracks) "yes" else "no"))
-  kv("Projection", if (!is.na(epsg)) sprintf("EPSG:%s", epsg) else "projected")
-  if (has_kud) kv("Home range", sprintf("%g%% isopleth", ud.contour * 100))
-  kv("Scale bar", sprintf("%g km", scale.km))
-  .summaryClose()
+.printMapsSummary <- function(n_ids, n_total, n_discarded, has_kud, epsg, ud.contour,
+                              verbose = getOption("moby.verbose", TRUE)) {
+
+  crit <- c(Projection = if (!is.na(epsg)) sprintf("EPSG:%s", epsg) else "projected")
+  if (has_kud) crit["Home range"] <- sprintf("%g%% isopleth", ud.contour * 100)
+
+  .mobyHeader("plotMaps()", "Mapping each individual's space use",
+              facts = c(Individuals = sprintf("%d of %d", n_ids, n_total)),
+              criteria = crit, verbose = verbose)
+
+  # individuals lost to the < 5-detection rule: an outcome the user should see, not a plain fact
+  if (n_discarded > 0)
+    .mobyAttention(sprintf("%d individual(s) discarded (< 5 detections)", n_discarded), verbose = verbose)
 }
 
 

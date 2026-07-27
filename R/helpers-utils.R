@@ -40,34 +40,6 @@ NULL
 
 
 ##################################################################################################
-## Plot summary cards   ##########################################################################
-
-#' Print a plot summary "card" to the console
-#'
-#' @description Shared formatter for the summary blocks the plotting functions print after rendering
-#' (e.g. "Abacus plot", "Movement network"). Centralises the rule width and key-column padding so
-#' every card looks identical, replacing the per-function \code{hr <- strrep("-", NN)} /
-#' \code{kv <- function(k, v) cat(sprintf("  %-Ns ...))} definitions that had drifted (rule widths of
-#' 50/52/54 and key paddings of 11/12/14/16). These are object-description displays, so \code{cat()}
-#' (stdout) is intentional here - unlike status output, which goes through \code{.mobyInform()}.
-#'
-#' \code{.summaryOpen()} prints a blank line, the title, and the top rule; \code{.summaryClose()}
-#' prints the bottom rule; \code{.kv()} prints one aligned \code{key: value} row; \code{.kvCont()}
-#' prints a continuation row (blank key column, aligned under the values).
-#'
-#' @param title Card title (e.g. "Abacus plot").
-#' @param key,value A key/value pair (the colon is added automatically).
-#' @note These functions are intended for internal use within the 'moby' package.
-#' @keywords internal
-#' @noRd
-.summaryRule  <- function() strrep("-", 54L)               # single, consistent card width
-.summaryOpen  <- function(title) cat("\n", title, "\n", .summaryRule(), "\n", sep = "")
-.summaryClose <- function() cat(.summaryRule(), "\n", sep = "")
-.kv           <- function(key, value) cat(sprintf("  %-16s %s\n", paste0(key, ":"), value))
-.kvCont       <- function(value) cat(sprintf("  %-16s %s\n", "", value))
-
-
-##################################################################################################
 ## Timezone helper   #############################################################################
 
 #' Retrieve the timezone of a date-time vector

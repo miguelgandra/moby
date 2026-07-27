@@ -53,6 +53,8 @@
 #' @param ncol Number of panel columns. Defaults to 1.
 #' @param cores Number of CPU cores for the CWT computation (needs \pkg{parallel}, \pkg{doSNOW},
 #' \pkg{foreach} when > 1). Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further arguments passed to \code{\link[wavScalogram]{cwt_wst}}.
 #'
@@ -100,6 +102,7 @@ plotScalogram <- function(data,
                           ncol = 1,
                           cores = 1,
                           cex = 1,
+                          verbose = getOption("moby.verbose", TRUE),
                           file = NULL,
                           width = NULL,
                           height = NULL,
@@ -164,9 +167,16 @@ plotScalogram <- function(data,
   # CWT computation ############################################################
   ##############################################################################
 
-  .printScalogramSummary(n_ids = n_ind, n_total = built$n_total, dt = built$dt, wavelet = wavelet.type,
-                         gap.handling = gap.handling, detrend = detrend, power.scaling = power.scaling,
-                         period.range = period.range, unit = unit_abbrev)
+  .mobyHeader("plotScalogram()",
+              paste0("Resolving how rhythms in '", variable, "' strengthen and shift through time"),
+              facts = c(
+                "Individuals" = sprintf("%d of %d (min.days filter)", n_ind, built$n_total),
+                "Sampling"    = sprintf("dt = %g min", built$dt)),
+              criteria = c(
+                "Wavelet"        = sprintf("%s; power: %s", wavelet.type, power.scaling),
+                "Pre-processing" = sprintf("gaps: %s; detrend: %s", gap.handling, detrend),
+                "Period range"   = sprintf("%g-%g %s", period.range[1], period.range[2], unit_abbrev)),
+              verbose = verbose)
 
   data_ts <- lapply(ord_ids, function(id) stats::ts(built$series[[id]]$values))
   cwt_fun <- function(x) wavScalogram::cwt_wst(x, dt = built$dt, scales = scales_arg, powerscales = TRUE,
@@ -349,20 +359,6 @@ plotScalogram <- function(data,
   .colorlegend(col = color.pal, zlim = zlim2, zval = zval, zlab = zlab, posx = c(0.9, 0.915),
                posy = c(0.15, 0.85), main = "", digit = digit, lab.scientific = lab_sci,
                cex = cex_legend, xpd = NA)
-}
-
-#' @keywords internal
-#' @noRd
-.printScalogramSummary <- function(n_ids, n_total, dt, wavelet, gap.handling, detrend, power.scaling,
-                                   period.range, unit){
-  kv <- .kv
-  .summaryOpen("Wavelet scalogram")
-  kv("Individuals", sprintf("%d of %d (min.days filter)", n_ids, n_total))
-  kv("Sampling", sprintf("dt = %g min", dt))
-  kv("Wavelet", sprintf("%s; power: %s", wavelet, power.scaling))
-  kv("Pre-processing", sprintf("gaps: %s; detrend: %s", gap.handling, detrend))
-  kv("Period range", sprintf("%g-%g %s", period.range[1], period.range[2], unit))
-  .summaryClose()
 }
 
 ##################################################################################################

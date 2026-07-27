@@ -489,28 +489,37 @@ plotArray <- function(deployments,
   #####################################################################################
 
   if (verbose) {
-    kv <- .kv
-    .summaryOpen("Receiver array")
-    kv("Stations", sprintf("%d (%d receiver%s)", n_stations, sum(stations$n_receivers),
-                           if (sum(stations$n_receivers) == 1) "" else "s"))
-    kv("Projection", if (projected) sprintf("projected%s", if (!is.na(epsg_label)) paste0(" (EPSG:", epsg_label, ")") else "")
-       else "geographic (lon/lat)")
+    # facts about the array as plotted; the projection and the nominal range govern how the layout
+    # and the coverage circles should be read, so they belong in the method block
+    facts <- c("Stations" = sprintf("%d (%d receiver%s)", n_stations, sum(stations$n_receivers),
+                                   if (sum(stations$n_receivers) == 1) "" else "s"))
     if (n_stations >= 2)
-      kv("Spacing (NN)", sprintf("median %s (range %s-%s)", .fmtDist(stats::median(nn_m)),
-                                 .fmtDist(min(nn_m)), .fmtDist(max(nn_m))))
-    if (!is.null(detection.range)) {
-      rr <- detection.range[is.finite(detection.range)]
-      if (length(rr)) kv("Detection range", if (length(unique(rr)) == 1) .fmtDist(rr[1])
-                         else sprintf("%s-%s", .fmtDist(min(rr)), .fmtDist(max(rr))))
-    }
+      facts["Spacing (NN)"] <- sprintf("median %s (range %s-%s)", .fmtDist(stats::median(nn_m)),
+                                       .fmtDist(min(nn_m)), .fmtDist(max(nn_m)))
     if (!is.null(status.at)) {
       tb <- table(stations$status); tb <- tb[tb > 0]
-      kv("Status", paste(sprintf("%d %s", tb, names(tb)), collapse = ", "))
+      facts["Status"] <- paste(sprintf("%d %s", tb, names(tb)), collapse = ", ")
     }
-    if (!is.null(zero_det)) kv("Zero detections", sprintf("%d station%s", length(zero_det), if (length(zero_det) == 1) "" else "s"))
-    if (projected && !is.na(scale.km)) kv("Scale bar", sprintf("%g km", scale.km))
-    if (n_dropped > 0) kv("Dropped", sprintf("%d (bad coordinates)", n_dropped))
-    .summaryClose()
+    if (!is.null(zero_det) && length(zero_det) > 0)
+      facts["Zero detections"] <- sprintf("%d station%s", length(zero_det),
+                                          if (length(zero_det) == 1) "" else "s")
+
+    crit <- c(projection = if (projected)
+                sprintf("projected%s", if (!is.na(epsg_label)) paste0(" (EPSG:", epsg_label, ")") else "")
+              else "geographic (lon/lat)")
+    if (!is.null(detection.range)) {
+      rr <- detection.range[is.finite(detection.range)]
+      if (length(rr)) crit["detection range"] <- if (length(unique(rr)) == 1) .fmtDist(rr[1])
+                                                 else sprintf("%s-%s", .fmtDist(min(rr)), .fmtDist(max(rr)))
+    }
+
+    .mobyHeader("plotArray()", "Mapping the receiver array layout", facts = facts,
+                criteria = crit, verbose = verbose)
+
+    if (n_dropped > 0) {
+      .mobyBlank(verbose)
+      .mobyAttention(n_dropped, " station(s) dropped (bad coordinates)", verbose = verbose)
+    }
   }
 
   invisible(stations)

@@ -14,6 +14,7 @@ plotAssociationMatrix(
   discard.missing = TRUE,
   main = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -46,6 +47,9 @@ instead of the observed range. Defaults to FALSE.}
 \item{main}{Optional overall title.}
 
 \item{cex}{Global expansion factor for all text (cell labels and legend). Defaults to 1.}
+
+\item{verbose}{Logical; print a summary of what was plotted. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

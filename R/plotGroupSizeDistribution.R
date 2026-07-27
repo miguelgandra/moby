@@ -45,6 +45,8 @@
 #' @param legend.horiz Logical; draw the legend horizontally. Defaults to FALSE.
 #' @param cex Global expansion factor for all plot text. Defaults to 1.
 #' @param ncol Number of columns in the panel layout. Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, a tidy data frame of the plotted distribution (columns `series`, `group_size`,
@@ -72,6 +74,7 @@ plotGroupSizeDistribution <- function(data,
                                       legend.horiz = FALSE,
                                       ncol = 1,
                                       cex = 1,
+                                      verbose = getOption("moby.verbose", TRUE),
                                       file = NULL,
                                       width = NULL,
                                       height = NULL,
@@ -172,11 +175,19 @@ plotGroupSizeDistribution <- function(data,
   # Console summary ####################################################################
   ######################################################################################
 
-  .printGroupSizeDistributionSummary(
-    n_ids = length(ids), n_bins = length(timebins),
-    split.by = split.by, n_split = length(split_levels), id.groups = id.groups,
-    group.comparisons = group.comparisons, n_series = n_series,
-    size_range = range(all_sizes), n_events = sum(dist$count))
+  size_range <- range(all_sizes)
+  facts <- c("Individuals" = .fmtN(length(ids)),
+             "Time bins"   = .fmtN(length(timebins)))
+  if(!is.null(id.groups))
+    facts["Groups"] <- sprintf("%d (%s -> %d series)", length(id.groups), group.comparisons, n_series)
+  if(!is.null(split.by))
+    facts["Split by"] <- sprintf("%s (%d levels)", split.by, length(split_levels))
+  facts["Group sizes"]    <- sprintf("%d to %d", size_range[1], size_range[2])
+  facts["Co-occurrences"] <- .fmtN(sum(dist$count))
+
+  .mobyHeader("plotGroupSizeDistribution()",
+              "Tallying how many individuals were detected together per time bin",
+              facts = facts, verbose = verbose)
 
 
   ######################################################################################
@@ -284,25 +295,6 @@ plotGroupSizeDistribution <- function(data,
   out
 }
 
-
-#######################################################################################################
-## Console summary (internal) #########################################################################
-#######################################################################################################
-
-#' @keywords internal
-#' @noRd
-.printGroupSizeDistributionSummary <- function(n_ids, n_bins, split.by, n_split, id.groups,
-                                               group.comparisons, n_series, size_range, n_events){
-  kv <- .kv
-  .summaryOpen("Co-occurring group-size distribution")
-  kv("Individuals", format(n_ids, big.mark=","))
-  kv("Time bins", format(n_bins, big.mark=","))
-  if(!is.null(id.groups)) kv("Groups", sprintf("%d (%s -> %d series)", length(id.groups), group.comparisons, n_series))
-  if(!is.null(split.by)) kv("Split by", sprintf("%s (%d levels)", split.by, n_split))
-  kv("Group sizes", sprintf("%d to %d", size_range[1], size_range[2]))
-  kv("Co-occurrences", format(n_events, big.mark=","))
-  .summaryClose()
-}
 
 #######################################################################################################
 #######################################################################################################

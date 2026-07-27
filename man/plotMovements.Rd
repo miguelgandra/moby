@@ -40,6 +40,7 @@ plotMovements(
   main = NULL,
   ncol = 1,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -141,6 +142,9 @@ value of 1 keeps the bounding box; values > 1 increase the extent. Defaults to 1
 
 \item{cex}{Global expansion factor scaling every text element (titles, node/edge labels, scale
 bar, legend). Defaults to 1.}
+
+\item{verbose}{Logical; print a summary of what was plotted. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

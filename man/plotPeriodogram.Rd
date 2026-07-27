@@ -22,6 +22,7 @@ plotPeriodogram(
   background.color = "grey96",
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -67,6 +68,9 @@ for the dominant peak. If NULL (default), spans ~2 sampling intervals to twice t
 \item{ncol}{Number of panel columns. If NULL, set from the number of individuals.}
 
 \item{cex}{Global expansion factor for all plot text. Defaults to 1.}
+
+\item{verbose}{Logical; print a summary of what was plotted. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

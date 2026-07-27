@@ -71,6 +71,8 @@
 #' @param legend.cols Number of columns for the `color.by` legend. If NULL, chosen automatically.
 #' @param cex Global expansion factor for all plot text. Defaults to 1.
 #' @param ncol Number of columns in the panel layout. If NULL, panels are stacked (one column).
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further arguments passed to \code{\link[graphics]{image}} (raster) or
 #' \code{\link[graphics]{points}} (points).
@@ -115,6 +117,7 @@ plotChronogram <- function(data,
                            legend.cols = NULL,
                            ncol = NULL,
                            cex = 1,
+                           verbose = getOption("moby.verbose", TRUE),
                            file = NULL,
                            width = NULL,
                            height = NULL,
@@ -316,14 +319,26 @@ plotChronogram <- function(data,
   # Console summary ###################################################################
   #####################################################################################
 
-  .printChronogramSummary(
-    n_ids = nlevels(data[, id.col]), n_det = n_det_total,
-    xmin = min(unlist(lapply(plot_data_list, function(x) min(x$timebin))), na.rm=TRUE),
-    xmax = max(unlist(lapply(plot_data_list, function(x) max(x$timebin))), na.rm=TRUE),
-    interval = interval, metric = metric, split.by = split.by, n_groups = length(groups),
-    style = style, color.by = color.by, color_is_numeric = color_is_numeric,
-    diel.lines = if(need_sun) diel.lines else 0, shade = shade,
-    date.interval = date.interval, date.start = date.start)
+  # unlist() drops POSIXct to numeric, so the range is rebuilt as a datetime before formatting
+  chrono_xmin <- as.POSIXct(min(unlist(lapply(plot_data_list, function(x) min(x$timebin))), na.rm=TRUE), origin="1970-01-01")
+  chrono_xmax <- as.POSIXct(max(unlist(lapply(plot_data_list, function(x) max(x$timebin))), na.rm=TRUE), origin="1970-01-01")
+  chrono_dur  <- as.integer(difftime(chrono_xmax, chrono_xmin, units="days"))
+
+  n_diel_lines <- if(need_sun) diel.lines else 0
+  diel_desc <- if(n_diel_lines > 0) sprintf("%d lines", n_diel_lines) else "off"
+  if(!isFALSE(shade)) diel_desc <- paste0(diel_desc, sprintf(" + %s shading", if(is.data.frame(shade)) "custom" else shade))
+
+  chrono_facts <- c("Individuals" = .fmtN(nlevels(data[, id.col])),
+                    "Detections"  = .fmtN(n_det_total),
+                    "Period"      = sprintf("%s to %s (%d d)", format(chrono_xmin, "%Y-%m-%d"),
+                                            format(chrono_xmax, "%Y-%m-%d"), chrono_dur),
+                    "Time bin"    = sprintf("%g min", interval))
+  if(!is.null(split.by)) chrono_facts["Split by"] <- sprintf("%s (%d groups)", split.by, length(groups))
+
+  .mobyHeader("plotChronogram()", "Mapping activity across hour of day and date",
+              facts = chrono_facts,
+              criteria = c(Metric = metric, Diel = diel_desc),
+              verbose = verbose)
 
 
   #####################################################################################
@@ -548,35 +563,6 @@ plotChronogram <- function(data,
 
 # short metric label for the legends
 .metricLabel <- function(var) switch(var, detections="detections", individuals="individuals", "co-occurrences"="co-occur.")
-
-#' Print a concise diagnostic summary for a chronogram (internal)
-#' @keywords internal
-#' @noRd
-.printChronogramSummary <- function(n_ids, n_det, xmin, xmax, interval, metric, split.by, n_groups,
-                                    style, color.by, color_is_numeric, diel.lines, shade,
-                                    date.interval, date.start){
-  xmin <- as.POSIXct(xmin, origin="1970-01-01"); xmax <- as.POSIXct(xmax, origin="1970-01-01")
-  dur <- as.integer(difftime(xmax, xmin, units="days"))
-  kv <- .kv
-
-  diel_desc <- if(diel.lines > 0) sprintf("%d lines", diel.lines) else "off"
-  if(!isFALSE(shade)) diel_desc <- paste0(diel_desc, sprintf(" + %s shading", if(is.data.frame(shade)) "custom" else shade))
-  date_desc <- if(identical(date.interval, "auto")) "auto" else sprintf("every %g", date.interval)
-  if(date.start != 1) date_desc <- paste0(date_desc, sprintf(" (phase %d)", date.start))
-
-  .summaryOpen("Chronogram")
-  kv("Individuals", format(n_ids, big.mark=","))
-  kv("Detections", format(n_det, big.mark=","))
-  kv("Period", sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"), format(xmax, "%Y-%m-%d"), dur))
-  kv("Time bin", sprintf("%g min", interval))
-  kv("Metric", metric)
-  if(!is.null(split.by)) kv("Split by", sprintf("%s (%d groups)", split.by, n_groups))
-  kv("Style", style)
-  if(!is.null(color.by)) kv("Colour", sprintf("%s (%s)", color.by, if(color_is_numeric) "continuous" else "categorical"))
-  kv("Diel", diel_desc)
-  kv("Date axis", date_desc)
-  .summaryClose()
-}
 
 #######################################################################################################
 #######################################################################################################

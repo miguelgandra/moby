@@ -65,6 +65,8 @@
 #' single individual, 2 otherwise).
 #' @param cex Global expansion factor applied to all plot text. Point size is controlled separately
 #' via `pt.cex`. Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further graphical parameters passed to \code{\link[graphics]{points}}.
 #'
@@ -103,6 +105,7 @@ plotActograms <- function(data,
                           legend.cols = NULL,
                           ncol = NULL,
                           cex = 1,
+                          verbose = getOption("moby.verbose", TRUE),
                           file = NULL,
                           width = NULL,
                           height = NULL,
@@ -263,11 +266,21 @@ plotActograms <- function(data,
   # Console summary ############################################################
   ##############################################################################
 
-  .printActogramSummary(
-    n_ids = length(plot_ids), n_groups = length(id.groups), n_total = n_total_ids,
-    n_missing = n_missing, discard = discard.missing, n_det = n_det, xmin = xmin, xmax = xmax,
-    color.by = color.by, ngroups = ngroups, diel.lines = diel.lines,
-    date.interval = date.interval, date.format = date.format, ax = ax, legend = show_legend)
+  # facts about the data being drawn, plus the diel definition (the only choice here that changes
+  # how the activity pattern is read)
+  ids_desc <- .fmtN(length(plot_ids))
+  if(length(id.groups) > 1) ids_desc <- paste0(ids_desc, sprintf(" (%d groups)", length(id.groups)))
+  if(n_missing > 0) ids_desc <- paste0(ids_desc, sprintf("; %d missing (%s)", n_missing,
+                       if(discard.missing) "removed" else "shown"))
+
+  .mobyHeader("plotActograms()", "Drawing per-individual detections by time of day",
+              facts = c("Individuals" = ids_desc,
+                        "Detections"  = .fmtN(n_det),
+                        "Period"      = sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"),
+                                                format(xmax, "%Y-%m-%d"),
+                                                as.integer(difftime(xmax, xmin, units="days")))),
+              criteria = c(diel = if(diel.lines > 0) sprintf("%d lines", diel.lines) else "off"),
+              verbose = verbose)
 
 
   ##############################################################################
@@ -350,43 +363,6 @@ plotActograms <- function(data,
   invisible(NULL)
 }
 
-
-##################################################################################################
-## Console summary (internal) ####################################################################
-##################################################################################################
-
-#' Print a concise diagnostic summary for an actogram plot
-#'
-#' @description Reports the input data and plotting decisions made by \code{\link{plotActograms}} as
-#' a compact, aligned console block.
-#' @note This function is intended for internal use within the 'moby' package.
-#' @keywords internal
-#' @noRd
-
-.printActogramSummary <- function(n_ids, n_groups, n_total, n_missing, discard, n_det, xmin, xmax,
-                                  color.by, ngroups, diel.lines, date.interval, date.format, ax, legend){
-  dur <- as.integer(difftime(xmax, xmin, units="days"))
-
-  ids_desc <- format(n_ids, big.mark=",")
-  if(n_groups > 1) ids_desc <- paste0(ids_desc, sprintf(" (%d groups)", n_groups))
-  if(n_missing > 0) ids_desc <- paste0(ids_desc, sprintf("; %d missing (%s)", n_missing, if(discard) "removed" else "shown"))
-
-  date_desc <- if(identical(date.interval, "auto")){
-    unit_lab <- c(hour="hourly", day="daily", week="weekly", month="monthly", year="yearly")[ax$unit]
-    sprintf("auto -> %s (\"%s\")", unname(unit_lab), ax$format)
-  } else sprintf("every %g (\"%s\")", date.interval, if(is.null(date.format)) "%b/%y" else date.format)
-
-  kv <- .kv
-  .summaryOpen("Actogram plot")
-  kv("Individuals", ids_desc)
-  kv("Detections", format(n_det, big.mark=","))
-  kv("Period", sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"), format(xmax, "%Y-%m-%d"), dur))
-  if(!is.null(color.by)) kv("Colour", sprintf("%s (%d levels)", color.by, ngroups))
-  kv("Diel", if(diel.lines > 0) sprintf("%d lines", diel.lines) else "off")
-  kv("Date axis", date_desc)
-  kv("Legend", if(legend) "shown" else "none")
-  .summaryClose()
-}
 
 ##################################################################################################
 ##################################################################################################

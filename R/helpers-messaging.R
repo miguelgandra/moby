@@ -167,6 +167,9 @@
 #' @param title Function name, e.g. `"filterDetections()"`.
 #' @param intro One line: what the function is doing with the user's data.
 #' @param input Optional one-line scale of the input (e.g. `"1,643 detections | 8 individuals"`).
+#' @param facts Optional named character vector of facts about the data being handled (counts, period,
+#' what was dropped). Rendered as aligned bullets directly under `intro`, with no heading - use this
+#' for "what am I looking at", and `criteria` for "how is it being analysed".
 #' @param criteria Optional named character vector of methodological choices; names are padded so the
 #' values align.
 #' @param criteria.label Heading for the `criteria` block. Defaults to `"Method"`.
@@ -174,7 +177,8 @@
 #' @param .envir Frame used to register the guard reset; defaults to the caller.
 #' @keywords internal
 #' @noRd
-.mobyHeader <- function(title, intro, input = NULL, criteria = NULL, criteria.label = "Method",
+.mobyHeader <- function(title, intro, input = NULL, facts = NULL, criteria = NULL,
+                        criteria.label = "Method",
                         verbose = getOption("moby.verbose", TRUE), .envir = parent.frame()) {
   if (!isTRUE(verbose)) return(invisible(NULL))
   # A header is already open further up the stack: stay quiet rather than nest banners. This is a
@@ -186,16 +190,22 @@
   cli::cli_text("")
   cli::cli_alert_info("{intro}")
   if (!is.null(input)) cli::cli_text("{cli::symbol$bullet} Input: {input}")
+  # cli_verbatim: emitted exactly as given, so the padding that aligns the values survives
+  # (cli_text/cli_bullets run the string through glue and collapse repeated spaces).
+  .kvBlock <- function(x, indent) {
+    w <- max(nchar(names(x)))
+    for (nm in names(x))
+      cli::cli_verbatim(paste0(indent, cli::symbol$bullet, " ", formatC(paste0(nm, ":"), width = -(w + 1)),
+                               " ", x[[nm]]))
+  }
+  if (length(facts) > 0) .kvBlock(facts, "")
   if (length(criteria) > 0) {
     cli::cli_text("")
     cli::cli_text("{cli::symbol$arrow_right} {criteria.label}")
     w <- max(nchar(names(criteria)))
-    for (nm in names(criteria)) {
-      # cli_verbatim: emitted exactly as given, so the padding that aligns the values survives
-      # (cli_text/cli_bullets run the string through glue and collapse repeated spaces).
+    for (nm in names(criteria))
       cli::cli_verbatim(paste0("  ", cli::symbol$bullet, " ", formatC(nm, width = -w), "  ",
                                criteria[[nm]]))
-    }
   }
   invisible(NULL)
 }

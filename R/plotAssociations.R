@@ -63,6 +63,8 @@
 #' @param main Optional overall title drawn above the panel grid.
 #' @param cex Global expansion factor scaling all text (titles, node/edge labels, axes, legend). Defaults to 1.
 #' @param ncol Number of columns for the plot layout. Defaults to NULL.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further arguments passed to \code{\link[qgraph]{qgraph}}.
 #' @return Invisibly, a tidy per-comparison-type data frame of network statistics (number of dyads,
@@ -117,6 +119,7 @@ plotAssociations <- function(overlaps = NULL,
                              main = NULL,
                              ncol=NULL,
                              cex = 1,
+                             verbose = getOption("moby.verbose", TRUE),
                              file = NULL,
                              width = NULL,
                              height = NULL,
@@ -328,8 +331,12 @@ plotAssociations <- function(overlaps = NULL,
                          edge_cut = vapply(network.params, `[`, numeric(1), 2),
                          edge_max = vapply(network.params, `[`, numeric(1), 3),
                          row.names = NULL, stringsAsFactors = FALSE)
-  .printAssociationsSummary(stats_df, n_ids = length(complete_ids), metric = metric,
-                            has_network = !is.null(overlaps), has_null = !is.null(random.results))
+  .mobyHeader("plotAssociations()", "Mapping pairwise overlaps between individuals",
+              facts = c(Individuals   = .fmtN(length(complete_ids)),
+                        Comparisons   = paste(stats_df$type, collapse = ", "),
+                        "Total dyads" = .fmtN(sum(stats_df$n_dyads))),
+              criteria = c(Metric = if(is.null(metric)) "association index" else metric),
+              verbose = verbose)
 
 
   ##############################################################################
@@ -586,23 +593,6 @@ plotAssociations <- function(overlaps = NULL,
 
   if(!is.null(main)) mtext(main, side = 3, outer = TRUE, font = 2, cex = cex_title, line = -0.5)
   invisible(stats_df)
-}
-
-
-#######################################################################################################
-## Internal helper ####################################################################################
-
-#' @keywords internal
-#' @noRd
-.printAssociationsSummary <- function(stats_df, n_ids, metric, has_network, has_null){
-  kv <- .kv
-  .summaryOpen("Association network")
-  kv("Individuals", n_ids)
-  kv("Comparisons", paste(stats_df$type, collapse = ", "))
-  kv("Metric", if(is.null(metric)) "association index" else metric)
-  kv("Total dyads", sum(stats_df$n_dyads))
-  kv("Shows", paste(c(if(has_network) "network", if(has_null) "null-model histogram"), collapse = " + "))
-  .summaryClose()
 }
 
 

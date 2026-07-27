@@ -77,6 +77,8 @@
 #' @param cex Global expansion factor scaling every text element (titles, node/edge labels, scale
 #' bar, legend). Defaults to 1.
 #' @param ncol Number of columns in the multi-panel layout. Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further arguments passed to \code{\link[igraph]{plot.igraph}}.
 #'
@@ -126,6 +128,7 @@ plotMovements <- function(network,
                           main = NULL,
                           ncol = 1,
                           cex = 1,
+                          verbose = getOption("moby.verbose", TRUE),
                           file = NULL,
                           width = NULL,
                           height = NULL,
@@ -190,7 +193,8 @@ plotMovements <- function(network,
   if (!has_coords) {
     warning("This movement network has no node coordinates; using a force-directed layout (no map).", call. = FALSE)
     .printMovementsSummary(n_nodes = nrow(nodes), n_edges = sum(edges$from != edges$to), n_groups = n_groups,
-                           projected = FALSE, epsg = NA, edge.metric = edge.metric, scale.km = NA, n_dropped = 0)
+                           projected = FALSE, epsg = NA, edge.metric = edge.metric, n_dropped = 0,
+                           verbose = verbose)
     graphics::par(mfrow = grDevices::n2mfrow(n_groups), mar = c(1, 1, 2, 1))
     if (!is.null(main)) graphics::par(oma = c(0, 0, 2, 0))
     for (g in seq_along(group_levels)) {
@@ -277,7 +281,7 @@ plotMovements <- function(network,
 
   .printMovementsSummary(n_nodes = nrow(site_coords), n_edges = nrow(e_all), n_groups = n_groups,
                          projected = projected, epsg = epsg_label, edge.metric = edge.metric,
-                         scale.km = if (projected) scale.km else NA, n_dropped = n_dropped)
+                         n_dropped = n_dropped, verbose = verbose)
 
 
   #####################################################################################
@@ -389,16 +393,21 @@ plotMovements <- function(network,
 
 #' @keywords internal
 #' @noRd
-.printMovementsSummary <- function(n_nodes, n_edges, n_groups, projected, epsg, edge.metric, scale.km, n_dropped) {
-  kv <- .kv
-  .summaryOpen("Movement network")
-  kv("Nodes / edges", sprintf("%d sites, %d edges", n_nodes, n_edges))
-  kv("Groups", n_groups)
-  kv("Edge metric", edge.metric)
-  kv("Projection", if (projected) sprintf("projected%s", if (!is.na(epsg)) paste0(" (EPSG:", epsg, ")") else "") else "force-directed (no map)")
-  if (projected && !is.na(scale.km)) kv("Scale bar", sprintf("%g km", scale.km))
-  if (n_dropped > 0) kv("Dropped sites", sprintf("%d (missing coordinates)", n_dropped))
-  .summaryClose()
+.printMovementsSummary <- function(n_nodes, n_edges, n_groups, projected, epsg, edge.metric, n_dropped,
+                                   verbose = getOption("moby.verbose", TRUE)) {
+
+  .mobyHeader("plotMovements()", "Drawing the network of movements between sites",
+              facts = c("Nodes/edges" = sprintf("%d sites, %d edges", n_nodes, n_edges),
+                        Groups = as.character(n_groups)),
+              criteria = c("Edge metric" = edge.metric,
+                           Projection = if (projected)
+                             sprintf("projected%s", if (!is.na(epsg)) paste0(" (EPSG:", epsg, ")") else "")
+                           else "force-directed (no map)"),
+              verbose = verbose)
+
+  # sites lost for lack of coordinates: an outcome the user should see, not a plain fact
+  if (n_dropped > 0)
+    .mobyAttention(sprintf("%d site(s) dropped (missing coordinates)", n_dropped), verbose = verbose)
 }
 
 #######################################################################################################

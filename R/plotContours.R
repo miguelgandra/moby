@@ -83,6 +83,8 @@
 #' @param disable.par Logical. If TRUE, the function does not set up its own multi-panel layout (so it
 #' can be embedded in a user-managed layout); `ncol` then has no effect. Defaults to FALSE.
 #' @details The timezone for binning is taken from the `datetime.col` data (falling back to UTC).
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further arguments passed to the underlying filled-contour routine.
 #'
@@ -126,6 +128,7 @@ plotContours <- function(data,
                          ncol = 1,
                          disable.par = FALSE,
                          cex = 1,
+                         verbose = getOption("moby.verbose", TRUE),
                          file = NULL,
                          width = NULL,
                          height = NULL,
@@ -307,12 +310,20 @@ plotContours <- function(data,
   # Console summary ###################################################################
   #####################################################################################
 
-  .printContoursSummary(
-    n_ids = nlevels(data[, id.col]), variables = variables,
-    xmin = min(data[[datetime.col]], na.rm=TRUE), xmax = max(data[[datetime.col]], na.rm=TRUE),
-    time.interval = time.interval, date.interval = date.interval, annual.cycle = annual.cycle,
-    split.by = if(identical(split.by, "dummy_group")) NULL else split.by, n_groups = length(groups),
-    diel.lines = diel.lines, shared.scale = shared.scale)
+  xmin <- min(data[[datetime.col]], na.rm=TRUE); xmax <- max(data[[datetime.col]], na.rm=TRUE)
+  facts <- c("Individuals" = .fmtN(nlevels(data[, id.col])),
+             "Variables"   = paste(variables, collapse=", "),
+             "Period"      = sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"), format(xmax, "%Y-%m-%d"),
+                                     as.integer(difftime(xmax, xmin, units="days"))))
+  # a multi-column split.by has already been collapsed into 'dummy_group', so it is not reported
+  if(!identical(split.by, "dummy_group"))
+    facts["Groups"] <- sprintf("%s (%d groups)", paste(split.by, collapse=", "), length(groups))
+
+  crit <- c("binning" = sprintf("%s x %s", time.interval, date.interval),
+            "diel"    = if(diel.lines > 0) sprintf("%d lines", diel.lines) else "off")
+
+  .mobyHeader("plotContours()", "Mapping continuous values across hour-of-day and date",
+              facts = facts, criteria = crit, verbose = verbose)
 
 
   #####################################################################################
@@ -417,28 +428,6 @@ plotContours <- function(data,
   invisible(NULL)
 }
 
-
-#######################################################################################################
-## Console summary (internal) #########################################################################
-#######################################################################################################
-
-#' @keywords internal
-#' @noRd
-.printContoursSummary <- function(n_ids, variables, xmin, xmax, time.interval, date.interval,
-                                  annual.cycle, split.by, n_groups, diel.lines, shared.scale){
-  dur <- as.integer(difftime(xmax, xmin, units="days"))
-  kv <- .kv
-  .summaryOpen("Contour plot")
-  kv("Individuals", format(n_ids, big.mark=","))
-  kv("Variables", paste(variables, collapse=", "))
-  kv("Period", sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"), format(xmax, "%Y-%m-%d"), dur))
-  kv("Binning", sprintf("%s x %s", time.interval, date.interval))
-  kv("Time axis", if(annual.cycle) "annual cycle (Jan-Dec)" else "true extent")
-  if(!is.null(split.by)) kv("Split by", sprintf("%s (%d groups)", paste(split.by, collapse=", "), n_groups))
-  kv("Diel", if(diel.lines > 0) sprintf("%d lines", diel.lines) else "off")
-  kv("Scale", if(shared.scale) "shared across panels" else "per panel")
-  .summaryClose()
-}
 
 #######################################################################################################
 #######################################################################################################

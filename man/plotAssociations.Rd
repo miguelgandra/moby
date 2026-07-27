@@ -36,6 +36,7 @@ plotAssociations(
   main = NULL,
   ncol = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -123,6 +124,9 @@ Larger values make all edges thicker, smaller values make them thinner.}
 \item{ncol}{Number of columns for the plot layout. Defaults to NULL.}
 
 \item{cex}{Global expansion factor scaling all text (titles, node/edge labels, axes, legend). Defaults to 1.}
+
+\item{verbose}{Logical; print a summary of what was plotted. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

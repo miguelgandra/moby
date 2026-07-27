@@ -58,6 +58,8 @@
 #' `group.by` is set or `events` are supplied.
 #' @param main Plot title. Defaults to "Periods of operation".
 #' @param cex Global expansion factor for all text. Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, a tidy per-row coverage table: `row`, `group`, `n_deployments`, `first`, `last`,
@@ -93,6 +95,7 @@ plotDeployments <- function(deployments,
                             legend = NULL,
                             main = "Periods of operation",
                             cex = 1,
+                            verbose = getOption("moby.verbose", TRUE),
                             file = NULL,
                             width = NULL,
                             height = NULL,
@@ -180,9 +183,15 @@ plotDeployments <- function(deployments,
   }
 
   xr <- range(c(start, stop_))
-  .printDeploymentsSummary(n_rows = n, row.by = row.by, groups = groups,
-                           n_deployments = nrow(d[keep, , drop = FALSE]), xr = xr,
-                           total_active = sum(coverage$active_days), n_events = length(ev_x))
+  facts <- c("Rows" = sprintf("%d (by %s)", n, row.by))
+  if(length(groups)) facts["Groups"] <- sprintf("%d (%s)", length(groups), paste(groups, collapse = ", "))
+  facts["Deployments"]   <- .fmtN(nrow(d[keep, , drop = FALSE]))
+  facts["Span"]          <- sprintf("%s to %s", strftime(xr[1], "%Y-%m-%d"), strftime(xr[2], "%Y-%m-%d"))
+  facts["Receiver-days"] <- .fmtN(round(sum(coverage$active_days)))
+  if(length(ev_x) > 0) facts["Events"] <- .fmtN(length(ev_x))
+
+  .mobyHeader("plotDeployments()", "Drawing operating-period timelines from the deployment log",
+              facts = facts, verbose = verbose)
 
 
   ##############################################################################
@@ -292,23 +301,6 @@ plotDeployments <- function(deployments,
   invisible(coverage)
 }
 
-
-#######################################################################################################
-## Internal helper ####################################################################################
-
-#' @keywords internal
-#' @noRd
-.printDeploymentsSummary <- function(n_rows, row.by, groups, n_deployments, xr, total_active, n_events){
-  kv <- .kv
-  .summaryOpen("Deployment timeline")
-  kv("Rows", sprintf("%d (by %s)", n_rows, row.by))
-  if(length(groups)) kv("Groups", sprintf("%d (%s)", length(groups), paste(groups, collapse = ", ")))
-  kv("Deployments", n_deployments)
-  kv("Span", sprintf("%s to %s", strftime(xr[1], "%Y-%m-%d"), strftime(xr[2], "%Y-%m-%d")))
-  kv("Receiver-days", format(round(total_active), big.mark = ","))
-  if(n_events > 0) kv("Events", n_events)
-  .summaryClose()
-}
 
 #######################################################################################################
 #######################################################################################################

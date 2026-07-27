@@ -61,6 +61,8 @@
 #' @param main Optional overall title.
 #' @param cex Global expansion factor for all plot text. Defaults to 1.
 #' @param ncol Number of columns in the panel layout. Defaults to 2.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, a tidy per-metric data frame of the test results (test, paired, n's, statistic,
@@ -97,6 +99,7 @@ plotMetricComparison <- function(data,
                                  main = NULL,
                                  ncol = 2,
                                  cex = 1,
+                                 verbose = getOption("moby.verbose", TRUE),
                                  file = NULL,
                                  width = NULL,
                                  height = NULL,
@@ -189,7 +192,7 @@ plotMetricComparison <- function(data,
 
   .printMetricComparisonSummary(metrics = metrics, split.by = split.by, levels = levels_,
                                 paired = paired, test = test, stats = stats_tab,
-                                p.adjust.method = p.adjust.method)
+                                p.adjust.method = p.adjust.method, verbose = verbose)
 
 
   ######################################################################################
@@ -283,24 +286,33 @@ plotMetricComparison <- function(data,
 
 #' @keywords internal
 #' @noRd
-.printMetricComparisonSummary <- function(metrics, split.by, levels, paired, test, stats, p.adjust.method){
-  kv <- .kv
-  .summaryOpen("Metric comparison")
-  kv("Metrics", paste(metrics, collapse = ", "))
-  kv("Grouping", sprintf("%s (%s): %s", split.by, if(paired) "repeated-measures" else "independent groups",
-                         paste(levels, collapse = ", ")))
+.printMetricComparisonSummary <- function(metrics, split.by, levels, paired, test, stats, p.adjust.method,
+                                          verbose = getOption("moby.verbose", TRUE)){
+
+  facts <- c(Metrics = paste(metrics, collapse = ", "),
+             Groups = sprintf("%s (%s): %s", split.by, if(paired) "repeated-measures" else "independent groups",
+                              paste(levels, collapse = ", ")))
+  crit <- c(Test = "none")
+  big_loss <- FALSE
+
   if(test != "none"){
     tests_used <- unique(stats$test[!is.na(stats$test)])
-    kv("Test", sprintf("%s; correction: %s", paste(tests_used, collapse = "/"), p.adjust.method))
+    crit["Test"] <- sprintf("%s; correction: %s", paste(tests_used, collapse = "/"), p.adjust.method)
     dropped <- stats$metric[stats$n_dropped > 0 & !is.na(stats$n_dropped)]
     if(length(dropped) > 0){
       frac <- max(stats$n_dropped / pmax(stats$n_total, 1), na.rm = TRUE)
-      kv("Incomplete", sprintf("%d/%d individuals dropped (max %.0f%%); complete-case only",
-                               max(stats$n_dropped, na.rm = TRUE), max(stats$n_total, na.rm = TRUE), 100 * frac))
-      if(frac > 0.3) cat("  ! large data loss - non-detection may be informative; consider a mixed model.\n")
+      facts["Incomplete"] <- sprintf("%d/%d individuals dropped (max %.0f%%); complete-case only",
+                                     max(stats$n_dropped, na.rm = TRUE), max(stats$n_total, na.rm = TRUE), 100 * frac)
+      big_loss <- frac > 0.3
     }
-  } else kv("Test", "none")
-  .summaryClose()
+  }
+
+  .mobyHeader("plotMetricComparison()", "Comparing per-individual metrics across group levels",
+              facts = facts, criteria = crit, verbose = verbose)
+
+  if(isTRUE(big_loss))
+    .mobyAttention("large data loss - non-detection may be informative; consider a mixed model.",
+                   verbose = verbose)
 }
 
 ##################################################################################################

@@ -82,6 +82,8 @@
 #' chosen automatically from the estimated legend height versus the device height.
 #' @param cex Global expansion factor applied to all plot text (axis labels, titles, legend and the
 #' top band). Detection point size is controlled separately via `pt.cex`. Defaults to 1.
+#' @param verbose Logical; print a summary of what was plotted. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #' @param ... Further graphical parameters passed to \code{\link[graphics]{points}} when drawing the
 #' detections (e.g. `lwd`, `bg`).
@@ -123,6 +125,7 @@ plotAbacus <- function(data,
                        background.color = "grey96",
                        legend.cols = NULL,
                        cex = 1,
+                       verbose = getOption("moby.verbose", TRUE),
                        file = NULL,
                        width = NULL,
                        height = NULL,
@@ -330,15 +333,30 @@ plotAbacus <- function(data,
     pt.cex <- max(0.3, min(1.6, 0.9 * row_h_in / char_h_in))
   }
 
-  .printAbacusSummary(
-    n_ids = nlevels(data[,id.col]), n_groups = length(id.groups),
-    n_total = n_total_ids, n_missing = n_missing, discard = discard.missing,
-    n_det = n_det_raw, n_points = n_points, xmin = xmin, xmax = xmax,
-    color.by = color.by, ngroups = if(!is.null(color.by)) ngroups else NA,
-    bin = bin, bin_sec = if(!is.null(bin)) bin_sec else NA, scale.by.count = scale.by.count,
-    pt.cex = pt.cex, pt_cex_auto = pt_cex_auto, date.interval = date.interval,
-    date.format = date.format, ax = ax, top.band = top.band, shade = shade,
-    legend = legend, legend.cols = legend.cols)
+  # console summary: what is being drawn (facts) plus, when binning is on, the aggregation that
+  # defines what a single plotted point means (a methodological choice, not an appearance one)
+  ids_desc <- .fmtN(nlevels(data[,id.col]))
+  if(length(id.groups) > 1) ids_desc <- paste0(ids_desc, sprintf(" (%d groups)", length(id.groups)))
+  if(n_missing > 0) ids_desc <- paste0(ids_desc, sprintf("; %d missing (%s)",
+                       n_missing, if(discard.missing) "removed" else "shown"))
+
+  crit <- character(0)
+  if(!is.null(bin)){
+    bin_label <- switch(as.character(bin_sec), "3600"="hourly", "86400"="daily",
+                        "604800"="weekly", "2629800"="monthly", sprintf("%g-min", bin_sec/60))
+    if(identical(bin, "auto")) bin_label <- paste0(bin_label, " [auto]")
+    crit["binning"] <- sprintf("%s bins %s %s pts, mean %.1f det/pt%s", bin_label,
+                               .mobyGlyph("mid"), .fmtN(n_points), n_det_raw/n_points,
+                               if(scale.by.count) "; area-scaled" else "")
+  }
+
+  .mobyHeader("plotAbacus()", "Drawing detection timelines per individual",
+              facts = c("Individuals" = ids_desc,
+                        "Detections"  = .fmtN(n_det_raw),
+                        "Period"      = sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"),
+                                                format(xmax, "%Y-%m-%d"),
+                                                as.integer(difftime(xmax, xmin, units="days")))),
+              criteria = crit, verbose = verbose)
 
 
   ##############################################################################
@@ -549,66 +567,6 @@ plotAbacus <- function(data,
   }
 
   invisible(NULL)
-}
-
-
-#######################################################################################################
-## Console summary (internal) #########################################################################
-#######################################################################################################
-
-#' Print a concise diagnostic summary for an abacus plot
-#'
-#' @description Reports the input data and the (adaptive) plotting decisions made by
-#' \code{\link{plotAbacus}} as a compact, aligned console block.
-#' @note This function is intended for internal use within the 'moby' package.
-#' @keywords internal
-#' @noRd
-
-.printAbacusSummary <- function(n_ids, n_groups, n_total, n_missing, discard, n_det, n_points,
-                                xmin, xmax, color.by, ngroups, bin, bin_sec, scale.by.count,
-                                pt.cex, pt_cex_auto, date.interval, date.format, ax, top.band,
-                                shade, legend, legend.cols) {
-
-  dur <- as.integer(difftime(xmax, xmin, units="days"))
-
-  ids_desc <- format(n_ids, big.mark=",")
-  if(n_groups > 1) ids_desc <- paste0(ids_desc, sprintf(" (%d groups)", n_groups))
-  if(n_missing > 0) ids_desc <- paste0(ids_desc, sprintf("; %d missing (%s)",
-                       n_missing, if(discard) "removed" else "shown"))
-
-  bin_label <- if(is.null(bin)) NULL else {
-    lab <- switch(as.character(bin_sec), "3600"="hourly", "86400"="daily",
-                  "604800"="weekly", "2629800"="monthly", sprintf("%g-min", bin_sec/60))
-    if(identical(bin, "auto")) paste0(lab, " [auto]") else lab
-  }
-
-  date_desc <- if(identical(date.interval, "auto")){
-    unit_lab <- c(hour="hourly", day="daily", week="weekly", month="monthly", year="yearly")[ax$unit]
-    sprintf("auto -> %s (\"%s\")", unname(unit_lab), ax$format)
-  } else sprintf("every %g (\"%s\")", date.interval, if(is.null(date.format)) "%b" else date.format)
-
-  shade_desc <- if(is.data.frame(shade)) sprintf("custom (%d periods)", nrow(shade)) else
-                if(isTRUE(shade)) "seasonal" else "none"
-
-  # narrow, width-robust layout: short labels, compact values, long info split over two lines
-  kv   <- .kv
-  cont <- .kvCont
-  .summaryOpen("Abacus plot")
-  kv("Individuals", ids_desc)
-  kv("Detections", format(n_det, big.mark=","))
-  kv("Period", sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"), format(xmax, "%Y-%m-%d"), dur))
-  if(!is.null(color.by)) kv("Colour", sprintf("%s (%d levels)", color.by, ngroups))
-  if(!is.null(bin)){
-    kv("Binning", sprintf("%s bins", bin_label))
-    cont(sprintf("%s pts; mean %.1f det/pt%s", format(n_points, big.mark=","),
-                 n_det/n_points, if(scale.by.count) "; area-scaled" else ""))
-  }
-  kv("Points", sprintf("cex %.2f%s", pt.cex, if(pt_cex_auto) " [auto]" else ""))
-  kv("Date axis", date_desc)
-  if(!isFALSE(top.band)) kv("Top band", sprintf("\"%s\"", top.band))
-  kv("Shading", shade_desc)
-  if(legend) kv("Legend", sprintf("%d col%s", legend.cols, if(legend.cols > 1) "s" else ""))
-  .summaryClose()
 }
 
 
