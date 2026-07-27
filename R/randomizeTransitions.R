@@ -79,14 +79,26 @@ randomizeTransitions <- function(network,
   edge_results <- list()
   net_results <- list()
 
-  .mobyInform(sprintf("Running %d permutations across %d group(s)...", iterations, length(groups)),
-              verbose = verbose)
+  # ---- header ---------------------------------------------------------------------------------
+  # Same test as randomizeAssociations(), on edges rather than dyads, so the two read alike: the
+  # parameters below decide which edges come out significant.
+  start.time <- Sys.time()
+  crit <- c(iterations = .fmtN(iterations),
+            alternative = alternative[1],
+            adjustment = p.adjust.method,
+            "conf. level" = format(conf.level))
+  if (!is.null(random.seed)) crit["seed"] <- format(random.seed)
+
+  .mobyHeader("randomizeTransitions()", "Testing movement transitions against a null model",
+              input = paste0(.fmtN(nrow(edges)), " edges ", .mobyGlyph("mid"), " ",
+                             .fmtN(length(groups)), " group", if (length(groups) == 1) "" else "s"),
+              criteria = crit, criteria.label = "Permutation test", verbose = verbose)
 
   for (g in groups) {
     e_g <- edges[edges$group == g, , drop = FALSE]
     rec_g <- records[[g]]
     if (nrow(e_g) == 0 || is.null(rec_g) || nrow(rec_g) == 0) next
-    pb <- .progressBar(iterations, verbose)
+    pb <- .progressBar(iterations, verbose, name = "Permuting")
 
     # reconstruct each individual's time-ordered sequence of visited (run) sites:
     # for consecutive transitions f1->t1, f2->t2, ... the run sequence is c(f1, t1, t2, ...)
@@ -135,6 +147,25 @@ randomizeTransitions <- function(network,
   attr(result, "iterations") <- iterations
   attr(result, "alternative") <- alternative
   attr(result, "p.adjust.method") <- p.adjust.method
+
+  # ---- outcome: the test's finding, from the existing 'association' classification --------------
+  if (verbose) {
+    assoc <- result$edges$association
+    .mobyBlank(verbose)
+    .mobyOk(.fmtN(nrow(result$edges)), " edges tested", verbose = verbose)
+    if (!is.null(assoc)) {
+      # .empiricalPvalues() labels the direction exactly "more"/"less", or "non-significant";
+      # match on those values rather than on a pattern, which silently missed "more".
+      above  <- sum(assoc == "more", na.rm = TRUE)
+      below  <- sum(assoc == "less", na.rm = TRUE)
+      nonsig <- sum(assoc == "non-significant", na.rm = TRUE)
+      .mobyNote(.fmtN(above), " above random ", .mobyGlyph("mid"), " ", .fmtN(below),
+                " below random ", .mobyGlyph("mid"), " ", .fmtN(nonsig), " non-significant",
+                verbose = verbose)
+    }
+  }
+  .mobyRuntime(start.time, verbose, min.secs = 1)
+
   result
 }
 
