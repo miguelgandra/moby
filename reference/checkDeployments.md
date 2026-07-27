@@ -33,7 +33,7 @@ checkDeployments(
   gap.tolerance = 1,
   land.tolerance = 500,
   min.active.days = NULL,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -227,6 +227,17 @@ never removes them.
 # quality-control a receiver-deployment log
 checkDeployments(rays_deployments)
 #> - 'detections' checks requested but no 'detections' supplied; skipping the detection-vs-metadata checks.
+#> ── checkDeployments() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Auditing receiver deployment metadata
+#> • Input: 6 deployment records · 6 receivers · 6 stations
+#> 
+#> → Checks
+#>   • groups           dates · overlaps · gaps · coordinates · detections
+#>   • scope            all deployments
+#>   • coord tolerance  500 m
+#>   • gap tolerance    1 d
+#> 
 #> <mobyQC> deployment metadata quality-control report
 #>   6 deployment records | 6 receivers | 6 stations
 #>   No issues flagged.
@@ -234,18 +245,55 @@ checkDeployments(rays_deployments)
 # also cross-check the detections against the deployment windows
 data(rays)
 checkDeployments(rays_deployments, detections = rays)
+#> ── checkDeployments() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Auditing receiver deployment metadata
+#> • Input: 6 deployment records · 6 receivers · 6 stations
+#> 
+#> → Checks
+#>   • groups           dates · overlaps · gaps · coordinates · detections
+#>   • scope            all deployments
+#>   • coord tolerance  500 m
+#>   • gap tolerance    1 d
+#> ℹ Cross-checking: 1,643 detections
+#> 
 #> <mobyQC> deployment metadata quality-control report
 #>   6 deployment records | 6 receivers | 6 stations
 #>   No issues flagged.
 
 # restrict the metadata checks to receivers that actually recorded detections
 checkDeployments(rays_deployments, detections = rays, scope = "detected")
+#> ── checkDeployments() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Auditing receiver deployment metadata
+#> • Input: 6 deployment records · 6 receivers · 6 stations
+#> 
+#> → Checks
+#>   • groups           dates · overlaps · gaps · coordinates · detections
+#>   • scope            receivers with detections
+#>   • coord tolerance  500 m
+#>   • gap tolerance    1 d
+#> ℹ Cross-checking: 1,643 detections
+#> 
 #> <mobyQC> deployment metadata quality-control report
 #>   6 deployment records | 6 receivers | 6 stations
 #>   No issues flagged.
 
 # additionally flag (never remove) stations monitored for under ~6 months
 checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
+#> ── checkDeployments() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Auditing receiver deployment metadata
+#> • Input: 6 deployment records · 6 receivers · 6 stations
+#> 
+#> → Checks
+#>   • groups           dates · overlaps · gaps · coordinates · detections
+#>   • scope            all deployments
+#>   • coord tolerance  500 m
+#>   • gap tolerance    1 d
+#>   • min active days  180
+#> ℹ Cross-checking: 1,643 detections
+#> 
 #> <mobyQC> deployment metadata quality-control report
 #>   6 deployment records | 6 receivers | 6 stations
 #>   6 issue(s) flagged:
