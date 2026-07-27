@@ -123,7 +123,7 @@
 <strong>Help pages</strong> — every function is documented, e.g. <code><a href="reference/filterDetections.html">?filterDetections</a></code>, <code><a href="reference/calculateUDs.html">?calculateUDs</a></code>.</li>
 </ul>
 <p align="center">
-<img src="reference/figures/moby-pipeline.svg" width="820" alt="moby data preparation in five stages: import, validate, enrich, clean and bin, declare — producing a mobyData object that feeds the analysis pathways. Essential steps are marked in teal, optional ones in ochre."></p>
+<img src="reference/figures/moby-pipeline.svg" width="100%" alt="moby data preparation in five stages: import, validate, enrich, clean and bin, declare — producing a mobyData object that feeds the analysis pathways. Essential steps are marked in teal, optional ones in ochre."></p>
 <p>Only two of those steps have teeth: <code><a href="reference/assignAnimalIDs.html">assignAnimalIDs()</a></code> (without it <code><a href="reference/filterDetections.html">filterDetections()</a></code> has no tagging dates and stops) and <code><a href="reference/filterDetections.html">filterDetections()</a></code> itself. Everything else is a convenience you can skip by supplying the columns or metadata yourself — every function also accepts an ordinary data frame. <code><a href="reference/moby_pipeline.html">?moby_pipeline</a></code> has the full table of consequences, the two ordering rules, and the return-shape traps worth knowing.</p>
 </div>
 <div class="section level2">
