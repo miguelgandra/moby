@@ -83,7 +83,7 @@ calculateStepDistances <- function(data,
                                    grid.resolution = 100,
                                    mov.directions = 16,
                                    cores = 1,
-                                   verbose = TRUE){
+                                   verbose = getOption("moby.verbose", TRUE)){
 
   # The least-cost graph is a purely internal implementation detail: it is built on demand, used, and
   # discarded. Only the distance-enriched data (with its trajectories) is returned.
@@ -147,6 +147,20 @@ calculateStepDistances <- function(data,
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
   land.shape <- reviewed_params$land.shape
+
+  # ---- header ---------------------------------------------------------------------------------
+  # The path type is the lead criterion: straight-line and least-cost distances mean different
+  # things, and the grid/direction settings change the least-cost result.
+  crit <- c(paths = if (is.null(land.shape)) "straight-line (great-circle)" else "least-cost around land")
+  if (!is.null(land.shape))
+    crit["grid"] <- paste0(.fmtN(grid.resolution), " m ", .mobyGlyph("mid"), " ", mov.directions, " directions")
+  if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
+
+  .mobyHeader("calculateStepDistances()", "Measuring distance between consecutive positions",
+              input = paste0(.fmtN(nrow(data)), " positions ", .mobyGlyph("mid"), " ",
+                             .fmtN(length(unique(data[[id.col]]))), " individuals"),
+              criteria = crit, verbose = verbose)
+
 
   # manage spatial objects
   coords <- sf::st_as_sf(data, coords=c(lon.col, lat.col))
@@ -233,7 +247,6 @@ calculateStepDistances <- function(data,
       grid.resolution <- trCost$grid$resx
     # build the least-cost graph (terra raster -> igraph); replaces gdistance transition/geoCorrection
     } else {
-      if(verbose) {cat(paste0("Building least-cost graph (", grid.resolution, "m grid | ", mov.directions, " directions)\n"))}
       trCost <- .buildCostGraph(land.shape, coords, grid.resolution, mov.directions, epsg.code)
     }
 
@@ -247,10 +260,9 @@ calculateStepDistances <- function(data,
   # split COAs by individual
   data_individual <- split(data, f=data[,id.col], drop=FALSE)
 
-  # initialize progress bar
-  if(verbose){
-    pb <- txtProgressBar(min=0, max=length(data_individual), initial=0, style=3)
-  }
+  # initialize progress bar (.progressBar is NULL when quiet or non-interactive, so the bar no longer
+  # sprays a wall of "=" into knitted documents and CI logs; .progressSet/.progressEnd no-op on NULL)
+  pb <- .progressBar(length(data_individual), verbose, name = "Calculating steps")
 
   # initialize trajectories list variable
   final_trajectories <- vector("list", length=length(data_individual))
@@ -267,7 +279,6 @@ calculateStepDistances <- function(data,
   if(is.null(land.shape)){
 
     # output to console
-    if(verbose) cat("Calculating linear paths between consecutive positions...\n")
 
     # loop through each individual
     for (i in seq_along(data_individual)) {
@@ -291,7 +302,7 @@ calculateStepDistances <- function(data,
       }
 
       # update progress bar
-      if(verbose) setTxtProgressBar(pb, i)
+      .progressSet(pb, i)
     }
   }
 
@@ -302,7 +313,6 @@ calculateStepDistances <- function(data,
   if(!is.null(land.shape) && cores==1){
 
     # output to console
-    if(verbose) cat("Calculating least-cost paths between consecutive positions...\n")
 
     # loop through each individual
     for (i in seq_along(data_individual)) {
@@ -316,7 +326,7 @@ calculateStepDistances <- function(data,
       lines_skipped <- lines_skipped + results$lines_skipped
 
       # update progress bar
-      if(verbose) setTxtProgressBar(pb, i)
+      .progressSet(pb, i)
     }
   }
 
@@ -328,8 +338,6 @@ calculateStepDistances <- function(data,
   if(!is.null(land.shape) && cores>1){
 
     # print information to console if verbose mode is enabled
-    if (verbose) cat(paste0("Starting parallel computation: ", cores, " cores\n"))
-    if (verbose) cat("Calculating least-cost paths between consecutive positions...\n")
 
     # register parallel backend with the specified number of cores
     cl <- parallel::makeCluster(cores)
@@ -342,8 +350,7 @@ calculateStepDistances <- function(data,
     `%dopar%` <- foreach::`%dopar%`
 
     # set progress bar options based on verbose mode
-    if(verbose) opts <- list(progress = function(n) setTxtProgressBar(pb, n))
-    else opts <- NULL
+    opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
 
     # perform parallel computation over each individual's data using foreach
     # trCost (an igraph graph + a plain-R grid descriptor) and calculateLeastCost (a self-contained
@@ -366,11 +373,8 @@ calculateStepDistances <- function(data,
   ## Return results ############################################################
   ##############################################################################
 
-  # close progress bar and print time taken
-  if(verbose) close(pb)
-  end.time <- Sys.time()
-  time.taken <- end.time - start.time
-  if(verbose) cat(paste("Total execution time:", sprintf("%.02f", as.numeric(time.taken)), base::units(time.taken), "\n"))
+  # ---- outcome -------------------------------------------------------------------------------
+  .progressEnd(pb)
 
   # issue a warning if any track segments overlapped land and were skipped
   if(verbose & lines_skipped>0) {
@@ -400,6 +404,18 @@ calculateStepDistances <- function(data,
   attr(final_data, "mov.directions") <- mov.directions
   attr(final_data, "cores") <- cores
   attr(final_data, "processing.date") <- Sys.time()
+
+  if (verbose) {
+    d <- suppressWarnings(as.numeric(final_data[["dist_m"]]))
+    d <- d[is.finite(d)]
+    .mobyBlank(verbose)
+    .mobyOk(.fmtN(length(d)), " steps measured", verbose = verbose)
+    if (length(d) > 0)
+      .mobyNote("Median step: ", .fmtN(round(stats::median(d))), " m (",
+                .fmtN(round(min(d))), "-", .fmtN(round(max(d))), " m)", verbose = verbose)
+  }
+  .mobyRuntime(start.time, verbose, min.secs = 1)
+
 
   # restore the mobyData class/metadata when the input carried it
   if(!is.null(meta)){

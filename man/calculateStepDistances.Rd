@@ -14,7 +14,7 @@ calculateStepDistances(
   grid.resolution = 100,
   mov.directions = 16,
   cores = 1,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
