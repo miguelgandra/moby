@@ -1,102 +1,117 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 820 940" width="820" height="940"
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 620" width="1200" height="620"
      font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
-     role="img" aria-label="moby data preparation workflow in five stages: import, validate, enrich, clean and bin, declare - producing a mobyData object that feeds the analysis pathways">
+     role="img" aria-label="moby data preparation in five stages: import, validate, enrich, clean and bin, declare - producing a mobyData object that feeds the analysis pathways. Teal dots mark essential steps, ochre dots optional ones.">
   <title>moby data preparation, in five stages</title>
-  <desc>Raw detections, a receiver deployment log and tag metadata are imported (optional), the receiver log is validated read-only with checkDeployments, the side tables are folded into the detections with assignAnimalIDs and matchDeployments, the data is cleaned and binned with filterDetections, correctPositions and getTimeBins, and as_moby declares study metadata. The result is a mobyData object feeding residency, space use, movement, social network and spatial network analyses. Essential steps are marked in teal, optional ones in ochre.</desc>
+  <desc>Raw detections, a receiver deployment log and tag metadata are imported (optional); the receiver log is validated read-only with checkDeployments; the side tables are folded in with assignAnimalIDs and matchDeployments; the data is cleaned and binned with filterDetections, correctPositions and getTimeBins; as_moby declares study metadata. The result is a mobyData object feeding residency, space use, movement, social network and spatial network analyses. Teal dots mark the two essential steps, ochre dots the optional ones.</desc>
 
   <defs>
-    <marker id="pa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
-      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8b98a8"/>
+    <marker id="qa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+      <path d="M 0 0 L 10 5 L 0 10 z" fill="#8ba3aa"/>
     </marker>
-    <filter id="pcard" x="-5%" y="-6%" width="110%" height="116%">
-      <feDropShadow dx="0" dy="1.5" stdDeviation="2.2" flood-color="#243447" flood-opacity="0.10"/>
+    <filter id="qc" x="-5%" y="-6%" width="110%" height="116%">
+      <feDropShadow dx="0" dy="1.4" stdDeviation="2.1" flood-color="#1d3d42" flood-opacity="0.10"/>
     </filter>
   </defs>
 
   <!-- opaque panel so the figure reads identically in light and dark themes -->
-  <rect x="0" y="0" width="820" height="940" rx="12" fill="#ffffff" stroke="#e6eaf0" stroke-width="1"/>
+  <rect x="0" y="0" width="1200" height="620" rx="12" fill="#ffffff" stroke="#E3EDEE" stroke-width="1"/>
 
-  <!-- ==================== header ==================== -->
-  <text x="34" y="45" font-size="17" font-weight="700" fill="#2d3748" letter-spacing="0.2">moby · preparing your data</text>
-  <text x="34" y="67" font-size="13" font-style="italic" fill="#94a3b8">five stages, from a raw export to an analysis-ready dataset</text>
-  <circle cx="596" cy="40" r="4.6" fill="#2F7E8C"/>
-  <text x="609" y="45" font-size="13" fill="#576372">essential</text>
-  <circle cx="700" cy="40" r="4.6" fill="#AD7132"/>
-  <text x="713" y="45" font-size="13" fill="#576372">optional</text>
+  <text x="32" y="42" font-size="19" font-weight="700" fill="#2d3748" letter-spacing="0.2">moby &#183; preparing your data</text>
+  <text x="32" y="62" font-size="14" font-style="italic" fill="#7c93a0">five stages, from a raw export to an analysis-ready dataset</text>
 
-  <!-- ==================== RAW DATA ==================== -->
-  <rect x="34" y="92" width="752" height="74" rx="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2" filter="url(#pcard)"/>
-  <text x="54" y="122" font-size="15" font-weight="700" fill="#475569" letter-spacing="0.2">RAW DATA</text>
-  <text x="310" y="122" font-size="15" fill="#576372">detection export · receiver log · tag metadata</text>
-  <text x="310" y="146" font-size="12.5" fill="#b0b9c6">VUE · VDAT · GLATOS · OTN · ETN · generic</text>
-  <line x1="410" y1="168" x2="410" y2="192" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <circle cx="946" cy="36" r="4.2" fill="#2F7E8C"/>
+  <text x="958" y="41" font-size="13" fill="#38505c">essential</text>
+  <circle cx="1054" cy="36" r="4.2" fill="#AD7132"/>
+  <text x="1066" y="41" font-size="13" fill="#38505c">optional</text>
 
-  <!-- ==================== 1 · IMPORT ==================== -->
-  <rect x="34" y="194" width="752" height="104" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#pcard)"/>
-  <text x="54" y="224" font-size="15" font-weight="700" fill="#3f4a5a" letter-spacing="0.2">1 · IMPORT</text>
-  <text x="54" y="246" font-size="12.5" font-style="italic" fill="#94a3b8">harmonise any source</text>
-  <text x="54" y="266" font-size="12.5" font-style="italic" fill="#b0b9c6">skip if already tidy</text>
-  <circle cx="316" cy="216" r="4.2" fill="#AD7132"/>
-  <text x="330" y="221" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDetections()</text>
-  <circle cx="316" cy="242" r="4.2" fill="#AD7132"/>
-  <text x="330" y="247" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDeployments()</text>
-  <circle cx="316" cy="268" r="4.2" fill="#AD7132"/>
-  <text x="330" y="273" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importTags()</text>
-  <text x="586" y="247" font-size="12.5" fill="#9aa5b4">→ canonical columns</text>
-  <line x1="410" y1="300" x2="410" y2="324" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <!-- ============ row 1 ============ -->
 
-  <!-- ==================== 2 · VALIDATE ==================== -->
-  <rect x="34" y="326" width="752" height="76" rx="9" fill="#fbfcfd" stroke="#b0b9c6" stroke-width="1.2" stroke-dasharray="6 4"/>
-  <text x="54" y="356" font-size="15" font-weight="700" fill="#3f4a5a" letter-spacing="0.2">2 · VALIDATE</text>
-  <text x="54" y="378" font-size="12.5" font-style="italic" fill="#94a3b8">read-only</text>
-  <circle cx="316" cy="351" r="4.2" fill="#64748b"/>
-  <text x="330" y="356" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">checkDeployments()</text>
-  <text x="330" y="379" font-size="12.5" fill="#9aa5b4">→ a report; never changes your data</text>
-  <line x1="410" y1="404" x2="410" y2="428" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <!-- RAW DATA -->
+  <rect x="32" y="84" width="352" height="180" rx="9" fill="#F5FAFA" stroke="#C8DEDF" stroke-width="1.2" filter="url(#qc)"/>
+  <text x="52" y="114" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">RAW DATA</text>
+  <text x="52" y="134" font-size="12.5" font-style="italic" fill="#7c93a0">three tables</text>
+  <text x="52" y="162" font-size="15" fill="#38505c">&#183; detection export</text>
+  <text x="52" y="189" font-size="15" fill="#38505c">&#183; receiver deployment log</text>
+  <text x="52" y="216" font-size="15" fill="#38505c">&#183; tag / animal metadata</text>
+  <text x="52" y="244" font-size="12" fill="#a8bcc2">VUE &#183; VDAT &#183; GLATOS &#183; OTN &#183; ETN</text>
 
-  <!-- ==================== 3 · ENRICH ==================== -->
-  <rect x="34" y="430" width="752" height="90" rx="9" fill="#f4f6f9" stroke="#b9c4d3" stroke-width="1.2" filter="url(#pcard)"/>
-  <text x="54" y="460" font-size="15" font-weight="700" fill="#3f4a5a" letter-spacing="0.2">3 · ENRICH</text>
-  <text x="54" y="482" font-size="12.5" font-style="italic" fill="#94a3b8">either order</text>
-  <circle cx="316" cy="453" r="4.2" fill="#2F7E8C"/>
-  <text x="330" y="458" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">assignAnimalIDs()</text>
-  <text x="562" y="458" font-size="12.5" fill="#9aa5b4">→ animals, tagging dates</text>
-  <circle cx="316" cy="481" r="4.2" fill="#AD7132"/>
-  <text x="330" y="486" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()</text>
-  <text x="562" y="486" font-size="12.5" fill="#9aa5b4">→ stations, coordinates</text>
-  <line x1="410" y1="522" x2="410" y2="546" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <line x1="388" y1="174" x2="418" y2="174" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
 
-  <!-- ==================== 4 · CLEAN & BIN ==================== -->
-  <rect x="34" y="548" width="752" height="104" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#pcard)"/>
-  <text x="54" y="578" font-size="15" font-weight="700" fill="#3f4a5a" letter-spacing="0.2">4 · CLEAN &amp; BIN</text>
-  <text x="54" y="600" font-size="12.5" font-style="italic" fill="#94a3b8">removes and</text>
-  <text x="54" y="618" font-size="12.5" font-style="italic" fill="#94a3b8">reshapes records</text>
-  <circle cx="316" cy="570" r="4.2" fill="#2F7E8C"/>
-  <text x="330" y="575" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">filterDetections()</text>
-  <circle cx="316" cy="596" r="4.2" fill="#AD7132"/>
-  <text x="330" y="601" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">correctPositions()</text>
-  <circle cx="316" cy="622" r="4.2" fill="#AD7132"/>
-  <text x="330" y="627" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">getTimeBins()</text>
-  <text x="586" y="601" font-size="12.5" fill="#9aa5b4">→ take $data</text>
-  <line x1="410" y1="654" x2="410" y2="678" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <!-- 1 IMPORT -->
+  <rect x="424" y="84" width="352" height="180" rx="9" fill="#EFF7F7" stroke="#C3DBDC" stroke-width="1.2" filter="url(#qc)"/>
+  <text x="444" y="114" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">1 &#183; IMPORT</text>
+  <text x="444" y="134" font-size="12.5" font-style="italic" fill="#7c93a0">optional &#8212; skip if already tidy</text>
+  <circle cx="450" cy="158" r="4" fill="#AD7132"/>
+  <text x="464" y="162" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDetections()</text>
+  <circle cx="450" cy="185" r="4" fill="#AD7132"/>
+  <text x="464" y="189" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importDeployments()</text>
+  <circle cx="450" cy="212" r="4" fill="#AD7132"/>
+  <text x="464" y="216" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">importTags()</text>
+  <text x="444" y="244" font-size="12" fill="#a8bcc2">&#8594; canonical columns, parsed dates</text>
 
-  <!-- ==================== 5 · DECLARE ==================== -->
-  <rect x="34" y="680" width="752" height="76" rx="9" fill="#eef2f7" stroke="#9aa5b4" stroke-width="1.3" filter="url(#pcard)"/>
-  <text x="54" y="710" font-size="15" font-weight="700" fill="#3f4a5a" letter-spacing="0.2">5 · DECLARE</text>
-  <text x="54" y="732" font-size="12.5" font-style="italic" fill="#94a3b8">any time</text>
-  <circle cx="316" cy="705" r="4.2" fill="#AD7132"/>
-  <text x="330" y="710" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">as_moby()</text>
-  <text x="330" y="733" font-size="12.5" fill="#9aa5b4">→ id.groups · epsg.code · land.shape</text>
-  <line x1="410" y1="758" x2="410" y2="782" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <line x1="780" y1="174" x2="810" y2="174" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
 
-  <!-- ==================== mobyData ==================== -->
-  <rect x="260" y="784" width="300" height="54" rx="9" fill="#ffffff" stroke="#2F7E8C" stroke-width="2.2"/>
-  <text x="410" y="818" font-size="19" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2F7E8C">mobyData</text>
-  <line x1="410" y1="840" x2="410" y2="864" stroke="#8b98a8" stroke-width="2" marker-end="url(#pa)"/>
+  <!-- 2 VALIDATE -->
+  <rect x="816" y="84" width="352" height="180" rx="9" fill="#F8FCFC" stroke="#BCD5D6" stroke-width="1.2" stroke-dasharray="6 4"/>
+  <text x="836" y="114" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">2 &#183; VALIDATE</text>
+  <text x="836" y="134" font-size="12.5" font-style="italic" fill="#7c93a0">read-only &#8212; never changes data</text>
+  <circle cx="842" cy="158" r="4" fill="#5d7480"/>
+  <text x="856" y="162" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">checkDeployments()</text>
+  <text x="856" y="189" font-size="13" fill="#5d7480">&#183; coverage gaps &#183; overlaps</text>
+  <text x="856" y="214" font-size="13" fill="#5d7480">&#183; impossible or on-land coords</text>
+  <text x="836" y="244" font-size="12" fill="#a8bcc2">&#8594; a report you act on yourself</text>
 
-  <!-- ==================== ANALYSIS ==================== -->
-  <rect x="34" y="866" width="752" height="64" rx="9" fill="#f8fafc" stroke="#cbd5e1" stroke-width="1.2"/>
-  <text x="54" y="896" font-size="15" font-weight="700" fill="#475569" letter-spacing="0.2">ANALYSIS</text>
-  <text x="310" y="896" font-size="13.5" fill="#576372">residency · space use · movement</text>
-  <text x="310" y="917" font-size="13.5" fill="#576372">social networks · spatial networks</text>
+  <!-- wrap connector -->
+  <path d="M 992 268 L 992 286 L 208 286 L 208 298" fill="none" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
+
+  <!-- ============ row 2 ============ -->
+
+  <!-- 3 ENRICH -->
+  <rect x="32" y="302" width="352" height="180" rx="9" fill="#EFF7F7" stroke="#C3DBDC" stroke-width="1.2" filter="url(#qc)"/>
+  <text x="52" y="332" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">3 &#183; ENRICH</text>
+  <text x="52" y="352" font-size="12.5" font-style="italic" fill="#7c93a0">folds the side tables in</text>
+  <circle cx="58" cy="376" r="4" fill="#2F7E8C"/>
+  <text x="72" y="380" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">assignAnimalIDs()</text>
+  <circle cx="58" cy="403" r="4" fill="#AD7132"/>
+  <text x="72" y="407" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()</text>
+  <text x="72" y="432" font-size="13" fill="#5d7480">&#183; either order &#8212; different keys</text>
+  <text x="52" y="462" font-size="12" fill="#a8bcc2">&#8594; animals, dates, stations, coords</text>
+
+  <line x1="388" y1="392" x2="418" y2="392" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
+
+  <!-- 4 CLEAN & BIN -->
+  <rect x="424" y="302" width="352" height="180" rx="9" fill="#EFF7F7" stroke="#C3DBDC" stroke-width="1.2" filter="url(#qc)"/>
+  <text x="444" y="332" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">4 &#183; CLEAN &amp; BIN</text>
+  <text x="444" y="352" font-size="12.5" font-style="italic" fill="#7c93a0">removes and reshapes records</text>
+  <circle cx="450" cy="376" r="4" fill="#2F7E8C"/>
+  <text x="464" y="380" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">filterDetections()</text>
+  <circle cx="450" cy="403" r="4" fill="#AD7132"/>
+  <text x="464" y="407" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">correctPositions()</text>
+  <circle cx="450" cy="430" r="4" fill="#AD7132"/>
+  <text x="464" y="434" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">getTimeBins()</text>
+  <text x="444" y="462" font-size="12" fill="#a8bcc2">&#8594; take $data &#8212; these return lists</text>
+
+  <line x1="780" y1="392" x2="810" y2="392" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
+
+  <!-- 5 DECLARE -->
+  <rect x="816" y="302" width="352" height="180" rx="9" fill="#E4F0F0" stroke="#A9C9CB" stroke-width="1.3" filter="url(#qc)"/>
+  <text x="836" y="332" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">5 &#183; DECLARE</text>
+  <text x="836" y="352" font-size="12.5" font-style="italic" fill="#7c93a0">any time &#8212; idempotent</text>
+  <circle cx="842" cy="376" r="4" fill="#AD7132"/>
+  <text x="856" y="380" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">as_moby()</text>
+  <text x="856" y="405" font-size="13" fill="#5d7480">&#183; column roles &#183; id.groups</text>
+  <text x="856" y="430" font-size="13" fill="#5d7480">&#183; epsg.code &#183; land.shape</text>
+  <text x="836" y="462" font-size="12" fill="#a8bcc2">&#8594; metadata every function reads</text>
+
+  <!-- ============ outcome ============ -->
+  <path d="M 992 486 L 992 518" fill="none" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
+
+  <rect x="884" y="524" width="284" height="52" rx="9" fill="#ffffff" stroke="#2F7E8C" stroke-width="2.1"/>
+  <text x="1026" y="557" font-size="18" font-weight="600" text-anchor="middle" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2F7E8C">mobyData</text>
+
+  <line x1="878" y1="550" x2="848" y2="550" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
+
+  <rect x="32" y="524" width="808" height="52" rx="9" fill="#F5FAFA" stroke="#C8DEDF" stroke-width="1.2"/>
+  <text x="52" y="556" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">ANALYSIS</text>
+  <text x="166" y="556" font-size="13.5" fill="#38505c">residency &#183; space use &#183; movement &#183; social networks &#183; spatial networks</text>
 </svg>

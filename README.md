@@ -58,7 +58,7 @@ can follow every tutorial without supplying your own data.
 - **Help pages** — every function is documented, e.g. `?filterDetections`, `?calculateUDs`.
 
 <p align="center">
-  <img src="man/figures/moby-pipeline.svg" width="820"
+  <img src="man/figures/moby-pipeline.svg" width="100%"
        alt="moby data preparation in five stages: import, validate, enrich, clean and bin, declare — producing a mobyData object that feeds the analysis pathways. Essential steps are marked in teal, optional ones in ochre.">
 </p>
 
