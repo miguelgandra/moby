@@ -335,7 +335,19 @@ mean overlap, mean shared monitoring days, mean binary degree, and the edge disp
 <span class="r-in"><span>  <span class="va">rand</span> <span class="op">&lt;-</span> <span class="fu"><a href="randomizeAssociations.html">randomizeAssociations</a></span><span class="op">(</span><span class="va">wide</span>, <span class="va">assoc</span>, iterations <span class="op">=</span> <span class="fl">100</span>, random.seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>
 <span class="r-in"><span>  <span class="fu">plotAssociations</span><span class="op">(</span><span class="va">assoc</span>, <span class="va">rand</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.19 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">randomizeAssociations()</span> ───────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Testing associations against a null model</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 8 individuals · 28 dyads</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Permutation test</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • iterations   100</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • alternative  two.sided</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • adjustment   fdr</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • conf. level  0.95</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 28 dyads tested</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> 0 above random · 0 below random · 28 non-significant</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">plotAssociations()</span> ────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Mapping pairwise overlaps between individuals</span>

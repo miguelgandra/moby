@@ -184,11 +184,23 @@ wide <- createWideTable(rays, value.col = "station")
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
 assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.06 secs
+#> Total execution time: 0.05 secs
 # test the observed co-occurrences against a permutation null model
 # (iterations kept low here for speed; use the default 1000 in practice)
 rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
-#> Total execution time: 0.19 secs
+#> ── randomizeAssociations() ───────────────────────────────────────────── moby ──
+#> 
+#> ℹ Testing associations against a null model
+#> • Input: 8 individuals · 28 dyads
+#> 
+#> → Permutation test
+#>   • iterations   100
+#>   • alternative  two.sided
+#>   • adjustment   fdr
+#>   • conf. level  0.95
+#> 
+#> ✔ 28 dyads tested
+#> ℹ 0 above random · 0 below random · 28 non-significant
 rand$summary
 #>   Type N dyads Mean interval (d) Mean overlap (%) Mean null distr (%) P-value
 #> 1  All      28                77      0.47 ± 0.81         0.42 ± 0.09   0.515

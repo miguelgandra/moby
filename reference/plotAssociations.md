@@ -297,7 +297,19 @@ if (requireNamespace("qgraph", quietly = TRUE)) {
   rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
   plotAssociations(assoc, rand)
 }
-#> Total execution time: 0.19 secs
+#> ── randomizeAssociations() ───────────────────────────────────────────── moby ──
+#> 
+#> ℹ Testing associations against a null model
+#> • Input: 8 individuals · 28 dyads
+#> 
+#> → Permutation test
+#>   • iterations   100
+#>   • alternative  two.sided
+#>   • adjustment   fdr
+#>   • conf. level  0.95
+#> 
+#> ✔ 28 dyads tested
+#> ℹ 0 above random · 0 below random · 28 non-significant
 #> ── plotAssociations() ────────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Mapping pairwise overlaps between individuals
