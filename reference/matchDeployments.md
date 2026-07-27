@@ -32,7 +32,7 @@ matchDeployments(
   fill.coords = TRUE,
   fill.station = TRUE,
   drop.unmatched = FALSE,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -120,8 +120,18 @@ coordinates differ beyond `coord.tolerance`).
 ``` r
 # match detections to deployment windows, back-filling station/coordinates
 matched <- matchDeployments(rays_detections, rays_deployments, station.col = "station")
-#> matchDeployments: 1643/1643 detections matched a deployment window (0 unmatched).
-#>    0 coordinate(s) back-filled from metadata; 0 coordinate mismatch(es) > 500.
+#> ── matchDeployments() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Matching detections to receiver deployment windows
+#> • Input: 1,643 detections · 6 deployment records
+#> 
+#> → Matching criteria
+#>   • window           receiver + time within [deploy, recover]
+#>   • coord tolerance  500 m
+#>   • back-fill        station and coordinates from the log
+#>   • unmatched        retained, flagged in deployment_matched
+#> 
+#> ✔ 1,643 detections matched (100%)
 table(matched$deployment_matched)
 #> 
 #> TRUE 

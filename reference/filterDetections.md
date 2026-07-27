@@ -394,6 +394,6 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #> ✔ 563 detections retained (0 removed, 0%)
 #> ! 9 flagged for review (over-speed, retained)
 #> → Breakdown by filter: print() the result
-#> ⏱ runtime: 2.1s
+#> ⏱ runtime: 1.6s
 # }
 ```

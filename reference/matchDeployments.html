@@ -86,7 +86,7 @@ reported by <code><a href="checkDeployments.html">checkDeployments</a></code>, a
 <span>  fill.coords <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  fill.station <span class="op">=</span> <span class="cn">TRUE</span>,</span>
 <span>  drop.unmatched <span class="op">=</span> <span class="cn">FALSE</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -166,8 +166,18 @@ valid window) and <code>coord_mismatch</code> (own vs metadata coordinates diffe
     <h2 id="ref-examples">Examples<a class="anchor" aria-label="anchor" href="#ref-examples"></a></h2>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># match detections to deployment windows, back-filling station/coordinates</span></span></span>
 <span class="r-in"><span><span class="va">matched</span> <span class="op">&lt;-</span> <span class="fu">matchDeployments</span><span class="op">(</span><span class="va">rays_detections</span>, <span class="va">rays_deployments</span>, station.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> matchDeployments: 1643/1643 detections matched a deployment window (0 unmatched).</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    0 coordinate(s) back-filled from metadata; 0 coordinate mismatch(es) &gt; 500.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">matchDeployments()</span> ────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Matching detections to receiver deployment windows</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 6 deployment records</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Matching criteria</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • window           receiver + time within [deploy, recover]</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • coord tolerance  500 m</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • back-fill        station and coordinates from the log</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • unmatched        retained, flagged in deployment_matched</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,643 detections matched (100%)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/base/table.html" class="external-link">table</a></span><span class="op">(</span><span class="va">matched</span><span class="op">$</span><span class="va">deployment_matched</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> TRUE </span>
