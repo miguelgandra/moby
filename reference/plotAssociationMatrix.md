@@ -136,7 +136,7 @@ assoc <- calculateAssociations(wide)
 #> Calculating overlap - complete monitoring duration
 #> Total execution time: 0.04 secs
 rand  <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)
-#> Total execution time: 0.25 secs
+#> Total execution time: 0.88 secs
 plotAssociationMatrix(rand)
 #> ── plotAssociationMatrix() ───────────────────────────────────────────── moby ──
 #> 

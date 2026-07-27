@@ -26,7 +26,7 @@ calculateStepDistances(
   grid.resolution = 100,
   mov.directions = 16,
   cores = 1,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -137,9 +137,16 @@ data(rays)
 # (no land shape supplied: fast linear paths)
 rays_dist <- calculateStepDistances(rays)
 #> Warning: - 'id.col' converted to factor.
-#>   |                                                                              |                                                                      |   0%Calculating linear paths between consecutive positions...
-#>   |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
-#> Total execution time: 0.08 secs 
+#> ── calculateStepDistances() ──────────────────────────────────────────── moby ──
+#> 
+#> ℹ Measuring distance between consecutive positions
+#> • Input: 1,643 positions · 8 individuals
+#> 
+#> → Method
+#>   • paths  straight-line (great-circle)
+#> 
+#> ✔ 1,635 steps measured
+#> ℹ Median step: 0 m (0-4,196 m)
 head(rays_dist$dist_m)
 #> [1]    0.000    0.000    0.000    0.000 1639.958    0.000
 
@@ -151,15 +158,22 @@ land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
 rays_lc <- calculateStepDistances(rays[1:60, ], land.shape = land,
                                   grid.resolution = 200)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateStepDistances() ──────────────────────────────────────────── moby ──
+#> 
+#> ℹ Measuring distance between consecutive positions
+#> • Input: 60 positions · 1 individuals
+#> 
+#> → Method
+#>   • paths  least-cost around land
+#>   • grid   200 m · 16 directions
 #> Warning: - 27 detection(s) at 3 location(s) fall on the supplied land shape. A
 #> detection's position is the position of the receiver that logged it, so this
 #> usually means the deployment metadata places a receiver on land. Audit the
 #> receiver log with checkDeployments() and correct the coordinates at source; for
 #> a genuine near-shore position that a coarse coastline overlaps,
 #> correctPositions() can relocate points to the nearest marine cell.
-#> Building least-cost graph (200m grid | 16 directions)
-#>   |                                                                              |                                                                      |   0%Calculating least-cost paths between consecutive positions...
-#>   |                                                                              |======================================================================| 100%
-#> Total execution time: 0.31 secs 
+#> 
+#> ✔ 59 steps measured
+#> ℹ Median step: 0 m (0-4,296 m)
 # }
 ```

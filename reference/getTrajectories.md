@@ -34,9 +34,16 @@ A named list of trajectory geometries (one element per individual), or
 data(rays)
 rays_dist <- calculateStepDistances(rays)
 #> Warning: - 'id.col' converted to factor.
-#>   |                                                                              |                                                                      |   0%Calculating linear paths between consecutive positions...
-#>   |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
-#> Total execution time: 0.07 secs 
+#> ── calculateStepDistances() ──────────────────────────────────────────── moby ──
+#> 
+#> ℹ Measuring distance between consecutive positions
+#> • Input: 1,643 positions · 8 individuals
+#> 
+#> → Method
+#>   • paths  straight-line (great-circle)
+#> 
+#> ✔ 1,635 steps measured
+#> ℹ Median step: 0 m (0-4,196 m)
 traj <- getTrajectories(rays_dist)
 length(traj)
 #> [1] 8
