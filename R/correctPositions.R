@@ -75,9 +75,6 @@ correctPositions <- function(data,
   # measure running time
   start.time <- Sys.time()
 
-  # print message
-  .printConsole("Relocating positions on land to the nearest marine cell", verbose = verbose)
-
   # capture the original spatial.layer name
   spatial_layer_name <- deparse(substitute(spatial.layer))
 
@@ -154,32 +151,36 @@ correctPositions <- function(data,
   ## Process Raster Values #####################################################
   ##############################################################################
 
+  # Describe the layer for the header instead of lecturing the user about the argument they chose:
+  # what raster.type MEANS is documented, so only the resulting interpretation is reported.
+  layer_desc <- if (inherits(spatial.layer, "sf")) "land polygons (sf)" else NULL
+
   # convert values based on raster.type
   if (inherits(spatial.layer, "SpatRaster")) {
     raster_layer <- spatial.layer
     if (raster.type == "land") {
       if(!any(is.na(terra::values(spatial.layer)))) .mobyAbort("The spatial layer contains no NA values. Ensure the layer includes water surfaces as NA for proper processing.")
-      .mobyInform("Raster type set to 'land' - all values are interpreted as land surfaces; NA values are treated as water.", verbose = verbose)
+      layer_desc <- "land raster (NA = water)"
       raster_layer <- terra::ifel(is.na(raster_layer), 0, 1)          # land = 1, water (NA) = 0
     } else if (raster.type == "water") {
       if(!any(is.na(terra::values(spatial.layer)))) .mobyAbort("The spatial layer contains no NA values. Ensure the layer includes land surfaces as NA for proper processing.")
-      .mobyInform("Raster type set to 'water' - all values are interpreted as water surfaces; NA values are treated as land.", verbose = verbose)
+      layer_desc <- "water raster (NA = land)"
       raster_layer <- terra::ifel(is.na(raster_layer), 1, 0)          # water = 0, land (NA) = 1
     } else if (raster.type == "bathy") {
       if(length(unique(terra::values(spatial.layer)[,1]))<=3) .mobyAbort("Raster type set to 'bathy', but the supplied values seem binary.")
       bathy_vals <- ifelse(mean(terra::values(raster_layer) > 0, na.rm = TRUE) > 0.5, "positive", "negative")
       if(bathy_vals=="positive") {
-        .mobyInform("Depth values seem to range from 0 to ", round(max(terra::values(raster_layer), na.rm=TRUE)),
-                    " m. Negative values will be converted to NA (land).", verbose = verbose)
+        layer_desc <- paste0("bathymetry raster (0-",
+                             .fmtN(round(max(terra::values(raster_layer), na.rm=TRUE))), " m)")
       }else{
-        .mobyInform("Depth values seem to range from 0 to ", round(min(terra::values(raster_layer), na.rm=TRUE)),
-                    " m. Positive values will be converted to NA (land).", verbose = verbose)
+        layer_desc <- paste0("bathymetry raster (0-",
+                             .fmtN(abs(round(min(terra::values(raster_layer), na.rm=TRUE)))), " m)")
         raster_layer <- raster_layer * -1
       }
       # depth <= threshold -> land (1), depth > threshold -> water (0), NA -> land (1)
       raster_layer <- terra::ifel(raster_layer <= depth.threshold, 1, 0)
       raster_layer[is.na(raster_layer)] <- 1
-      if(depth.threshold>0) .mobyInform("Positions will be relocated to a min depth of ", depth.threshold, " meters.", verbose = verbose)
+      # depth.threshold is surfaced in the header criteria, not as a separate status line
     }
   }
 
@@ -206,9 +207,33 @@ correctPositions <- function(data,
     land_mask <- sf::st_cast(land_mask, "LINESTRING")
   }
 
+  # ---- header ---------------------------------------------------------------------------------
+  # Placed here so the Input line can state how many positions actually fall on land, while still
+  # preceding the relocation loop (the slow part). Criteria carry only the choices that decide the
+  # OUTCOME: which layer, how far the search may go, the projection used, and the worker count.
+  crit <- c()
+  if (!is.null(layer_desc)) crit["layer"] <- layer_desc
+  if (identical(raster.type, "bathy") && depth.threshold > 0)
+    crit["min depth"] <- paste0(depth.threshold, " m")
+  crit["search radius"] <- paste0(max.distance.km, " km")
+  # NOTE: .processSpatial() replaces epsg.code with an sf::crs object (length 2, whose $input is
+  # already "EPSG:nnnnn"), so it must not be pasted onto an "EPSG:" prefix.
+  if (!is.null(epsg.code)) {
+    epsg_txt <- if (inherits(epsg.code, "crs")) epsg.code$input else paste0("EPSG:", epsg.code)
+    crit["projection"] <- paste0(epsg_txt,
+                                 if (identical(coords_crs, "geographic")) " (reprojected for processing)" else "")
+  }
+  if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
+
+  .mobyHeader("correctPositions()", "Relocating positions that fall on land",
+              input = paste0(.fmtN(nrow(coords)), " positions ", .mobyGlyph("mid"), " ",
+                             .fmtN(length(pointsOnLand_indexes)), " on land"),
+              criteria = crit, criteria.label = "Relocation criteria", verbose = verbose)
+
   # if no land overlaps are found, return the original data
   if(length(pointsOnLand_indexes)==0){
-    .mobyInform("No land overlaps were detected. Returning the original data.", verbose = verbose)
+    .mobyBlank(verbose)
+    .mobyOk("No positions on land ", .mobyGlyph("mid"), " data returned unchanged", verbose = verbose)
 
     # return the original dataset
     results <- list("data"=data)
@@ -256,9 +281,6 @@ correctPositions <- function(data,
   ###########################################################
   # parallel computation
   }else if(cores>1){
-
-      # print information to console
-      .mobyInform("Starting parallel computation: ", cores, " cores", verbose = verbose)
 
       # register parallel backend with the specified number of cores
       cl <- parallel::makeCluster(cores)
@@ -388,18 +410,21 @@ correctPositions <- function(data,
   ## Return results ############################################################
   ##############################################################################
 
-  # output final summary of the relocation process
-  .mobyInform("Points relocated: ", length(relocated_indices), verbose = verbose)
-  if(length(skipped_indices)>0) .mobyInform("Points skipped: ", length(skipped_indices), verbose = verbose)
+  # ---- outcome -------------------------------------------------------------------------------
   mean_distance <- suppressWarnings(round(mean(unlist(distances), na.rm=TRUE)))
   min_distance <- suppressWarnings(round(min(unlist(distances), na.rm=TRUE)))
   max_distance <- suppressWarnings(round(max(unlist(distances), na.rm=TRUE)))
-  if(!is.infinite(mean_distance) && !is.na(mean_distance)){
-    .mobyInform("Mean relocation distance: ", mean_distance, " m (", min_distance," m \u2014 ", max_distance," m)", verbose = verbose)
-  }
 
-  # print time taken
-  .reportRuntime(start.time, verbose)
+  .mobyBlank(verbose)
+  .mobyOk(.fmtN(length(relocated_indices)), " positions relocated", verbose = verbose)
+  # skipped points are worth a second look, and the reason (the search radius) is stated with them
+  if(length(skipped_indices)>0)
+    .mobyAttention(.fmtN(length(skipped_indices)), " skipped - no water cell within ",
+                   max.distance.km, " km", verbose = verbose)
+  if(!is.infinite(mean_distance) && !is.na(mean_distance))
+    .mobyNote("Mean distance: ", .fmtN(mean_distance), " m (", .fmtN(min_distance), "-",
+              .fmtN(max_distance), " m)", verbose = verbose)
+  .mobyRuntime(start.time, verbose, min.secs = 1)
 
   # display the warning message if any points were skipped during processing
   if(length(skipped_indices)>0){
@@ -414,7 +439,8 @@ correctPositions <- function(data,
 
   # convert coordinates back to geographic (if needed)
   if(coords_crs=="geographic" && length(relocated_indices)>0){
-    warning("Coordinates were initially in a geographic CRS. They have been projected for spatial processing and converted back to geographic coordinates.", call.=FALSE)
+    # Not a warning: reprojecting for the spatial work and converting back is documented behaviour on
+    # a successful run, and it is reported by the header's "projection" criterion.
     pointsProjected <- sf::st_as_sf(as.data.frame(pointsCorrected[relocated_indices,]), coords=c(1,2), crs=epsg.code)
     pointsProjected <- sf::st_transform(pointsProjected, crs = 4326)
     pointsProjected <- sf::st_coordinates(pointsProjected)
