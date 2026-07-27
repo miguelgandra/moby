@@ -207,7 +207,7 @@ checkDeployments <- function(deployments,
                              gap.tolerance = 1,
                              land.tolerance = 500,
                              min.active.days = NULL,
-                             verbose = TRUE) {
+                             verbose = getOption("moby.verbose", TRUE)) {
 
   scope <- match.arg(scope)
   if (!is.null(min.active.days) && (!is.numeric(min.active.days) || length(min.active.days) != 1 ||
@@ -250,6 +250,26 @@ checkDeployments <- function(deployments,
   dep$station <- as.character(dep$station)
   dep <- dep[order(dep$receiver, dep$deploy), , drop = FALSE]
   dep <- .cleanRecover(dep)
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Criteria are the settings that decide WHAT gets flagged: which check groups run, whether the
+  # metadata checks are limited to receivers that recorded detections, and each tolerance.
+  crit <- c(groups = paste(checks, collapse = paste0(" ", .mobyGlyph("mid"), " ")),
+            scope = if (identical(scope, "detected")) "receivers with detections" else "all deployments")
+  # only report a tolerance when the check that consumes it is actually running
+  if (do_coords) crit["coord tolerance"] <- paste0(coord.tolerance, " m")
+  if (do_gaps)   crit["gap tolerance"]   <- paste0(gap.tolerance, " d")
+  if (do_coords && !is.null(land.shape)) crit["land tolerance"] <- paste0(land.tolerance, " m")
+  if (!is.null(min.active.days)) crit["min active days"] <- .fmtN(min.active.days)
+
+  .mobyHeader("checkDeployments()", "Auditing receiver deployment metadata",
+              input = paste0(.fmtN(nrow(dep)), " deployment records ", .mobyGlyph("mid"), " ",
+                             .fmtN(length(unique(dep$receiver))), " receivers ", .mobyGlyph("mid"), " ",
+                             .fmtN(length(unique(dep$station))), " stations"),
+              criteria = crit, criteria.label = "Checks", verbose = verbose)
+  if (!is.null(detections))
+    .mobyNote("Cross-checking: ", .fmtN(nrow(as.data.frame(detections))), " detections",
+              verbose = verbose)
 
   report <- list()
   add <- function(r) report[[length(report) + 1]] <<- r
@@ -435,13 +455,16 @@ checkDeployments <- function(deployments,
 
     # match each detection to a valid receiver+station+time window
     matched <- rep(FALSE, nrow(det))
+    pb_match <- .progressBar(nrow(dep), verbose, name = "Matching detections")
     for (i in seq_len(nrow(dep))) {
+      .progressSet(pb_match, i)
       in_win <- det$receiver == dep$receiver[i] &
                 (is.na(det_station) | det_station == dep$station[i]) &
                 det_time >= dep$deploy[i] & det_time <= dep$recover_clean[i]
       in_win[is.na(in_win)] <- FALSE
       matched[in_win] <- TRUE
     }
+    .progressEnd(pb_match)
 
     receivers_meta <- unique(dep$receiver)
     meta_pairs <- unique(paste(dep$receiver, dep$station, sep = "_|_"))
@@ -450,7 +473,9 @@ checkDeployments <- function(deployments,
     if (length(unmatched) > 0) {
       # categorise each unmatched detection
       cat_type <- character(length(unmatched))
+      pb_cat <- .progressBar(length(unmatched), verbose, name = "Categorising unmatched")
       for (k in seq_along(unmatched)) {
+        .progressSet(pb_cat, k)
         i <- unmatched[k]
         rec <- det$receiver[i]; stn <- det_station[i]; tm <- det_time[i]
         if (!rec %in% receivers_meta) {
@@ -465,6 +490,8 @@ checkDeployments <- function(deployments,
           else cat_type[k] <- "Detection in deployment gap"
         }
       }
+      .progressEnd(pb_cat)
+
       # aggregate unmatched detections by type + receiver + station
       agg <- data.frame(type = cat_type, receiver = det$receiver[unmatched],
                         station = det_station[unmatched], time = det_time[unmatched],
@@ -521,7 +548,7 @@ checkDeployments <- function(deployments,
   result <- list(report = report_df, deployments = dep, counts = counts)
   class(result) <- "mobyQC"
 
-  if (verbose) print(result)
+  if (verbose) { .mobyBlank(verbose); print(result) }
   invisible(result)
 }
 

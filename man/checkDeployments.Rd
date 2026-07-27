@@ -23,7 +23,7 @@ checkDeployments(
   gap.tolerance = 1,
   land.tolerance = 500,
   min.active.days = NULL,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
