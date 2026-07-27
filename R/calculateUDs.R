@@ -294,12 +294,24 @@ calculateUDs <- function(data,
   ## Calculate UDs ############################################################
   ##############################################################################
 
+  # ---- header ---------------------------------------------------------------------------------
+  # Criteria are the settings that define the ESTIMATE: a different estimator, bandwidth or contour
+  # set produces a different home range, so they belong on screen.
+  crit <- c(estimator = if (identical(method, "akde")) "AKDE (autocorrelated)" else "kernel density (KDE)")
+  if (identical(method, "akde")) crit["model"] <- model.selection[1]
+  else if (!is.null(bandwidth))  crit["bandwidth"] <- paste0(.fmtN(bandwidth), " m")
+  crit["contours"] <- paste0(paste0(contour.percent, "%"), collapse = paste0(" ", .mobyGlyph("mid"), " "))
+  if (!is.null(subset))     crit["grouping"] <- paste(subset, collapse = " / ")
+  if (!is.null(land.shape)) crit["land"] <- "clipped from UDs"
+
+  .mobyHeader("calculateUDs()", "Estimating utilization distributions",
+              input = paste0(.fmtN(nrow(coords)), " positions ", .mobyGlyph("mid"), " ",
+                             .fmtN(nlevels(droplevels(factor(coords[[id.col]])))), " individuals"),
+              criteria = crit, verbose = verbose)
+
   #######################################################################
   # if no subset provided, calculate the UDs for the whole dataset #####
   if(!multiple) {
-
-    # print status message to console
-    .mobyInform("Estimating kernel utilization distributions...", verbose = verbose)
 
     # compute UDs for the entire dataset
     final_results <- .computeUDs(coords, id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, epsg.code, verbose)
@@ -314,9 +326,6 @@ calculateUDs <- function(data,
   #######################################################################
   # else, split the data and calculate UDs for each group separately ###
   } else{
-
-    # print the grouping criteria (defined by 'subset') to the console
-    .mobyInform("Grouping data by: ", paste(subset, collapse=" / "), verbose = verbose)
 
     # split the data into groups based on the 'subset' variable
     group_coords <- split(coords, f=coords[[subset]], drop=TRUE)
@@ -336,7 +345,6 @@ calculateUDs <- function(data,
 
     # compute UDs for each group separately
     kud_results <- lapply(seq_along(group_coords), function(i) {
-      .mobyInform("Estimating kernel utilization distributions [", names(group_coords)[i], "]...", verbose = verbose)
       group_results <- .computeUDs(group_coords[[i]], id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, epsg.code, verbose)
       if(is.null(group_results)) return(NA)
       else return(group_results)
@@ -412,7 +420,18 @@ calculateUDs <- function(data,
   ##############################################################################
 
   # print the total execution time to the console
-  .reportRuntime(start.time, verbose)
+  # ---- outcome ---------------------------------------------------------------------------------
+  if (verbose) {
+    n_uds <- tryCatch({
+      u <- final_results$ud
+      if (is.list(u) && !is.null(names(u)) && all(vapply(u, is.list, logical(1)))) sum(lengths(u)) else length(u)
+    }, error = function(e) NA_integer_)
+    .mobyBlank(verbose)
+    if (is.finite(n_uds) && n_uds > 0)
+      .mobyOk(.fmtN(n_uds), " utilization distribution", if (n_uds == 1) "" else "s", " estimated",
+              verbose = verbose)
+  }
+  .mobyRuntime(start.time, verbose, min.secs = 1)
 
   # create attributes to save relevant metadata
   attr(final_results, 'method') <- "kde"
@@ -519,10 +538,8 @@ calculateUDs <- function(data,
 
   # print a message indicating how many kernel densities were corrected
   if(n_corrected==0){
-    .mobyInform("No land overlap detected", verbose = verbose)
   }else{
     kud_label <- ifelse(n_corrected==1, "UD", "UDs")
-    .mobyInform("Land overlap areas successfully subtracted from ", n_corrected, " ", kud_label, verbose = verbose)
   }
 
   # return the corrected kernel densities
@@ -620,7 +637,6 @@ calculateUDs <- function(data,
 
     # increase the grid extent incrementally by a factor of 0.05 (5%)
     expand_factor <- expand_factor + 0.05
-    if(expand_factor>0.1) .mobyInform("Expanding grid bounding box by: ", round(expand_factor*100), "%", verbose = verbose)
 
     # expand bounding box by a given % in all directions
     # create a custom spatial grid based on the coordinate extent, if not supplied by the user
@@ -631,7 +647,6 @@ calculateUDs <- function(data,
 
     # clip out areas of the kernel density that overlap with landmasses
     if(!is.null(land.shape)){
-      .mobyInform("Clipping out land masses...", verbose = verbose)
       ud <- .subtractLand(ud, land.shape, epsg.code, verbose)
     }
 
@@ -641,8 +656,6 @@ calculateUDs <- function(data,
 
     # loop through each contour percentage and calculate corresponding UD contours
     for(c in seq_along(contour.percent)){
-      # print progress message
-      .mobyInform("Calculating ", contour.percent[c], "% contours...", verbose = verbose)
       # attempt to calculate kernel contours for the specified contour percent
       kernel_contours[[c]] <- tryCatch({
         adehabitatHR::getverticeshr(ud, percent=contour.percent[c], unin="m", unout="km2")
@@ -653,7 +666,6 @@ calculateUDs <- function(data,
                                        "contour; enlarge its extent or omit it to auto-generate one. (",
                                        e$message, ")")
           else {
-            .mobyInform("Grid too small; generating a larger one...", verbose = verbose)
             return(NA)
           }
         } else {
@@ -811,7 +823,6 @@ calculateUDs <- function(data,
   area_rows <- list()
   contour_sf <- stats::setNames(vector("list", length(contour.percent)), paste0("K", contour.percent))
 
-  .mobyInform("Fitting AKDE movement models (this may take a while for many individuals)...", verbose = verbose)
 
   for (u in names(units)) {
     udata <- units[[u]]
@@ -820,7 +831,7 @@ calculateUDs <- function(data,
     # pass 1: fit a continuous-time movement model per individual (>= 5 locations required).
     # A per-individual progress bar reassures the user through what is the package's slowest step.
     tels <- list(); fits <- list(); nloc <- list()
-    pb <- .progressBar(length(ids), verbose)
+    pb <- .progressBar(length(ids), verbose, name = "Fitting AKDE movement models")
     for (i in seq_along(ids)) {
       id <- ids[i]
       .progressSet(pb, i)
@@ -922,7 +933,7 @@ calculateUDs <- function(data,
   final_results <- c(list(ud = ud_list, summary_table = summary_table),
                      contour_out, list(area_estimates = area_estimates))
 
-  .reportRuntime(start.time, verbose)
+  .mobyRuntime(start.time, verbose, min.secs = 1)
 
   attr(final_results, 'method') <- "akde"
   attr(final_results, 'bandwidth') <- NA
