@@ -311,7 +311,7 @@ plotContours <- function(data,
   #####################################################################################
 
   xmin <- min(data[[datetime.col]], na.rm=TRUE); xmax <- max(data[[datetime.col]], na.rm=TRUE)
-  facts <- c("Individuals" = .fmtN(nlevels(data[, id.col])),
+  facts <- c("Individuals" = .fmtN(.nObserved(data[, id.col])),
              "Variables"   = paste(variables, collapse=", "),
              "Period"      = sprintf("%s to %s (%d d)", format(xmin, "%Y-%m-%d"), format(xmax, "%Y-%m-%d"),
                                      as.integer(difftime(xmax, xmin, units="days"))))

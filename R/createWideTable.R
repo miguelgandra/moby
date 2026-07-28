@@ -111,8 +111,9 @@ createWideTable <- function(data,
   .mobyHeader("createWideTable()",
               paste0("Reshaping detections into a time-bin ", .mobyGlyph("times"), " individual matrix"),
               input = paste0(.fmtCount(nrow(data), "record"), " ", .mobyGlyph("mid"), " ",
-                             .fmtCount(nlevels(data[,id.col]), "individual")),
+                             .fmtCount(.nObserved(data[,id.col]), "individual")),
               criteria = crit, verbose = verbose)
+  .noteUndetected(data[,id.col], verbose, "column retained, all NA")
 
 
   ##############################################################################

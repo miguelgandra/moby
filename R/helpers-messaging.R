@@ -295,6 +295,45 @@
   formatC(n, format = "d", big.mark = ",")
 }
 
+#' Number of individuals OBSERVED in the data (as opposed to DECLARED by the factor levels).
+#'
+#' moby's ID column is always a factor, so two different quantities can be read off it and they are
+#' not interchangeable:
+#'   OBSERVED  individuals that actually contributed data  -> this helper
+#'   DECLARED  the roster carried by the factor levels     -> nlevels()
+#' They diverge whenever `id.groups` names a tagged animal that was never detected (validateArguments
+#' re-levels the factor to the roster), whenever a caller subsets without droplevels(), or whenever a
+#' pre-factored column arrives with spare levels.
+#'
+#' Use OBSERVED to answer "how much data is there?" - console input lines, plot summary cards, and any
+#' denominator describing the animals that contributed. Use DECLARED where the roster IS the subject:
+#' a per-individual results table is deliberately roster-shaped, so that a tagged-but-never-detected
+#' animal still gets a row and positionally-supplied tagging.dates stay aligned.
+#' @keywords internal
+#' @noRd
+.nObserved <- function(x) length(unique(as.character(stats::na.omit(x))))
+
+#' Note the tagged individuals that contributed no data, when the roster is larger than the data.
+#'
+#' The companion to `.nObserved()`. A header's input line reports the OBSERVED count, because that is
+#' the plain answer to "how much data is there"; this states the difference separately, so a reader
+#' does not have to reconcile two numbers inside one sentence. Silent when they agree, so an ordinary
+#' run gains nothing. `detail` says what became of the animal, which differs by function (a
+#' roster-shaped table keeps its row; a wide table keeps its column).
+#' @keywords internal
+#' @noRd
+.noteUndetected <- function(x, verbose, detail = NULL) {
+  n <- nlevels(x) - .nObserved(x)
+  if (n > 0) {
+    # separated from the header block: without it the note lands flush under the criteria bullets and
+    # reads as a further "Method" entry rather than as a fact about the data
+    .mobyBlank(verbose)
+    .mobyNote(.fmtCount(n, "tagged individual"), " with no detections",
+              if (!is.null(detail)) paste0(" (", detail, ")") else "", verbose = verbose)
+  }
+  invisible(NULL)
+}
+
 #' Detection count for a header's input line.
 #'
 #' A row is not always a detection: an aggregated dataset (COAs, binned records) carries a numeric

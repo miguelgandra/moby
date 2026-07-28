@@ -696,8 +696,12 @@ calculateUDs <- function(data,
   # set column names of the UD table
   colnames(kud_table) <- c("ID",  sprintf("UD %d%% (Km2)", contour.percent))
 
-  # add the number of COAs to the UD table
-  ncoas <- table(coords[[id.col]])
+  # add the number of COAs to the UD table.
+  # droplevels() first: table() over a factor carrying stale levels emits an entry per LEVEL (zero for
+  # animals with no data), and because ncoas is the LEFT side of the join below it DRIVES the row set -
+  # so summary_table gained a phantom row, with "N COAs" = 0 and NA areas, for every declared-but-not-
+  # estimated animal. The multiple = TRUE path never hit this because it droplevels each group already.
+  ncoas <- table(droplevels(as.factor(coords[[id.col]])))
   ncoas <- as.data.frame(ncoas)
   ncoas[is.na(ncoas)] <- 0
   colnames(ncoas) <- c("ID", "N COAs")

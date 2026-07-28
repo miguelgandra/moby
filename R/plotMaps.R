@@ -191,9 +191,16 @@ plotMaps <- function(data,
 
   if (is.null(id.groups)) id.groups <- list(levels(factor(data[, id.col])))
 
-  n_before <- nlevels(factor(data[, id.col])); missing_individuals <- character(0)
+  # The denominator must sit on the SAME basis as the discard count below, which comes from table()
+  # on the ID factor and so includes zero-count levels. Re-factoring here dropped those levels first,
+  # so a never-detected animal was subtracted from a total it had never been part of and the card
+  # printed impossible arithmetic ("Individuals: 8 of 8" above "1 individual(s) discarded").
+  n_before <- nlevels(data[, id.col]); missing_individuals <- character(0)
+  # computed unconditionally: a tagged animal with no detections cannot be mapped whether or not
+  # discard.missing is set, and previously it simply vanished from the figure unmentioned
+  counts <- table(data[, id.col])
+  never_detected <- names(counts[counts == 0])
   if (discard.missing) {
-    counts <- table(data[, id.col])
     missing_individuals <- names(counts[counts < 5])
     data <- data[!data[, id.col] %in% missing_individuals, ]
     data[, id.col] <- droplevels(factor(data[, id.col]))
@@ -281,8 +288,9 @@ plotMaps <- function(data,
   ids <- levels(factor(data[, id.col]))
   data_individual <- split(data, f = factor(data[, id.col]), drop = FALSE)
   results <- data.frame()
-  .printMapsSummary(n_ids = length(ids), n_total = n_before, n_discarded = length(missing_individuals),
-                    has_kud = has_ud,
+  .printMapsSummary(n_ids = length(ids), n_total = n_before,
+                    n_discarded = length(setdiff(missing_individuals, never_detected)),
+                    n_never = length(never_detected), has_kud = has_ud,
                     epsg = if (inherits(epsg.code, "crs") && !is.na(epsg.code$epsg)) epsg.code$epsg else NA,
                     ud.contour = ud.contour, verbose = verbose)
 
@@ -388,7 +396,7 @@ plotMaps <- function(data,
 
 #' @keywords internal
 #' @noRd
-.printMapsSummary <- function(n_ids, n_total, n_discarded, has_kud, epsg, ud.contour,
+.printMapsSummary <- function(n_ids, n_total, n_discarded, n_never = 0, has_kud, epsg, ud.contour,
                               verbose = getOption("moby.verbose", TRUE)) {
 
   crit <- c(Projection = if (!is.na(epsg)) sprintf("EPSG:%s", epsg) else "projected")
@@ -398,9 +406,14 @@ plotMaps <- function(data,
               facts = c(Individuals = sprintf("%d of %d", n_ids, n_total)),
               criteria = crit, verbose = verbose)
 
-  # individuals lost to the < 5-detection rule: an outcome the user should see, not a plain fact
+  # Individuals absent from the map, reported by CAUSE. Lumping them together said "< 5 detections"
+  # of an animal that had none at all and was never in the data.
+  if (n_never > 0)
+    .mobyAttention(.fmtCount(n_never, "tagged individual"), " with no detections (not mapped)",
+                   verbose = verbose)
   if (n_discarded > 0)
-    .mobyAttention(sprintf("%d individual(s) discarded (< 5 detections)", n_discarded), verbose = verbose)
+    .mobyAttention(.fmtCount(n_discarded, "individual"), " discarded (< 5 detections)",
+                   verbose = verbose)
 }
 
 

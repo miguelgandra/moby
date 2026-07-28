@@ -202,8 +202,9 @@ summaryTable <- function(data,
 
   .mobyHeader("summaryTable()", "Summarising monitoring and residency metrics per individual",
               input = paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
-                             .fmtCount(nlevels(data[,id.col]), "individual")),
+                             .fmtCount(.nObserved(data[,id.col]), "individual")),
               criteria = crit, verbose = verbose)
+  .noteUndetected(data[,id.col], verbose, "row retained, values shown as '-'")
 
 
   # define error function

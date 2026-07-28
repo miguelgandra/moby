@@ -94,7 +94,7 @@ movementTable <- function(data,
 
   .mobyHeader("movementTable()", "Summarising distance, rate of movement and space use per individual",
               input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
-                             .fmtCount(nlevels(data[, id.col]), "individual")),
+                             .fmtCount(.nObserved(data[, id.col]), "individual")),
               criteria = crit, verbose = verbose)
 
 

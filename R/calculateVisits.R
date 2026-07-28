@@ -102,7 +102,7 @@ calculateVisits <- function(data,
                         else "unlimited (visits end only on a change of location)")
 
   input_txt <- paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
-                      .fmtCount(nlevels(data[, id.col]), "individual"), " ", .mobyGlyph("mid"), " ",
+                      .fmtCount(.nObserved(data[, id.col]), "individual"), " ", .mobyGlyph("mid"), " ",
                       .fmtCount(length(unique(as.character(data[, spatial.col]))), "location"),
                       " (", spatial.col, ")")
 

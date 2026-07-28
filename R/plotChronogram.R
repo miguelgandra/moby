@@ -328,7 +328,7 @@ plotChronogram <- function(data,
   diel_desc <- if(n_diel_lines > 0) sprintf("%d lines", n_diel_lines) else "off"
   if(!isFALSE(shade)) diel_desc <- paste0(diel_desc, sprintf(" + %s shading", if(is.data.frame(shade)) "custom" else shade))
 
-  chrono_facts <- c("Individuals" = .fmtN(nlevels(data[, id.col])),
+  chrono_facts <- c("Individuals" = .fmtN(.nObserved(data[, id.col])),
                     "Detections"  = .fmtN(n_det_total),
                     "Period"      = sprintf("%s to %s (%d d)", format(chrono_xmin, "%Y-%m-%d"),
                                             format(chrono_xmax, "%Y-%m-%d"), chrono_dur),

@@ -85,8 +85,9 @@ calculateLinearityIndex <- function(data,
 
   .mobyHeader("calculateLinearityIndex()", "Measuring movement directness per individual",
               input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
-                             .fmtCount(nlevels(data[, id.col]), "individual")),
+                             .fmtCount(.nObserved(data[, id.col]), "individual")),
               criteria = crit, verbose = verbose)
+  .noteUndetected(data[, id.col], verbose, "row retained, values NA")
 
   ##############################################################################
   ## Total path length (Di denominator) ########################################

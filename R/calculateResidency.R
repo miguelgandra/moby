@@ -120,7 +120,7 @@ calculateResidency <- function(data,
 
   .mobyHeader("calculateResidency()", "Computing residency indices per individual",
               input = paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
-                             .fmtCount(nlevels(data[, id.col]), "individual")),
+                             .fmtCount(.nObserved(data[, id.col]), "individual")),
               criteria = crit, verbose = verbose)
 
   ##############################################################################

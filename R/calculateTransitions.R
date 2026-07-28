@@ -95,7 +95,7 @@ calculateTransitions <- function(data,
                         else "unlimited (visits end only on a change of location)")
 
   input_txt <- paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
-                      .fmtCount(nlevels(data[, id.col]), "individual"), " ", .mobyGlyph("mid"), " ",
+                      .fmtCount(.nObserved(data[, id.col]), "individual"), " ", .mobyGlyph("mid"), " ",
                       .fmtCount(length(unique(as.character(data[, spatial.col]))), "node"),
                       " (", spatial.col, ")")
 
@@ -117,9 +117,14 @@ calculateTransitions <- function(data,
   # group label per row (single "all" group when id.groups is not supplied) and the
   # number of (tagged) individuals per group, used as the denominator for transit percentages
   if (is.null(id.groups)) {
+    # With no id.groups there is no roster: the factor's level set is an accident of how the data
+    # frame was built (a subset that kept stale levels, or a pre-factored column), so counting levels
+    # here silently deflates every percentage transitionsTable() reports. Count the animals that
+    # actually contributed data. The id.groups branch below is different in kind - an explicit roster
+    # IS a declaration, and "3 of the 5 tagged (60%)" is a defensible statement - so it stays declared.
     data$.group <- "all"
     group_levels <- "all"
-    group_sizes <- stats::setNames(nlevels(data[, id.col]), "all")
+    group_sizes <- stats::setNames(length(unique(as.character(data[, id.col]))), "all")
   } else {
     grp_map <- stats::setNames(rep(names(id.groups), lengths(id.groups)), as.character(unlist(id.groups)))
     data$.group <- unname(grp_map[as.character(data[, id.col])])

@@ -79,8 +79,11 @@ calculateROM <- function(data,
   # table or its 'interval' attribute - so the result IS the completion summary.
   .mobyHeader("calculateROM()", "Summarising distance travelled and rate of movement per individual",
               input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
-                             .fmtCount(nlevels(data[, id.col]), "individual")),
+                             .fmtCount(.nObserved(data[, id.col]), "individual")),
               verbose = verbose)
+  # the returned table keeps a row per declared individual, so an undetected one arrives as a row of
+  # NAs; naming it here saves the reader scanning the table to work out why
+  .noteUndetected(data[, id.col], verbose, "row retained, values NA")
 
   ##############################################################################
   ## Determine the time-bin interval (and interpolate if irregular) ############

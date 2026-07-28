@@ -396,8 +396,16 @@ calculateAssociations <- function(data,
   # set default window size
   result$shared_monit_days <- 0
 
-  # if any of the individuals doesn't have detections, jump to next pair
+  # If either individual has no detections at all, the pair yields no association (NA), not zero.
+  # An SRI/HWI of 0 is a SAMPLING zero - both animals were monitored over a shared window and never
+  # co-occurred - whereas a never-detected animal is a STRUCTURAL zero: there is no evidence about it
+  # either way. Scoring it 0 against everyone would deflate mean association, inflate apparent network
+  # sparsity, and feed fabricated zeros into randomizeAssociations' observed and null distributions.
+  # The is.na(end_dates) test alone is only a PROXY for "has no detections": it holds when
+  # createWideTable derived the dates from the data, but a user-supplied scalar start/end date gives
+  # such an animal a real monitoring window and silently defeats it. Ask the data directly as well.
   if (any(is.na(end_dates[c(id1, id2)]))) return(result)
+  if (all(is.na(data[, id1])) || all(is.na(data[, id2]))) return(result)
 
   # if monitoring periods don't overlap, jump to next pair
   start <- max(start_dates[names(start_dates) %in% c(id1, id2)])
