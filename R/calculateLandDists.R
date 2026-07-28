@@ -21,6 +21,8 @@
 #' shore required for inshore/offshore classification.
 #' @param dist.col Optional. Column name for step length (meters).
 #' @param grid.resolution Numeric. Resolution of the distance raster in meters.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with added spatial and movement columns.
 #'
@@ -45,11 +47,11 @@ calculateLandDists <- function(data,
                                land.shape,
                                epsg.code = NULL,
                                grid.resolution = 100,
-                               mov.threshold = 0.5) {
+                               mov.threshold = 0.5,
+                               verbose = getOption("moby.verbose", TRUE)) {
 
   # --- 1. Initial Setup and Validation ---
   start.time <- Sys.time()
-  .printConsole("Calculating distances to nearest land (raster method)...")
 
   # resolve NULL column/CRS arguments from the mobyData metadata (or canonical defaults)
   .args <- .resolveArgs(data, list(id.col=id.col, lon.col=lon.col, lat.col=lat.col, epsg.code=epsg.code))
@@ -73,6 +75,20 @@ calculateLandDists <- function(data,
   if (!is.null(dist.col) && !(dist.col %in% names(data))) {
     stop(paste("Column", dist.col, "not found in data."), call. = FALSE)
   }
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Criteria = the two choices that change the numbers. The grid resolution sets both the precision
+  # and the floor of every land distance (distances are measured between raster cells), and
+  # mov.threshold decides where alongshore ends and inshore/offshore begins - it only applies when
+  # step lengths are supplied, so it is shown only then.
+  crit <- c(grid = paste0(.fmtN(grid.resolution), " m resolution"))
+  if (!is.null(dist.col))
+    crit["directionality"] <- paste0("perpendicular movement >= ", mov.threshold, " of step length")
+
+  .mobyHeader("calculateLandDists()", "Measuring distance from each position to the nearest land",
+              input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(length(unique(data[[id.col]])), "individual")),
+              criteria = crit, verbose = verbose)
 
   # --- 2. Spatial Projection ---
   # Convert data to sf and project to the metric system
@@ -107,8 +123,6 @@ calculateLandDists <- function(data,
   
   # --- 5. Movement Metrics (Conditional) ---
   if (!is.null(dist.col)) {
-    message("Quantifying movement directionality...")
-    
     # Split by ID to ensure calculations don't bleed between different animals
     data_list <- split(data, data[[id.col]])
     
@@ -141,9 +155,32 @@ calculateLandDists <- function(data,
   }
   
   # --- 6. Execution Summary ---
-  time.taken <- Sys.time() - start.time
-  cat(paste("Done! Total execution time:", 
-            round(as.numeric(time.taken), 2), units(time.taken), "\n"))
-  
+  # ---- outcome: what came out, read straight off the returned columns -------------------------
+  if (verbose) {
+    d <- suppressWarnings(as.numeric(data$land_dist))
+    n_missing <- sum(!is.finite(d))
+    d <- d[is.finite(d)]
+    .mobyBlank(verbose)
+    .mobyOk(.fmtN(length(d)), " distances computed", verbose = verbose)
+    if (length(d) > 0)
+      .mobyNote("Median distance to land: ", .fmtN(round(stats::median(d))), " m (",
+                .fmtN(round(min(d))), "-", .fmtN(round(max(d))), " m)", verbose = verbose)
+    # the second product of the run, when step lengths were supplied: how movement was oriented
+    # relative to the shore (a step with no length is unclassifiable, hence not always the full set)
+    if (!is.null(dist.col)) {
+      dirs <- table(data$direction)
+      if (sum(dirs) > 0)
+        .mobyNote("Direction: ", .fmtN(dirs[["inshore"]]), " inshore ", .mobyGlyph("mid"), " ",
+                  .fmtN(dirs[["alongshore"]]), " alongshore ", .mobyGlyph("mid"), " ",
+                  .fmtN(dirs[["offshore"]]), " offshore", verbose = verbose)
+    }
+    # positions outside the land shape's extent get no raster value: worth a second look, since the
+    # supplied coastline probably does not span the whole study area
+    if (n_missing > 0)
+      .mobyAttention(.fmtN(n_missing), " position(s) outside the land raster extent (land_dist = NA)",
+                     verbose = verbose)
+  }
+  .mobyRuntime(start.time, verbose, min.secs = 1)
+
   return(data)
 }

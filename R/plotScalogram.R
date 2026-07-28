@@ -182,17 +182,21 @@ plotScalogram <- function(data,
   cwt_fun <- function(x) wavScalogram::cwt_wst(x, dt = built$dt, scales = scales_arg, powerscales = TRUE,
                                                wname = wavelet.type, border_effects = "BE",
                                                makefigure = FALSE, energy_density = TRUE, figureperiod = TRUE, ...)
-  pb <- utils::txtProgressBar(min = 0, max = n_ind, style = 3)
+  # initialize progress bar (.progressBar is NULL when quiet or non-interactive, so the bar no longer
+  # sprays a wall of "=" into knitted documents and CI logs; .progressSet/.progressEnd no-op on NULL).
+  # The doSNOW progress callback fires in the MAIN process, never in a worker, so the same bar serves
+  # both branches unchanged.
+  pb <- .progressBar(n_ind, verbose, name = "Transforming")
   if(cores > 1){
     cl <- parallel::makeCluster(cores); doSNOW::registerDoSNOW(cl); on.exit(parallel::stopCluster(cl), add = TRUE)
     `%dopar%` <- foreach::`%dopar%`
-    opts <- list(progress = function(n) utils::setTxtProgressBar(pb, n))
+    opts <- if(!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
     cwts <- foreach::foreach(i = seq_along(data_ts), .options.snow = opts, .packages = "wavScalogram") %dopar% cwt_fun(data_ts[[i]])
   }else{
     cwts <- vector("list", n_ind)
-    for(i in seq_along(data_ts)){ cwts[[i]] <- cwt_fun(data_ts[[i]]); utils::setTxtProgressBar(pb, i) }
+    for(i in seq_along(data_ts)){ cwts[[i]] <- cwt_fun(data_ts[[i]]); .progressSet(pb, i) }
   }
-  close(pb)
+  .progressEnd(pb)
 
 
   ##############################################################################

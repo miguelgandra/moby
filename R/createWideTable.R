@@ -36,7 +36,8 @@
 #' @param round.dates Logical. If TRUE, the start and end dates are rounded to the nearest day:
 #' the earliest start date is floored to the beginning of the day, and the latest end date is
 #' rounded up to the end of the day. This ensures that the time bins cover whole days. Defaults to FALSE.
-#' @param verbose Output ties info to console? Defaults to TRUE.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @return A data frame in wide format with time bins as rows and individuals as columns. Each cell
 #' in the matrix represents the value from `value.col` for that time bin and individual, aggregated
 #' according to the specified aggregation function.
@@ -67,12 +68,20 @@ createWideTable <- function(data,
                             end.dates = NULL,
                             agg.fun = NULL,
                             round.dates = FALSE,
-                            verbose = TRUE) {
+                            verbose = getOption("moby.verbose", TRUE)) {
 
 
   ##############################################################################
   # Initial checks #############################################################
   ##############################################################################
+
+  # label for the header: the name of a user-supplied aggregation function. Captured here because an
+  # anonymous function deparses to several lines, which is reported generically instead.
+  agg_fun_name <- NULL
+  if(!is.null(agg.fun)){
+    agg_fun_name <- paste(deparse(substitute(agg.fun)), collapse=" ")
+    if(nchar(agg_fun_name)>30) agg_fun_name <- "user-supplied function"
+  }
 
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
@@ -90,6 +99,20 @@ createWideTable <- function(data,
       stop("Value column not found. Please specify the correct column using 'value.col'", call.=FALSE)
     }
   }
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Placed after the value.col check so the header only ever precedes a run that can proceed.
+  # Criteria carry only what changes the matrix CONTENT: which column supplies the values, a
+  # user-supplied aggregation rule, and whether the bin sequence is padded out to whole days.
+  crit <- c(values = value.col)
+  if(!is.null(agg.fun)) crit["aggregation"] <- agg_fun_name
+  if(isTRUE(round.dates)) crit["date rounding"] <- "start/end snapped to whole days"
+
+  .mobyHeader("createWideTable()",
+              paste0("Reshaping detections into a time-bin ", .mobyGlyph("times"), " individual matrix"),
+              input = paste0(.fmtCount(nrow(data), "record"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(data[,id.col]), "individual")),
+              criteria = crit, verbose = verbose)
 
 
   ##############################################################################
@@ -225,6 +248,13 @@ createWideTable <- function(data,
   names(end.dates) <- levels(data[,id.col])
   attr(data_table, 'start.dates') <- start.dates
   attr(data_table, 'end.dates') <- end.dates
+
+  # ---- outcome -------------------------------------------------------------------------------
+  # The shape of the returned matrix is the result here: the bin sequence is built from the
+  # monitoring period, so its length is not something the caller supplied.
+  .mobyBlank(verbose)
+  .mobyOk(.fmtN(nrow(data_table)), " time bins ", .mobyGlyph("times"), " ",
+          .fmtCount(ncol(data_table) - 1L, "individual"), verbose = verbose)
 
   # return formatted table
   return(data_table)

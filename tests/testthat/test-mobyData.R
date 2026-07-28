@@ -35,7 +35,7 @@ test_that("functions resolve column names from mobyData metadata without explici
   )
   md <- as_moby(df, id.col = "animal", timebin.col = "tbin",
                 lon.col = "x", lat.col = "y", station.col = "rec")
-  coas <- suppressWarnings(calculateCOAs(md))
+  coas <- suppressWarnings(suppressMessages(calculateCOAs(md)))
   expect_true("animal" %in% colnames(coas))
   expect_true(nrow(coas) > 0)
 })
@@ -46,7 +46,7 @@ test_that("plain data frames with canonical column names still work", {
     timebin = as.POSIXct("2023-01-01", tz = "UTC") + rep(c(0, 3600, 7200), 2),
     lon = -8, lat = 37, station = "R1"
   )
-  coas <- suppressWarnings(calculateCOAs(df))
+  coas <- suppressWarnings(suppressMessages(calculateCOAs(df)))
   expect_true(nrow(coas) > 0)
 })
 
@@ -170,8 +170,9 @@ test_that("calculateCOAs actually drops the datetime role it documents dropping"
   # re-applied its canonical default, leaving metadata pointing at a non-existent column
   expect_null(mobyMeta(coas)$datetime.col)
   expect_false("datetime" %in% colnames(coas))
-  # and computing COAs is now quiet (it previously emitted a spurious 'datetime' missing-column note)
-  expect_silent(suppressWarnings(calculateCOAs(rays)))
+  # and computing COAs is now quiet (it previously emitted a spurious 'datetime' missing-column note);
+  # verbose = FALSE must silence the summary AND leave no other output behind
+  expect_silent(suppressWarnings(calculateCOAs(rays, verbose = FALSE)))
   # the rest of the metadata is still carried forward
   expect_equal(mobyMeta(coas)$epsg.code, mobyMeta(rays)$epsg.code)
   expect_equal(mobyMeta(coas)$timebin.col, "timebin")

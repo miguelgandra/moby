@@ -90,7 +90,7 @@ randomizeTransitions <- function(network,
   if (!is.null(random.seed)) crit["seed"] <- format(random.seed)
 
   .mobyHeader("randomizeTransitions()", "Testing movement transitions against a null model",
-              input = paste0(.fmtN(nrow(edges)), " edges ", .mobyGlyph("mid"), " ",
+              input = paste0(.fmtCount(nrow(edges), "edge"), " ", .mobyGlyph("mid"), " ",
                              .fmtN(length(groups)), " group", if (length(groups) == 1) "" else "s"),
               criteria = crit, criteria.label = "Permutation test", verbose = verbose)
 

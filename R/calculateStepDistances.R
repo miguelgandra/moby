@@ -157,8 +157,8 @@ calculateStepDistances <- function(data,
   if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
 
   .mobyHeader("calculateStepDistances()", "Measuring distance between consecutive positions",
-              input = paste0(.fmtN(nrow(data)), " positions ", .mobyGlyph("mid"), " ",
-                             .fmtN(length(unique(data[[id.col]]))), " individuals"),
+              input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(length(unique(data[[id.col]])), "individual")),
               criteria = crit, verbose = verbose)
 
 

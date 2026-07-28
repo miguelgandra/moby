@@ -13,7 +13,8 @@ calculateLandDists(
   land.shape,
   epsg.code = NULL,
   grid.resolution = 100,
-  mov.threshold = 0.5
+  mov.threshold = 0.5,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ it is taken from the \code{mobyData} metadata (see \code{\link{as_moby}}); a pro
 
 \item{mov.threshold}{Numeric (0-1). Proportion of movement perpendicular to
 shore required for inshore/offshore classification.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with added spatial and movement columns.

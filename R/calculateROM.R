@@ -86,7 +86,8 @@ calculateROM <- function(data,
   # step spans one nominal interval before distances are converted to rates of movement
   if (length(interval) > 1) {
     data <- interpolateDistances(data, id.col = id.col, timebin.col = timebin.col,
-                                 dist.col = dist.col, keep.intermediate = TRUE)
+                                 dist.col = dist.col, keep.intermediate = TRUE,
+                                 verbose = FALSE)
   }
   # reduce to a single scalar = the MODAL (most common) step interval, in minutes, computed across
   # all consecutive steps. This is the true nominal bin width (after regularisation, the dominant

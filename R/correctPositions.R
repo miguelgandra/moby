@@ -226,7 +226,7 @@ correctPositions <- function(data,
   if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
 
   .mobyHeader("correctPositions()", "Relocating positions that fall on land",
-              input = paste0(.fmtN(nrow(coords)), " positions ", .mobyGlyph("mid"), " ",
+              input = paste0(.fmtCount(nrow(coords), "position"), " ", .mobyGlyph("mid"), " ",
                              .fmtN(length(pointsOnLand_indexes)), " on land"),
               criteria = crit, criteria.label = "Relocation criteria", verbose = verbose)
 

@@ -13,7 +13,7 @@ createWideTable(
   end.dates = NULL,
   agg.fun = NULL,
   round.dates = FALSE,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -57,7 +57,8 @@ for numeric columns (e.g., 'detections'), the sum of values is used.}
 the earliest start date is floored to the beginning of the day, and the latest end date is
 rounded up to the end of the day. This ensures that the time bins cover whole days. Defaults to FALSE.}
 
-\item{verbose}{Output ties info to console? Defaults to TRUE.}
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame in wide format with time bins as rows and individuals as columns. Each cell

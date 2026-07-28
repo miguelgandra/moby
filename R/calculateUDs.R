@@ -305,8 +305,8 @@ calculateUDs <- function(data,
   if (!is.null(land.shape)) crit["land"] <- "clipped from UDs"
 
   .mobyHeader("calculateUDs()", "Estimating utilization distributions",
-              input = paste0(.fmtN(nrow(coords)), " positions ", .mobyGlyph("mid"), " ",
-                             .fmtN(nlevels(droplevels(factor(coords[[id.col]])))), " individuals"),
+              input = paste0(.fmtCount(nrow(coords), "position"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(droplevels(factor(coords[[id.col]]))), "individual")),
               criteria = crit, verbose = verbose)
 
   #######################################################################
@@ -428,7 +428,7 @@ calculateUDs <- function(data,
     }, error = function(e) NA_integer_)
     .mobyBlank(verbose)
     if (is.finite(n_uds) && n_uds > 0)
-      .mobyOk(.fmtN(n_uds), " utilization distribution", if (n_uds == 1) "" else "s", " estimated",
+      .mobyOk(.fmtCount(n_uds, "utilization distribution"), " estimated",
               verbose = verbose)
   }
   .mobyRuntime(start.time, verbose, min.secs = 1)

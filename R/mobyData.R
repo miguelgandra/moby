@@ -219,8 +219,8 @@ mobyMeta <- function(x) attr(x, "moby")
   else                             list(rule = "-",      sep = "|",      arrow = "->")
 }
 
-# thousands-separated integer, locale-independent
-.fmtCount <- function(n) formatC(n, format = "d", big.mark = ",")
+# (thousands-separated integers come from .fmtN() in helpers-messaging.R; this file used to carry a
+# byte-identical private copy, which collided with the count+noun .fmtCount() helper)
 
 # pack items onto lines at item boundaries (never leaving a separator stranded at a line start)
 .packItems <- function(items, sep, avail) {
@@ -308,10 +308,12 @@ print.mobyData <- function(x, preview = 3L, width = getOption("width"), ...) {
   # a position table knows how many detections it was aggregated from - report both, so the row count
   # is never mistaken for the detection count
   n_det <- if (noun == "positions") sum(x[["detections"]], na.rm = TRUE) else NA_real_
-  overview <- c(paste(.fmtCount(nrow(x)), noun),
-                if (is.finite(n_det) && n_det > 0) paste(.fmtCount(round(n_det)), "detections"),
-                if (!is.na(n_ids)) paste(.fmtCount(n_ids), "individuals"),
-                paste(.fmtCount(ncol(x)), "variables"))
+  # .mobyRowNoun() returns the plural; all three nouns pluralise regularly, so the singular that
+  # .fmtCount() needs is recovered by dropping the trailing "s"
+  overview <- c(.fmtCount(nrow(x), sub("s$", "", noun)),
+                if (is.finite(n_det) && n_det > 0) .fmtCount(round(n_det), "detection"),
+                if (!is.na(n_ids)) .fmtCount(n_ids, "individual"),
+                .fmtCount(ncol(x), "variable"))
   .mobyField("overview", .packItems(overview, g$sep, w - 11L))
 
   # ---- period ----------------------------------------------------------------------------------
@@ -329,7 +331,7 @@ print.mobyData <- function(x, preview = 3L, width = getOption("width"), ...) {
   st <- meta$station.col
   space <- character(0)
   if (!is.null(st) && st %in% colnames(x))
-    space <- c(space, paste(.fmtCount(length(unique(stats::na.omit(x[[st]])))), "stations"))
+    space <- c(space, .fmtCount(length(unique(stats::na.omit(x[[st]]))), "station"))
   for (ax in c("lon", "lat")) {
     cc <- meta[[paste0(ax, ".col")]]
     if (!is.null(cc) && cc %in% colnames(x) && is.numeric(x[[cc]]) && any(!is.na(x[[cc]]))) {

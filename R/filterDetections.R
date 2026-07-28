@@ -354,7 +354,7 @@ filterDetections <- function(data,
   if (min.days > 0)       crit["min days"] <- .fmtN(min.days)
 
   .mobyHeader("filterDetections()", "Removing spurious detections",
-              input = paste0(.fmtN(n_total), " detections ", .mobyGlyph("mid"), " ", .fmtN(nfish), " individuals"),
+              input = paste0(.fmtCount(n_total, "detection"), " ", .mobyGlyph("mid"), " ", .fmtCount(nfish, "individual")),
               criteria = crit, criteria.label = "Filtering criteria", verbose = verbose)
 
   data_individual <- split(data, f = data[, id.col], drop = FALSE)

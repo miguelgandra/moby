@@ -10,7 +10,7 @@ calculateUDOverlap(
   index = "BA",
   contour = 95,
   conf.level = 0.95,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -29,7 +29,8 @@ in (0, 100]). Defaults to 95. Ignored for AKDE (which integrates the full UD).}
 \item{conf.level}{AKDE only: the confidence level for the reported overlap CIs. Defaults to 0.95.
 Ignored for KDE (which provides no CIs).}
 
-\item{verbose}{Logical; print progress messages. Defaults to TRUE.}
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A tidy data frame with one row per pair of individuals (self-pairs excluded) — unordered

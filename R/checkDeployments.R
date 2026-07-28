@@ -264,11 +264,11 @@ checkDeployments <- function(deployments,
 
   .mobyHeader("checkDeployments()", "Auditing receiver deployment metadata",
               input = paste0(.fmtN(nrow(dep)), " deployment records ", .mobyGlyph("mid"), " ",
-                             .fmtN(length(unique(dep$receiver))), " receivers ", .mobyGlyph("mid"), " ",
-                             .fmtN(length(unique(dep$station))), " stations"),
+                             .fmtCount(length(unique(dep$receiver)), "receiver"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(length(unique(dep$station)), "station")),
               criteria = crit, criteria.label = "Checks", verbose = verbose)
   if (!is.null(detections))
-    .mobyNote("Cross-checking: ", .fmtN(nrow(as.data.frame(detections))), " detections",
+    .mobyNote("Cross-checking: ", .fmtCount(nrow(as.data.frame(detections)), "detection"),
               verbose = verbose)
 
   report <- list()
@@ -655,7 +655,7 @@ matchDeployments <- function(detections,
   crit["unmatched"] <- if (drop.unmatched) "dropped" else "retained, flagged in deployment_matched"
 
   .mobyHeader("matchDeployments()", "Matching detections to receiver deployment windows",
-              input = paste0(.fmtN(nrow(det)), " detections ", .mobyGlyph("mid"), " ",
+              input = paste0(.fmtCount(nrow(det), "detection"), " ", .mobyGlyph("mid"), " ",
                              .fmtN(nrow(dep)), " deployment records"),
               criteria = crit, criteria.label = "Matching criteria", verbose = verbose)
 

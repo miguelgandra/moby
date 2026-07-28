@@ -10,7 +10,8 @@ calculateCOAs(
   timebin.col = NULL,
   station.col = NULL,
   lon.col = NULL,
-  lat.col = NULL
+  lat.col = NULL,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -27,6 +28,9 @@ calculateCOAs(
 \item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
 
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame of per-(ID, time bin) positions with columns:

@@ -203,7 +203,7 @@ randomizeAssociations <- function(data,
   if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
 
   .mobyHeader("randomizeAssociations()", "Testing associations against a null model",
-              input = paste0(.fmtN(n_ids), " individuals ", .mobyGlyph("mid"), " ",
+              input = paste0(.fmtCount(n_ids, "individual"), " ", .mobyGlyph("mid"), " ",
                              .fmtN(ncol(pairwise_combinations)), " dyads"),
               criteria = crit, criteria.label = "Permutation test", verbose = verbose)
   unique_pairs <- apply(pairwise_combinations, 2, function(x) paste(complete_ids[x], collapse="-"))

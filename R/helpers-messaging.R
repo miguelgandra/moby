@@ -304,3 +304,14 @@
 #' @keywords internal
 #' @noRd
 .fmtN <- function(n) formatC(n, format = "d", big.mark = ",")
+
+#' Format a count with its noun, agreeing in number ("1 individual", "8 individuals").
+#'
+#' Console text is assembled as plain strings before reaching cli, so cli's own `{?s}` pluralisation
+#' (which needs a glue expression) is unavailable - hence this helper. Irregular plurals are passed
+#' explicitly via `plural`.
+#' @keywords internal
+#' @noRd
+.fmtCount <- function(n, singular, plural = paste0(singular, "s")) {
+  paste0(.fmtN(n), " ", if (isTRUE(n == 1)) singular else plural)
+}

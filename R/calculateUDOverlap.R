@@ -51,7 +51,8 @@
 #' Ignored for KDE (which provides no CIs).
 #' @param id.groups Optional named list of ID groups. When supplied, each pair is annotated with its
 #' `group1`/`group2` membership and a `pair_type` of `"within"` or `"between"`.
-#' @param verbose Logical; print progress messages. Defaults to TRUE.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A tidy data frame with one row per pair of individuals (self-pairs excluded) — unordered
 #' pairs for symmetric indices, ordered pairs for the directional indices \code{HR}/\code{PHR}:
@@ -91,7 +92,7 @@ calculateUDOverlap <- function(uds,
                                index = "BA",
                                contour = 95,
                                conf.level = 0.95,
-                               verbose = TRUE) {
+                               verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
   ## Validate + detect method ##################################################
@@ -131,12 +132,36 @@ calculateUDOverlap <- function(uds,
   # each ordered pair is reported on its own row. All other indices (BA/UDOI/VI/HD, and AKDE's BA) are
   # symmetric and reported once per unordered pair.
   directed <- method == "kde" && index %in% c("HR", "PHR")
-  out <- list(); mats <- list()
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Criteria are the choices that define the overlap VALUE: the estimator the UDs came from, the index
+  # being evaluated, and the one setting that shapes that estimator's answer (the KDE isopleth the
+  # overlap is restricted to, or the AKDE confidence level of the reported interval). The setting the
+  # active estimator ignores is deliberately not advertised.
+  idx_names <- c(BA = "Bhattacharyya coefficient", UDOI = "UD overlap index",
+                 HR = "home-range area overlap", PHR = "probability of relocation",
+                 VI = "volume of intersection", HD = "Hellinger distance")
+  crit <- c(estimator = if (method == "akde") "AKDE (autocorrelated)" else "kernel density (KDE)",
+            index = paste0(index, " (", idx_names[[index]], ")"))
+  if (method == "kde") crit["contour"] <- paste0(contour, "% isopleth")
+  else                 crit["conf.level"] <- paste0(format(100 * conf.level), "% CI")
+
+  n_uds <- sum(lengths(groups))
+  input_txt <- .fmtCount(n_uds, "utilization distribution")
+  # units are estimated on separate grids and never crossed, so the count is part of the input scale
+  if (length(groups) > 1)
+    input_txt <- paste0(input_txt, " ", .mobyGlyph("mid"), " ", .fmtCount(length(groups), "unit"))
+
+  .mobyHeader("calculateUDOverlap()", "Measuring home-range overlap between individuals",
+              input = input_txt, criteria = crit, verbose = verbose)
+
+  out <- list(); mats <- list(); skipped <- character(0)
   for (g in names(groups)) {
     coll <- groups[[g]]
     ids <- names(coll)
     if (length(ids) < 2) {
-      if (verbose) message("- Group '", g, "' has < 2 individuals; no pairs computed.")
+      # no pair is possible within this unit; collected and reported once in the outcome block
+      skipped <- c(skipped, g)
       next
     }
     if (method == "kde") {
@@ -179,7 +204,24 @@ calculateUDOverlap <- function(uds,
   if (length(mats) == 1 && nrow(result) > 0) attr(result, "matrix") <- mats[[1]]
   attr(result, "processing.date") <- Sys.time()
 
-  if (verbose) message("- Computed ", index, " overlap for ", nrow(result), " pair(s) (", method, ").")
+  # ---- outcome ---------------------------------------------------------------------------------
+  if (verbose) {
+    .mobyBlank(verbose)
+    if (nrow(result) > 0) {
+      .mobyOk(.fmtCount(nrow(result), if (directed) "ordered pair" else "pair"), " compared",
+              verbose = verbose)
+      v <- suppressWarnings(as.numeric(result[[index]]))
+      v <- v[is.finite(v)]
+      if (length(v) > 0)
+        .mobyNote("Median ", index, ": ", sprintf("%.2f", stats::median(v)), " (",
+                  sprintf("%.2f", min(v)), "-", sprintf("%.2f", max(v)), ")", verbose = verbose)
+    }
+    # a unit holding a single animal yields no pair, so those animals are absent from the result
+    if (length(skipped) > 0)
+      .mobyAttention(if (identical(skipped, "all")) "Fewer than 2 individuals: no pairs to compute"
+                     else paste0(length(skipped), " unit(s) with fewer than 2 individuals: no pairs (",
+                                 paste(skipped, collapse = ", "), ")"), verbose = verbose)
+  }
   result
 }
 

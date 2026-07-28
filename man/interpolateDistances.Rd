@@ -9,7 +9,8 @@ interpolateDistances(
   id.col = NULL,
   timebin.col = NULL,
   dist.col = "dist_m",
-  keep.intermediate = FALSE
+  keep.intermediate = FALSE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ the output of \code{\link{calculateStepDistances}}.}
 
 \item{keep.intermediate}{Boolean indicating if intermediate distances (assigned
 to time-bins without detections) should be kept or discarded. Defaults to false.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 Original data frame plus missing time-bins (with diluted distances)

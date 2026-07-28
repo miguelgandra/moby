@@ -101,7 +101,7 @@ test_that("correctPositions SF path matches frozen golden (relocated set + coord
 
 test_that("calculateLandDists (terra) matches frozen golden within band", {
   ld <- calculateLandDists(fx$track, land.shape = fx$land_sf, epsg.code = EPSG,
-                           id.col = "ID", lon.col = "lon", lat.col = "lat")
+                           id.col = "ID", lon.col = "lon", lat.col = "lat", verbose = FALSE)
   expect_within_band(ld$land_dist, golden$land_dist,
                      TOL_LAND_ABS, TOL_LAND_REL, "land_dist")
 })

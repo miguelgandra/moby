@@ -14,6 +14,8 @@
 #' @param data A data frame containing animal detections and including a time bin column
 #' (as specified by the `timebin.col` argument). Time bins can be created using the
 #' \code{\link{getTimeBins}} function.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame of per-(ID, time bin) positions with columns:
 #' \itemize{
@@ -45,7 +47,8 @@ calculateCOAs <- function(data,
                           timebin.col = NULL,
                           station.col = NULL,
                           lon.col = NULL,
-                          lat.col = NULL){
+                          lat.col = NULL,
+                          verbose = getOption("moby.verbose", TRUE)){
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -57,6 +60,14 @@ calculateCOAs <- function(data,
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
+
+  # ---- header ---------------------------------------------------------------------------------
+  # No criteria block: the aggregation is fully determined by the supplied time-bin column (a
+  # property of the data, reported by the result's print method), not by any argument of this call.
+  .mobyHeader("calculateCOAs()", "Estimating centres of activity per individual and time bin",
+              input = paste0(.fmtCount(nrow(data), "detection"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(length(unique(data[[id.col]])), "individual")),
+              verbose = verbose)
 
   # add a column to count individual detections
   data$detections <- 1
@@ -123,6 +134,11 @@ calculateCOAs <- function(data,
     result <- do.call(as_moby, c(list(result), prev_meta))
     attr(result, "moby")$datetime.col <- NULL
   }
+
+  # ---- outcome --------------------------------------------------------------------------------
+  .mobyBlank(verbose)
+  .mobyOk(.fmtN(nrow(result)), " positions estimated across ",
+          .fmtCount(length(unique(result[[id.col]])), "individual"), verbose = verbose)
 
   # return results
   return(result)

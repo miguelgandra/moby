@@ -18,6 +18,8 @@
 #' the output of \code{\link{calculateStepDistances}}.
 #' @param keep.intermediate Boolean indicating if intermediate distances (assigned
 #' to time-bins without detections) should be kept or discarded. Defaults to false.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @return Original data frame plus missing time-bins (with diluted distances)
 #' @examples
 #' data(rays)
@@ -37,7 +39,8 @@ interpolateDistances <- function(data,
                                  id.col = NULL,
                                  timebin.col = NULL,
                                  dist.col = "dist_m",
-                                 keep.intermediate = FALSE){
+                                 keep.intermediate = FALSE,
+                                 verbose = getOption("moby.verbose", TRUE)){
 
   # capture mobyData metadata so a detection-like output can be re-wrapped (chainable pipeline)
   prev_meta <- attr(data, "moby")
@@ -46,21 +49,29 @@ interpolateDistances <- function(data,
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
 
-  # print message
-  .printConsole("Interpolating distances")
+  # ---- header -----------------------------------------------------------------------------------
+  # No 'Method' block: the only choice here, keep.intermediate, adds no column to the output and is
+  # directly readable off it (the added time-bins carry either the diluted distance or NA).
+  n_in <- nrow(data)
+  .mobyHeader("interpolateDistances()", "Diluting step distances over the time-bins they span",
+              input = paste0(.fmtCount(n_in, "time-bin"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(length(unique(data[,id.col])), "individual")),
+              verbose = verbose)
 
   # split data by individual
   data$origin_temp <- 1
   data_fish <- split(data, f=data[,id.col])
 
-  # set progress bar
-  pb <- txtProgressBar(min=0, max=length(data_fish), initial=0, style=3)
+  # initialize progress bar (.progressBar returns NULL when quiet or non-interactive, so the bar no
+  # longer sprays a wall of "=" into knitted documents and CI logs; .progressSet/.progressEnd no-op
+  # on NULL, hence no if(verbose) guards at the call sites)
+  pb <- .progressBar(length(data_fish), verbose, name = "Interpolating")
 
   # loop through each individual
   data_list <- list()
   for(i in seq_along(data_fish)) {
 
-    setTxtProgressBar(pb,i)
+    .progressSet(pb, i)
     data_out <- data_fish[[i]]
     if(nrow(data_out)<=1) {data_list[[i]] <- data_out; next}
 
@@ -84,7 +95,7 @@ interpolateDistances <- function(data,
     if(!keep.intermediate) {data_out[,dist.col][is.na(data_out$origin_temp)]<-NA}
     data_list[[i]] <- data_out
   }
-  close(pb)
+  .progressEnd(pb)
 
   # return results
   result <- do.call("rbind", data_list)
@@ -92,6 +103,16 @@ interpolateDistances <- function(data,
   if("detections" %in% colnames(data)) {result$detections[is.na(result$detections)] <- 0}
   if("stations" %in% colnames(data)) {result$stations[is.na(result$stations)] <- 0}
   if("transmitter" %in% colnames(data)) {result$transmitter <- .naLocf(result$transmitter)}
+
+  # ---- outcome ----------------------------------------------------------------------------------
+  n_added <- nrow(result) - n_in
+  .mobyBlank(verbose)
+  if(n_added > 0){
+    .mobyOk(.fmtN(n_added), " time-bins interpolated (", .fmtN(nrow(result)),
+            " rows returned)", verbose = verbose)
+  }else{
+    .mobyOk("No missing time-bins found - distances left unchanged", verbose = verbose)
+  }
 
   # re-attach mobyData metadata so the (detection-like) output stays chainable
   if(!is.null(prev_meta)){
