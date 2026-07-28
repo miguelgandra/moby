@@ -43,6 +43,8 @@
 #' structured) residencies, one column per level (e.g. per habitat or array).
 #' @param cap Logical; cap index values at 1 (their theoretical maximum). Defaults to TRUE.
 #' Set to FALSE to retain raw values (useful for diagnosing edge effects).
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with one row per individual containing: the ID column, `tagging_date`,
 #' `first_detection`, `last_detection`, `monitoring_end` (POSIXct); `days_detected` (Dd),
@@ -75,7 +77,8 @@ calculateResidency <- function(data,
                                residency.index = c("IR1", "IR2", "IWR"),
                                start.point = "release",
                                residency.by = NULL,
-                               cap = TRUE) {
+                               cap = TRUE,
+                               verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -88,7 +91,7 @@ calculateResidency <- function(data,
   last.monitoring.date <- reviewed_params$last.monitoring.date
 
   errors <- c()
-  if (!all(residency.index %in% c("IR1", "IR2", "IWR", "IR2/IR1"))) {
+  if (length(residency.index) == 0 || !all(residency.index %in% c("IR1", "IR2", "IWR", "IR2/IR1"))) {
     errors <- c(errors, "Invalid 'residency.index'. Choose from: 'IR1', 'IR2', 'IWR', 'IR2/IR1'.")
   }
   if (!is.character(start.point) || length(start.point) != 1 || !start.point %in% c("release", "first.detection")) {
@@ -97,13 +100,28 @@ calculateResidency <- function(data,
   if (!is.null(residency.by) && !residency.by %in% colnames(data)) {
     errors <- c(errors, "Variable used to calculate partial residencies ('residency.by') not found in the data.")
   }
-  if (!is.logical(cap) || length(cap) != 1) errors <- c(errors, "'cap' must be a single logical value.")
+  if (!is.logical(cap) || length(cap) != 1 || is.na(cap)) errors <- c(errors, "'cap' must be a single logical value.")
   if (any(residency.index %in% c("IR2", "IWR")) && is.null(tag.durations) && is.null(last.monitoring.date)) {
     errors <- c(errors, "Indices 'IR2'/'IWR' require 'tag.durations' or 'last.monitoring.date' to define the study interval.")
   }
   if (length(errors) > 0) {
     stop(paste0("\n", paste0("- ", errors, collapse = "\n")), call. = FALSE)
   }
+
+  # ---- header -----------------------------------------------------------------------------------
+  # Criteria are the choices that change what the numbers MEAN: which indices are computed, where the
+  # detection span starts (release vs first detection moves Di, and so every index value), whether
+  # values are capped at their theoretical maximum, and the variable partial residencies are broken
+  # down by. Everything else this function produces is read straight off the returned table.
+  crit <- c(indices = paste(residency.index, collapse = paste0(" ", .mobyGlyph("mid"), " ")))
+  crit["span start"] <- if (start.point == "first.detection") "first detection" else "release date"
+  crit["cap"] <- if (isTRUE(cap)) "values capped at 1" else "off (raw values retained)"
+  if (!is.null(residency.by)) crit["partial residency"] <- paste0("by '", residency.by, "'")
+
+  .mobyHeader("calculateResidency()", "Computing residency indices per individual",
+              input = paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(data[, id.col]), "individual")),
+              criteria = crit, verbose = verbose)
 
   ##############################################################################
   ## Temporal building blocks ##################################################
@@ -196,6 +214,18 @@ calculateResidency <- function(data,
   }
 
   rownames(out) <- NULL
+
+  # ---- the one thing the returned table cannot show ---------------------------------------------
+  # An individual can end up with no computable residency at all (never detected, or an interval that
+  # could not be resolved). The NAs are in the table, but only a row-by-row scan reveals them, so the
+  # count is named once here. No completion line: the table itself is the summary.
+  n_missing <- sum(rowSums(!is.na(out[, residency.index, drop = FALSE])) == 0)
+  if (n_missing > 0) {
+    .mobyBlank(verbose)
+    .mobyNote(.fmtCount(n_missing, "individual"), " with no computable residency ",
+              "(no detections, or an unresolvable interval)", verbose = verbose)
+  }
+
   out
 }
 

@@ -23,6 +23,8 @@
 #' visually aggregate animals belonging to the same class (e.g. different species).
 #' @param dist.col Name of the column containing distance values (in meters). Defaults to 'dist_m'.
 #' @param discard.missing If true, only individuals with detections are included.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @param ... Additional arguments passed to \code{\link{calculateLinearityIndex}} (and onwards to
 #' \code{\link{calculateStepDistances}}), used to calculate distances between the first and last recorded
 #' detections for each individual (e.g., `grid.resolution`, `mov.directions` and `cores`).
@@ -62,6 +64,7 @@ movementTable <- function(data,
                           land.shape = NULL,
                           epsg.code = NULL,
                           discard.missing = TRUE,
+                          verbose = getOption("moby.verbose", TRUE),
                           ...) {
 
   ##############################################################################
@@ -76,18 +79,47 @@ movementTable <- function(data,
   # validate uds
   if(!c("bandwidth") %in% names(attributes(uds))) stop("The supplied uds do not seem to be in the right format. Please use the output of the 'calculateUDs' function.", call. = FALSE)
 
+  # ---- header ---------------------------------------------------------------------------------
+  # The only methodological choice made here is how the net displacement behind the linearity index
+  # is measured: supplying a land layer swaps straight lines for shortest in-water paths, which
+  # changes what the index means. Everything else (the metrics themselves, the mean +/- SE row) is
+  # visible in the returned table.
+  crit <- c("net displacement" = if(is.null(land.shape)) "straight-line (great-circle)" else "least-cost around land")
+
+  # calculateROM() rejects ambiguous steps, but it runs after this header, so the same guard is
+  # applied here first: a call that is going to error must not print a banner ahead of the error.
+  if(any(duplicated(data[, c(id.col, timebin.col)]))){
+    stop("Duplicated detection timestamps found. Please check the data.", call.=FALSE)
+  }
+
+  .mobyHeader("movementTable()", "Summarising distance, rate of movement and space use per individual",
+              input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(data[, id.col]), "individual")),
+              criteria = crit, verbose = verbose)
+
 
   ##############################################################################
   ## Compute numeric cores (delegated) #########################################
   ##############################################################################
 
   # total distance and rate of movement (handles interval detection / interpolation internally)
-  metrics <- calculateROM(data, id.col=id.col, timebin.col=timebin.col, dist.col=dist.col)
+  # (children stay silent: this function's own header already describes the run)
+  metrics <- calculateROM(data, id.col=id.col, timebin.col=timebin.col, dist.col=dist.col,
+                          verbose=FALSE)
+
+  # Silencing the child would otherwise swallow its one disclosure, and this is the documented entry
+  # point for these metrics: when the series was irregular, every distance and rate below was computed
+  # from interpolated rather than raw steps - a methodological fact the returned table cannot reveal.
+  if(isTRUE(attr(metrics, "interpolated"))){
+    .mobyBlank(verbose)
+    .mobyNote("Irregular time-bin widths detected ", .mobyGlyph("mid"),
+              " distances interpolated to a common interval", verbose = verbose)
+  }
 
   # movement linearity (net displacement / total distance)
   linearity <- calculateLinearityIndex(data, land.shape=land.shape, epsg.code=epsg.code, id.col=id.col,
                                        timebin.col=timebin.col, lon.col=lon.col, lat.col=lat.col,
-                                       dist.col=dist.col, ...)
+                                       dist.col=dist.col, ..., verbose=FALSE)
 
   # assemble a single per-individual numeric core; use the (possibly interpolated) total distance
   # from 'metrics' as the linearity denominator so the displayed distance and LI stay consistent
@@ -103,6 +135,11 @@ movementTable <- function(data,
   if(is.null(id.groups)){
     id.groups <- list(levels(data[,id.col]))
   }
+
+  # individuals that will be missing from the table altogether (discard.missing drops those without a
+  # single detection). Counted here because the returned table cannot reveal it: their rows are
+  # simply absent. as.character() guards against factor levels collapsing to integer codes.
+  n_missing <- if(discard.missing) sum(!unlist(lapply(id.groups, as.character)) %in% detected) else 0
 
   # subset UD results per group
   summary_table <- uds$summary_table
@@ -191,6 +228,15 @@ movementTable <- function(data,
 
   # aggregate group tables
   movement_table <- do.call("rbind", movement_table)
+
+  # ---- outcome --------------------------------------------------------------------------------
+  # No completion line: the returned table IS the summary, and restating its size would only repeat
+  # what the user is about to read. The one thing the table cannot show is who is not in it.
+  if(n_missing > 0){
+    .mobyBlank(verbose)
+    .mobyNote(.fmtCount(n_missing, "individual"), " with no detections excluded from the table",
+              verbose = verbose)
+  }
 
   # return table
   return(movement_table)

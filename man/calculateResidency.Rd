@@ -14,7 +14,8 @@ calculateResidency(
   residency.index = c("IR1", "IR2", "IWR"),
   start.point = "release",
   residency.by = NULL,
-  cap = TRUE
+  cap = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -46,6 +47,9 @@ structured) residencies, one column per level (e.g. per habitat or array).}
 
 \item{cap}{Logical; cap index values at 1 (their theoretical maximum). Defaults to TRUE.
 Set to FALSE to retain raw values (useful for diagnosing edge effects).}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with one row per individual containing: the ID column, \code{tagging_date},

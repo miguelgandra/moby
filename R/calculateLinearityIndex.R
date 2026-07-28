@@ -29,6 +29,8 @@
 #' Defaults to `"dist_m"`.
 #' @param ... Additional arguments passed to \code{\link{calculateStepDistances}} (e.g. `grid.resolution`,
 #' `mov.directions`, `cores`), used when computing net displacements.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with one row per individual containing: the ID column, `net_distance_m`
 #' (shortest distance between the first and last positions, in metres), `total_distance_m` (total
@@ -56,6 +58,7 @@ calculateLinearityIndex <- function(data,
                                     dist.col = "dist_m",
                                     land.shape = NULL,
                                     epsg.code = NULL,
+                                    verbose = getOption("moby.verbose", TRUE),
                                     ...) {
 
   ##############################################################################
@@ -70,6 +73,20 @@ calculateLinearityIndex <- function(data,
     stop(paste0("Distance column ('", dist.col, "') not found in the data. ",
                 "Did you run calculateStepDistances() first?"), call. = FALSE)
   }
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Sole criterion: how the net displacement (the numerator) is measured. With a land shape the
+  # "straight line" is the shortest in-water route, without one it is a great-circle line - the two
+  # give different indices for the same track, so the user must be told which was used. The
+  # denominator is whatever 'dist.col' already holds, a property of the input rather than of this
+  # call, and the returned table reports both distances, so nothing else belongs here.
+  crit <- c("net displacement" = if (is.null(land.shape)) "straight-line (great-circle)"
+                                 else "least-cost around land")
+
+  .mobyHeader("calculateLinearityIndex()", "Measuring movement directness per individual",
+              input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(data[, id.col]), "individual")),
+              criteria = crit, verbose = verbose)
 
   ##############################################################################
   ## Total path length (Di denominator) ########################################

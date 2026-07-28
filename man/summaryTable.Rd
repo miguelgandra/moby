@@ -19,7 +19,8 @@ summaryTable(
   start.point = "release",
   last.monitoring.date = NULL,
   residency.by = NULL,
-  error.stat = "sd"
+  error.stat = "sd",
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -96,6 +97,9 @@ Defaults to NULL.}
 
 \item{error.stat}{The statistic to use for variability/error calculation, either 'sd' (standard deviation)
 or 'se' (standard error). Defaults to 'sd'.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame summarizing information on tagged animals, with the following columns:

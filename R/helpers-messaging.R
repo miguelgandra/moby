@@ -305,6 +305,19 @@
 #' @noRd
 .fmtN <- function(n) formatC(n, format = "d", big.mark = ",")
 
+#' Detection count for a header's input line.
+#'
+#' A row is not always a detection: an aggregated dataset (COAs, binned records) carries a numeric
+#' `detections` column holding how many decodes each row stands for, so nrow() would report records
+#' instead. Shared so that a parent and its child never state different totals for the same input.
+#' @keywords internal
+#' @noRd
+.nDetections <- function(data) {
+  if ("detections" %in% colnames(data) && is.numeric(data[["detections"]]))
+    sum(data[["detections"]], na.rm = TRUE)
+  else nrow(data)
+}
+
 #' Format a count with its noun, agreeing in number ("1 individual", "8 individuals").
 #'
 #' Console text is assembled as plain strings before reaching cli, so cli's own `{?s}` pluralisation

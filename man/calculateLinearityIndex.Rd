@@ -13,6 +13,7 @@ calculateLinearityIndex(
   dist.col = "dist_m",
   land.shape = NULL,
   epsg.code = NULL,
+  verbose = getOption("moby.verbose", TRUE),
   ...
 )
 }
@@ -37,6 +38,9 @@ distances are used.}
 
 \item{epsg.code}{Optional. Coordinate reference system used to project positions. If not
 supplied, the CRS is taken from \code{land.shape} (when available).}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{...}{Additional arguments passed to \code{\link{calculateStepDistances}} (e.g. \code{grid.resolution},
 \code{mov.directions}, \code{cores}), used when computing net displacements.}

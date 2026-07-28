@@ -60,6 +60,8 @@
 #' will be calculated independently for each group.
 #' @param error.stat The statistic to use for variability/error calculation, either 'sd' (standard deviation)
 #' or 'se' (standard error). Defaults to 'sd'.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame summarizing information on tagged animals, with the following columns:
 #' - `ID`: Unique identifier for each tagged animal.
@@ -114,7 +116,8 @@ summaryTable <- function(data,
                          start.point = "release",
                          last.monitoring.date = NULL,
                          residency.by = NULL,
-                         error.stat = "sd") {
+                         error.stat = "sd",
+                         verbose = getOption("moby.verbose", TRUE)) {
 
 
   ##############################################################################
@@ -176,12 +179,32 @@ summaryTable <- function(data,
       # print prompt
       proceed <- utils::menu(c("Yes", "No"), title="Residency.by has multiple levels and more than one residency index will be calculated. This can result in a table with many columns. Do you want to proceed?")
       # if user selects 'No', stop the function
+      # NOTE: deliberately UNGATED (not .mobyNote). This is the direct reply to an action the user
+      # just took at an interactive prompt, not verbose narration - declining must never be met with
+      # silence, even under verbose = FALSE.
       if(proceed==2) {
         message("Operation cancelled. No summary table was generated.")
         return(NULL)
       }
     }
   }
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Placed after the argument checks and after the cancel prompt, so a call that is going to error -
+  # or that the user declines - never prints a banner first.
+  # This function prints a header and nothing else: the returned table IS the summary, so any
+  # closing line would just restate what the user is about to look at. Criteria carry only the
+  # choices that change the NUMBERS: which residency index/indices are computed, where the days at
+  # liberty start, and which statistic every reported error is (sd vs se).
+  crit <- c("residency index" = paste(residency.index, collapse=paste0(" ", .mobyGlyph("mid"), " ")),
+            "start point"     = if(start.point=="release") "release date" else "first detection",
+            "error"           = if(error.stat=="sd") "standard deviation (sd)" else "standard error (se)")
+
+  .mobyHeader("summaryTable()", "Summarising monitoring and residency metrics per individual",
+              input = paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(data[,id.col]), "individual")),
+              criteria = crit, verbose = verbose)
+
 
   # define error function
   getErrorFun <- function(x) {
@@ -243,7 +266,7 @@ summaryTable <- function(data,
                                   id.col=id.col, datetime.col=datetime.col,
                                   last.monitoring.date=last.monitoring.date_named,
                                   residency.index=residency.index, start.point=start.point,
-                                  residency.by=residency.by, cap=TRUE)
+                                  residency.by=residency.by, cap=TRUE, verbose=FALSE)
   # align residency rows with the table's ID order
   residency <- residency[match(id_levels, as.character(residency[[id.col]])), , drop=FALSE]
   Dd <- residency$days_detected

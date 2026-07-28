@@ -4,7 +4,13 @@
 \alias{calculateROM}
 \title{Calculate rates of movement (and total distance travelled)}
 \usage{
-calculateROM(data, id.col = NULL, timebin.col = NULL, dist.col = "dist_m")
+calculateROM(
+  data,
+  id.col = NULL,
+  timebin.col = NULL,
+  dist.col = "dist_m",
+  verbose = getOption("moby.verbose", TRUE)
+)
 }
 \arguments{
 \item{data}{A data frame (or \code{\link{mobyData}}) of binned detections with stepwise
@@ -16,6 +22,9 @@ distances, as returned by \code{\link{calculateStepDistances}}.}
 
 \item{dist.col}{Name of the column containing the (stepwise) distance values, in metres.
 Defaults to \code{"dist_m"}.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with one row per individual containing: the ID column, \code{n_steps}

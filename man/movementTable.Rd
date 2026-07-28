@@ -16,6 +16,7 @@ movementTable(
   land.shape = NULL,
   epsg.code = NULL,
   discard.missing = TRUE,
+  verbose = getOption("moby.verbose", TRUE),
   ...
 )
 }
@@ -45,6 +46,9 @@ compute net displacements along the shortest in-water path for the linearity ind
 If not supplied, CRS is assumed to be the same as in land.shape.}
 
 \item{discard.missing}{If true, only individuals with detections are included.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{...}{Additional arguments passed to \code{\link{calculateLinearityIndex}} (and onwards to
 \code{\link{calculateStepDistances}}), used to calculate distances between the first and last recorded

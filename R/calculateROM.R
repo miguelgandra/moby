@@ -27,6 +27,8 @@
 #' distances, as returned by \code{\link{calculateStepDistances}}.
 #' @param dist.col Name of the column containing the (stepwise) distance values, in metres.
 #' Defaults to `"dist_m"`.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with one row per individual containing: the ID column, `n_steps`
 #' (number of movement steps, i.e. non-missing distances), `total_distance_m` (total path length
@@ -49,9 +51,10 @@
 #' @export
 
 calculateROM <- function(data,
-                                     id.col = NULL,
-                                     timebin.col = NULL,
-                                     dist.col = "dist_m") {
+                         id.col = NULL,
+                         timebin.col = NULL,
+                         dist.col = "dist_m",
+                         verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -70,6 +73,15 @@ calculateROM <- function(data,
     stop("Duplicated detection timestamps found. Please ensure all detections are correctly time-binned before proceeding.", call. = FALSE)
   }
 
+  # ---- header -----------------------------------------------------------------------------------
+  # No 'Method' block: dist.col/id.col/timebin.col are column mappings, not methodological choices,
+  # and every quantity that defines the run (the modal interval included) is carried by the returned
+  # table or its 'interval' attribute - so the result IS the completion summary.
+  .mobyHeader("calculateROM()", "Summarising distance travelled and rate of movement per individual",
+              input = paste0(.fmtCount(nrow(data), "position"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nlevels(data[, id.col]), "individual")),
+              verbose = verbose)
+
   ##############################################################################
   ## Determine the time-bin interval (and interpolate if irregular) ############
   ##############################################################################
@@ -84,10 +96,15 @@ calculateROM <- function(data,
   interval <- .binInterval(data)
   # irregular series (more than one distinct bin width): regularise by interpolation so that every
   # step spans one nominal interval before distances are converted to rates of movement
-  if (length(interval) > 1) {
+  interpolated <- length(interval) > 1
+  if (interpolated) {
     data <- interpolateDistances(data, id.col = id.col, timebin.col = timebin.col,
                                  dist.col = dist.col, keep.intermediate = TRUE,
                                  verbose = FALSE)
+    # a methodological step the returned table cannot reveal: the rates below were computed from
+    # regularised, not raw, steps
+    .mobyNote("Irregular time-bin widths detected ", .mobyGlyph("mid"),
+              " distances interpolated to a common interval", verbose = verbose)
   }
   # reduce to a single scalar = the MODAL (most common) step interval, in minutes, computed across
   # all consecutive steps. This is the true nominal bin width (after regularisation, the dominant
@@ -127,6 +144,9 @@ calculateROM <- function(data,
   colnames(out)[1] <- id.col
   rownames(out) <- NULL
   attr(out, "interval") <- interval
+  # recorded so a caller that silences this function can still disclose the regularisation: the
+  # published rates come from interpolated, not raw, steps
+  attr(out, "interpolated") <- interpolated
   out
 }
 

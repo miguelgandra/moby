@@ -11,7 +11,8 @@ calculateVisits(
   spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.unit = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs"),
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -33,6 +34,9 @@ longer than this split the sequence into separate residence events. Defaults to 
 \code{Inf} to segment on location changes only.}
 
 \item{max.gap.unit}{Units of \code{max.gap}: one of \code{"hours"} (default), \code{"days"}, \code{"mins"}, \code{"secs"}.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with one row per residence event (visit), ordered by group, individual and

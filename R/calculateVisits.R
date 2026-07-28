@@ -36,6 +36,8 @@
 #' longer than this split the sequence into separate residence events. Defaults to 48 (hours). Use
 #' `Inf` to segment on location changes only.
 #' @param max.gap.unit Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`, `"secs"`.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with one row per residence event (visit), ordered by group, individual and
 #' arrival time:
@@ -70,7 +72,8 @@ calculateVisits <- function(data,
                             spatial.col = NULL,
                             id.groups = NULL,
                             max.gap = 48,
-                            max.gap.unit = c("hours", "days", "mins", "secs")) {
+                            max.gap.unit = c("hours", "days", "mins", "secs"),
+                            verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
   ## Validate ##################################################################
@@ -87,9 +90,24 @@ calculateVisits <- function(data,
 
   max.gap.unit <- match.arg(max.gap.unit)
   max.gap.secs  <- .gapToSecs(max.gap, max.gap.unit)
-  if (is.finite(max.gap.secs))
-    message("- Defining residence events with max.gap = ", max.gap, " ", max.gap.unit,
-            " (a longer absence starts a new visit); tune/justify per system.")
+
+  # ---- header ---------------------------------------------------------------------------------
+  # max.gap is the single methodological choice here - it defines what counts as one uninterrupted
+  # stay - so it is the criteria block. An infinite gap disables gap-splitting altogether, which the
+  # criteria line states in words rather than reporting a meaningless "Inf hours". Everything else
+  # about the run (events, durations, detection counts) is on the returned table, so no outcome line.
+  crit <- c("max.gap" = if (is.finite(max.gap.secs))
+                          paste0(.fmtCount(max.gap, sub("s$", "", max.gap.unit)),
+                                 " (a longer absence starts a new visit; tune per system)")
+                        else "unlimited (visits end only on a change of location)")
+
+  input_txt <- paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
+                      .fmtCount(nlevels(data[, id.col]), "individual"), " ", .mobyGlyph("mid"), " ",
+                      .fmtCount(length(unique(as.character(data[, spatial.col]))), "location"),
+                      " (", spatial.col, ")")
+
+  .mobyHeader("calculateVisits()", "Segmenting detections into residence events (visits)",
+              input = input_txt, criteria = crit, verbose = verbose)
 
   # group label per row (single "all" group unless id.groups is supplied)
   if (is.null(id.groups)) {
