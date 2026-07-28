@@ -99,7 +99,7 @@ rays_land <- calculateLandDists(rays, land.shape = land)
 #> 
 #> ✔ 1,643 distances computed
 #> ℹ Median distance to land: 984 m (0-2,415 m)
-#> ⏱ runtime: 3.0s
+#> ⏱ runtime: 2.9s
 head(rays_land$land_dist)
 #> [1] 1298.88 1298.88 1298.88 1298.88 1298.88 2383.32
 # }
