@@ -11,9 +11,9 @@ vue_detections <- function() {
 test_that("importDetections harmonises a VUE export into a canonical data frame", {
   f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
   write.csv(vue_detections(), f, row.names = FALSE)
-  d <- importDetections(f, source = "vue")
+  d <- importDetections(f, source = "vue", verbose = FALSE)
   # importing reshapes only: it returns a plain data frame (as importTags/importDeployments do), and
-  # as_moby()/assignAnimalIDs() are what attach metadata
+  # as_moby()/assignAnimalIDs(verbose = FALSE) are what attach metadata
   expect_false(is_moby(d))
   expect_s3_class(d, "data.frame")
   expect_true(all(c("ID", "datetime", "transmitter", "receiver", "station", "lon", "lat") %in% colnames(d)))
@@ -29,14 +29,14 @@ test_that("importDetections handles GLATOS and ETN data frames", {
                    transmitter_codespace = c("A69-1602", "A69-1602"), transmitter_id = c("111", "111"),
                    receiver_sn = c("1001", "1001"), station = c("stA", "stA"),
                    deploy_lat = c(37, 37), deploy_long = c(-8, -8))
-  d <- importDetections(gl, source = "glatos")
+  d <- importDetections(gl, source = "glatos", verbose = FALSE)
   expect_true("fish1" %in% as.character(d$ID))
   expect_true(all(d$transmitter == "A69-1602-111"))  # codespace + id combined
 
   etn <- data.frame(animal_id = "eel1", date_time = "2023-06-01 00:00:00",
                     acoustic_tag_id = "A69-1303-9", receiver_id = "R1", station_name = "S1",
                     deploy_latitude = 51, deploy_longitude = 3)
-  de <- importDetections(etn, source = "etn")
+  de <- importDetections(etn, source = "etn", verbose = FALSE)
   expect_equal(as.character(de$ID), "eel1")
   expect_equal(de$station, "S1")
 })
@@ -44,17 +44,17 @@ test_that("importDetections handles GLATOS and ETN data frames", {
 test_that("importDetections supports generic col.map and missing optional fields", {
   raw <- data.frame(when = "2023-06-01 00:00:00", tag = "T1", rec = "R1")
   d <- importDetections(raw, source = "generic",
-                        col.map = list(datetime = "when", transmitter = "tag", receiver = "rec"))
+                        col.map = list(datetime = "when", transmitter = "tag", receiver = "rec"), verbose = FALSE)
   expect_false(is_moby(d))
   expect_equal(as.character(d$ID), "T1")
   expect_false("lon" %in% colnames(d))  # absent optional field degrades gracefully
 })
 
-test_that("an imported table flows into as_moby()/assignAnimalIDs() with no column arguments", {
+test_that("an imported table flows into as_moby()/assignAnimalIDs(verbose = FALSE) with no column arguments", {
   # the payoff of canonical names: the harmonised data frame needs no explicit *.col arguments
   f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
   write.csv(vue_detections(), f, row.names = FALSE)
-  det <- importDetections(f, source = "vue")
+  det <- importDetections(f, source = "vue", verbose = FALSE)
 
   md <- suppressMessages(as_moby(det))
   expect_true(is_moby(md))
@@ -63,11 +63,11 @@ test_that("an imported table flows into as_moby()/assignAnimalIDs() with no colu
   expect_equal(meta$datetime.col, "datetime")
   expect_equal(meta$station.col, "station")
 
-  # assignAnimalIDs() also accepts the plain imported frame and returns a mobyData
+  # assignAnimalIDs(verbose = FALSE) also accepts the plain imported frame and returns a mobyData
   tags <- data.frame(transmitter = c("A69-1602-111", "A69-1602-222"), ID = c("shark1", "shark2"),
                      tagging_date = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
                      nominal_delay = c(120, 120))
-  out <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags)))
+  out <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, verbose = FALSE)))
   expect_true(is_moby(out))
   expect_setequal(as.character(unique(out$ID)), c("shark1", "shark2"))
   expect_false(is.null(mobyMeta(out)$tagging.dates))
@@ -80,7 +80,7 @@ test_that("importDeployments produces the canonical deployment schema", {
     Deploymentdate = "2023-01-01 00:00:00", Dateout = "2023-04-01 00:00:00")
   f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
   write.csv(raw, f, row.names = FALSE)
-  dep <- importDeployments(f, source = "vue")
+  dep <- importDeployments(f, source = "vue", verbose = FALSE)
   expect_true(all(c("receiver", "station", "lon", "lat", "deploy", "recover") %in% colnames(dep)))
   expect_s3_class(dep$deploy, "POSIXct")
 })
@@ -104,7 +104,7 @@ test_that("checkDeployments cross-checks detections against metadata", {
   d <- vue_detections()
   d[4, ] <- list("2024-01-01 00:00:00", "VR2W-9999", "A69-1602-222", "shark2", "st X", 37.2, -8.2)
   write.csv(d, f, row.names = FALSE)
-  det <- importDetections(f, source = "vue")
+  det <- importDetections(f, source = "vue", verbose = FALSE)
   dep <- data.frame(receiver = c("VR2W-1001", "VR2W-1002"), station = c("st A", "st B"),
                     lon = c(-8, -8.1), lat = c(37, 37.1),
                     deploy = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
@@ -325,14 +325,14 @@ test_that("importTags harmonises the transmitter nominal delay (incl. min/max mi
   tg <- rays_tags; tg$nominal_delay <- "90"
   out <- importTags(tg, source = "generic",
                     col.map = list(ID = "ID", transmitter = "transmitter",
-                                   tagging_date = "tagging_date", nominal_delay = "nominal_delay"))
+                                   tagging_date = "tagging_date", nominal_delay = "nominal_delay"), verbose = FALSE)
   expect_true(is.numeric(out$nominal_delay))
   expect_true(all(out$nominal_delay == 90))
   # many tag exports give a delay RANGE: the nominal delay is its midpoint
   tg2 <- rays_tags; tg2$min_delay <- 60; tg2$max_delay <- 180
   out2 <- suppressMessages(importTags(tg2, source = "generic",
                                       col.map = list(ID = "ID", transmitter = "transmitter",
-                                                     min_delay = "min_delay", max_delay = "max_delay")))
+                                                     min_delay = "min_delay", max_delay = "max_delay"), verbose = FALSE))
   expect_true(all(out2$nominal_delay == 120))
 })
 
@@ -340,9 +340,9 @@ test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections 
   tg <- rays_tags; tg$nominal_delay <- 120
   tags <- importTags(tg, source = "generic",
                      col.map = list(ID = "ID", transmitter = "transmitter",
-                                    tagging_date = "tagging_date", nominal_delay = "nominal_delay"))
+                                    tagging_date = "tagging_date", nominal_delay = "nominal_delay"), verbose = FALSE)
   det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
-  md <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags)))
+  md <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, verbose = FALSE)))
 
   nd <- mobyMeta(md)$nominal.delay
   expect_false(is.null(nd))
@@ -355,7 +355,7 @@ test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections 
   expect_true(any(grepl("min_lag > 3600 s", res$data_discarded$reason)))
 
   # and it can be opted out of
-  md_off <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, set.nominal.delay = FALSE)))
+  md_off <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, set.nominal.delay = FALSE, verbose = FALSE)))
   expect_null(mobyMeta(md_off)$nominal.delay)
 })
 
@@ -390,7 +390,7 @@ test_that("assignAnimalIDs and matchDeployments commute", {
                     recover = as.POSIXct("2023-12-01", tz = "UTC"))
 
   quiet <- function(e) suppressWarnings(suppressMessages(e))
-  a <- quiet(matchDeployments(quiet(assignAnimalIDs(detp, tags)), dep, drop.unmatched = TRUE, verbose = FALSE))
+  a <- quiet(matchDeployments(quiet(assignAnimalIDs(detp, tags, verbose = FALSE)), dep, drop.unmatched = TRUE, verbose = FALSE))
   b <- quiet(assignAnimalIDs(quiet(matchDeployments(detp, dep, drop.unmatched = TRUE, verbose = FALSE)), tags))
 
   expect_equal(nrow(a), nrow(b))

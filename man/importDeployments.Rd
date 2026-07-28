@@ -9,7 +9,8 @@ importDeployments(
   source = c("vue", "glatos", "otn", "etn", "generic"),
   tz = "UTC",
   col.map = NULL,
-  datetime.format = NULL
+  datetime.format = NULL,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -25,6 +26,9 @@ merged over the \code{source} preset. See \link{moby_import_schema} for the full
 and which are required.}
 
 \item{datetime.format}{Optional explicit \code{strptime} format for the deploy/recover columns.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with columns \code{receiver}, \code{station}, \code{lon}, \code{lat}, \code{deploy} (POSIXct),

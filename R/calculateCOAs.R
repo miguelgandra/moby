@@ -131,7 +131,7 @@ calculateCOAs <- function(data,
   # default, leaving the metadata pointing at a column that does not exist. Clear it explicitly.
   if(!is.null(prev_meta)){
     prev_meta$datetime.col <- NULL
-    result <- do.call(as_moby, c(list(result), prev_meta))
+    result <- do.call(as_moby, c(list(result), prev_meta, list(verbose = FALSE)))
     attr(result, "moby")$datetime.col <- NULL
   }
 

@@ -10,7 +10,8 @@ importTags(
   tz = "UTC",
   col.map = NULL,
   datetime.format = NULL,
-  keep.extra = TRUE
+  keep.extra = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -29,6 +30,9 @@ fields and examples.}
 
 \item{keep.extra}{Logical; retain unmapped source columns. Defaults to \code{TRUE} so that
 additional biometric fields are preserved.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with at least \code{transmitter} and (when available) \code{ID}, \code{tagging_date}

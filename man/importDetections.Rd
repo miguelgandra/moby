@@ -10,7 +10,8 @@ importDetections(
   tz = "UTC",
   col.map = NULL,
   datetime.format = NULL,
-  keep.extra = FALSE
+  keep.extra = FALSE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -32,6 +33,9 @@ detection fields, which are required, and worked examples.}
 
 \item{keep.extra}{Logical; retain source columns that were not mapped to a canonical field.
 Defaults to \code{FALSE}.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with harmonised columns (\code{ID}, \code{datetime}, \code{transmitter}, \code{receiver},

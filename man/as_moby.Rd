@@ -18,7 +18,8 @@ as_moby(
   land.shape = NULL,
   epsg.code = NULL,
   tagging.dates = NULL,
-  nominal.delay = NULL
+  nominal.delay = NULL,
+  verbose = getOption("moby.verbose", TRUE)
 )
 
 \method{print}{mobyData}(x, preview = 3L, width = getOption("width"), ...)
@@ -57,6 +58,9 @@ automatically by \code{\link{filterDetections}} to scale its short-interval (min
 false-detection filter. Usually populated for you by \code{\link{assignAnimalIDs}} when the tag
 table carries a delay column.}
 
+\item{verbose}{Logical; print informational notes about the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
+
 \item{x}{A \code{mobyData} object.}
 
 \item{preview}{Number of leading rows shown under the summary. Defaults to 3; \code{0} prints the
@@ -83,6 +87,11 @@ living in global state, so analyses stay reproducible and self-describing.
 
 Calling \code{as_moby()} on an existing \code{mobyData} object updates only the supplied fields and
 inherits the rest, making it easy to add metadata (e.g. \code{tagging.dates}) after construction.
+
+Unlike the analytical functions, \code{as_moby()} prints no banner and no completion summary: the
+object it returns already describes itself when printed (see the \code{print()} method below). Its only
+console output is a note listing mapped columns that are absent from the data, which \code{verbose}
+(or \code{options(moby.verbose = FALSE)}) silences.
 }
 \examples{
 df <- data.frame(

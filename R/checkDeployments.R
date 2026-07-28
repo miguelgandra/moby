@@ -744,7 +744,7 @@ matchDeployments <- function(detections,
   }
   rownames(det) <- NULL
 
-  do.call(as_moby, c(list(det), base_meta))
+  do.call(as_moby, c(list(det), base_meta, list(verbose = FALSE)))
 }
 
 

@@ -141,11 +141,13 @@
   data_cols <- colnames(data)
   out <- data.frame(row.names = seq_len(nrow(data)))
   used <- character(0)
+  mapped <- character(0)
   for (field in names(mapping)) {
     src <- .matchColumn(mapping[[field]], data_cols)
     if (!is.na(src)) {
       out[[field]] <- data[[src]]
       used <- c(used, src)
+      mapped <- c(mapped, field)
     }
   }
   # parse datetimes
@@ -161,6 +163,12 @@
     extra <- setdiff(data_cols, used)
     for (e in extra) if (!e %in% names(out)) out[[e]] <- data[[e]]
   }
+  # Record which canonical fields were genuinely resolved to a source column. The importers report
+  # this to the user, and names(out) cannot answer it: under keep.extra an UNMAPPED source column is
+  # copied through under its own name, so a canonical field whose col.map entry matched nothing would
+  # still appear in names(out) whenever the source happens to carry a literal column of that name -
+  # masking the very col.map typo the report exists to expose.
+  attr(out, "mapped_fields") <- mapped
   out
 }
 
@@ -178,6 +186,36 @@
     return(as.data.frame(readxl::read_excel(x)))
   }
   utils::read.csv(x, header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+}
+
+
+# ---- console helpers shared by the three importers ------------------------------------------------
+# One-line description of what was read and at what scale: the file's basename (never the full path,
+# which would wrap the header) or "data frame", plus the incoming rows x columns.
+.importScale <- function(x, data) {
+  src <- if (is.data.frame(x)) "data frame" else basename(as.character(x)[1])
+  paste0(src, " ", .mobyGlyph("mid"), " ", .fmtCount(nrow(data), "row"), " ",
+         .mobyGlyph("times"), " ", .fmtCount(ncol(data), "column"))
+}
+
+# The methodological choices of an import: which mapping was applied, and how timestamps were read.
+.importCriteria <- function(source, col.map, tz, datetime.format) {
+  crit <- c(source = if (source == "generic") "generic (user col.map)"
+                     else paste0(source, " preset", if (!is.null(col.map)) " + user col.map" else ""),
+            timezone = tz)
+  # only worth reporting when the user overrode the auto-detection
+  if (!is.null(datetime.format)) crit["datetime format"] <- datetime.format
+  crit
+}
+
+# Report which canonical fields the mapping resolved. An unresolved OPTIONAL field is normal, so this
+# is a note, not a warning: only the user can say whether a missing field matters to them.
+.reportFieldMapping <- function(resolved, unresolved, verbose) {
+  if (length(resolved) > 0)
+    .mobyNote("Fields resolved: ", paste(resolved, collapse = ", "), verbose = verbose)
+  if (length(unresolved) > 0)
+    .mobyNote("Fields not found: ", paste(unresolved, collapse = ", "), verbose = verbose)
+  invisible(NULL)
 }
 
 
@@ -327,6 +365,8 @@ NULL
 #' `NULL`, common layouts are auto-detected.
 #' @param keep.extra Logical; retain source columns that were not mapped to a canonical field.
 #' Defaults to `FALSE`.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with harmonised columns (`ID`, `datetime`, `transmitter`, `receiver`,
 #' `station`, `lon`, `lat`, ...), sorted by animal and time. When the source has no animal
@@ -360,7 +400,8 @@ importDetections <- function(x,
                              tz = "UTC",
                              col.map = NULL,
                              datetime.format = NULL,
-                             keep.extra = FALSE) {
+                             keep.extra = FALSE,
+                             verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
   data <- .readSource(x)
@@ -377,18 +418,35 @@ importDetections <- function(x,
 
   if (!"datetime" %in% names(out)) stop("Could not locate a datetime column. Check 'source' or provide 'col.map'.", call. = FALSE)
 
+  # ---- header ---------------------------------------------------------------------------------
+  # Placed after the required-field check so a preset that does not match the file errors cleanly,
+  # without a banner in front of it. Criteria are the choices that change what the imported table
+  # MEANS: which mapping was applied (preset and/or user col.map) and how the timestamps were
+  # interpreted (tz, explicit format).
+  .mobyHeader("importDetections()", "Reading and harmonising acoustic detections",
+              input = .importScale(x, data), criteria = .importCriteria(source, col.map, tz, datetime.format),
+              verbose = verbose)
+
+  # which canonical fields the mapping actually resolved, recorded by .harmonise() itself (see there:
+  # names(out) cannot answer this under keep.extra)
+  resolved <- attr(out, "mapped_fields")
+  attr(out, "mapped_fields") <- NULL
+
   # combine GLATOS codespace + id into a full transmitter string when both present
   if (all(c("transmitter_codespace", "transmitter") %in% names(out))) {
     out$transmitter <- paste(out$transmitter_codespace, out$transmitter, sep = "-")
     out$transmitter_codespace <- NULL
+    # merged away, so it is no longer a field the user can find in the result
+    resolved <- setdiff(resolved, "transmitter_codespace")
   }
 
   # initialise animal ID from transmitter when the source carries none
   if (!"ID" %in% names(out)) {
     if (!"transmitter" %in% names(out)) stop("Neither an animal ID nor a transmitter column could be located.", call. = FALSE)
     out$ID <- as.character(out$transmitter)
-    message("Note: no animal-ID column found; 'ID' initialised from 'transmitter'. ",
-            "Join tag metadata to assign true animal IDs.")
+    .mobyBlank(verbose)
+    .mobyNote("No animal-ID column found; 'ID' initialised from 'transmitter'. ",
+              "Join tag metadata to assign true animal IDs.", verbose = verbose)
   }
   out$ID <- factor(out$ID)
 
@@ -399,6 +457,17 @@ importDetections <- function(x,
   out <- out[, ord, drop = FALSE]
   out <- out[order(out$ID, out$datetime), , drop = FALSE]
   rownames(out) <- NULL
+
+  # ---- outcome --------------------------------------------------------------------------------
+  # The field-resolution lists are the high-value part: they are the only way for a user to tell
+  # whether the chosen preset / col.map actually found their columns.
+  .mobyBlank(verbose)
+  # NA is not a transmitter: counting it would overstate the array
+  n_tx <- if ("transmitter" %in% names(out)) length(unique(stats::na.omit(as.character(out$transmitter)))) else NULL
+  .mobyOk(.fmtCount(nrow(out), "detection"), " imported",
+          if (!is.null(n_tx)) paste0(" from ", .fmtCount(n_tx, "transmitter")) else "",
+          verbose = verbose)
+  .reportFieldMapping(resolved, setdiff(names(mapping), resolved), verbose)
 
   out
 }
@@ -418,6 +487,8 @@ importDetections <- function(x,
 #' merged over the `source` preset. See [moby_import_schema] for the full list of deployment fields
 #' and which are required.
 #' @param datetime.format Optional explicit `strptime` format for the deploy/recover columns.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with columns `receiver`, `station`, `lon`, `lat`, `deploy` (POSIXct),
 #' `recover` (POSIXct) and, where available, `depth`; sorted by receiver and deployment date.
@@ -436,7 +507,8 @@ importDeployments <- function(x,
                               source = c("vue", "glatos", "otn", "etn", "generic"),
                               tz = "UTC",
                               col.map = NULL,
-                              datetime.format = NULL) {
+                              datetime.format = NULL,
+                              verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
   data <- .readSource(x)
@@ -454,6 +526,16 @@ importDeployments <- function(x,
   for (req in c("receiver", "station", "deploy")) {
     if (!req %in% names(out)) stop(paste0("Could not locate a '", req, "' column. Check 'source' or provide 'col.map'."), call. = FALSE)
   }
+
+  # ---- header ---------------------------------------------------------------------------------
+  # After the required-field checks, so a preset that does not match the file errors without a banner
+  .mobyHeader("importDeployments()", "Reading and harmonising the receiver deployment log",
+              input = .importScale(x, data), criteria = .importCriteria(source, col.map, tz, datetime.format),
+              verbose = verbose)
+
+  # resolution record, kept by .harmonise() itself (names(out) cannot answer it under keep.extra)
+  resolved <- attr(out, "mapped_fields")
+  attr(out, "mapped_fields") <- NULL
   out$receiver <- as.character(out$receiver)
   out$station <- as.character(out$station)
 
@@ -462,6 +544,13 @@ importDeployments <- function(x,
   out <- out[, ord, drop = FALSE]
   out <- out[order(out$receiver, out$deploy), , drop = FALSE]
   rownames(out) <- NULL
+
+  # ---- outcome --------------------------------------------------------------------------------
+  .mobyBlank(verbose)
+  .mobyOk(.fmtCount(nrow(out), "deployment record"), " imported across ",
+          .fmtCount(length(unique(stats::na.omit(out$receiver))), "receiver"), verbose = verbose)
+  .reportFieldMapping(resolved, setdiff(names(mapping), resolved), verbose)
+
   out
 }
 
@@ -533,6 +622,8 @@ importDeployments <- function(x,
 #' @param datetime.format Optional explicit `strptime` format for the tagging-date column.
 #' @param keep.extra Logical; retain unmapped source columns. Defaults to `TRUE` so that
 #' additional biometric fields are preserved.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with at least `transmitter` and (when available) `ID`, `tagging_date`
 #' (POSIXct), `nominal_delay` (seconds) and biometric columns.
@@ -553,7 +644,8 @@ importTags <- function(x,
                        tz = "UTC",
                        col.map = NULL,
                        datetime.format = NULL,
-                       keep.extra = TRUE) {
+                       keep.extra = TRUE,
+                       verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
   data <- .readSource(x)
@@ -568,13 +660,25 @@ importTags <- function(x,
   out <- .harmonise(data, mapping, datetime_fields = "tagging_date", tz = tz,
                     datetime.format = datetime.format, keep.extra = keep.extra)
 
+  # resolution record, kept by .harmonise() itself (names(out) cannot answer it under keep.extra,
+  # which is this function's default). Adjusted below as derived columns are added/merged.
+  resolved <- attr(out, "mapped_fields")
+  attr(out, "mapped_fields") <- NULL
+
   if (all(c("transmitter_codespace", "transmitter") %in% names(out))) {
     out$transmitter <- paste(out$transmitter_codespace, out$transmitter, sep = "-")
     out$transmitter_codespace <- NULL
+    resolved <- setdiff(resolved, "transmitter_codespace")
   }
   if (!"transmitter" %in% names(out)) {
     stop("Could not locate a 'transmitter' column (the key used to join tags to detections). Provide 'col.map'.", call. = FALSE)
   }
+
+  # ---- header ---------------------------------------------------------------------------------
+  # After the required-field check, so a preset that does not match the file errors without a banner
+  .mobyHeader("importTags()", "Reading and harmonising tag and animal metadata",
+              input = .importScale(x, data), criteria = .importCriteria(source, col.map, tz, datetime.format),
+              verbose = verbose)
   out$transmitter <- as.character(out$transmitter)
   if ("length" %in% names(out)) out$length <- suppressWarnings(as.numeric(out$length))
   for (dc in intersect(c("nominal_delay", "min_delay", "max_delay"), names(out)))
@@ -584,13 +688,30 @@ importTags <- function(x,
   # the midpoint, which is what the short-interval false-detection filter is scaled to
   if (!"nominal_delay" %in% names(out) && all(c("min_delay", "max_delay") %in% names(out))) {
     out$nominal_delay <- (out$min_delay + out$max_delay) / 2
-    message("Note: 'nominal_delay' derived as the midpoint of 'min_delay' and 'max_delay'.")
+    # the result DOES carry a nominal_delay now, so it must not be listed as "not found" below - this
+    # is the one field a user has to confirm is present (filterDetections reads it to scale min_lag)
+    resolved <- union(resolved, "nominal_delay")
+    .mobyBlank(verbose)
+    .mobyNote("'nominal_delay' derived as the midpoint of 'min_delay' and 'max_delay'.", verbose = verbose)
   }
 
   pref <- c("ID", "transmitter", "serial", "tagging_date", "tagging_location", "species", "sex",
             "length", "nominal_delay", "min_delay", "max_delay")
   ord <- c(intersect(pref, names(out)), setdiff(names(out), pref))
-  out[, ord, drop = FALSE]
+  out <- out[, ord, drop = FALSE]
+
+  # ---- outcome --------------------------------------------------------------------------------
+  # The transmitter count is reported only when it differs from the row count, i.e. when several rows
+  # share a code (a tag listed under more than one code space, or a re-tagged animal).
+  .mobyBlank(verbose)
+  n_tx <- length(unique(stats::na.omit(out$transmitter)))
+  .mobyOk(.fmtCount(nrow(out), "tag"), " imported",
+          if (n_tx != nrow(out)) paste0(" ", .mobyGlyph("mid"), " ",
+                                        .fmtCount(n_tx, "distinct transmitter")) else "",
+          verbose = verbose)
+  .reportFieldMapping(resolved, setdiff(names(mapping), resolved), verbose)
+
+  out
 }
 
 
@@ -672,6 +793,8 @@ importTags <- function(x,
 #' returned object's metadata. \code{\link{filterDetections}} reads these automatically to scale its
 #' short-interval (min_lag) false-detection filter, so arrays mixing tag families (e.g. 60 s and
 #' 120 s tags) are handled per animal.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A \code{\link{mobyData}} object with the `ID` column assigned (and, optionally,
 #' tagging dates and biometric columns attached). Detections whose transmitter is absent from
@@ -696,7 +819,8 @@ assignAnimalIDs <- function(detections,
                             transmitter.col = "transmitter",
                             keep.cols = NULL,
                             set.tagging.dates = TRUE,
-                            set.nominal.delay = TRUE) {
+                            set.nominal.delay = TRUE,
+                            verbose = getOption("moby.verbose", TRUE)) {
 
   id.col <- .resolveArgs(detections, list(id.col = id.col))$id.col
   prev_meta <- attr(detections, "moby")
@@ -708,12 +832,24 @@ assignAnimalIDs <- function(detections,
   }
   if (!"transmitter" %in% colnames(tg)) stop("'tags' must contain a 'transmitter' column (see importTags()).", call. = FALSE)
 
+  # ---- header ---------------------------------------------------------------------------------
+  # No criteria block: the join key is a column mapping, not a methodological choice, and the
+  # framework reserves "-> Method" for settings that change what the result MEANS.
+  .mobyHeader("assignAnimalIDs()", "Joining tag metadata to replace placeholder IDs with real animal IDs",
+              input = paste0(.fmtCount(nrow(det), "detection"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(length(unique(stats::na.omit(as.character(det[[transmitter.col]])))),
+                                       "transmitter")),
+              verbose = verbose)
+
   # ensure the tag table has an animal-ID column
   if (!"ID" %in% colnames(tg)) {
-    key <- if ("serial" %in% colnames(tg) && !all(is.na(tg$serial))) tg$serial else tg$transmitter
+    use_serial <- "serial" %in% colnames(tg) && !all(is.na(tg$serial))
+    key <- if (use_serial) tg$serial else tg$transmitter
     tg$ID <- as.character(key)
-    message("Note: 'tags' has no 'ID' column; animal IDs derived from ",
-            if ("serial" %in% colnames(tg)) "'serial'" else "'transmitter'", ".")
+    .mobyBlank(verbose)
+    # report the column actually used: an all-NA 'serial' is present but unusable, and falls back
+    .mobyNote("'tags' has no 'ID' column; animal IDs derived from ",
+              if (use_serial) "'serial'" else "'transmitter'", ".", verbose = verbose)
   }
   tg$ID <- as.character(tg$ID)
 
@@ -727,12 +863,14 @@ assignAnimalIDs <- function(detections,
   # purpose: they are either another project's tags, or a further code space of one of your own tags
   # (common with sensor transmitters). Only the user can tell which, so name them.
   if (length(clash) > 0) {
-    message("Note: ", length(clash), " transmitter code(s) match a tag's number but a different code ",
-            "space, so they were NOT assigned: ", paste(utils::head(clash, 5), collapse = ", "),
-            if (length(clash) > 5) ", ..." else "",
-            ". If these are further code spaces of your own transmitters (e.g. a sensor tag ",
-            "transmitting on more than one code space), add each code as a row of 'tags' mapped to ",
-            "the same animal ID.")
+    .mobyBlank(verbose)
+    .mobyNote(.fmtCount(length(clash), "transmitter code"),
+              if (length(clash) == 1) " matches" else " match", " a tag's number but a different code ",
+              "space, so they were NOT assigned: ", paste(utils::head(clash, 5), collapse = ", "),
+              if (length(clash) > 5) ", ..." else "",
+              ". If these are further code spaces of your own transmitters (e.g. a sensor tag ",
+              "transmitting on more than one code space), add each code as a row of 'tags' mapped to ",
+              "the same animal ID.", verbose = verbose)
   }
 
   det[[id.col]] <- factor(tg$ID[idx])
@@ -776,13 +914,55 @@ assignAnimalIDs <- function(detections,
   det <- det[order(det[[id.col]], det[[if ("datetime" %in% colnames(det)) "datetime" else id.col]]), , drop = FALSE]
   rownames(det) <- NULL
 
+  # ---- outcome --------------------------------------------------------------------------------
+  # Two of this function's effects are otherwise invisible: it writes tagging.dates and nominal.delay
+  # into the returned object's metadata, which is what filterDetections() later reads. Report them, so
+  # "did my tag table supply the delay the min_lag filter needs?" is answered here rather than by
+  # inspecting attributes.
+  .mobyBlank(verbose)
+  # count detections that actually RECEIVED an ID, not merely those that found a tag row: a tag whose
+  # own ID is NA (a blank 'serial', or a blank ID column) matches but assigns nothing, and reporting
+  # the match rate would then claim every detection was assigned while half came back NA
+  n_assigned <- sum(!is.na(det[[id.col]]))
+  n_animals <- nlevels(droplevels(det[[id.col]]))
+  .mobyOk(.fmtCount(n_assigned, "detection"), " matched to ", .fmtCount(n_animals, "animal"),
+          verbose = verbose)
+  meta_set <- character(0)
+  if (!is.null(tagging.dates))
+    meta_set <- c(meta_set, paste0("tagging.dates (", .fmtCount(length(tagging.dates), "individual"), ")"))
+  if (!is.null(nominal.delay)) {
+    # a single shared delay prints as one value; a mixed-tag-family array prints as a range. The
+    # coverage is part of the answer: a delay attached for 2 of 8 animals scales the min_lag filter
+    # for 2 of 8, and would otherwise be indistinguishable from full coverage.
+    nd_rng <- range(nominal.delay)
+    nd_txt <- if (isTRUE(all.equal(nd_rng[1], nd_rng[2]))) format(nd_rng[1])
+              else paste0(format(nd_rng[1]), "-", format(nd_rng[2]))
+    cover <- if (length(nominal.delay) < n_animals)
+               paste0(", ", .fmtN(length(nominal.delay)), " of ", .fmtCount(n_animals, "individual")) else ""
+    meta_set <- c(meta_set, paste0("nominal.delay (", nd_txt, " s", cover, ")"))
+  }
+  if (length(meta_set) > 0)
+    .mobyNote("Metadata attached: ", paste(meta_set, collapse = ", "), verbose = verbose)
+  # a requested metadata field that the tag table appeared to carry but yielded nothing is otherwise
+  # discoverable only by inspecting attributes
+  if (set.nominal.delay && "nominal_delay" %in% colnames(tg) && is.null(nominal.delay))
+    .mobyNote("No usable 'nominal_delay' in 'tags'; none attached (filterDetections' min_lag filter ",
+              "will need it supplied).", verbose = verbose)
+  # NB: detections left unassigned are NOT reported here - the warning() above already states it, and
+  # saying the same thing twice in two different styles is precisely the inconsistency to avoid.
+  # Tag rows that matched but carry no ID have no such warning, so they get one of their own.
+  n_blank <- sum(!is.na(idx) & is.na(tg$ID[idx]))
+  if (n_blank > 0)
+    warning(paste0("- ", n_blank, " detection(s) matched a tag row with no animal ID; their ID is NA."),
+            call. = FALSE)
+
   # rebuild the mobyData, preserving the original metadata (column map, CRS, etc.) and updating the
   # ID column and (when available) the tagging dates and transmitter nominal delays
   base_meta <- if (!is.null(prev_meta)) prev_meta else list()
   base_meta$id.col <- id.col
   if (!is.null(tagging.dates)) base_meta$tagging.dates <- tagging.dates
   if (!is.null(nominal.delay)) base_meta$nominal.delay <- nominal.delay
-  do.call(as_moby, c(list(det), base_meta))
+  do.call(as_moby, c(list(det), base_meta, list(verbose = FALSE)))
 }
 
 #######################################################################################################

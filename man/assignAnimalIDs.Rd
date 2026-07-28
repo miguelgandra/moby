@@ -11,7 +11,8 @@ assignAnimalIDs(
   transmitter.col = "transmitter",
   keep.cols = NULL,
   set.tagging.dates = TRUE,
-  set.nominal.delay = TRUE
+  set.nominal.delay = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -37,6 +38,9 @@ attach per-individual tagging dates to the returned object's metadata.}
 returned object's metadata. \code{\link{filterDetections}} reads these automatically to scale its
 short-interval (min_lag) false-detection filter, so arrays mixing tag families (e.g. 60 s and
 120 s tags) are handled per animal.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A \code{\link{mobyData}} object with the \code{ID} column assigned (and, optionally,

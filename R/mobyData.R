@@ -33,6 +33,11 @@
 #' Calling `as_moby()` on an existing `mobyData` object updates only the supplied fields and
 #' inherits the rest, making it easy to add metadata (e.g. `tagging.dates`) after construction.
 #'
+#' Unlike the analytical functions, `as_moby()` prints no banner and no completion summary: the
+#' object it returns already describes itself when printed (see the `print()` method below). Its only
+#' console output is a note listing mapped columns that are absent from the data, which `verbose`
+#' (or `options(moby.verbose = FALSE)`) silences.
+#'
 #' @param data A data frame of detections (one row per detection, or per binned record).
 #' @param id.col Name of the column containing animal IDs. Defaults to `"ID"`.
 #' @param datetime.col Name of the column containing date-times in POSIXct format. Defaults to `"datetime"`.
@@ -54,6 +59,8 @@
 #' used by many functions to compute metrics or draw plots independently per group.
 #' @param land.shape Optional `sf` (or `SpatialPolygons*`) object representing landmasses,
 #' used by spatial functions (e.g. in-water distances, UD land clipping).
+#' @param verbose Logical; print informational notes about the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A `mobyData` object (a `data.frame` with a `"moby"` metadata attribute).
 #'
@@ -92,7 +99,8 @@ as_moby <- function(data,
                     land.shape   = NULL,
                     epsg.code    = NULL,
                     tagging.dates = NULL,
-                    nominal.delay = NULL) {
+                    nominal.delay = NULL,
+                    verbose = getOption("moby.verbose", TRUE)) {
 
   if (!inherits(data, "data.frame")) {
     stop("'data' must be a data frame.", call. = FALSE)
@@ -101,6 +109,10 @@ as_moby <- function(data,
   # inherit existing metadata when re-wrapping a mobyData object: only override fields
   # that were explicitly supplied by the caller
   prev <- attr(data, "moby")
+  # `supplied` records which arguments the caller named, and is only ever queried for the eleven
+  # metadata field names (via pick(), below) and the five role columns (via `asked`, further down).
+  # Non-metadata arguments such as `verbose` therefore land in this vector harmlessly: nothing
+  # consults them, so passing verbose = FALSE cannot alter which metadata is inherited or reported.
   supplied <- names(as.list(match.call())[-1])
 
   # coerce to a plain data.frame, then re-attach the class/metadata below
@@ -171,8 +183,9 @@ as_moby <- function(data,
   mapped <- unlist(meta[role_cols[asked]], use.names = FALSE)
   missing_cols <- setdiff(mapped, colnames(data))
   if (length(missing_cols) > 0) {
-    message("Note: the following mapped column(s) are not present in the data and will only ",
-            "matter for functions that use them: ", paste(missing_cols, collapse = ", "), ".")
+    .mobyNote("The following mapped column(s) are not present in the data and will only ",
+              "matter for functions that use them: ", paste(missing_cols, collapse = ", "), ".",
+              verbose = verbose)
   }
 
   attr(data, "moby") <- meta
