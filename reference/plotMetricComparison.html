@@ -254,6 +254,15 @@ aggregated by <code>agg.fun</code> (mean by default).</p>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># Compare per-individual residency indices between the two species</span></span></span>
 <span class="r-in"><span><span class="va">res</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateResidency.html">calculateResidency</a></span><span class="op">(</span><span class="va">rays</span>, last.monitoring.date <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/Extremes.html" class="external-link">max</a></span><span class="op">(</span><span class="va">rays</span><span class="op">$</span><span class="va">datetime</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateResidency()</span> ──────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Computing residency indices per individual</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • indices     IR1 · IR2 · IWR</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • span start  release date</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • cap         values capped at 1</span>
 <span class="r-in"><span><span class="va">res</span><span class="op">$</span><span class="va">species</span> <span class="op">&lt;-</span> <span class="va">rays_tags</span><span class="op">$</span><span class="va">species</span><span class="op">[</span><span class="fu"><a href="https://rdrr.io/r/base/match.html" class="external-link">match</a></span><span class="op">(</span><span class="va">res</span><span class="op">$</span><span class="va">ID</span>, <span class="va">rays_tags</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span><span class="op">]</span></span></span>
 <span class="r-in"><span><span class="fu">plotMetricComparison</span><span class="op">(</span><span class="va">res</span>, metrics <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"IR1"</span>, <span class="st">"IR2"</span><span class="op">)</span>, split.by <span class="op">=</span> <span class="st">"species"</span>,</span></span>
 <span class="r-in"><span>                     paired <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>

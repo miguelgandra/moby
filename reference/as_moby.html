@@ -9,7 +9,11 @@ is expected (including with base subsetting, dplyr, etc.), and plain data frames
 fully supported by all moby functions. Metadata travels with the object rather than
 living in global state, so analyses stay reproducible and self-describing.
 Calling as_moby() on an existing mobyData object updates only the supplied fields and
-inherits the rest, making it easy to add metadata (e.g. tagging.dates) after construction."><meta property="og:description" content="Wraps a detection data frame into a mobyData object: a lightweight data.frame
+inherits the rest, making it easy to add metadata (e.g. tagging.dates) after construction.
+Unlike the analytical functions, as_moby() prints no banner and no completion summary: the
+object it returns already describes itself when printed (see the print() method below). Its only
+console output is a note listing mapped columns that are absent from the data, which verbose
+(or options(moby.verbose = FALSE)) silences."><meta property="og:description" content="Wraps a detection data frame into a mobyData object: a lightweight data.frame
 subclass that carries dataset-level metadata (column mapping, coordinate reference
 system, tagging dates, ID groups and an optional land layer) as attributes. Downstream
 moby functions read this metadata automatically, so column names, EPSG codes and
@@ -19,7 +23,11 @@ is expected (including with base subsetting, dplyr, etc.), and plain data frames
 fully supported by all moby functions. Metadata travels with the object rather than
 living in global state, so analyses stay reproducible and self-describing.
 Calling as_moby() on an existing mobyData object updates only the supplied fields and
-inherits the rest, making it easy to add metadata (e.g. tagging.dates) after construction."><meta property="og:image" content="https://miguelgandra.github.io/moby/logo.png"></head><body>
+inherits the rest, making it easy to add metadata (e.g. tagging.dates) after construction.
+Unlike the analytical functions, as_moby() prints no banner and no completion summary: the
+object it returns already describes itself when printed (see the print() method below). Its only
+console output is a note listing mapped columns that are absent from the data, which verbose
+(or options(moby.verbose = FALSE)) silences."><meta property="og:image" content="https://miguelgandra.github.io/moby/logo.png"></head><body>
     <a href="#main" class="visually-hidden-focusable">Skip to contents</a>
 
 
@@ -75,6 +83,10 @@ fully supported by all <code>moby</code> functions. Metadata travels with the ob
 living in global state, so analyses stay reproducible and self-describing.</p>
 <p>Calling <code>as_moby()</code> on an existing <code>mobyData</code> object updates only the supplied fields and
 inherits the rest, making it easy to add metadata (e.g. <code>tagging.dates</code>) after construction.</p>
+<p>Unlike the analytical functions, <code>as_moby()</code> prints no banner and no completion summary: the
+object it returns already describes itself when printed (see the <code><a href="https://rdrr.io/r/base/print.html" class="external-link">print()</a></code> method below). Its only
+console output is a note listing mapped columns that are absent from the data, which <code>verbose</code>
+(or <code>options(moby.verbose = FALSE)</code>) silences.</p>
     </div>
 
     <div class="section level2">
@@ -91,7 +103,8 @@ inherits the rest, making it easy to add metadata (e.g. <code>tagging.dates</cod
 <span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  tagging.dates <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  nominal.delay <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span>
 <span></span>
 <span><span class="co"># S3 method for class 'mobyData'</span></span>
@@ -157,6 +170,11 @@ value (applied to all individuals) or a named numeric vector whose names match t
 automatically by <code><a href="filterDetections.html">filterDetections</a></code> to scale its short-interval (min_lag)
 false-detection filter. Usually populated for you by <code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code> when the tag
 table carries a delay column.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print informational notes about the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
 
 
 <dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>

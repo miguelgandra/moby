@@ -145,8 +145,8 @@ Run <code><a href="https://rdrr.io/r/parallel/detectCores.html" class="external-
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Logical. Should the function output process information and display a progress bar?
-Defaults to TRUE.</p></dd>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -203,7 +203,7 @@ across a call's segments (and across calls when the cache is supplied).</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateStepDistances()</span> ──────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Measuring distance between consecutive positions</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 60 positions · 1 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 60 positions · 1 individual</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • paths  least-cost around land</span>

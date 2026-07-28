@@ -176,15 +176,29 @@ analysis. Methods Ecol Evol 8: 1309-1320.
 data(rays)
 wide <- createWideTable(rays, value.col = "station")
 #> Warning: - 'id.col' converted to factor.
+#> ── createWideTable() ─────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reshaping detections into a time-bin × individual matrix
+#> • Input: 1,643 records · 8 individuals
+#> 
+#> → Method
+#>   • values  station
 #> Warning: 3 (ID, time-bin) combination(s) had multiple differing values; the first was kept. Aggregate upstream (e.g. calculateCOAs) to control this.
 #> Tied (ID, time-bin) instances (first value kept):
 #>                  timebin  ID                ties
 #> 1898 2023-06-14 11:00:00 D03 ST01 (1) | ST06 (1)
 #> 2163 2023-04-24 05:00:00 D04 ST01 (4) | ST05 (4)
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
+#> 
+#> ✔ 2,130 time bins × 8 individuals
 assoc <- calculateAssociations(wide)
-#> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.03 secs
+#> ── calculateAssociations() ───────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a co-occurrence association network
+#> • Input: 8 individuals · 2,130 time bins
+#> 
+#> → Method
+#>   • metric  simple-ratio index (SRI)
 # test the observed co-occurrences against a permutation null model
 # (iterations kept low here for speed; use the default 1000 in practice)
 rand <- randomizeAssociations(wide, assoc, iterations = 100, random.seed = 1)

@@ -96,15 +96,29 @@ at their geographic coordinates when available.</p>
 <span class="r-in"><span><span class="co"># association network (individual co-occurrences)</span></span></span>
 <span class="r-in"><span><span class="va">wide</span> <span class="op">&lt;-</span> <span class="fu"><a href="createWideTable.html">createWideTable</a></span><span class="op">(</span><span class="va">rays</span>, value.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">createWideTable()</span> ─────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reshaping detections into a time-bin × individual matrix</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 records · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • values  station</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>3 (ID, time-bin) combination(s) had multiple differing values; the first was kept. Aggregate upstream (e.g. calculateCOAs) to control this.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> Tied (ID, time-bin) instances (first value kept):</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                  timebin  ID                ties</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1898 2023-06-14 11:00:00 D03 ST01 (1) | ST06 (1)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2163 2023-04-24 05:00:00 D04 ST01 (4) | ST05 (4)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 2,130 time bins × 8 individuals</span>
 <span class="r-in"><span><span class="va">assoc</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateAssociations.html">calculateAssociations</a></span><span class="op">(</span><span class="va">wide</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating overlap - complete monitoring duration</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Total execution time: 0.10 secs</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateAssociations()</span> ───────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Building a co-occurrence association network</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 8 individuals · 2,130 time bins</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • metric  simple-ratio index (SRI)</span>
 <span class="r-in"><span><span class="kw">if</span> <span class="op">(</span><span class="fu"><a href="https://rdrr.io/r/base/ns-load.html" class="external-link">requireNamespace</a></span><span class="op">(</span><span class="st">"qgraph"</span>, quietly <span class="op">=</span> <span class="cn">TRUE</span><span class="op">)</span><span class="op">)</span> <span class="op">{</span></span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">assoc</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="op">}</span></span></span>
@@ -121,7 +135,13 @@ at their geographic coordinates when available.</p>
 <span class="r-in"><span><span class="co"># movement network (transitions between locations)</span></span></span>
 <span class="r-in"><span><span class="va">trans</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateTransitions.html">calculateTransitions</a></span><span class="op">(</span><span class="va">rays</span>, spatial.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateTransitions()</span> ────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Building a directed movement network between locations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals · 6 nodes (station)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/graphics/plot.default.html" class="external-link">plot</a></span><span class="op">(</span><span class="va">trans</span><span class="op">)</span></span></span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">plotMovements()</span> ───────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>

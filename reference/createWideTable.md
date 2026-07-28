@@ -18,7 +18,7 @@ createWideTable(
   end.dates = NULL,
   agg.fun = NULL,
   round.dates = FALSE,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -94,7 +94,8 @@ createWideTable(
 
 - verbose:
 
-  Output ties info to console? Defaults to TRUE.
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -130,6 +131,15 @@ createWideTable(data, id.col = "id", timebin.col = "timebin", value.col = "detec
 #> the animal ID levels. This warning will be displayed only once during this
 #> session.
 #> Warning: - 'id.col' converted to factor.
+#> ── createWideTable() ─────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reshaping detections into a time-bin × individual matrix
+#> • Input: 9 records · 3 individuals
+#> 
+#> → Method
+#>   • values  detections
+#> 
+#> ✔ 5 time bins × 3 individuals
 #>               timebin  A  B C
 #> 1 2023-01-01 00:00:00  2  5 0
 #> 2 2023-01-01 00:05:00  3  0 6

@@ -40,7 +40,13 @@ data frame; `networkNodes()` returns the node data frame;
 data(rays)
 trans <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
-#> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
+#> ── calculateTransitions() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a directed movement network between locations
+#> • Input: 1,643 detections · 8 individuals · 6 nodes (station)
+#> 
+#> → Method
+#>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)
 is_mobyNetwork(trans)
 #> [1] TRUE
 networkType(trans)

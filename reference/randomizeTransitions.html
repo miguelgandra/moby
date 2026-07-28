@@ -151,7 +151,13 @@ realised transitions versus the null, with its empirical p-value.</p></dd>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/data.html" class="external-link">data</a></span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">trans</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateTransitions.html">calculateTransitions</a></span><span class="op">(</span><span class="va">rays</span>, spatial.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateTransitions()</span> ────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Building a directed movement network between locations</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals · 6 nodes (station)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)</span>
 <span class="r-in"><span><span class="co"># test each transition against a within-individual permutation null</span></span></span>
 <span class="r-in"><span><span class="co"># (iterations kept low here for speed; use the default 1000 in practice)</span></span></span>
 <span class="r-in"><span><span class="va">rand</span> <span class="op">&lt;-</span> <span class="fu">randomizeTransitions</span><span class="op">(</span><span class="va">trans</span>, iterations <span class="op">=</span> <span class="fl">100</span>, random.seed <span class="op">=</span> <span class="fl">1</span><span class="op">)</span></span></span>

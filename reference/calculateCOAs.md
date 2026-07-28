@@ -17,7 +17,8 @@ calculateCOAs(
   timebin.col = NULL,
   station.col = NULL,
   lon.col = NULL,
-  lat.col = NULL
+  lat.col = NULL,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -54,6 +55,11 @@ calculateCOAs(
 
   Name of the column containing latitude (or projected y) values.
   Defaults to `"lat"`.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -95,6 +101,12 @@ data(rays)
 # calculate Centers of Activity (one position per ID and time bin)
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateCOAs() ───────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating centres of activity per individual and time bin
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> ✔ 794 positions estimated across 8 individuals
 head(coas)
 #>    ID             timebin    lon    lat detections stations station
 #> 1 D02 2023-04-02 17:00:00 -9.008 38.464          3        1    ST02

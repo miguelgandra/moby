@@ -17,7 +17,8 @@ importTags(
   tz = "UTC",
   col.map = NULL,
   datetime.format = NULL,
-  keep.extra = TRUE
+  keep.extra = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -52,6 +53,11 @@ importTags(
   Logical; retain unmapped source columns. Defaults to `TRUE` so that
   additional biometric fields are preserved.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame with at least `transmitter` and (when available) `ID`,
@@ -81,6 +87,17 @@ for the canonical field list;
 tags <- importTags(rays_tags, source = "generic",
                    col.map = list(ID = "ID", transmitter = "transmitter",
                                   tagging_date = "tagging_date", species = "species"))
+#> ── importTags() ──────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reading and harmonising tag and animal metadata
+#> • Input: data frame · 8 rows × 5 columns
+#> 
+#> → Method
+#>   • source    generic (user col.map)
+#>   • timezone  UTC
+#> 
+#> ✔ 8 tags imported
+#> ℹ Fields resolved: ID, transmitter, tagging_date, species
 head(tags)
 #>    ID    transmitter tagging_date            species tagging_station
 #> 1 R01 A69-1602-30001   2023-04-03       Raja clavata            ST02

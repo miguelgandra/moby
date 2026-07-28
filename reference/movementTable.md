@@ -25,6 +25,7 @@ movementTable(
   land.shape = NULL,
   epsg.code = NULL,
   discard.missing = TRUE,
+  verbose = getOption("moby.verbose", TRUE),
   ...
 )
 ```
@@ -86,6 +87,11 @@ movementTable(
 
   If true, only individuals with detections are included.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - ...:
 
   Additional arguments passed to
@@ -110,6 +116,12 @@ data(rays)
 # build per-time-bin tracks with stepwise distances
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateCOAs() ───────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating centres of activity per individual and time bin
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> ✔ 794 positions estimated across 8 individuals
 tracks <- calculateStepDistances(coas, verbose = FALSE)
 
 if (requireNamespace("adehabitatHR", quietly = TRUE)) {
@@ -136,8 +148,15 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • grouping   id.groups
 #> 
 #> ✔ 8 utilization distributions estimated
-#> Interpolating distances
-#>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
+#> ── movementTable() ───────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Summarising distance, rate of movement and space use per individual
+#> • Input: 794 positions · 8 individuals
+#> 
+#> → Method
+#>   • net displacement  straight-line (great-circle)
+#> 
+#> ℹ Irregular time-bin widths detected · distances interpolated to a common interval
 #>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI
 #> 1        Raja clavata                                                    
 #> 2                 R01          62.2       31.3         2019.6        0.02

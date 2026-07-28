@@ -21,7 +21,8 @@ importDetections(
   tz = "UTC",
   col.map = NULL,
   datetime.format = NULL,
-  keep.extra = FALSE
+  keep.extra = FALSE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -62,6 +63,11 @@ importDetections(
 
   Logical; retain source columns that were not mapped to a canonical
   field. Defaults to `FALSE`.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -104,6 +110,17 @@ det <- importDetections(csv, source = "generic",
                                        station = "station_name", lon = "deploy_longitude",
                                        lat = "deploy_latitude", receiver = "receiver_id",
                                        transmitter = "transmitter"))
+#> ── importDetections() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reading and harmonising acoustic detections
+#> • Input: rays_detections.csv · 1,643 rows × 8 columns
+#> 
+#> → Method
+#>   • source    generic (user col.map)
+#>   • timezone  UTC
+#> 
+#> ✔ 1,643 detections imported from 8 transmitters
+#> ℹ Fields resolved: ID, datetime, station, lon, lat, receiver, transmitter
 head(det)
 #>    ID            datetime    transmitter  receiver station    lon    lat
 #> 1 D01 2023-04-08 15:05:10 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456

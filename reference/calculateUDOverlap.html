@@ -82,7 +82,7 @@ intervals</strong>; for classic kernel density (<code>method = "kde"</code>) it 
 <span>  index <span class="op">=</span> <span class="st">"BA"</span>,</span>
 <span>  contour <span class="op">=</span> <span class="fl">95</span>,</span>
 <span>  conf.level <span class="op">=</span> <span class="fl">0.95</span>,</span>
-<span>  verbose <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -116,7 +116,8 @@ Ignored for KDE (which provides no CIs).</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
-<dd><p>Logical; print progress messages. Defaults to TRUE.</p></dd>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -188,7 +189,18 @@ overlap. Methods in Ecology and Evolution, 9(7), 1679-1691.</p>
 <span class="r-in"><span><span class="op">}</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- Some of the ID(s) in id.groups don't match the IDs in the data.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> - Computed UDOI overlap for 3 pair(s) (kde).</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateUDOverlap()</span> ──────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Measuring home-range overlap between individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 3 utilization distributions</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • estimator  kernel density (KDE)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • index      UDOI (UD overlap index)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • contour    95% isopleth</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 3 pairs compared</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Median UDOI: 0.94 (0.87-0.94)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>   id1 id2      UDOI</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 D01 D02 0.9402257</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 D01 D03 0.8684309</span>

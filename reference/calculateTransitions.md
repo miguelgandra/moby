@@ -30,7 +30,8 @@ calculateTransitions(
   spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.unit = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs"),
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -77,6 +78,11 @@ calculateTransitions(
   Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`,
   `"secs"`.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A
@@ -109,7 +115,13 @@ data(rays)
 # build a movement network with the receiver stations as nodes
 trans <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
-#> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
+#> ── calculateTransitions() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a directed movement network between locations
+#> • Input: 1,643 detections · 8 individuals · 6 nodes (station)
+#> 
+#> → Method
+#>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)
 trans
 #> <mobyNetwork> movement network
 #>   nodes: 12  |  edges: 58

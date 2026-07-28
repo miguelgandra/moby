@@ -17,6 +17,13 @@ Calling `as_moby()` on an existing `mobyData` object updates only the
 supplied fields and inherits the rest, making it easy to add metadata
 (e.g. `tagging.dates`) after construction.
 
+Unlike the analytical functions, `as_moby()` prints no banner and no
+completion summary: the object it returns already describes itself when
+printed (see the [`print()`](https://rdrr.io/r/base/print.html) method
+below). Its only console output is a note listing mapped columns that
+are absent from the data, which `verbose` (or
+`options(moby.verbose = FALSE)`) silences.
+
 ## Usage
 
 ``` r
@@ -32,7 +39,8 @@ as_moby(
   land.shape = NULL,
   epsg.code = NULL,
   tagging.dates = NULL,
-  nominal.delay = NULL
+  nominal.delay = NULL,
+  verbose = getOption("moby.verbose", TRUE)
 )
 
 # S3 method for class 'mobyData'
@@ -109,6 +117,11 @@ print(x, preview = 3L, width = getOption("width"), ...)
   populated for you by
   [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
   when the tag table carries a delay column.
+
+- verbose:
+
+  Logical; print informational notes about the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 - x:
 

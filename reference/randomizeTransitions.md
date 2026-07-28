@@ -95,7 +95,13 @@ A list with
 data(rays)
 trans <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
-#> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
+#> ── calculateTransitions() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a directed movement network between locations
+#> • Input: 1,643 detections · 8 individuals · 6 nodes (station)
+#> 
+#> → Method
+#>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)
 # test each transition against a within-individual permutation null
 # (iterations kept low here for speed; use the default 1000 in practice)
 rand <- randomizeTransitions(trans, iterations = 100, random.seed = 1)

@@ -21,7 +21,8 @@ calculateLandDists(
   land.shape,
   epsg.code = NULL,
   grid.resolution = 100,
-  mov.threshold = 0.5
+  mov.threshold = 0.5,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -69,6 +70,11 @@ calculateLandDists(
   Numeric (0-1). Proportion of movement perpendicular to shore required
   for inshore/offshore classification.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame with added spatial and movement columns.
@@ -83,8 +89,17 @@ land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
   c(-9.05, 38.49), c(-8.90, 38.49), c(-8.90, 38.43),
   c(-9.05, 38.49)))), crs = 4326))
 rays_land <- calculateLandDists(rays, land.shape = land)
-#> Calculating distances to nearest land (raster method)...
-#> Done! Total execution time: 2.29 secs 
+#> ── calculateLandDists() ──────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Measuring distance from each position to the nearest land
+#> • Input: 1,643 positions · 8 individuals
+#> 
+#> → Method
+#>   • grid  100 m resolution
+#> 
+#> ✔ 1,643 distances computed
+#> ℹ Median distance to land: 984 m (0-2,415 m)
+#> ⏱ runtime: 3.0s
 head(rays_land$land_dist)
 #> [1] 1298.88 1298.88 1298.88 1298.88 1298.88 2383.32
 # }

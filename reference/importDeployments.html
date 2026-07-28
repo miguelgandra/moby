@@ -60,7 +60,8 @@ of the <code>moby</code> workflow.</p>
 <span>  source <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"vue"</span>, <span class="st">"glatos"</span>, <span class="st">"otn"</span>, <span class="st">"etn"</span>, <span class="st">"generic"</span><span class="op">)</span>,</span>
 <span>  tz <span class="op">=</span> <span class="st">"UTC"</span>,</span>
 <span>  col.map <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  datetime.format <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  datetime.format <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -90,6 +91,11 @@ and which are required.</p></dd>
 <dt id="arg-datetime-format">datetime.format<a class="anchor" aria-label="anchor" href="#arg-datetime-format"></a></dt>
 <dd><p>Optional explicit <code>strptime</code> format for the deploy/recover columns.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -107,6 +113,17 @@ and which are required.</p></dd>
     <div class="sourceCode"><pre class="sourceCode r"><code><span class="r-in"><span><span class="co"># read a raw ETN deployment export and harmonise it</span></span></span>
 <span class="r-in"><span><span class="va">csv</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/system.file.html" class="external-link">system.file</a></span><span class="op">(</span><span class="st">"extdata"</span>, <span class="st">"rays_deployments.csv"</span>, package <span class="op">=</span> <span class="st">"moby"</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">deployments</span> <span class="op">&lt;-</span> <span class="fu">importDeployments</span><span class="op">(</span><span class="va">csv</span>, source <span class="op">=</span> <span class="st">"etn"</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">importDeployments()</span> ───────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reading and harmonising the receiver deployment log</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: rays_deployments.csv · 6 rows × 38 columns</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • source    etn preset</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • timezone  UTC</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 6 deployment records imported across 6 receivers</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Fields resolved: receiver, station, lat, lon, deploy, recover, depth</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">deployments</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    receiver station    lon    lat              deploy             recover depth</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 VR2W-1001    ST01 -9.020 38.454 2023-03-25 09:00:00 2023-07-05 15:00:00    NA</span>

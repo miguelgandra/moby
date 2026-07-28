@@ -73,7 +73,8 @@ alongshore).</p>
 <span>  <span class="va">land.shape</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  grid.resolution <span class="op">=</span> <span class="fl">100</span>,</span>
-<span>  mov.threshold <span class="op">=</span> <span class="fl">0.5</span></span>
+<span>  mov.threshold <span class="op">=</span> <span class="fl">0.5</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -119,6 +120,11 @@ it is taken from the <code>mobyData</code> metadata (see <code><a href="as_moby.
 <dd><p>Numeric (0-1). Proportion of movement perpendicular to
 shore required for inshore/offshore classification.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -134,8 +140,17 @@ shore required for inshore/offshore classification.</p></dd>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9.05</span>, <span class="fl">38.49</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">8.90</span>, <span class="fl">38.49</span><span class="op">)</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">8.90</span>, <span class="fl">38.43</span><span class="op">)</span>,</span></span>
 <span class="r-in"><span>  <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="op">-</span><span class="fl">9.05</span>, <span class="fl">38.49</span><span class="op">)</span><span class="op">)</span><span class="op">)</span><span class="op">)</span>, crs <span class="op">=</span> <span class="fl">4326</span><span class="op">)</span><span class="op">)</span></span></span>
 <span class="r-in"><span><span class="va">rays_land</span> <span class="op">&lt;-</span> <span class="fu">calculateLandDists</span><span class="op">(</span><span class="va">rays</span>, land.shape <span class="op">=</span> <span class="va">land</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Calculating distances to nearest land (raster method)...</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> Done! Total execution time: 2.29 secs </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateLandDists()</span> ──────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Measuring distance from each position to the nearest land</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 positions · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • grid  100 m resolution</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,643 distances computed</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Median distance to land: 984 m (0-2,415 m)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ⏱ runtime: 3.0s</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">rays_land</span><span class="op">$</span><span class="va">land_dist</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] 1298.88 1298.88 1298.88 1298.88 1298.88 2383.32</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>

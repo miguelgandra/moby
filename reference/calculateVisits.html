@@ -83,7 +83,8 @@ durations are consistent across them.</p>
 <span>  spatial.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  id.groups <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  max.gap <span class="op">=</span> <span class="fl">48</span>,</span>
-<span>  max.gap.unit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hours"</span>, <span class="st">"days"</span>, <span class="st">"mins"</span>, <span class="st">"secs"</span><span class="op">)</span></span>
+<span>  max.gap.unit <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"hours"</span>, <span class="st">"days"</span>, <span class="st">"mins"</span>, <span class="st">"secs"</span><span class="op">)</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -122,6 +123,11 @@ longer than this split the sequence into separate residence events. Defaults to 
 
 <dt id="arg-max-gap-unit">max.gap.unit<a class="anchor" aria-label="anchor" href="#arg-max-gap-unit"></a></dt>
 <dd><p>Units of <code>max.gap</code>: one of <code>"hours"</code> (default), <code>"days"</code>, <code>"mins"</code>, <code>"secs"</code>.</p></dd>
+
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
 
 </dl></div>
     <div class="section level2">
@@ -177,7 +183,13 @@ Movement Ecology, 11(1), 12.</p>
 <span class="r-in"><span><span class="co"># discrete visits to each receiver station (48 h gap threshold)</span></span></span>
 <span class="r-in"><span><span class="va">visits</span> <span class="op">&lt;-</span> <span class="fu">calculateVisits</span><span class="op">(</span><span class="va">rays</span>, spatial.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> - Defining residence events with max.gap = 48 hours (a longer absence starts a new visit); tune/justify per system.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateVisits()</span> ─────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Segmenting detections into residence events (visits)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals · 6 locations (station)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">visits</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                group  id site             arrival           departure</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 Dasyatis pastinaca D01 ST03 2023-04-08 15:05:10 2023-04-08 16:51:56</span>

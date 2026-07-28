@@ -193,6 +193,7 @@ is present — a time (x) by period (y) heat map. Shown here for the first
 species:
 
 ``` r
+
 plotScalogram(binned[binned$ID %in% id_groups[[1]], ],
               variable = "detections", id.col = "ID", timebin.col = "timebin", ncol = 2)
 #> Warning: - 'id.col' converted to factor.
@@ -206,17 +207,6 @@ plotScalogram(binned[binned$ID %in% id_groups[[1]], ],
 #>   • Wavelet         MORLET; power: log
 #>   • Pre-processing  gaps: zero; detrend: none
 #>   • Period range    3-48 h
-#> 
-  |                                                                            
-  |                                                                      |   0%
-  |                                                                            
-  |==================                                                    |  25%
-  |                                                                            
-  |===================================                                   |  50%
-  |                                                                            
-  |====================================================                  |  75%
-  |                                                                            
-  |======================================================================| 100%
 ```
 
 ![](03-exploratory_files/figure-html/unnamed-chunk-10-1.png)
@@ -241,6 +231,15 @@ monitoring_end <- as.POSIXct("2023-07-05", tz = "UTC")
 
 residency <- calculateResidency(rays, last.monitoring.date = monitoring_end)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateResidency() ──────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Computing residency indices per individual
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Method
+#>   • indices     IR1 · IR2 · IWR
+#>   • span start  release date
+#>   • cap         values capped at 1
 head(residency)
 #>    ID tagging_date     first_detection      last_detection monitoring_end
 #> 1 D01   2023-04-07 2023-04-08 15:05:10 2023-06-28 18:33:40     2023-07-05
@@ -275,6 +274,15 @@ per-individual table, grouped by species when `id.groups` is supplied.
 
 summaryTable(rays, last.monitoring.date = monitoring_end, id.groups = id_groups)
 #> Warning: - 'id.col' converted to factor.
+#> ── summaryTable() ────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Summarising monitoring and residency metrics per individual
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Method
+#>   • residency index  IR1 · IR2 · IR2/IR1
+#>   • start point      release date
+#>   • error            standard deviation (sd)
 #> Warning: - No 'detections' column found, assuming one detection per row.
 #>                    ID Tagging date Last detection N Detect N Receiv
 #> 1        Raja clavata                                              

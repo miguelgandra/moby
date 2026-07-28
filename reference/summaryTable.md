@@ -27,7 +27,8 @@ summaryTable(
   start.point = "release",
   last.monitoring.date = NULL,
   residency.by = NULL,
-  error.stat = "sd"
+  error.stat = "sd",
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -171,6 +172,11 @@ summaryTable(
   The statistic to use for variability/error calculation, either 'sd'
   (standard deviation) or 'se' (standard error). Defaults to 'sd'.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame summarizing information on tagged animals, with the
@@ -235,6 +241,15 @@ summaryTable(rays,
              last.monitoring.date = as.POSIXct("2023-12-31", tz = "UTC"),
              id.groups = mobyMeta(rays)$id.groups)
 #> Warning: - 'id.col' converted to factor.
+#> ── summaryTable() ────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Summarising monitoring and residency metrics per individual
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Method
+#>   • residency index  IR1 · IR2 · IR2/IR1
+#>   • start point      release date
+#>   • error            standard deviation (sd)
 #> Warning: - No 'detections' column found, assuming one detection per row.
 #>                    ID Tagging date Last detection N Detect N Receiv
 #> 1        Raja clavata                                              

@@ -161,7 +161,8 @@ checkDeployments(
 
 - verbose:
 
-  Logical; print a summary to the console. Defaults to TRUE.
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -226,7 +227,7 @@ never removes them.
 ``` r
 # quality-control a receiver-deployment log
 checkDeployments(rays_deployments)
-#> - 'detections' checks requested but no 'detections' supplied; skipping the detection-vs-metadata checks.
+#> ℹ 'detections' checks requested but no 'detections' supplied; skipping the detection-vs-metadata checks.
 #> ── checkDeployments() ────────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Auditing receiver deployment metadata

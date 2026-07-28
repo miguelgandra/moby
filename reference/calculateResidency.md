@@ -42,7 +42,8 @@ calculateResidency(
   residency.index = c("IR1", "IR2", "IWR"),
   start.point = "release",
   residency.by = NULL,
-  cap = TRUE
+  cap = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -104,6 +105,11 @@ calculateResidency(
   to TRUE. Set to FALSE to retain raw values (useful for diagnosing edge
   effects).
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame with one row per individual containing: the ID column,
@@ -136,6 +142,15 @@ data(rays)
 res <- calculateResidency(rays,
          last.monitoring.date = as.POSIXct("2023-12-31", tz = "UTC"))
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateResidency() ──────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Computing residency indices per individual
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Method
+#>   • indices     IR1 · IR2 · IWR
+#>   • span start  release date
+#>   • cap         values capped at 1
 head(res)
 #>    ID tagging_date     first_detection      last_detection monitoring_end
 #> 1 D01   2023-04-07 2023-04-08 15:05:10 2023-06-28 18:33:40     2023-12-31

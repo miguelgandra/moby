@@ -69,7 +69,8 @@ passed between each two consecutive positions.</p>
 <span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  dist.col <span class="op">=</span> <span class="st">"dist_m"</span>,</span>
-<span>  keep.intermediate <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  keep.intermediate <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -99,6 +100,11 @@ the output of <code><a href="calculateStepDistances.html">calculateStepDistances
 <dd><p>Boolean indicating if intermediate distances (assigned
 to time-bins without detections) should be kept or discarded. Defaults to false.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -112,12 +118,22 @@ to time-bins without detections) should be kept or discarded. Defaults to false.
 <span class="r-in"><span><span class="co"># build per-time-bin tracks with stepwise distances</span></span></span>
 <span class="r-in"><span><span class="va">coas</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateCOAs.html">calculateCOAs</a></span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateCOAs()</span> ───────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Estimating centres of activity per individual and time bin</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 794 positions estimated across 8 individuals</span>
 <span class="r-in"><span><span class="va">tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateStepDistances.html">calculateStepDistances</a></span><span class="op">(</span><span class="va">coas</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># dilute distances across time-bins with no detections</span></span></span>
 <span class="r-in"><span><span class="va">interp</span> <span class="op">&lt;-</span> <span class="fu">interpolateDistances</span><span class="op">(</span><span class="va">tracks</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Interpolating distances</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">interpolateDistances()</span> ────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Diluting step distances over the time-bins they span</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 794 time-bins · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 14,710 time-bins interpolated (15,504 rows returned)</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">interp</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>               timebin  ID    lon    lat detections stations station</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 2023-04-08 15:00:00 D01 -8.996 38.456          3        1    ST03</span>

@@ -88,6 +88,7 @@ great-circle distances are used. This is the numeric core behind the <code>LI</c
 <span>  dist.col <span class="op">=</span> <span class="st">"dist_m"</span>,</span>
 <span>  land.shape <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  epsg.code <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span>,</span>
 <span>  <span class="va">...</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -133,6 +134,11 @@ distances are used.</p></dd>
 supplied, the CRS is taken from <code>land.shape</code> (when available).</p></dd>
 
 
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
+
 <dt id="arg--">...<a class="anchor" aria-label="anchor" href="#arg--"></a></dt>
 <dd><p>Additional arguments passed to <code><a href="calculateStepDistances.html">calculateStepDistances</a></code> (e.g. <code>grid.resolution</code>,
 <code>mov.directions</code>, <code>cores</code>), used when computing net displacements.</p></dd>
@@ -157,10 +163,23 @@ path length, in metres) and <code>linearity_index</code> (their ratio, between 0
 <span class="r-in"><span><span class="co"># build per-time-bin tracks with stepwise distances</span></span></span>
 <span class="r-in"><span><span class="va">coas</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateCOAs.html">calculateCOAs</a></span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateCOAs()</span> ───────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Estimating centres of activity per individual and time bin</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 794 positions estimated across 8 individuals</span>
 <span class="r-in"><span><span class="va">tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateStepDistances.html">calculateStepDistances</a></span><span class="op">(</span><span class="va">coas</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># movement directness per individual (net displacement / total path length)</span></span></span>
 <span class="r-in"><span><span class="fu">calculateLinearityIndex</span><span class="op">(</span><span class="va">tracks</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateLinearityIndex()</span> ─────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Measuring movement directness per individual</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 794 positions · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • net displacement  straight-line (great-circle)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    ID net_distance_m total_distance_m linearity_index</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 D01       1467.639         60186.62      0.02438481</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 D02          0.000         46676.77      0.00000000</span>

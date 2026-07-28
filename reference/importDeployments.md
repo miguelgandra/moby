@@ -13,7 +13,8 @@ importDeployments(
   source = c("vue", "glatos", "otn", "etn", "generic"),
   tz = "UTC",
   col.map = NULL,
-  datetime.format = NULL
+  datetime.format = NULL,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -44,6 +45,11 @@ importDeployments(
 
   Optional explicit `strptime` format for the deploy/recover columns.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame with columns `receiver`, `station`, `lon`, `lat`, `deploy`
@@ -63,6 +69,17 @@ for the canonical field list;
 # read a raw ETN deployment export and harmonise it
 csv <- system.file("extdata", "rays_deployments.csv", package = "moby")
 deployments <- importDeployments(csv, source = "etn")
+#> ── importDeployments() ───────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reading and harmonising the receiver deployment log
+#> • Input: rays_deployments.csv · 6 rows × 38 columns
+#> 
+#> → Method
+#>   • source    etn preset
+#>   • timezone  UTC
+#> 
+#> ✔ 6 deployment records imported across 6 receivers
+#> ℹ Fields resolved: receiver, station, lat, lon, deploy, recover, depth
 head(deployments)
 #>    receiver station    lon    lat              deploy             recover depth
 #> 1 VR2W-1001    ST01 -9.020 38.454 2023-03-25 09:00:00 2023-07-05 15:00:00    NA

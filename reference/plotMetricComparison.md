@@ -222,6 +222,15 @@ devices.
 # Compare per-individual residency indices between the two species
 res <- calculateResidency(rays, last.monitoring.date = max(rays$datetime))
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateResidency() ──────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Computing residency indices per individual
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> → Method
+#>   • indices     IR1 · IR2 · IWR
+#>   • span start  release date
+#>   • cap         values capped at 1
 res$species <- rays_tags$species[match(res$ID, rays_tags$ID)]
 plotMetricComparison(res, metrics = c("IR1", "IR2"), split.by = "species",
                      paired = FALSE)

@@ -67,7 +67,8 @@ character or factor columns, unique values are concatenated and separated by "|"
 <span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  station.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  lon.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  lat.col <span class="op">=</span> <span class="cn">NULL</span></span>
+<span>  lat.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -100,6 +101,11 @@ character or factor columns, unique values are concatenated and separated by "|"
 <dt id="arg-lat-col">lat.col<a class="anchor" aria-label="anchor" href="#arg-lat-col"></a></dt>
 <dd><p>Name of the column containing latitude (or projected y) values. Defaults to <code>"lat"</code>.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -124,6 +130,12 @@ is not retained.)</p>
 <span class="r-in"><span><span class="co"># calculate Centers of Activity (one position per ID and time bin)</span></span></span>
 <span class="r-in"><span><span class="va">coas</span> <span class="op">&lt;-</span> <span class="fu">calculateCOAs</span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateCOAs()</span> ───────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Estimating centres of activity per individual and time bin</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 794 positions estimated across 8 individuals</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">coas</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    ID             timebin    lon    lat detections stations station</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 D02 2023-04-02 17:00:00 -9.008 38.464          3        1    ST02</span>

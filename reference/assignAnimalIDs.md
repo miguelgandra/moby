@@ -21,7 +21,8 @@ assignAnimalIDs(
   transmitter.col = "transmitter",
   keep.cols = NULL,
   set.tagging.dates = TRUE,
-  set.nominal.delay = TRUE
+  set.nominal.delay = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -69,6 +70,11 @@ assignAnimalIDs(
   reads these automatically to scale its short-interval (min_lag)
   false-detection filter, so arrays mixing tag families (e.g. 60 s and
   120 s tags) are handled per animal.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -119,9 +125,27 @@ gives the same result.
 tags <- importTags(rays_tags, source = "generic",
                    col.map = list(ID = "ID", transmitter = "transmitter",
                                   tagging_date = "tagging_date"))
+#> ── importTags() ──────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reading and harmonising tag and animal metadata
+#> • Input: data frame · 8 rows × 5 columns
+#> 
+#> → Method
+#>   • source    generic (user col.map)
+#>   • timezone  UTC
+#> 
+#> ✔ 8 tags imported
+#> ℹ Fields resolved: ID, transmitter, tagging_date
 # detections carrying the tagged rays' transmitters
 det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
 det <- assignAnimalIDs(det, tags)
+#> ── assignAnimalIDs() ─────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Joining tag metadata to replace placeholder IDs with real animal IDs
+#> • Input: 1,643 detections · 8 transmitters
+#> 
+#> ✔ 1,643 detections matched to 8 animals
+#> ℹ Metadata attached: tagging.dates (8 individuals)
 levels(det$ID)
 #> [1] "D01" "D02" "D03" "D04" "R01" "R02" "R03" "R04"
 ```

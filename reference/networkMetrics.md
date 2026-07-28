@@ -17,7 +17,12 @@ nodes identify brokers / movement corridors.
 ## Usage
 
 ``` r
-networkMetrics(network, weight = NULL, community = TRUE)
+networkMetrics(
+  network,
+  weight = NULL,
+  community = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
+)
 ```
 
 ## Arguments
@@ -38,6 +43,11 @@ networkMetrics(network, weight = NULL, community = TRUE)
 
   Logical; run weighted community detection (walktrap) and report
   modularity and community membership. Defaults to TRUE.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -69,9 +79,23 @@ An object of class `mobyNetworkMetrics`: a list with
 data(rays)
 trans <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
-#> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
+#> ── calculateTransitions() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a directed movement network between locations
+#> • Input: 1,643 detections · 8 individuals · 6 nodes (station)
+#> 
+#> → Method
+#>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)
 # node- and network-level graph metrics
 metrics <- networkMetrics(trans)
+#> ── networkMetrics() ──────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Computing node- and network-level graph metrics
+#> • Input: movement network · 6 nodes · 58 edges
+#> 
+#> → Method
+#>   • weight       n_movements (type default)
+#>   • communities  walktrap (weighted)
 metrics
 #> <mobyNetworkMetrics> movement network
 #>   network-level metrics:

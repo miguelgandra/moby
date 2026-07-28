@@ -95,8 +95,8 @@ calculateStepDistances(
 
 - verbose:
 
-  Logical. Should the function output process information and display a
-  progress bar? Defaults to TRUE.
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -161,7 +161,7 @@ rays_lc <- calculateStepDistances(rays[1:60, ], land.shape = land,
 #> ── calculateStepDistances() ──────────────────────────────────────────── moby ──
 #> 
 #> ℹ Measuring distance between consecutive positions
-#> • Input: 60 positions · 1 individuals
+#> • Input: 60 positions · 1 individual
 #> 
 #> → Method
 #>   • paths  least-cost around land

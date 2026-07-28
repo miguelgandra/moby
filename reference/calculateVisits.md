@@ -27,7 +27,8 @@ calculateVisits(
   spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.unit = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs"),
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -71,6 +72,11 @@ calculateVisits(
 
   Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`,
   `"secs"`.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -137,7 +143,13 @@ data(rays)
 # discrete visits to each receiver station (48 h gap threshold)
 visits <- calculateVisits(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
-#> - Defining residence events with max.gap = 48 hours (a longer absence starts a new visit); tune/justify per system.
+#> ── calculateVisits() ─────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Segmenting detections into residence events (visits)
+#> • Input: 1,643 detections · 8 individuals · 6 locations (station)
+#> 
+#> → Method
+#>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)
 head(visits)
 #>                group  id site             arrival           departure
 #> 1 Dasyatis pastinaca D01 ST03 2023-04-08 15:05:10 2023-04-08 16:51:56

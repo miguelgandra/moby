@@ -87,7 +87,13 @@ widths), distances are first reconciled to a common interval with
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateROM</span><span class="op">(</span><span class="va">data</span>, id.col <span class="op">=</span> <span class="cn">NULL</span>, timebin.col <span class="op">=</span> <span class="cn">NULL</span>, dist.col <span class="op">=</span> <span class="st">"dist_m"</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">calculateROM</span><span class="op">(</span></span>
+<span>  <span class="va">data</span>,</span>
+<span>  id.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  timebin.col <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  dist.col <span class="op">=</span> <span class="st">"dist_m"</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
+<span><span class="op">)</span></span></code></pre></div>
     </div>
 
     <div class="section level2">
@@ -111,6 +117,11 @@ distances, as returned by <code><a href="calculateStepDistances.html">calculateS
 <dd><p>Name of the column containing the (stepwise) distance values, in metres.
 Defaults to <code>"dist_m"</code>.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -133,12 +144,21 @@ The (modal) time-bin interval used to convert distances to rates, in minutes, is
 <span class="r-in"><span><span class="co"># build per-time-bin tracks with stepwise distances</span></span></span>
 <span class="r-in"><span><span class="va">coas</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateCOAs.html">calculateCOAs</a></span><span class="op">(</span><span class="va">rays</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateCOAs()</span> ───────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Estimating centres of activity per individual and time bin</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 794 positions estimated across 8 individuals</span>
 <span class="r-in"><span><span class="va">tracks</span> <span class="op">&lt;-</span> <span class="fu"><a href="calculateStepDistances.html">calculateStepDistances</a></span><span class="op">(</span><span class="va">coas</span>, verbose <span class="op">=</span> <span class="cn">FALSE</span><span class="op">)</span></span></span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># summarise total distance travelled and rate of movement per individual</span></span></span>
 <span class="r-in"><span><span class="fu">calculateROM</span><span class="op">(</span><span class="va">tracks</span><span class="op">)</span></span></span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> Interpolating distances</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">calculateROM()</span> ────────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Summarising distance travelled and rate of movement per individual</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 794 positions · 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Irregular time-bin widths detected · distances interpolated to a common interval</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    ID n_steps total_distance_m mean_rom   max_rom</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 D01    1947         60186.62 30.91249 2275.3137</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 D02    2077         46676.77 22.47317  273.3264</span>

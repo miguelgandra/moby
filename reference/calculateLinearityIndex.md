@@ -28,6 +28,7 @@ calculateLinearityIndex(
   dist.col = "dist_m",
   land.shape = NULL,
   epsg.code = NULL,
+  verbose = getOption("moby.verbose", TRUE),
   ...
 )
 ```
@@ -76,6 +77,11 @@ calculateLinearityIndex(
   Optional. Coordinate reference system used to project positions. If
   not supplied, the CRS is taken from `land.shape` (when available).
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 - ...:
 
   Additional arguments passed to
@@ -104,10 +110,23 @@ data(rays)
 # build per-time-bin tracks with stepwise distances
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateCOAs() ───────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating centres of activity per individual and time bin
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> ✔ 794 positions estimated across 8 individuals
 tracks <- calculateStepDistances(coas, verbose = FALSE)
 
 # movement directness per individual (net displacement / total path length)
 calculateLinearityIndex(tracks)
+#> ── calculateLinearityIndex() ─────────────────────────────────────────── moby ──
+#> 
+#> ℹ Measuring movement directness per individual
+#> • Input: 794 positions · 8 individuals
+#> 
+#> → Method
+#>   • net displacement  straight-line (great-circle)
 #>    ID net_distance_m total_distance_m linearity_index
 #> 1 D01       1467.639         60186.62      0.02438481
 #> 2 D02          0.000         46676.77      0.00000000

@@ -16,7 +16,8 @@ interpolateDistances(
   id.col = NULL,
   timebin.col = NULL,
   dist.col = "dist_m",
-  keep.intermediate = FALSE
+  keep.intermediate = FALSE,
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -48,6 +49,11 @@ interpolateDistances(
   Boolean indicating if intermediate distances (assigned to time-bins
   without detections) should be kept or discarded. Defaults to false.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 Original data frame plus missing time-bins (with diluted distances)
@@ -60,12 +66,22 @@ data(rays)
 # build per-time-bin tracks with stepwise distances
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateCOAs() ───────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating centres of activity per individual and time bin
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> ✔ 794 positions estimated across 8 individuals
 tracks <- calculateStepDistances(coas, verbose = FALSE)
 
 # dilute distances across time-bins with no detections
 interp <- interpolateDistances(tracks)
-#> Interpolating distances
-#>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
+#> ── interpolateDistances() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Diluting step distances over the time-bins they span
+#> • Input: 794 time-bins · 8 individuals
+#> 
+#> ✔ 14,710 time-bins interpolated (15,504 rows returned)
 head(interp)
 #>               timebin  ID    lon    lat detections stations station
 #> 1 2023-04-08 15:00:00 D01 -8.996 38.456          3        1    ST03

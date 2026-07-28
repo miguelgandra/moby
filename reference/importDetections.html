@@ -73,7 +73,8 @@ handle non-standard layouts.</p>
 <span>  tz <span class="op">=</span> <span class="st">"UTC"</span>,</span>
 <span>  col.map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.format <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  keep.extra <span class="op">=</span> <span class="cn">FALSE</span></span>
+<span>  keep.extra <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -111,6 +112,11 @@ detection fields, which are required, and worked examples.</p></dd>
 <dd><p>Logical; retain source columns that were not mapped to a canonical field.
 Defaults to <code>FALSE</code>.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -141,6 +147,17 @@ to <code><a href="as_moby.html">as_moby</a></code>; <code><a href="assignAnimalI
 <span class="r-in"><span>                                       station <span class="op">=</span> <span class="st">"station_name"</span>, lon <span class="op">=</span> <span class="st">"deploy_longitude"</span>,</span></span>
 <span class="r-in"><span>                                       lat <span class="op">=</span> <span class="st">"deploy_latitude"</span>, receiver <span class="op">=</span> <span class="st">"receiver_id"</span>,</span></span>
 <span class="r-in"><span>                                       transmitter <span class="op">=</span> <span class="st">"transmitter"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">importDetections()</span> ────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reading and harmonising acoustic detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: rays_detections.csv · 1,643 rows × 8 columns</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • source    generic (user col.map)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • timezone  UTC</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,643 detections imported from 8 transmitters</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Fields resolved: ID, datetime, station, lon, lat, receiver, transmitter</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">det</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    ID            datetime    transmitter  receiver station    lon    lat</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 D01 2023-04-08 15:05:10 A69-1602-30005 VR2W-1003    ST03 -8.996 38.456</span>

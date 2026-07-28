@@ -76,14 +76,14 @@ calculateAssociations(
   Number of CPU cores to use for the computations. Defaults to 1, which
   means no parallel computing (single core). If set to a value greater
   than 1, the function will use parallel computing to speed up
-  calculations.
+  calculations. Run
+  [`parallel::detectCores()`](https://rdrr.io/r/parallel/detectCores.html)
+  to check the number of available cores.
 
 - verbose:
 
-  Logical; print progress and a summary to the console. Defaults to
-  `getOption("moby.verbose", TRUE)`. Run
-  [`parallel::detectCores()`](https://rdrr.io/r/parallel/detectCores.html)
-  to check the number of available cores.
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -185,15 +185,29 @@ data(rays)
 # associations require the wide (time bin x individual) table as input
 wide <- createWideTable(rays, value.col = "station")
 #> Warning: - 'id.col' converted to factor.
+#> ── createWideTable() ─────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reshaping detections into a time-bin × individual matrix
+#> • Input: 1,643 records · 8 individuals
+#> 
+#> → Method
+#>   • values  station
 #> Warning: 3 (ID, time-bin) combination(s) had multiple differing values; the first was kept. Aggregate upstream (e.g. calculateCOAs) to control this.
 #> Tied (ID, time-bin) instances (first value kept):
 #>                  timebin  ID                ties
 #> 1898 2023-06-14 11:00:00 D03 ST01 (1) | ST06 (1)
 #> 2163 2023-04-24 05:00:00 D04 ST01 (4) | ST05 (4)
 #> 5302 2023-06-25 16:00:00 R04 ST03 (1) | ST05 (1)
+#> 
+#> ✔ 2,130 time bins × 8 individuals
 assoc <- calculateAssociations(wide)
-#> Calculating overlap - complete monitoring duration
-#> Total execution time: 0.11 secs
+#> ── calculateAssociations() ───────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a co-occurrence association network
+#> • Input: 8 individuals · 2,130 time bins
+#> 
+#> → Method
+#>   • metric  simple-ratio index (SRI)
 assoc
 #> <mobyNetwork> association network
 #>   nodes: 8  |  edges: 28

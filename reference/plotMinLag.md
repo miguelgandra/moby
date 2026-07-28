@@ -26,6 +26,7 @@ plotMinLag(
   breaks = 40,
   main = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -95,6 +96,11 @@ plotMinLag(
 - cex:
 
   Global expansion factor for labels. Defaults to 1.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 - file:
 

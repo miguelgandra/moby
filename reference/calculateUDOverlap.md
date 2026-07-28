@@ -28,7 +28,7 @@ calculateUDOverlap(
   index = "BA",
   contour = 95,
   conf.level = 0.95,
-  verbose = TRUE
+  verbose = getOption("moby.verbose", TRUE)
 )
 ```
 
@@ -66,7 +66,8 @@ calculateUDOverlap(
 
 - verbose:
 
-  Logical; print progress messages. Defaults to TRUE.
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 
@@ -160,7 +161,18 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 }
 #> Warning: - 'id.col' converted to factor.
 #> Warning: - Some of the ID(s) in id.groups don't match the IDs in the data.
-#> - Computed UDOI overlap for 3 pair(s) (kde).
+#> ── calculateUDOverlap() ──────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Measuring home-range overlap between individuals
+#> • Input: 3 utilization distributions
+#> 
+#> → Method
+#>   • estimator  kernel density (KDE)
+#>   • index      UDOI (UD overlap index)
+#>   • contour    95% isopleth
+#> 
+#> ✔ 3 pairs compared
+#> ℹ Median UDOI: 0.94 (0.87-0.94)
 #>   id1 id2      UDOI
 #> 1 D01 D02 0.9402257
 #> 2 D01 D03 0.8684309

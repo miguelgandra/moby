@@ -67,7 +67,8 @@ detection dataset.</p>
 <span>  tz <span class="op">=</span> <span class="st">"UTC"</span>,</span>
 <span>  col.map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.format <span class="op">=</span> <span class="cn">NULL</span>,</span>
-<span>  keep.extra <span class="op">=</span> <span class="cn">TRUE</span></span>
+<span>  keep.extra <span class="op">=</span> <span class="cn">TRUE</span>,</span>
+<span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
 
@@ -102,6 +103,11 @@ fields and examples.</p></dd>
 <dd><p>Logical; retain unmapped source columns. Defaults to <code>TRUE</code> so that
 additional biometric fields are preserved.</p></dd>
 
+
+<dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
+<dd><p>Logical; print a summary of the operation. Defaults to
+<code>getOption("moby.verbose", TRUE)</code>.</p></dd>
+
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
@@ -127,6 +133,17 @@ false-detection filter, so carrying it through here means that filter can be ena
 <span class="r-in"><span><span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu">importTags</span><span class="op">(</span><span class="va">rays_tags</span>, source <span class="op">=</span> <span class="st">"generic"</span>,</span></span>
 <span class="r-in"><span>                   col.map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="st">"ID"</span>, transmitter <span class="op">=</span> <span class="st">"transmitter"</span>,</span></span>
 <span class="r-in"><span>                                  tagging_date <span class="op">=</span> <span class="st">"tagging_date"</span>, species <span class="op">=</span> <span class="st">"species"</span><span class="op">)</span><span class="op">)</span></span></span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">importTags()</span> ──────────────────────────────────────────────────────── moby ──</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Reading and harmonising tag and animal metadata</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: data frame · 8 rows × 5 columns</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Method</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • source    generic (user col.map)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • timezone  UTC</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 tags imported</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Fields resolved: ID, transmitter, tagging_date, species</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">tags</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>    ID    transmitter tagging_date            species tagging_station</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 R01 A69-1602-30001   2023-04-03       Raja clavata            ST02</span>

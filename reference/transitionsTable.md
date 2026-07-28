@@ -23,7 +23,12 @@ from the network's `transition_records` attribute.
 ## Usage
 
 ``` r
-transitionsTable(network, id.metadata = NULL, error.stat = "se")
+transitionsTable(
+  network,
+  id.metadata = NULL,
+  error.stat = "se",
+  verbose = getOption("moby.verbose", TRUE)
+)
 ```
 
 ## Arguments
@@ -45,6 +50,11 @@ transitionsTable(network, id.metadata = NULL, error.stat = "se")
   Error statistic for numeric metadata summaries: `"se"` (standard
   error, default) or `"sd"` (standard deviation).
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame with one row per directed transition (and group-label rows
@@ -61,9 +71,22 @@ when the network was built with `id.groups`).
 data(rays)
 trans <- calculateTransitions(rays, spatial.col = "station")
 #> Warning: - 'id.col' converted to factor.
-#> - Segmenting residence events with max.gap = 48 hours; tune/justify per system (Inf = split on location change only).
+#> ── calculateTransitions() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Building a directed movement network between locations
+#> • Input: 1,643 detections · 8 individuals · 6 nodes (station)
+#> 
+#> → Method
+#>   • max.gap  48 hours (a longer absence starts a new visit; tune per system)
 # publication-ready summary of the directed transitions
 transitionsTable(trans)
+#> ── transitionsTable() ────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Summarising directed transitions between sites
+#> • Input: 6 sites · 58 transitions
+#> 
+#> → Method
+#>   • error  standard error (se)
 #>                  Type Movements Individuals Mean duration (h)
 #> 1        Raja clavata                                        
 #> 2       ST01 --> ST02         1     1 (25%)              58.4

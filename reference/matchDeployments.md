@@ -99,7 +99,8 @@ matchDeployments(
 
 - verbose:
 
-  Logical; print a short summary. Defaults to TRUE.
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
 
 ## Value
 

@@ -28,7 +28,13 @@ so that rates are comparable across individuals.
 ## Usage
 
 ``` r
-calculateROM(data, id.col = NULL, timebin.col = NULL, dist.col = "dist_m")
+calculateROM(
+  data,
+  id.col = NULL,
+  timebin.col = NULL,
+  dist.col = "dist_m",
+  verbose = getOption("moby.verbose", TRUE)
+)
 ```
 
 ## Arguments
@@ -54,6 +60,11 @@ calculateROM(data, id.col = NULL, timebin.col = NULL, dist.col = "dist_m")
   Name of the column containing the (stepwise) distance values, in
   metres. Defaults to `"dist_m"`.
 
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
 ## Value
 
 A data frame with one row per individual containing: the ID column,
@@ -78,12 +89,21 @@ data(rays)
 # build per-time-bin tracks with stepwise distances
 coas <- calculateCOAs(rays)
 #> Warning: - 'id.col' converted to factor.
+#> ── calculateCOAs() ───────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Estimating centres of activity per individual and time bin
+#> • Input: 1,643 detections · 8 individuals
+#> 
+#> ✔ 794 positions estimated across 8 individuals
 tracks <- calculateStepDistances(coas, verbose = FALSE)
 
 # summarise total distance travelled and rate of movement per individual
 calculateROM(tracks)
-#> Interpolating distances
-#>   |                                                                              |                                                                      |   0%  |                                                                              |=========                                                             |  12%  |                                                                              |==================                                                    |  25%  |                                                                              |==========================                                            |  38%  |                                                                              |===================================                                   |  50%  |                                                                              |============================================                          |  62%  |                                                                              |====================================================                  |  75%  |                                                                              |=============================================================         |  88%  |                                                                              |======================================================================| 100%
+#> ── calculateROM() ────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Summarising distance travelled and rate of movement per individual
+#> • Input: 794 positions · 8 individuals
+#> ℹ Irregular time-bin widths detected · distances interpolated to a common interval
 #>    ID n_steps total_distance_m mean_rom   max_rom
 #> 1 D01    1947         60186.62 30.91249 2275.3137
 #> 2 D02    2077         46676.77 22.47317  273.3264
