@@ -123,13 +123,17 @@
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
 #' @noRd
-.beginFileOutput <- function(file, width, height, res, w.rule, h.rule, crowd.unit = NULL){
+.beginFileOutput <- function(file, width, height, res, w.rule, h.rule, crowd.unit = NULL,
+                             verbose = getOption("moby.verbose", TRUE)){
   wd <- do.call(.autoDim, c(list(user = width),  w.rule))
   ht <- do.call(.autoDim, c(list(user = height), h.rule))
   if(!is.null(crowd.unit) && (wd$clamped || ht$clamped)){
     n <- if(ht$clamped) h.rule$n else w.rule$n
-    message(sprintf(paste0("moby: %d %s exceed the comfortable default figure size; the saved figure may be ",
-                           "crowded. Set 'width'/'height' explicitly for a larger canvas."), n, crowd.unit))
+    # gated: a dozen exported plot functions route through here, so an ungated note leaks out of all
+    # of them and ignores both verbose = FALSE and options(moby.verbose = FALSE)
+    .mobyNote(sprintf(paste0("%s %s exceed the comfortable default figure size; the saved figure may be ",
+                             "crowded. Set 'width'/'height' explicitly for a larger canvas."),
+                      .fmtN(n), crowd.unit), verbose = verbose)
   }
   .openDevice(file, wd$value, ht$value, res)
   invisible(NULL)

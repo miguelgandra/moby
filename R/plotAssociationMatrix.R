@@ -159,7 +159,7 @@ plotAssociationMatrix <- function(random.results,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 5, slope = 0.35, n = n_cols, lo = 4, hi = 36),
                      h.rule = list(base = 3, slope = 0.30, n = n_rows, lo = 4, hi = 36),
-                     crowd.unit = "individuals")
+                     crowd.unit = "individuals", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   matrix_metric <- attributes(random.results)$metric

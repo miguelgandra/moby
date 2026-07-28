@@ -218,7 +218,8 @@ test_that("on-land check auto-resolves land.shape from the detections mobyData, 
 
   # a land layer with no CRS -> skip with a message, never error, never a false row
   no_crs <- sf::st_set_crs(sq, NA)
-  expect_message(checkDeployments(dep, land.shape = no_crs, verbose = FALSE), "could not run the on-land check")
+  expect_message(checkDeployments(dep, land.shape = no_crs), "could not run the on-land check")
+  expect_no_message(checkDeployments(dep, land.shape = no_crs, verbose = FALSE))
   r2 <- suppressMessages(checkDeployments(dep, land.shape = no_crs, verbose = FALSE))$report
   expect_false("Coordinates on land" %in% r2$type)
 })
@@ -242,8 +243,11 @@ test_that("deployment.lon.col/lat.col let a non-canonical deployment log be chec
   # an explicitly named coordinate column that is absent is reported, not silently ignored
   expect_message(
     checkDeployments(raw, deployment.deploy.col = "Deploy_Date", deployment.lon.col = "lon_wgs84",
-                     deployment.lat.col = "Latitude", verbose = FALSE),
+                     deployment.lat.col = "Latitude"),
     "lon_wgs84.*not found")
+  expect_no_message(
+    checkDeployments(raw, deployment.deploy.col = "Deploy_Date", deployment.lon.col = "lon_wgs84",
+                     deployment.lat.col = "Latitude", verbose = FALSE))
 })
 
 test_that("scope = 'detected' restricts metadata checks to receivers present in the detections", {
@@ -275,7 +279,8 @@ test_that("scope = 'detected' without detections warns and audits everything", {
                     lon = c(-8, -8), lat = c(37, 37),
                     deploy  = as.POSIXct(c("2023-01-01", "2023-06-01"), tz = "UTC"),
                     recover = as.POSIXct(c("2023-02-01", "2023-07-01"), tz = "UTC"))
-  expect_message(checkDeployments(dep, scope = "detected", verbose = FALSE), "needs a 'detections'")
+  expect_message(checkDeployments(dep, scope = "detected"), "needs a 'detections'")
+  expect_no_message(checkDeployments(dep, scope = "detected", verbose = FALSE))
   a <- suppressMessages(checkDeployments(dep, scope = "detected", verbose = FALSE))
   b <- checkDeployments(dep, verbose = FALSE)
   expect_equal(a$report, b$report)                  # falls back to a full audit
@@ -306,7 +311,8 @@ test_that("checkDeployments handles a clean log and a missing 'detections' reque
   expect_s3_class(qc, "mobyQC")
   expect_equal(nrow(qc$report), 0)
   expect_no_error(print(qc))                                     # print handles the empty case
-  expect_message(checkDeployments(clean, checks = "detections", verbose = FALSE), "no 'detections' supplied")
+  expect_message(checkDeployments(clean, checks = "detections"), "no 'detections' supplied")
+  expect_no_message(checkDeployments(clean, checks = "detections", verbose = FALSE))
   expect_error(checkDeployments(clean, checks = "bogus", verbose = FALSE), "should be one of")
 })
 

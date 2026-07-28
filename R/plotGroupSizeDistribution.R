@@ -160,7 +160,7 @@ plotGroupSizeDistribution <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule=list(base=3, slope=2.6, n=ncol, lo=4.5, hi=28),
                      h.rule=list(base=1.6, slope=2.6, n=rows, lo=3.5, hi=28),
-                     crowd.unit="panels")
+                     crowd.unit="panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add=TRUE, after=FALSE)
   }
 

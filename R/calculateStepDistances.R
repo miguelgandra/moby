@@ -36,8 +36,8 @@
 #' the function will use parallel computing to speed up calculations. This parameter
 #' is only relevant for estimating least-cost paths, specifically when a \code{land.shape} is provided.
 #' Run \code{parallel::detectCores()} to check the number of available cores.
-#' @param verbose Logical. Should the function output process information and display a progress bar?
-#' Defaults to TRUE.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @note Least-cost in-water paths are computed on a **terra**-rasterised cost surface routed with
 #' **igraph** (Dijkstra); great-circle distances use **geosphere**. The graph is built once and reused
@@ -120,7 +120,7 @@ calculateStepDistances <- function(data,
                            cores = 1,
                            land.shape.name = NULL,
                            cost.graph = NULL,
-                           verbose = TRUE){
+                           verbose = getOption("moby.verbose", TRUE)){
 
   ##############################################################################
   ## Initial checks ############################################################

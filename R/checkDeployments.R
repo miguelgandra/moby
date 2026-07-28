@@ -161,7 +161,8 @@
 #' value are flagged as `"Short monitoring duration"`. Off by default (`NULL`); there is no universal
 #' threshold (it is study-specific). The flag is **report-only**: it never removes anything. See the
 #' Details for why deletion is a deliberate, bias-prone choice best left to the analyst.
-#' @param verbose Logical; print a summary to the console. Defaults to TRUE.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return An object of class `mobyQC`: a list with
 #' \item{report}{A tidy data frame of flagged issues (`type`, `receiver`, `station`, `first`,
@@ -232,9 +233,9 @@ checkDeployments <- function(deployments,
   # an explicitly named coordinate column that is absent is almost always a typo, not "no coordinates"
   if (!has_coords && (!identical(deployment.lon.col, "lon") || !identical(deployment.lat.col, "lat")) &&
       any(c(deployment.lon.col, deployment.lat.col) %in% colnames(dep)))
-    message("- coordinate column(s) '",
+    .mobyNote("coordinate column(s) '",
             paste(setdiff(c(deployment.lon.col, deployment.lat.col), colnames(dep)), collapse = "', '"),
-            "' not found in 'deployments'; skipping the coordinate checks.")
+            "' not found in 'deployments'; skipping the coordinate checks.", verbose = verbose)
   if (has_coords) { dep$lon <- dep[[deployment.lon.col]]; dep$lat <- dep[[deployment.lat.col]] }
 
   # resolve which check groups to run (default "all"); "detections" needs a detection dataset
@@ -244,7 +245,8 @@ checkDeployments <- function(deployments,
   do_gaps <- "gaps" %in% checks; do_coords <- "coordinates" %in% checks
   do_det <- "detections" %in% checks
   if (do_det && is.null(detections))
-    message("- 'detections' checks requested but no 'detections' supplied; skipping the detection-vs-metadata checks.")
+    .mobyNote("'detections' checks requested but no 'detections' supplied; skipping the ",
+              "detection-vs-metadata checks.", verbose = verbose)
 
   dep$receiver <- as.character(dep$receiver)
   dep$station <- as.character(dep$station)
@@ -287,8 +289,8 @@ checkDeployments <- function(deployments,
     if (!is.null(det_rec)) detected_receivers <- unique(as.character(det_rec))
   }
   if (scope == "detected" && is.null(detected_receivers))
-    message("- scope = \"detected\" needs a 'detections' dataset with a 'receiver' column; ",
-            "auditing all deployments instead.")
+    .mobyNote("scope = \"detected\" needs a 'detections' dataset with a 'receiver' column; ",
+            "auditing all deployments instead.", verbose = verbose)
   dep_scope <- if (scope == "detected" && !is.null(detected_receivers))
     dep[dep$receiver %in% detected_receivers, , drop = FALSE] else dep
 
@@ -399,8 +401,8 @@ checkDeployments <- function(deployments,
       pos <- pos[!duplicated(pos[c("station", "lon", "lat")]), , drop = FALSE]
       din <- if (nrow(pos) > 0) .distanceIntoLand(pos$lon, pos$lat, land.shape, epsg.code) else numeric(0)
       if (is.null(din)) {
-        message("- could not run the on-land check: 'land.shape' lacks a usable CRS or is ",
-                "incompatible with the coordinates; skipping it.")
+        .mobyNote("could not run the on-land check: 'land.shape' lacks a usable CRS or is ", 
+                "incompatible with the coordinates; skipping it.", verbose = verbose)
       } else {
         for (i in which(din > land.tolerance)) {
           likely_error <- din[i] > 5000
@@ -581,7 +583,8 @@ checkDeployments <- function(deployments,
 #' names from the matched deployment. Default TRUE.
 #' @param drop.unmatched Logical; drop detections that fall outside every deployment window.
 #' Defaults to FALSE (they are retained and flagged).
-#' @param verbose Logical; print a short summary. Defaults to TRUE.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A \code{\link{mobyData}} object (the detections) with back-filled `lon`/`lat`/station
 #' where missing, plus two logical flag columns: `deployment_matched` (detection fell within a

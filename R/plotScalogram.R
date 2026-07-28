@@ -247,7 +247,7 @@ plotScalogram <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 5.5, slope = 4, n = max(0, ncol - 1), lo = 5.5, hi = 30),
                      h.rule = list(base = 1.5, slope = 2.6, n = ceiling(n_ind / ncol), lo = 4, hi = 30),
-                     crowd.unit = "individuals")
+                     crowd.unit = "individuals", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   original_par <- .savePar(); on.exit(.restorePar(original_par), add = TRUE)

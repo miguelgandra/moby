@@ -244,7 +244,7 @@ plotActograms <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule=list(base=5, slope=3.25, n=max(0, ncol-1), lo=5, hi=30),
                      h.rule=list(base=2, slope=2.75, n=ceiling(length(plot_ids)/ncol), lo=4, hi=30),
-                     crowd.unit="individuals")
+                     crowd.unit="individuals", verbose = verbose)
     on.exit(grDevices::dev.off(), add=TRUE, after=FALSE)
   }
   if(show_legend && is.null(legend.cols)) legend.cols <- min(3, max(1, ngroups))

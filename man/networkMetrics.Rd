@@ -4,7 +4,12 @@
 \alias{networkMetrics}
 \title{Compute node- and network-level metrics for a moby network}
 \usage{
-networkMetrics(network, weight = NULL, community = TRUE)
+networkMetrics(
+  network,
+  weight = NULL,
+  community = TRUE,
+  verbose = getOption("moby.verbose", TRUE)
+)
 }
 \arguments{
 \item{network}{A \code{\link{mobyNetwork}} object (type \code{"association"} or \code{"movement"}).}
@@ -14,6 +19,9 @@ networkMetrics(network, weight = NULL, community = TRUE)
 
 \item{community}{Logical; run weighted community detection (walktrap) and report modularity
 and community membership. Defaults to TRUE.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 An object of class \code{mobyNetworkMetrics}: a list with

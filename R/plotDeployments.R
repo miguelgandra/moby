@@ -202,7 +202,7 @@ plotDeployments <- function(deployments,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 9, slope = 0, n = 0, lo = 7, hi = 20),
                      h.rule = list(base = 1.6, slope = 0.28, n = n, lo = 3, hi = 40),
-                     crowd.unit = "rows")
+                     crowd.unit = "rows", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   original_par <- .savePar(); on.exit(.restorePar(original_par), add = TRUE)

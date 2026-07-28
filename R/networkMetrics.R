@@ -74,6 +74,8 @@
 #' (association networks) or `"n_movements"` (movement networks).
 #' @param community Logical; run weighted community detection (walktrap) and report modularity
 #' and community membership. Defaults to TRUE.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return An object of class `mobyNetworkMetrics`: a list with
 #' \item{nodes}{A data frame of per-node metrics (one row per node and group/subset). For
@@ -96,7 +98,8 @@
 #'
 #' @export
 
-networkMetrics <- function(network, weight = NULL, community = TRUE) {
+networkMetrics <- function(network, weight = NULL, community = TRUE,
+                           verbose = getOption("moby.verbose", TRUE)) {
 
   if (!inherits(network, "mobyNetwork")) {
     stop("'network' must be a 'mobyNetwork' object (see calculateAssociations() / calculateTransitions()).", call. = FALSE)
@@ -105,13 +108,35 @@ networkMetrics <- function(network, weight = NULL, community = TRUE) {
     stop("Computing network metrics requires the 'igraph' package. Install it with install.packages('igraph').", call. = FALSE)
   }
   type <- attr(network, "network.type")
+  if (!isTRUE(type %in% c("movement", "association"))) {
+    stop(paste0("Unknown network type: '", type, "'."), call. = FALSE)
+  }
   edges <- networkEdges(network)
+
+  # the weight column feeds every metric, and when 'weight' is NULL it is picked from the network
+  # type - resolve and validate it up front, so a call that cannot run prints no banner first
+  wcol <- if (!is.null(weight)) weight else if (type == "movement") "n_movements" else "association"
+  if (!wcol %in% colnames(edges)) stop(paste0("Weight column '", wcol, "' not found in the network edges."), call. = FALSE)
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Header only, no outcome line: the returned mobyNetworkMetrics prints its own summary of what
+  # came out. Criteria are the two choices that change every number reported - the edge column read
+  # as connection strength (flagged when it came from the type-dependent default, which the user
+  # cannot otherwise see) and whether community detection was run.
+  n_nodes <- if (type == "movement") length(unique(as.character(networkNodes(network)$site)))
+             else length(attr(network, "ids"))
+  crit <- c(weight = paste0(wcol, if (is.null(weight)) " (type default)" else ""),
+            communities = if (isTRUE(community)) "walktrap (weighted)" else "not run")
+
+  .mobyHeader("networkMetrics()", "Computing node- and network-level graph metrics",
+              input = paste0(type, " network ", .mobyGlyph("mid"), " ",
+                             .fmtCount(n_nodes, "node"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nrow(edges), "edge")),
+              criteria = crit, verbose = verbose)
 
   node_rows <- list(); net_rows <- list()
 
   if (type == "movement") {
-    wcol <- if (is.null(weight)) "n_movements" else weight
-    if (!wcol %in% colnames(edges)) stop(paste0("Weight column '", wcol, "' not found in the network edges."), call. = FALSE)
     nodes_attr <- networkNodes(network)
     for (g in unique(edges$group)) {
       e_g <- edges[edges$group == g & !is.na(edges[[wcol]]) & edges[[wcol]] > 0,
@@ -125,8 +150,6 @@ networkMetrics <- function(network, weight = NULL, community = TRUE) {
     }
 
   } else if (type == "association") {
-    wcol <- if (is.null(weight)) "association" else weight
-    if (!wcol %in% colnames(edges)) stop(paste0("Weight column '", wcol, "' not found in the network edges."), call. = FALSE)
     ids <- as.character(attr(network, "ids"))
     has_subset <- "subset" %in% colnames(edges)
     groups <- if (has_subset) unique(edges$subset) else "all"
@@ -140,8 +163,6 @@ networkMetrics <- function(network, weight = NULL, community = TRUE) {
       net_rows[[g]] <- cbind(group = g, m$network, stringsAsFactors = FALSE)
     }
 
-  } else {
-    stop(paste0("Unknown network type: '", type, "'."), call. = FALSE)
   }
 
   result <- list(nodes = do.call(rbind, node_rows), network = do.call(.rbindFill, net_rows))

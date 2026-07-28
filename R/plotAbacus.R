@@ -226,7 +226,7 @@ plotAbacus <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base=9,   slope=0,    n=0,          lo=6, hi=12),
                      h.rule = list(base=1.5, slope=0.22, n=total_rows, lo=3, hi=22),
-                     crowd.unit="individuals")
+                     crowd.unit="individuals", verbose = verbose)
     on.exit(grDevices::dev.off(), add=TRUE, after=FALSE)
   }
 

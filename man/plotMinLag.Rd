@@ -17,6 +17,7 @@ plotMinLag(
   breaks = 40,
   main = NULL,
   cex = 1,
+  verbose = getOption("moby.verbose", TRUE),
   file = NULL,
   width = NULL,
   height = NULL,
@@ -54,6 +55,9 @@ before computing \code{min_lag}, matching the stage-0 behaviour of \code{\link[=
 \item{main}{Optional plot title.}
 
 \item{cex}{Global expansion factor for labels. Defaults to 1.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 
 \item{file}{Optional output file. If \code{NULL} (the default), the figure is drawn on the current
 graphics device - the usual interactive behaviour. If a file path is supplied, moby opens a

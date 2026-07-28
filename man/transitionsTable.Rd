@@ -4,7 +4,12 @@
 \alias{transitionsTable}
 \title{Summarise a movement network as a transitions table}
 \usage{
-transitionsTable(network, id.metadata = NULL, error.stat = "se")
+transitionsTable(
+  network,
+  id.metadata = NULL,
+  error.stat = "se",
+  verbose = getOption("moby.verbose", TRUE)
+)
 }
 \arguments{
 \item{network}{A \code{mobyNetwork} object of type \code{"movement"}, from \code{\link{calculateTransitions}}.}
@@ -15,6 +20,9 @@ categorical columns as counts, per transition type.}
 
 \item{error.stat}{Error statistic for numeric metadata summaries: \code{"se"} (standard error,
 default) or \code{"sd"} (standard deviation).}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with one row per directed transition (and group-label rows when the

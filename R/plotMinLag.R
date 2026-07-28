@@ -43,6 +43,8 @@
 #' @param breaks Number of histogram bins on the log10 axis. Defaults to 40.
 #' @param cex Global expansion factor for labels. Defaults to 1.
 #' @param main Optional plot title.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #' @template deviceArgs
 #'
 #' @return Invisibly, a data frame with one row per `factors` value: the multiplier (`factor`), the
@@ -70,6 +72,7 @@ plotMinLag <- function(data,
                        breaks = 40,
                        main = NULL,
                        cex = 1,
+                       verbose = getOption("moby.verbose", TRUE),
                        file = NULL,
                        width = NULL,
                        height = NULL,
@@ -123,7 +126,8 @@ plotMinLag <- function(data,
   if (!any(keep))
     .mobyAbort("No detections have a known nominal delay; cannot build the diagnostic.")
   if (!all(keep))
-    message("moby: ", sum(!keep), " detection(s) from tag(s) with no nominal delay were excluded.")
+    .mobyNote(.fmtCount(sum(!keep), "detection"), " from tags with no nominal delay excluded",
+              verbose = verbose)
   data <- data[keep, , drop = FALSE]; nd_row <- nd_row[keep]
 
   # nearest same-receiver gap per detection, computed within each individual (shared helper)

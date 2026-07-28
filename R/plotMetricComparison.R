@@ -176,7 +176,7 @@ plotMetricComparison <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 2.2, slope = 2.8, n = ncol, lo = 4.5, hi = 28),
                      h.rule = list(base = 1.8, slope = 2.8, n = rows, lo = 3.5, hi = 28),
-                     crowd.unit = "panels")
+                     crowd.unit = "panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   original_par <- .savePar(); on.exit(.restorePar(original_par), add = TRUE)

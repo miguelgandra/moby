@@ -140,7 +140,7 @@ plotPeriodogram <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 4.5, slope = 3.2, n = max(0, ncol - 1), lo = 4.5, hi = 30),
                      h.rule = list(base = 2, slope = 2.4, n = ceiling(n_ind / ncol), lo = 4.5, hi = 30),
-                     crowd.unit = "individuals")
+                     crowd.unit = "individuals", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   original_par <- .savePar(); on.exit(.restorePar(original_par), add = TRUE)

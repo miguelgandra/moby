@@ -11,7 +11,8 @@ calculateTransitions(
   spatial.col = NULL,
   id.groups = NULL,
   max.gap = 48,
-  max.gap.unit = c("hours", "days", "mins", "secs")
+  max.gap.unit = c("hours", "days", "mins", "secs"),
+  verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
@@ -33,6 +34,9 @@ to \code{\link{calculateVisits}}); a longer absence ends a stay, so a later retu
 visit. Defaults to 48 (hours). Use \code{Inf} to segment on location changes only.}
 
 \item{max.gap.unit}{Units of \code{max.gap}: one of \code{"hours"} (default), \code{"days"}, \code{"mins"}, \code{"secs"}.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A \code{\link{mobyNetwork}} object of type \code{"movement"}. Its rows are the directed

@@ -147,7 +147,7 @@ plotStationStats <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule=list(base=3,   slope=3.2, n=n_series, lo=5, hi=30),
                      h.rule=list(base=1.2, slope=2.7, n=n_types,  lo=4, hi=30),
-                     crowd.unit="panels")
+                     crowd.unit="panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add=TRUE, after=FALSE)
   }
 

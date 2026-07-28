@@ -60,7 +60,8 @@ names from the matched deployment. Default TRUE.}
 \item{drop.unmatched}{Logical; drop detections that fall outside every deployment window.
 Defaults to FALSE (they are retained and flagged).}
 
-\item{verbose}{Logical; print a short summary. Defaults to TRUE.}
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A \code{\link{mobyData}} object (the detections) with back-filled \code{lon}/\code{lat}/station

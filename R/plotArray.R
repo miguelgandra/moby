@@ -384,7 +384,7 @@ plotArray <- function(deployments,
   if (!is.null(file)) {
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 7, slope = 0, n = 1, lo = 5, hi = 12),
-                     h.rule = list(base = 6.5, slope = 0, n = 1, lo = 4.5, hi = 12))
+                     h.rule = list(base = 6.5, slope = 0, n = 1, lo = 4.5, hi = 12), verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   graphics::par(mar = if (!is.null(background.layer)) c(3, 3, 2.5, 6) else c(3, 3, 2.5, 1))

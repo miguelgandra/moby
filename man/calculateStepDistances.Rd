@@ -50,8 +50,8 @@ the function will use parallel computing to speed up calculations. This paramete
 is only relevant for estimating least-cost paths, specifically when a \code{land.shape} is provided.
 Run \code{parallel::detectCores()} to check the number of available cores.}
 
-\item{verbose}{Logical. Should the function output process information and display a progress bar?
-Defaults to TRUE.}
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 The input data (a \code{\link{mobyData}} when one was supplied, otherwise a data frame)

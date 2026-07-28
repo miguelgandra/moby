@@ -28,6 +28,8 @@
 #' to \code{\link{calculateVisits}}); a longer absence ends a stay, so a later return counts as a new
 #' visit. Defaults to 48 (hours). Use `Inf` to segment on location changes only.
 #' @param max.gap.unit Units of `max.gap`: one of `"hours"` (default), `"days"`, `"mins"`, `"secs"`.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A \code{\link{mobyNetwork}} object of type `"movement"`. Its rows are the directed
 #' edges with columns: `group`, `from`, `to`, `n_movements` (number of transitions),
@@ -58,7 +60,8 @@ calculateTransitions <- function(data,
                                  spatial.col = NULL,
                                  id.groups = NULL,
                                  max.gap = 48,
-                                 max.gap.unit = c("hours", "days", "mins", "secs")) {
+                                 max.gap.unit = c("hours", "days", "mins", "secs"),
+                                 verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
   ## Initial checks ############################################################
@@ -78,9 +81,26 @@ calculateTransitions <- function(data,
   # longer than this ends a stay, so a later return is a new visit rather than one continuous stay.
   max.gap.unit <- match.arg(max.gap.unit)
   max.gap.secs  <- .gapToSecs(max.gap, max.gap.unit)
-  if (is.finite(max.gap.secs))
-    message("- Segmenting residence events with max.gap = ", max.gap, " ", max.gap.unit,
-            "; tune/justify per system (Inf = split on location change only).")
+
+  # ---- header ---------------------------------------------------------------------------------
+  # max.gap is the only methodological choice of the call - it defines what counts as one
+  # uninterrupted stay, and hence which consecutive visits become an edge - so it is the criteria
+  # block. The wording is deliberately identical to calculateVisits(), which segments with the very
+  # same engine (.residenceRuns()): the two must never describe the same rule differently. An
+  # infinite gap is stated in words rather than as a meaningless "Inf hours". The network itself
+  # (nodes, edges, groups) is reported by the mobyNetwork print method, so there is no outcome line.
+  crit <- c("max.gap" = if (is.finite(max.gap.secs))
+                          paste0(.fmtCount(max.gap, sub("s$", "", max.gap.unit)),
+                                 " (a longer absence starts a new visit; tune per system)")
+                        else "unlimited (visits end only on a change of location)")
+
+  input_txt <- paste0(.fmtCount(.nDetections(data), "detection"), " ", .mobyGlyph("mid"), " ",
+                      .fmtCount(nlevels(data[, id.col]), "individual"), " ", .mobyGlyph("mid"), " ",
+                      .fmtCount(length(unique(as.character(data[, spatial.col]))), "node"),
+                      " (", spatial.col, ")")
+
+  .mobyHeader("calculateTransitions()", "Building a directed movement network between locations",
+              input = input_txt, criteria = crit, verbose = verbose)
 
   # resolve (optional) node coordinates from the mobyData metadata / canonical defaults
   lon.col <- if (!is.null(meta) && !is.null(meta$lon.col)) meta$lon.col else "lon"

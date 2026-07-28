@@ -98,26 +98,6 @@
 }
 
 
-#' Report elapsed run time (verbose-gated, to stderr)
-#'
-#' @description Prints a single "Total execution time: X units" line via \code{.mobyInform()},
-#' replacing the block of hand-duplicated timing \code{cat()} lines scattered across the compute
-#' functions.
-#' @param start.time A \code{POSIXct} start stamp (typically \code{Sys.time()} captured on entry).
-#' @param verbose Logical; print the line. Defaults to \code{getOption("moby.verbose", TRUE)}.
-#' @param prefix Optional leading label (default "Total execution time:").
-#' @note This function is intended for internal use within the 'moby' package.
-#' @keywords internal
-#' @noRd
-.reportRuntime <- function(start.time, verbose = getOption("moby.verbose", TRUE),
-                           prefix = "Total execution time:") {
-  if (!isTRUE(verbose)) return(invisible(NULL))
-  elapsed <- difftime(Sys.time(), start.time)
-  .mobyInform(sprintf("%s %.2f %s", prefix, as.numeric(elapsed), attr(elapsed, "units")), verbose = TRUE)
-  invisible(NULL)
-}
-
-
 #######################################################################################################
 ## Structured console framework (cli backend) #########################################################
 ## The vocabulary shared by every user-facing moby function, so output looks the same wherever the
@@ -303,7 +283,17 @@
 #' Format an integer with thousands separators, for message text
 #' @keywords internal
 #' @noRd
-.fmtN <- function(n) formatC(n, format = "d", big.mark = ",")
+.fmtN <- function(n) {
+  # Counts are integers, but this also formats user-supplied thresholds (a max.gap of 0.5 hours, say),
+  # and format = "d" TRUNCATES those - reporting "0 hours" for a 30-minute rule. Keep the integer
+  # path (thousands separators, no decimals) and fall back to a faithful rendering otherwise.
+  # a non-finite value has no integer representation at all (format = "d" yields NA with a coercion
+  # warning), so render it as itself
+  if (is.numeric(n) && length(n) == 1L && !is.finite(n)) return(as.character(n))
+  if (is.numeric(n) && length(n) == 1L && n != round(n))
+    return(format(n, big.mark = ",", trim = TRUE, scientific = FALSE))
+  formatC(n, format = "d", big.mark = ",")
+}
 
 #' Detection count for a header's input line.
 #'

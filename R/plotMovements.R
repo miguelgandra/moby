@@ -181,7 +181,7 @@ plotMovements <- function(network,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 4.5, slope = 3.2, n = ncol, lo = 4.5, hi = 30),
                      h.rule = list(base = 3, slope = 2.8, n = ceiling(n_groups / ncol), lo = 4.5, hi = 30),
-                     crowd.unit = "panels")
+                     crowd.unit = "panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
 
@@ -239,7 +239,8 @@ plotMovements <- function(network,
   bad <- !stats::complete.cases(site_coords[, c("lon", "lat")]) | !is.finite(site_coords$lon) | !is.finite(site_coords$lat)
   n_dropped <- sum(bad)
   if (n_dropped > 0) {
-    message(sprintf("- %d site(s) with missing coordinates were dropped from the map.", n_dropped))
+    .mobyNote(.fmtCount(n_dropped, "site"), " with missing coordinates dropped from the map",
+              verbose = verbose)
     site_coords <- site_coords[!bad, , drop = FALSE]
   }
   if (nrow(site_coords) == 0) stop("No sites with valid coordinates to plot.", call. = FALSE)
@@ -261,7 +262,7 @@ plotMovements <- function(network,
 
   # coastline fallback: on a projected map with no user land.shape, fetch a default coastline
   if (projected && is.null(land.shape) && !isFALSE(coastline))
-    land.shape <- .defaultCoastline(bbox, epsg.code, coastline)
+    land.shape <- .defaultCoastline(bbox, epsg.code, coastline, verbose = verbose)
 
   # crop map layers to the (expanded) bounding box; raster uses the axis-correct extent
   if (projected && !is.null(land.shape)) land.shape <- sf::st_crop(sf::st_geometry(land.shape), bbox)

@@ -37,11 +37,11 @@ not required (less computing time). Defaults to "all".}
 
 \item{cores}{Number of CPU cores to use for the computations. Defaults to 1, which
 means no parallel computing (single core).  If set to a value greater than 1,
-the function will use parallel computing to speed up calculations.}
-
-\item{verbose}{Logical; print progress and a summary to the console. Defaults to
-\code{getOption("moby.verbose", TRUE)}.
+the function will use parallel computing to speed up calculations.
 Run \code{parallel::detectCores()} to check the number of available cores.}
+
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A \code{\link{mobyNetwork}} object of type \code{"association"}: a data frame of network

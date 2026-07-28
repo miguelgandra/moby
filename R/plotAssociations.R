@@ -442,7 +442,7 @@ plotAssociations <- function(overlaps = NULL,
     .beginFileOutput(file, width, height, res,
                      w.rule=list(base=2, slope=3.2, n=ncol(layout_matrix), lo=5, hi=30),
                      h.rule=list(base=1, slope=2.8, n=nrow(layout_matrix), lo=4, hi=30),
-                     crowd.unit="panels")
+                     crowd.unit="panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add=TRUE, after=FALSE)
   }
 

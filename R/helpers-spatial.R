@@ -480,7 +480,8 @@
 #' (`"small"`/`"medium"`/`"large"`). Regional windows entirely over water return `NULL`.
 #' @keywords internal
 #' @noRd
-.defaultCoastline <- function(bbox, epsg.code, coastline = TRUE, verbose = TRUE) {
+.defaultCoastline <- function(bbox, epsg.code, coastline = TRUE,
+                              verbose = getOption("moby.verbose", TRUE)) {
   # geographic (EPSG:4326) window matching the projected study area, to crop a global coastline to it
   win <- tryCatch({
     poly <- sf::st_as_sfc(sf::st_bbox(c(xmin = bbox[["xmin"]], ymin = bbox[["ymin"]],

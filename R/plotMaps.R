@@ -243,7 +243,7 @@ plotMaps <- function(data,
   bbox <- .expandBbox(bbox, extent.factor)
   # coastline fallback: if the user supplied no land.shape, fetch a default coastline for the extent
   if (is.null(land.shape) && !isFALSE(coastline))
-    land.shape <- .defaultCoastline(bbox, epsg.code, coastline)
+    land.shape <- .defaultCoastline(bbox, epsg.code, coastline, verbose = verbose)
   if (!is.null(land.shape)) land.shape <- suppressWarnings(sf::st_crop(sf::st_geometry(land.shape), bbox))
   if (!is.null(background.layer)) background.layer <- terra::crop(background.layer, .bboxToExtent(bbox))
   if (is.null(scale.km)) scale.km <- pretty((bbox["xmax"] - bbox["xmin"]) * 0.2 / 1000)[2]
@@ -263,7 +263,7 @@ plotMaps <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule = list(base = 2, slope = 3.2, n = ncol, lo = 4, hi = 30),
                      h.rule = list(base = 1, slope = 2.8, n = ceiling(sum(lengths(id.groups)) / ncol), lo = 4, hi = 30),
-                     crowd.unit = "panels")
+                     crowd.unit = "panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add = TRUE, after = FALSE)
   }
   layout_params <- .setLayout(ncol, id.groups, plots.height = 6, dividers.height = 0.6,

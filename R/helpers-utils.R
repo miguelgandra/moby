@@ -24,21 +24,6 @@ NULL
 #' @keywords internal
 #' @noRd
 
-.printConsole <- function(string, verbose = getOption("moby.verbose", TRUE)){
-  if (!isTRUE(verbose)) return(invisible(NULL))
-  wrapped_text <- paste(strwrap(string, width=getOption("width")*1.2), collapse="\n")
-  # Routed through message() (stderr) so section headers are suppressible and never contaminate
-  # captured stdout. ANSI bold is emitted only on interactive colour-capable terminals, so log
-  # files and non-ANSI front-ends stay clean.
-  if (interactive() && isTRUE(getOption("crayon.enabled", interactive()))) {
-    message("\033[0;1m", wrapped_text, "\033[0m")
-  } else {
-    message(wrapped_text)
-  }
-  invisible(NULL)
-}
-
-
 ##################################################################################################
 ## Timezone helper   #############################################################################
 

@@ -22,6 +22,8 @@
 #' categorical columns as counts, per transition type.
 #' @param error.stat Error statistic for numeric metadata summaries: `"se"` (standard error,
 #' default) or `"sd"` (standard deviation).
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with one row per directed transition (and group-label rows when the
 #' network was built with `id.groups`).
@@ -36,7 +38,8 @@
 #'
 #' @export
 
-transitionsTable <- function(network, id.metadata = NULL, error.stat = "se") {
+transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
+                             verbose = getOption("moby.verbose", TRUE)) {
 
   if (!inherits(network, "mobyNetwork") || !identical(attr(network, "network.type"), "movement")) {
     stop("'network' must be a movement 'mobyNetwork' object (see calculateTransitions()).", call. = FALSE)
@@ -56,6 +59,23 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se") {
   } else NULL
 
   group_levels <- if (is.null(id.groups)) "all" else names(id.groups)
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Placed after the argument checks, so a call that is going to error never prints a banner first.
+  # This function prints a header and nothing else: the returned table IS the summary, so a closing
+  # line would only restate what the user is about to read. The one criterion is the statistic behind
+  # every "+/-" the table reports (worded exactly as in summaryTable(), so the two never disagree);
+  # the duration unit is derived from the data and already spelled out in the column name.
+  # Count the sites the network actually HAS. attr(, "ordered.sites") is the factor levels of the
+  # spatial column, which includes never-visited stations, so using it here reported more sites than
+  # calculateTransitions() and networkMetrics() do for the same object.
+  n_sites <- length(unique(as.character(networkNodes(network)$site)))
+  .mobyHeader("transitionsTable()", "Summarising directed transitions between sites",
+              input = paste0(.fmtCount(n_sites, "site"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nrow(edges), "transition")),
+              criteria = c("error" = if (error.stat == "se") "standard error (se)"
+                                     else "standard deviation (sd)"),
+              verbose = verbose)
 
   # overall duration unit (days if mean transit time is long)
   all_dur <- edges$mean_duration_h

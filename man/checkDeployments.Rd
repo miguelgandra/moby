@@ -102,7 +102,8 @@ value are flagged as \code{"Short monitoring duration"}. Off by default (\code{N
 threshold (it is study-specific). The flag is \strong{report-only}: it never removes anything. See the
 Details for why deletion is a deliberate, bias-prone choice best left to the analyst.}
 
-\item{verbose}{Logical; print a summary to the console. Defaults to TRUE.}
+\item{verbose}{Logical; print a summary of the operation. Defaults to
+\code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 An object of class \code{mobyQC}: a list with

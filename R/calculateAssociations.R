@@ -39,9 +39,9 @@
 #' @param cores Number of CPU cores to use for the computations. Defaults to 1, which
 #' means no parallel computing (single core).  If set to a value greater than 1,
 #' the function will use parallel computing to speed up calculations.
-#' @param verbose Logical; print progress and a summary to the console. Defaults to
-#' \code{getOption("moby.verbose", TRUE)}.
 #' Run \code{parallel::detectCores()} to check the number of available cores.
+#' @param verbose Logical; print a summary of the operation. Defaults to
+#' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @details The two metrics for calculating association indices are:
 #
@@ -199,14 +199,51 @@ calculateAssociations <- function(data,
   # generate all pairwise combinations
   pairwise_combinations <- combn(seq_len(n_ids), 2)
 
+  # ---- header ---------------------------------------------------------------------------------
+  # Criteria = the choices that decide what an "association" means here: the co-occurrence index,
+  # which group comparisons are actually run, and the variable that splits the monitoring period.
+  # The core count rides along so a parallel run announces itself once, up front, rather than
+  # interrupting the progress bars mid-loop.
+  crit <- c(metric = switch(metric,
+                            "simple-ratio" = "simple-ratio index (SRI)",
+                            "half-weight"  = "half-weight index (HWI)"))
+  # group.comparisons only bites when id.groups define the groups to compare
+  if (!is.null(id.groups)) {
+    crit["comparisons"] <- switch(group.comparisons,
+                                  "all"     = "all (within and between groups)",
+                                  "within"  = "within groups only",
+                                  "between" = "between groups only")
+  }
+  if (!is.null(subset)) {
+    crit["subset"] <- paste0(paste(subset, collapse = " + "), " (",
+                             .fmtCount(length(data_list), "level"), ")")
+  }
+  if (cores > 1) crit["cores"] <- paste0(cores, " (parallel)")
+
+  .mobyHeader("calculateAssociations()", "Building a co-occurrence association network",
+              input = paste0(.fmtCount(n_ids, "individual"), " ", .mobyGlyph("mid"), " ",
+                             .fmtCount(nrow(data), "time bin")),
+              criteria = crit, verbose = verbose)
+
   # initiate results list
   results <- list()
 
+  # Cluster set up ONCE, outside the subset loop: it is identical on every iteration, and building it
+  # per subset both cost ~0.24 s each time (making the parallel path slower than serial for a
+  # multi-level subset) and leaked workers, because on.exit() without add=TRUE replaced the previous
+  # handler so only the last cluster was ever stopped. The orphaned sockets later surfaced as
+  # "closing unused connection" warnings attributed to whatever ran next.
+  if (cores > 1) {
+    cl <- parallel::makeCluster(cores)
+    on.exit(parallel::stopCluster(cl), add = TRUE)
+    doSNOW::registerDoSNOW(cl)
+    # registerDoSNOW sets a GLOBAL foreach backend; without this the user's own %dopar% would be left
+    # pointing at a cluster this function has already stopped
+    on.exit(foreach::registerDoSEQ(), add = TRUE)
+  }
+
   # iterate over each data subset
   for (i in seq_along(data_list)) {
-
-    # print message to console
-    .printConsole(paste0("Calculating overlap - ", names(data_list)[i]), verbose = verbose)
 
     # retrieve current data subset
     data <- data_list[[i]]
@@ -217,8 +254,12 @@ calculateAssociations <- function(data,
                  id.groups=id.groups, group.comparisons=group.comparisons,
                  timebin.col=timebin.col, data=data, metric=metric)
 
-    # set progress bar (NULL when quiet / non-interactive; downstream calls are NULL-safe)
-    pb <- .progressBar(ncol(pairwise_combinations), verbose)
+    # set progress bar (NULL when quiet / non-interactive; downstream calls are NULL-safe).
+    # The subset level travels on the bar's label, so each subset keeps its context without
+    # spending a printed line on it.
+    pb_name <- if (is.null(subset)) "Computing dyads"
+               else paste0("Computing dyads - ", names(data_list)[i])
+    pb <- .progressBar(ncol(pairwise_combinations), verbose, name = pb_name)
 
     ###################################################################
     # calculate pairwise results using the default method (single core)
@@ -232,13 +273,7 @@ calculateAssociations <- function(data,
       # else use parallel computing to speed up calculations
     } else {
 
-      # print to console
-      .mobyInform("Starting parallel computation: ", cores, " cores", verbose = verbose)
-
-      # initialize cluster and ensure it's properly stopped when the function exits
-      cl <- parallel::makeCluster(cores)
-      on.exit(parallel::stopCluster(cl))
-      doSNOW::registerDoSNOW(cl)
+      # (cluster built once, above the loop)
 
       # set progress bar (only when a bar is active)
       opts <- if (!is.null(pb)) list(progress = function(n) .progressSet(pb, n)) else list()
@@ -273,11 +308,6 @@ calculateAssociations <- function(data,
   # remove skipped pairwise combinations
   results <- results[!is.na(results$id1),]
 
-  # remove dyads containing individuals without detections
-  if (length(missing_individuals) > 0){
-    .mobyInform(length(missing_individuals), " individual(s) with no detections", verbose = verbose)
-  }
-
   # create a new group comparison 'type' column in results
   if(!is.null(id.groups)){
     group_names <- names(id.groups)
@@ -301,8 +331,17 @@ calculateAssociations <- function(data,
                           subset = subset, group.comparisons = group.comparisons,
                           processing.date = Sys.time())
 
-  # print run time
-  .reportRuntime(start.time, verbose)
+  # ---- outcome --------------------------------------------------------------------------------
+  # No completion line: this returns a mobyNetwork, whose print method already reports the node and
+  # edge counts, and its sibling calculateTransitions() returns the same class and prints none. Only
+  # what that print CANNOT show is reported here.
+  # dyads involving an individual that was never detected carry no association
+  if (length(missing_individuals) > 0) {
+    .mobyBlank(verbose)
+    .mobyNote(.fmtCount(length(missing_individuals), "individual"), " with no detections",
+              verbose = verbose)
+  }
+  .mobyRuntime(start.time, verbose, min.secs = 1)
 
   # return results
   return(results)

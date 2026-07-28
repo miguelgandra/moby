@@ -293,7 +293,7 @@ plotChronogram <- function(data,
     .beginFileOutput(file, width, height, res,
                      w.rule=list(base=2.3, slope=3.2, n=ncol, lo=5, hi=30),
                      h.rule=list(base=1.5, slope=3,   n=rows, lo=3.5, hi=30),
-                     crowd.unit="panels")
+                     crowd.unit="panels", verbose = verbose)
     on.exit(grDevices::dev.off(), add=TRUE, after=FALSE)
   }
 

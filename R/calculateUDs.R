@@ -233,7 +233,8 @@ calculateUDs <- function(data,
     stop(stop_message, call.=FALSE)
   }
   if(method=="akde" && !is.null(bandwidth)){
-    message("Note: 'bandwidth' is ignored when method='akde' (AKDE estimates smoothing from the fitted movement model).")
+    .mobyNote("'bandwidth' is ignored when method='akde' (AKDE estimates smoothing from the ",
+              "fitted movement model).", verbose = verbose)
   }
 
   # dispatch to the autocorrelated KDE pipeline (default)
