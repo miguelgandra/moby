@@ -269,9 +269,12 @@ checkDeployments <- function(deployments,
                              .fmtCount(length(unique(dep$receiver)), "receiver"), " ", .mobyGlyph("mid"), " ",
                              .fmtCount(length(unique(dep$station)), "station")),
               criteria = crit, criteria.label = "Checks", verbose = verbose)
-  if (!is.null(detections))
+  # separated from the Checks block: this is a second input being brought in, not a further check
+  if (!is.null(detections)) {
+    .mobyBlank(verbose)
     .mobyNote("Cross-checking: ", .fmtCount(nrow(as.data.frame(detections)), "detection"),
               verbose = verbose)
+  }
 
   report <- list()
   add <- function(r) report[[length(report) + 1]] <<- r

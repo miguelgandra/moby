@@ -192,10 +192,9 @@
 # ---- console helpers shared by the three importers ------------------------------------------------
 # One-line description of what was read and at what scale: the file's basename (never the full path,
 # which would wrap the header) or "data frame", plus the incoming rows x columns.
-.importScale <- function(x, data) {
-  src <- if (is.data.frame(x)) "data frame" else basename(as.character(x)[1])
-  paste0(src, " ", .mobyGlyph("mid"), " ", .fmtCount(nrow(data), "row"), " ",
-         .mobyGlyph("times"), " ", .fmtCount(ncol(data), "column"))
+.importSource <- function(x) {
+  # basename() so a long path cannot wrap the header line
+  if (is.data.frame(x)) "data frame" else basename(as.character(x)[1])
 }
 
 # The methodological choices of an import: which mapping was applied, and how timestamps were read.
@@ -404,8 +403,9 @@ importDetections <- function(x,
                              verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
-  data <- .readSource(x)
 
+  # mapping assembled first: it needs no data, so an unusable 'col.map' or 'source' still errors
+  # before anything is printed
   mapping <- if (source == "generic") list() else .detectionPresets()[[source]]
   if (!is.null(col.map)) {
     if (!is.list(col.map) || is.null(names(col.map))) stop("'col.map' must be a named list.", call. = FALSE)
@@ -413,19 +413,21 @@ importDetections <- function(x,
   }
   if (length(mapping) == 0) stop("No column mapping available. For source='generic', supply 'col.map'.", call. = FALSE)
 
+  # ---- header ---------------------------------------------------------------------------------
+  # Printed BEFORE the file is read and parsed: on a large export those steps dominate the runtime,
+  # and the user should see what is running rather than a silent console. The trade-off is that a
+  # preset which turns out not to match the file now errors beneath the banner rather than in front
+  # of it - the cheap argument checks above still error cleanly.
+  .mobyHeader("importDetections()", "Reading and harmonising acoustic detections",
+              input = .importSource(x), criteria = .importCriteria(source, col.map, tz, datetime.format),
+              verbose = verbose)
+
+  data <- .readSource(x)
+
   out <- .harmonise(data, mapping, datetime_fields = "datetime", tz = tz,
                     datetime.format = datetime.format, keep.extra = keep.extra)
 
   if (!"datetime" %in% names(out)) stop("Could not locate a datetime column. Check 'source' or provide 'col.map'.", call. = FALSE)
-
-  # ---- header ---------------------------------------------------------------------------------
-  # Placed after the required-field check so a preset that does not match the file errors cleanly,
-  # without a banner in front of it. Criteria are the choices that change what the imported table
-  # MEANS: which mapping was applied (preset and/or user col.map) and how the timestamps were
-  # interpreted (tz, explicit format).
-  .mobyHeader("importDetections()", "Reading and harmonising acoustic detections",
-              input = .importScale(x, data), criteria = .importCriteria(source, col.map, tz, datetime.format),
-              verbose = verbose)
 
   # which canonical fields the mapping actually resolved, recorded by .harmonise() itself (see there:
   # names(out) cannot answer this under keep.extra)
@@ -511,8 +513,9 @@ importDeployments <- function(x,
                               verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
-  data <- .readSource(x)
 
+  # mapping assembled first: it needs no data, so an unusable 'col.map' or 'source' still errors
+  # before anything is printed
   mapping <- if (source == "generic") list() else .deploymentPresets()[[source]]
   if (!is.null(col.map)) {
     if (!is.list(col.map) || is.null(names(col.map))) stop("'col.map' must be a named list.", call. = FALSE)
@@ -520,18 +523,23 @@ importDeployments <- function(x,
   }
   if (length(mapping) == 0) stop("No column mapping available. For source='generic', supply 'col.map'.", call. = FALSE)
 
+  # ---- header ---------------------------------------------------------------------------------
+  # Printed BEFORE the file is read and parsed: on a large export those steps dominate the runtime,
+  # and the user should see what is running rather than a silent console. The trade-off is that a
+  # preset which turns out not to match the file now errors beneath the banner rather than in front
+  # of it - the cheap argument checks above still error cleanly.
+  .mobyHeader("importDeployments()", "Reading and harmonising the receiver deployment log",
+              input = .importSource(x), criteria = .importCriteria(source, col.map, tz, datetime.format),
+              verbose = verbose)
+
+  data <- .readSource(x)
+
   out <- .harmonise(data, mapping, datetime_fields = c("deploy", "recover"), tz = tz,
                     datetime.format = datetime.format, keep.extra = FALSE)
 
   for (req in c("receiver", "station", "deploy")) {
     if (!req %in% names(out)) stop(paste0("Could not locate a '", req, "' column. Check 'source' or provide 'col.map'."), call. = FALSE)
   }
-
-  # ---- header ---------------------------------------------------------------------------------
-  # After the required-field checks, so a preset that does not match the file errors without a banner
-  .mobyHeader("importDeployments()", "Reading and harmonising the receiver deployment log",
-              input = .importScale(x, data), criteria = .importCriteria(source, col.map, tz, datetime.format),
-              verbose = verbose)
 
   # resolution record, kept by .harmonise() itself (names(out) cannot answer it under keep.extra)
   resolved <- attr(out, "mapped_fields")
@@ -648,14 +656,26 @@ importTags <- function(x,
                        verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
-  data <- .readSource(x)
 
+  # mapping assembled first: it needs no data, so an unusable 'col.map' or 'source' still errors
+  # before anything is printed
   mapping <- if (source == "generic") list() else .tagPresets()[[source]]
   if (!is.null(col.map)) {
     if (!is.list(col.map) || is.null(names(col.map))) stop("'col.map' must be a named list.", call. = FALSE)
     for (nm in names(col.map)) mapping[[nm]] <- col.map[[nm]]
   }
   if (length(mapping) == 0) stop("No column mapping available. For source='generic', supply 'col.map'.", call. = FALSE)
+
+  # ---- header ---------------------------------------------------------------------------------
+  # Printed BEFORE the file is read and parsed: on a large export those steps dominate the runtime,
+  # and the user should see what is running rather than a silent console. The trade-off is that a
+  # preset which turns out not to match the file now errors beneath the banner rather than in front
+  # of it - the cheap argument checks above still error cleanly.
+  .mobyHeader("importTags()", "Reading and harmonising tag and animal metadata",
+              input = .importSource(x), criteria = .importCriteria(source, col.map, tz, datetime.format),
+              verbose = verbose)
+
+  data <- .readSource(x)
 
   out <- .harmonise(data, mapping, datetime_fields = "tagging_date", tz = tz,
                     datetime.format = datetime.format, keep.extra = keep.extra)
@@ -674,11 +694,6 @@ importTags <- function(x,
     stop("Could not locate a 'transmitter' column (the key used to join tags to detections). Provide 'col.map'.", call. = FALSE)
   }
 
-  # ---- header ---------------------------------------------------------------------------------
-  # After the required-field check, so a preset that does not match the file errors without a banner
-  .mobyHeader("importTags()", "Reading and harmonising tag and animal metadata",
-              input = .importScale(x, data), criteria = .importCriteria(source, col.map, tz, datetime.format),
-              verbose = verbose)
   out$transmitter <- as.character(out$transmitter)
   if ("length" %in% names(out)) out$length <- suppressWarnings(as.numeric(out$length))
   for (dc in intersect(c("nominal_delay", "min_delay", "max_delay"), names(out)))

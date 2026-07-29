@@ -76,6 +76,11 @@
 .progressBar <- function(max, verbose = getOption("moby.verbose", TRUE), min = 0,
                          name = "Processing", .envir = parent.frame()) {
   if (!isTRUE(verbose) || !interactive() || !is.finite(max) || max <= min) return(NULL)
+  # Separated from whatever preceded it: a bar drawn flush against the header's criteria bullets reads
+  # as part of that block rather than as the next step of the run. Emitted here rather than at the
+  # call sites so every bar in the package is spaced the same way, and only when a bar is actually
+  # created (a quiet or non-interactive run returns above, and leaves no stray blank line).
+  .mobyBlank(verbose)
   # cli bar: tied to the caller's frame (auto-cleaned on early exit) and auto-suppressed for loops
   # that finish faster than getOption("cli.progress_show_after") (~2 s), so quick runs stay clean.
   cli::cli_progress_bar(name, total = as.integer(max - min), .envir = .envir)
