@@ -113,7 +113,7 @@ det <- importDetections(csv, source = "generic",
 #> ── importDetections() ────────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Reading and harmonising acoustic detections
-#> • Input: rays_detections.csv · 1,643 rows × 8 columns
+#> • Input: rays_detections.csv
 #> 
 #> → Method
 #>   • source    generic (user col.map)

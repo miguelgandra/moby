@@ -72,7 +72,7 @@ deployments <- importDeployments(csv, source = "etn")
 #> ── importDeployments() ───────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Reading and harmonising the receiver deployment log
-#> • Input: rays_deployments.csv · 6 rows × 38 columns
+#> • Input: rays_deployments.csv
 #> 
 #> → Method
 #>   • source    etn preset

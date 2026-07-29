@@ -90,7 +90,7 @@ tags <- importTags(rays_tags, source = "generic",
 #> ── importTags() ──────────────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Reading and harmonising tag and animal metadata
-#> • Input: data frame · 8 rows × 5 columns
+#> • Input: data frame
 #> 
 #> → Method
 #>   • source    generic (user col.map)

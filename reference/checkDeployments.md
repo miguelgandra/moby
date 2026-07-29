@@ -256,6 +256,7 @@ checkDeployments(rays_deployments, detections = rays)
 #>   • scope            all deployments
 #>   • coord tolerance  500 m
 #>   • gap tolerance    1 d
+#> 
 #> ℹ Cross-checking: 1,643 detections
 #> 
 #> <mobyQC> deployment metadata quality-control report
@@ -274,6 +275,7 @@ checkDeployments(rays_deployments, detections = rays, scope = "detected")
 #>   • scope            receivers with detections
 #>   • coord tolerance  500 m
 #>   • gap tolerance    1 d
+#> 
 #> ℹ Cross-checking: 1,643 detections
 #> 
 #> <mobyQC> deployment metadata quality-control report
@@ -293,6 +295,7 @@ checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
 #>   • coord tolerance  500 m
 #>   • gap tolerance    1 d
 #>   • min active days  180
+#> 
 #> ℹ Cross-checking: 1,643 detections
 #> 
 #> <mobyQC> deployment metadata quality-control report
