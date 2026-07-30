@@ -111,30 +111,135 @@
   NA_character_
 }
 
-# robust POSIXct parsing (handles common acoustic-telemetry datetime layouts).
-# Tries a sequence of explicit formats and keeps the one parsing the most values,
-# avoiding lubridate's multi-order regex (which can fail on some PCRE2 builds).
-.parseDatetime <- function(x, tz, format = NULL) {
+#' Candidate datetime layouts, tried when `datetime.format` is not supplied.
+#'
+#' Ordered only for readability; selection is by specificity and agreement, not by position (see
+#' .parseDatetime), so adding a layout here cannot change how an already-unambiguous column is read.
+#' @keywords internal
+#' @noRd
+.datetimeFormats <- c(
+  # date + time to the second
+  "%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%SZ", "%Y-%m-%dT%H:%M:%S", "%Y/%m/%d %H:%M:%S",
+  "%d/%m/%Y %H:%M:%S", "%m/%d/%Y %H:%M:%S", "%d-%m-%Y %H:%M:%S", "%m-%d-%Y %H:%M:%S",
+  "%d-%b-%Y %H:%M:%S", "%d %b %Y %H:%M:%S", "%b %d, %Y %H:%M:%S",
+  # date + time to the minute
+  "%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M", "%d/%m/%Y %H:%M", "%m/%d/%Y %H:%M",
+  "%d-%m-%Y %H:%M", "%m-%d-%Y %H:%M", "%d-%b-%Y %H:%M",
+  # date only
+  "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d-%b-%Y", "%d %b %Y")
+
+# number of conversion specifications in a format: its information content, used to prefer
+# "%Y-%m-%d %H:%M:%S" over "%Y-%m-%d". strptime ignores trailing text, so the shorter format also
+# "parses" a full timestamp - it just silently discards the time.
+.formatSpecificity <- function(fmt) lengths(regmatches(fmt, gregexpr("%", fmt, fixed = TRUE)))
+
+#' Parse a column of date-times.
+#'
+#' \strong{Timezone contract.} The two input types are treated differently, on purpose:
+#' \itemize{
+#'   \item \strong{character} - the text carries no zone, so `tz` is applied AS the zone during
+#'     parsing: "2023-06-01 08:00:00" with `tz = "Europe/Lisbon"` is 08:00 Lisbon time.
+#'   \item \strong{POSIXct} - the value is already an absolute instant chosen by the caller, so it is
+#'     never reinterpreted. `tz` changes only how it is DISPLAYED; the instant is preserved.
+#' }
+#' Reinterpreting a POSIXct (treating its wall clock as if it were in `tz`) would silently move every
+#' timestamp, so it is never done.
+#'
+#' \strong{Format selection.} With `format` supplied it is used exactly, and an error is raised if it
+#' parses nothing. Otherwise the layout is INFERRED, but only when the answer is unambiguous:
+#' \enumerate{
+#'   \item every candidate is tried against the WHOLE column; only those parsing every non-missing
+#'     value are kept;
+#'   \item of those, only the most specific are kept, so a date-only layout cannot beat a
+#'     date-and-time one just because strptime ignores the trailing text it did not consume;
+#'   \item if the survivors disagree - the classic day-first / month-first pair, where "07/06/2013" is
+#'     equally 7 June and 6 July - the column is genuinely ambiguous and an error asks for
+#'     `datetime.format`, rather than picking one and being silently wrong;
+#'   \item if nothing parses, that is an error too: an all-NA datetime column would otherwise travel
+#'     downstream and empty the analysis without a word.
+#' }
+#' Month names are matched with `LC_TIME` pinned to "C", so "06-Jun-2013" reads the same under a
+#' French or Portuguese locale as under an English one.
+#' @keywords internal
+#' @noRd
+.parseDatetime <- function(x, tz, format = NULL, field = "datetime") {
+
+  # already an instant: change the display zone, never the value
   if (inherits(x, "POSIXct")) {
     attr(x, "tzone") <- tz
     return(x)
   }
+
   x <- as.character(x)
-  if (!is.null(format)) return(as.POSIXct(x, format = format, tz = tz))
-  formats <- c("%Y-%m-%d %H:%M:%S", "%Y-%m-%dT%H:%M:%S", "%Y-%m-%d %H:%M",
-               "%Y/%m/%d %H:%M:%S", "%m/%d/%Y %H:%M:%S", "%d/%m/%Y %H:%M:%S", "%Y-%m-%d")
-  non_na <- !is.na(x) & nzchar(x)
-  n_target <- sum(non_na)
-  best <- as.POSIXct(rep(NA_real_, length(x)), tz = tz)
-  best_ok <- -1L
-  for (fmt in formats) {
-    parsed <- suppressWarnings(as.POSIXct(x, format = fmt, tz = tz))
-    n_ok <- sum(!is.na(parsed) & non_na)
-    if (n_ok > best_ok) { best_ok <- n_ok; best <- parsed }
-    if (best_ok == n_target) break
+  non_na <- !is.na(x) & nzchar(trimws(x))
+  # a column that is entirely blank is a legitimately empty optional field (an open deployment has no
+  # recovery date), not a parse failure
+  if (!any(non_na)) return(as.POSIXct(rep(NA_real_, length(x)), tz = tz))
+
+  # month abbreviations are locale-dependent in strptime; "C" makes the candidate list mean the same
+  # thing on every machine
+  old_lc <- Sys.getlocale("LC_TIME")
+  on.exit(try(Sys.setlocale("LC_TIME", old_lc), silent = TRUE), add = TRUE)
+  try(Sys.setlocale("LC_TIME", "C"), silent = TRUE)
+
+  if (!is.null(format)) {
+    out <- suppressWarnings(as.POSIXct(x, format = format, tz = tz))
+    if (all(is.na(out[non_na])))
+      stop("'", field, "' could not be parsed with datetime.format = \"", format,
+           "\" (e.g. \"", x[non_na][1], "\"). Check the format string.", call. = FALSE)
+    return(out)
   }
-  best
+
+  # Try every candidate, then decide what "parses the column" means. A value no candidate can read is
+  # junk, not evidence against a format - station logs routinely use placeholders like "/  /" for a
+  # receiver that was never recovered - so those rows are excluded from the requirement and simply
+  # become NA. A candidate must read every value that ANY candidate could read.
+  all_parsed <- lapply(.datetimeFormats, function(fmt) suppressWarnings(as.POSIXct(x, format = fmt, tz = tz)))
+  names(all_parsed) <- .datetimeFormats
+  parseable <- non_na & Reduce(`|`, lapply(all_parsed, function(p) !is.na(p)))
+  if (!any(parseable))
+    stop("'", field, "' could not be parsed as a date-time (e.g. \"", x[non_na][1],
+         "\"). Supply datetime.format, e.g. datetime.format = \"%d/%m/%Y %H:%M\".", call. = FALSE)
+  parsed <- all_parsed[vapply(all_parsed, function(p) !any(is.na(p[parseable])), logical(1))]
+  non_na <- parseable   # the rows the checks below reason about
+
+  # Discard layouts that "parse" only by misreading the string. strptime ignores trailing text, so
+  # "%Y/%m/%d" accepts "25/06/2013" as year 25 - a full match on paper, nonsense in fact. Acoustic
+  # telemetry post-dates 1970, so an implausible year is proof the layout is wrong. If the filter
+  # would leave nothing, it is not applied and the errors below still report honestly.
+  if (length(parsed) > 1) {
+    yr_ok <- vapply(parsed, function(p) {
+      y <- as.integer(format(p[non_na], "%Y"))
+      all(!is.na(y) & y >= 1970 & y <= as.integer(format(Sys.Date(), "%Y")) + 1L)
+    }, logical(1))
+    if (any(yr_ok)) parsed <- parsed[yr_ok]
+  }
+
+  # keep the most informative layouts, then require them to agree
+  spec <- .formatSpecificity(names(parsed))
+  parsed <- parsed[spec == max(spec)]
+  ref <- parsed[[1]]
+  agree <- vapply(parsed, function(p) isTRUE(all.equal(as.numeric(p), as.numeric(ref))), logical(1))
+  if (!all(agree)) {
+    fmts <- names(parsed)
+    stop("'", field, "' is ambiguous: ", paste(sprintf("\"%s\"", fmts), collapse = " and "),
+         if (length(fmts) > 2) " all fit" else " both fit",
+         " every value but disagree (e.g. \"", x[non_na][1], "\" reads as ",
+         paste(unique(format(vapply(parsed, function(p) p[non_na][1], numeric(1)),
+                             tz = tz)), collapse = " or "),
+         "). Supply datetime.format to say which is intended.", call. = FALSE)
+  }
+  ref
 }
+
+# The declared type of every canonical field (see the type contract in .harmonise). Datetime fields
+# are not listed: each importer names its own, because the same field name is a date in one schema and
+# not in another.
+.numericFields <- c("lon", "lat", "depth", "station_depth", "sensor_value",
+                    "length", "min_delay", "max_delay", "nominal_delay", "battery")
+.characterFields <- c("ID", "transmitter", "transmitter_codespace", "transmitter_name", "receiver",
+                      "station", "serial", "sensor_unit", "species", "sex", "size", "format",
+                      "type", "satelliteID", "tagging_location")
 
 # core harmoniser shared by importDetections / importDeployments
 .harmonise <- function(data, mapping, datetime_fields, tz, datetime.format, keep.extra) {
@@ -150,13 +255,24 @@
       mapped <- c(mapped, field)
     }
   }
-  # parse datetimes
+  # ---- type contract --------------------------------------------------------------------------
+  # Readers infer types from content, so the same field can arrive typed differently depending on the
+  # file (a station coded "0012" becomes the integer 12) or on which backend read it. Rather than
+  # suppressing inference everywhere, the canonical fields moby actually uses are given a declared
+  # type here. Unmapped `keep.extra` columns keep whatever the reader inferred - they are the user's
+  # own columns and moby makes no claim about them.
   for (field in intersect(datetime_fields, names(out))) {
-    out[[field]] <- .parseDatetime(out[[field]], tz = tz, format = datetime.format)
+    # field name passed through so a parse failure names the column that failed
+    out[[field]] <- .parseDatetime(out[[field]], tz = tz, format = datetime.format, field = field)
   }
-  # coerce coordinates / depth to numeric where present
-  for (field in intersect(c("lon", "lat", "depth"), names(out))) {
+  # measurements: always numeric
+  for (field in intersect(.numericFields, names(out))) {
     out[[field]] <- suppressWarnings(as.numeric(out[[field]]))
+  }
+  # keys and labels: always character, so a numeric-looking code is never silently renumbered and a
+  # join key cannot depend on how the file happened to be typed
+  for (field in intersect(.characterFields, names(out))) {
+    if (!is.character(out[[field]])) out[[field]] <- as.character(out[[field]])
   }
   # retain unmapped columns if requested
   if (keep.extra) {
@@ -172,21 +288,145 @@
   out
 }
 
-# read a CSV or xlsx file path, or pass through a data.frame
-.readSource <- function(x) {
+#' Detect the field separator of a delimited text file.
+#'
+#' Splits the header with each candidate separator and keeps the one yielding the most fields. The
+#' header is used rather than the data because exports are frequently RAGGED - trailing empty fields
+#' are simply omitted, so data rows carry fewer fields than the header declares - which makes the data
+#' rows an unreliable guide to the true column count. `utils::count.fields()` is quote-aware, so a
+#' separator appearing INSIDE a quoted field is not counted.
+#' @keywords internal
+#' @noRd
+.detectDelim <- function(lines) {
+  cand <- c(",", ";", "\t", "|")
+  n <- vapply(cand, function(s) {
+    k <- tryCatch(utils::count.fields(textConnection(lines[1]), sep = s, quote = "\""),
+                  error = function(e) NA_integer_)
+    if (length(k) != 1 || is.na(k)) 0L else as.integer(k)
+  }, integer(1))
+  # comma wins ties: it is the commonest, and a tie means neither separator actually splits anything
+  if (max(n) <= 1) return(",")
+  cand[which.max(n)]
+}
+
+#' Detect the decimal mark of a delimited text file.
+#'
+#' Only a non-comma separator leaves the comma free to act as a decimal mark, so a comma-separated
+#' file is always "." by construction. Otherwise a sample of fields is scanned for the `12,34` shape.
+#' @keywords internal
+#' @noRd
+.detectDec <- function(lines, delim) {
+  if (identical(delim, ",")) return(".")
+  fields <- unlist(strsplit(lines[-1], delim, fixed = TRUE))
+  fields <- trimws(gsub("\"", "", fields))
+  if (any(grepl("^-?[0-9]+,[0-9]+$", fields))) "," else "."
+}
+
+#' Is the fast reading backend available?
+#'
+#' Named rather than inlined so the backend choice is one testable decision: the equivalence tests
+#' mock this to force the base reader and assert both paths return identical data.
+#' @keywords internal
+#' @noRd
+.hasDataTable <- function() requireNamespace("data.table", quietly = TRUE)
+
+#' Read a delimited or Excel file, or pass a data frame through.
+#'
+#' The single reader behind every importer, so a new import function inherits it by calling this
+#' rather than a reader of its own.
+#'
+#' \strong{Backend.} `data.table::fread()` is used when data.table is installed (roughly 10x faster on
+#' a large export) and `utils::read.csv()` otherwise. The backend is an implementation detail: the
+#' returned data frame must be IDENTICAL either way, which is why every option that either reader
+#' would otherwise decide for itself is pinned here:
+#' \itemize{
+#'   \item `header`/`fill` - fread infers the column count from the first DATA row, so on a ragged
+#'     export it silently consumes the header as data (a real VUE export produced 84,016x10 with data
+#'     values as column names, against read.csv's 84,017x12). `fill = TRUE` restores agreement.
+#'   \item separator and decimal mark - detected once, here, and handed to both readers. Letting each
+#'     apply its own default made them disagree on column types.
+#'   \item date columns - fread auto-parses ISO-8601 to POSIXct assuming UTC, where read.csv returns
+#'     character for the importer to parse in the requested `tz`. That is not a formatting difference:
+#'     it changes the INSTANT (one hour apart for a "Europe/Lisbon" import). Any date/time column the
+#'     backend produces is therefore returned to character, so the timezone is always applied by the
+#'     importer, from the original string.
+#'   \item BOM - fread strips a leading byte-order mark from the first column name, read.csv keeps it.
+#'     Stripped here so both agree.
+#' }
+#' @keywords internal
+#' @noRd
+.readTabular <- function(x) {
   if (is.data.frame(x)) return(as.data.frame(x))
   if (!is.character(x) || length(x) != 1 || !file.exists(x)) {
     stop("'x' must be a data frame or a path to an existing .csv/.xlsx file.", call. = FALSE)
   }
+
   ext <- tolower(tools::file_ext(x))
   if (ext %in% c("xlsx", "xls")) {
     if (!requireNamespace("readxl", quietly = TRUE)) {
       stop("Reading Excel files requires the 'readxl' package. Install it with install.packages('readxl'), or export to CSV.", call. = FALSE)
     }
-    return(as.data.frame(readxl::read_excel(x)))
+    return(.normaliseRead(as.data.frame(readxl::read_excel(x))))
   }
-  utils::read.csv(x, header = TRUE, stringsAsFactors = FALSE, check.names = FALSE)
+
+  lines <- readLines(x, n = 20L, warn = FALSE)
+  lines <- lines[nzchar(trimws(lines))]
+  if (length(lines) == 0) stop("'", basename(x), "' is empty.", call. = FALSE)
+  delim <- .detectDelim(lines)
+  dec   <- .detectDec(lines, delim)
+
+  out <- if (.hasDataTable()) {
+    # integer64 = "double" so a long numeric code (a 16-digit serial) matches read.csv's numeric
+    # rather than arriving as an integer64, which is not the same object.
+    args <- list(x, sep = delim, dec = dec, header = TRUE, fill = TRUE, stringsAsFactors = FALSE,
+                 check.names = FALSE, showProgress = FALSE, data.table = FALSE, integer64 = "double")
+    d <- as.data.frame(do.call(data.table::fread, args))
+    # fread types ISO-8601 columns as POSIXct/IDate where read.csv leaves them as text, and
+    # reformatting afterwards cannot restore the original string ("...T08:00:00" comes back
+    # "... 08:00:00"). So when such a column appears, re-read it as character: that preserves the
+    # source text byte for byte and keeps the timezone decision with the importer. Most files have no
+    # ISO column and are read exactly once.
+    dates <- names(d)[vapply(d, inherits, logical(1),
+                             what = c("POSIXct", "POSIXt", "Date", "IDate", "ITime"))]
+    if (length(dates)) {
+      args$colClasses <- stats::setNames(list(dates), "character")
+      d <- as.data.frame(do.call(data.table::fread, args))
+    }
+    d
+  } else {
+    utils::read.csv(x, sep = delim, dec = dec, header = TRUE,
+                    stringsAsFactors = FALSE, check.names = FALSE)
+  }
+
+  # A file that resolves to one column DESPITE containing a candidate separator almost always means
+  # the separator was misread, and the failure is otherwise silent: every canonical field simply goes
+  # "not found". A file with no separator at all legitimately has one column, so it must not warn.
+  if (ncol(out) == 1 && any(vapply(c(",", ";", "\t", "|"),
+                                   function(d) grepl(d, lines[1], fixed = TRUE), logical(1))))
+    warning("'", basename(x), "' was read as a single column; check the file's delimiter.", call. = FALSE)
+
+  .normaliseRead(out)
 }
+
+#' Strip a byte-order mark from column names and undo any date parsing the backend performed.
+#' @keywords internal
+#' @noRd
+.normaliseRead <- function(d) {
+  # Strip a leading byte-order mark. useBytes = TRUE because read.csv can hand back a name holding
+  # raw BOM bytes that is not valid in the session encoding, which a normal regex refuses to touch.
+  names(d) <- sub("^\xef\xbb\xbf", "", names(d), useBytes = TRUE)   # UTF-8 BOM bytes
+  names(d) <- sub("^\ufeff", "", names(d))                            # already-decoded U+FEFF
+  # Safety net for any reader that still types a date column (e.g. readxl): back to text, so the
+  # importer - not the reader - decides what timezone the source string means.
+  for (nm in names(d)) {
+    if (inherits(d[[nm]], c("POSIXct", "POSIXt", "Date", "IDate", "ITime")))
+      d[[nm]] <- format(d[[nm]], "%Y-%m-%d %H:%M:%S")
+  }
+  d
+}
+
+# kept as the name the importers call; every reader decision lives in .readTabular()
+.readSource <- function(x) .readTabular(x)
 
 
 # ---- console helpers shared by the three importers ------------------------------------------------
@@ -360,8 +600,16 @@ NULL
 #' @param col.map Optional named list mapping canonical fields to the column name(s) in `x`, merged
 #' over (and overriding) the chosen `source` preset. See [moby_import_schema] for the full list of
 #' detection fields, which are required, and worked examples.
-#' @param datetime.format Optional explicit `strptime` format for the datetime column; if
-#' `NULL`, common layouts are auto-detected.
+#' @param datetime.format Optional explicit `strptime` format for the datetime column. When `NULL`
+#' (default) the layout is inferred, but only when the answer is unambiguous: a column such as
+#' `"07/06/2013"`, where day-first and month-first both fit and disagree, raises an error asking for
+#' this argument rather than silently choosing one. A column no layout can read is an error too, so an
+#' unreadable column can never travel on as silent `NA`s.
+#'
+#' Timezone handling depends on the input type. TEXT carries no zone, so `tz` is applied as the zone
+#' while parsing. A column that is ALREADY `POSIXct` (as when a data frame is passed in, e.g. from an
+#' API) is an absolute instant chosen by the caller: it is never reinterpreted, and `tz` changes only
+#' how it is displayed.
 #' @param keep.extra Logical; retain source columns that were not mapped to a canonical field.
 #' Defaults to `FALSE`.
 #' @param verbose Logical; print a summary of the operation. Defaults to
@@ -488,7 +736,16 @@ importDetections <- function(x,
 #' @param col.map Optional named list mapping canonical deployment fields to source column name(s),
 #' merged over the `source` preset. See [moby_import_schema] for the full list of deployment fields
 #' and which are required.
-#' @param datetime.format Optional explicit `strptime` format for the deploy/recover columns.
+#' @param datetime.format Optional explicit `strptime` format for the deploy/recover columns. When `NULL`
+#' (default) the layout is inferred, but only when the answer is unambiguous: a column such as
+#' `"07/06/2013"`, where day-first and month-first both fit and disagree, raises an error asking for
+#' this argument rather than silently choosing one. A column no layout can read is an error too, so an
+#' unreadable column can never travel on as silent `NA`s.
+#'
+#' Timezone handling depends on the input type. TEXT carries no zone, so `tz` is applied as the zone
+#' while parsing. A column that is ALREADY `POSIXct` (as when a data frame is passed in, e.g. from an
+#' API) is an absolute instant chosen by the caller: it is never reinterpreted, and `tz` changes only
+#' how it is displayed.
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
@@ -627,7 +884,16 @@ importDeployments <- function(x,
 #' @param col.map Optional named list mapping canonical tag fields to the column name(s) in `x`,
 #' merged over (and extending) the `source` preset. See [moby_import_schema] for the full list of tag
 #' fields and examples.
-#' @param datetime.format Optional explicit `strptime` format for the tagging-date column.
+#' @param datetime.format Optional explicit `strptime` format for the tagging-date column. When `NULL`
+#' (default) the layout is inferred, but only when the answer is unambiguous: a column such as
+#' `"07/06/2013"`, where day-first and month-first both fit and disagree, raises an error asking for
+#' this argument rather than silently choosing one. A column no layout can read is an error too, so an
+#' unreadable column can never travel on as silent `NA`s.
+#'
+#' Timezone handling depends on the input type. TEXT carries no zone, so `tz` is applied as the zone
+#' while parsing. A column that is ALREADY `POSIXct` (as when a data frame is passed in, e.g. from an
+#' API) is an absolute instant chosen by the caller: it is never reinterpreted, and `tz` changes only
+#' how it is displayed.
 #' @param keep.extra Logical; retain unmapped source columns. Defaults to `TRUE` so that
 #' additional biometric fields are preserved.
 #' @param verbose Logical; print a summary of the operation. Defaults to
@@ -694,10 +960,8 @@ importTags <- function(x,
     stop("Could not locate a 'transmitter' column (the key used to join tags to detections). Provide 'col.map'.", call. = FALSE)
   }
 
-  out$transmitter <- as.character(out$transmitter)
-  if ("length" %in% names(out)) out$length <- suppressWarnings(as.numeric(out$length))
-  for (dc in intersect(c("nominal_delay", "min_delay", "max_delay"), names(out)))
-    out[[dc]] <- suppressWarnings(as.numeric(out[[dc]]))
+  # (transmitter, length and the delay columns are typed by the contract in .harmonise(); nothing to
+  # re-coerce here)
 
   # many tag exports specify a delay RANGE rather than a nominal delay; the nominal (mean) delay is
   # the midpoint, which is what the short-interval false-detection filter is scaled to

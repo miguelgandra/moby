@@ -28,6 +28,7 @@ Imports:
     lubridate
 Suggests:
     knitr,
+    data.table,
     parallel,
     foreach,
     doSNOW,

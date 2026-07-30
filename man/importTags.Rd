@@ -26,7 +26,16 @@ importTags(
 merged over (and extending) the \code{source} preset. See \link{moby_import_schema} for the full list of tag
 fields and examples.}
 
-\item{datetime.format}{Optional explicit \code{strptime} format for the tagging-date column.}
+\item{datetime.format}{Optional explicit \code{strptime} format for the tagging-date column. When \code{NULL}
+(default) the layout is inferred, but only when the answer is unambiguous: a column such as
+\code{"07/06/2013"}, where day-first and month-first both fit and disagree, raises an error asking for
+this argument rather than silently choosing one. A column no layout can read is an error too, so an
+unreadable column can never travel on as silent \code{NA}s.
+
+Timezone handling depends on the input type. TEXT carries no zone, so \code{tz} is applied as the zone
+while parsing. A column that is ALREADY \code{POSIXct} (as when a data frame is passed in, e.g. from an
+API) is an absolute instant chosen by the caller: it is never reinterpreted, and \code{tz} changes only
+how it is displayed.}
 
 \item{keep.extra}{Logical; retain unmapped source columns. Defaults to \code{TRUE} so that
 additional biometric fields are preserved.}
