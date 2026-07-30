@@ -56,8 +56,19 @@ importDetections(
 
 - datetime.format:
 
-  Optional explicit `strptime` format for the datetime column; if
-  `NULL`, common layouts are auto-detected.
+  Optional explicit `strptime` format for the datetime column. When
+  `NULL` (default) the layout is inferred, but only when the answer is
+  unambiguous: a column such as `"07/06/2013"`, where day-first and
+  month-first both fit and disagree, raises an error asking for this
+  argument rather than silently choosing one. A column no layout can
+  read is an error too, so an unreadable column can never travel on as
+  silent `NA`s.
+
+  Timezone handling depends on the input type. TEXT carries no zone, so
+  `tz` is applied as the zone while parsing. A column that is ALREADY
+  `POSIXct` (as when a data frame is passed in, e.g. from an API) is an
+  absolute instant chosen by the caller: it is never reinterpreted, and
+  `tz` changes only how it is displayed.
 
 - keep.extra:
 

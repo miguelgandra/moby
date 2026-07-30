@@ -89,7 +89,15 @@ and which are required.</p></dd>
 
 
 <dt id="arg-datetime-format">datetime.format<a class="anchor" aria-label="anchor" href="#arg-datetime-format"></a></dt>
-<dd><p>Optional explicit <code>strptime</code> format for the deploy/recover columns.</p></dd>
+<dd><p>Optional explicit <code>strptime</code> format for the deploy/recover columns. When <code>NULL</code>
+(default) the layout is inferred, but only when the answer is unambiguous: a column such as
+<code>"07/06/2013"</code>, where day-first and month-first both fit and disagree, raises an error asking for
+this argument rather than silently choosing one. A column no layout can read is an error too, so an
+unreadable column can never travel on as silent <code>NA</code>s.</p>
+<p>Timezone handling depends on the input type. TEXT carries no zone, so <code>tz</code> is applied as the zone
+while parsing. A column that is ALREADY <code>POSIXct</code> (as when a data frame is passed in, e.g. from an
+API) is an absolute instant chosen by the caller: it is never reinterpreted, and <code>tz</code> changes only
+how it is displayed.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
