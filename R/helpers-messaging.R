@@ -184,13 +184,31 @@
                                " ", x[[nm]]))
   }
   if (length(facts) > 0) .kvBlock(facts, "")
-  if (length(criteria) > 0) {
-    cli::cli_text("")
-    cli::cli_text("{cli::symbol$arrow_right} {criteria.label}")
-    w <- max(nchar(names(criteria)))
-    for (nm in names(criteria))
-      cli::cli_verbatim(paste0("  ", cli::symbol$bullet, " ", formatC(nm, width = -w), "  ",
-                               criteria[[nm]]))
+  if (length(criteria) > 0) .mobyBlock(criteria.label, criteria, verbose = TRUE)
+  invisible(NULL)
+}
+
+#' A labelled block of aligned bullets ("-> Label" followed by indented entries).
+#'
+#' The shape the header uses for its criteria, available on its own so a completion summary can group
+#' related lines the same way instead of emitting a loose run of bullets. An entry whose value is
+#' empty prints as a bare name, which is how a filter with no tunable parameter is listed.
+#' @keywords internal
+#' @noRd
+.mobyBlock <- function(label, items, verbose = getOption("moby.verbose", TRUE)) {
+  if (!isTRUE(verbose) || length(items) == 0) return(invisible(NULL))
+  nms <- names(items)
+  vals <- as.character(unlist(items))
+  has_val <- !is.na(vals) & nzchar(vals)
+  cli::cli_text("")
+  cli::cli_text("{cli::symbol$arrow_right} {label}")
+  # width from the named entries only, so a bare name does not pad the others
+  w <- if (any(has_val)) max(nchar(nms[has_val])) else 0L
+  for (i in seq_along(items)) {
+    # cli_verbatim: emitted exactly as given, so the padding that aligns the values survives
+    cli::cli_verbatim(if (has_val[i])
+      paste0("  ", cli::symbol$bullet, " ", formatC(nms[i], width = -w), "  ", vals[i])
+      else paste0("  ", cli::symbol$bullet, " ", nms[i]))
   }
   invisible(NULL)
 }
@@ -282,6 +300,7 @@
     mid       = if (utf8) "\u00b7" else "|",
     times     = if (utf8) "\u00d7" else "x",
     stopwatch = if (utf8) "\u23f1" else cli::symbol$bullet,
+    dash      = if (utf8) "\u2014" else "-",
     stop("unknown glyph: ", name))
 }
 

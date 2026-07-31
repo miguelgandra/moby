@@ -111,9 +111,11 @@ An object of class \code{mobyFilter} (a list, with a \code{print} method) contai
 \item{\code{data}}{the filtered detections as a \code{mobyData}, with an added \code{qc_flag} column
 (\code{"valid"}, or \code{"overspeed_review"} for speed-flagged detections retained for review);}
 \item{\code{data_discarded}}{the removed detections, each with a \code{reason} column;}
-\item{\code{summary}}{a per-individual data frame of raw counts and removals by filter.}
+\item{\code{filter_summary}}{a per-individual data frame of raw counts and removals by filter.}
 }
-The filtering parameters used are stored as the \code{"parameters"} attribute.
+The filtering parameters used are stored as the \code{"parameters"} attribute. The \code{print} method gives
+a high-level overview - what the run removed, under which filters, and where the detail lives -
+rather than the whole per-individual table, which is \verb{$filter_summary}.
 }
 \description{
 Cleans a detection dataset by applying a sequence of quality-control filters, each of

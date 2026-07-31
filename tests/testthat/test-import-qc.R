@@ -358,7 +358,7 @@ test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections 
   # the whole point: filterDetections enables its min_lag filter with NO argument supplied,
   # at the documented 30 x nominal.delay threshold (30 * 120 = 3600 s)
   res <- suppressWarnings(suppressMessages(filterDetections(md)))
-  expect_true(any(grepl("min_lag > 3600 s", res$data_discarded$reason)))
+  expect_true(any(grepl("minimum lag (< 3600 s)", res$data_discarded$reason, fixed = TRUE)))
 
   # and it can be opted out of
   md_off <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, set.nominal.delay = FALSE, verbose = FALSE)))
@@ -408,4 +408,78 @@ test_that("assignAnimalIDs and matchDeployments commute", {
   expect_equal(length(mobyMeta(a)$tagging.dates), length(mobyMeta(b)$tagging.dates))
   expect_equal(length(mobyMeta(a)$nominal.delay), length(mobyMeta(b)$nominal.delay))
   expect_false(victim %in% levels(a$ID))
+})
+
+
+# ---- print.mobyQC ---------------------------------------------------------------------------------
+# Same structure as the other moby objects: Input / Results / a categorical Summary / where the
+# detail lives. The full report stays in $report rather than being printed.
+
+test_that("print.mobyQC follows the shared Input / Results / Summary / Details structure", {
+  dep <- data.frame(
+    receiver = c("R1", "R1", "R2"), station = c("A", "A", "B"),
+    lon = c(-8, -8, -7), lat = c(37, 37, 38),
+    deploy = as.POSIXct(c("2023-01-01", "2023-06-01", "2023-01-01"), tz = "UTC"),
+    recover = as.POSIXct(c("2023-02-01", "2023-07-01", "2023-02-01"), tz = "UTC"),
+    stringsAsFactors = FALSE)
+  qc <- suppressMessages(checkDeployments(dep, min.active.days = 180, verbose = FALSE))
+  out <- paste(capture.output(print(qc)), collapse = "\n")
+
+  expect_match(out, "<mobyQC>", fixed = TRUE)
+  for (s in c("Input", "Results", "Issue summary")) expect_match(out, s, fixed = TRUE)
+  expect_match(out, "deployment records", fixed = TRUE)
+  expect_match(out, "receivers", fixed = TRUE)
+  expect_match(out, "issues flagged", fixed = TRUE)
+  expect_match(out, "$report", fixed = TRUE)
+  # the full report is pointed at, never dumped
+  expect_false(grepl("details", out, fixed = TRUE))
+  expect_lt(length(capture.output(print(qc))), 30L)
+})
+
+
+test_that("each issue reports how many objects it affects", {
+  dep <- data.frame(
+    receiver = c("R1", "R1", "R2", "R2"), station = c("A", "A", "B", "B"),
+    lon = c(-8, -8, -7, -7), lat = c(37, 37, 38, 38),
+    deploy = as.POSIXct(c("2023-01-01", "2023-06-01", "2023-01-01", "2023-06-01"), tz = "UTC"),
+    recover = as.POSIXct(c("2023-02-01", "2023-07-01", "2023-02-01", "2023-07-01"), tz = "UTC"),
+    stringsAsFactors = FALSE)
+  qc <- suppressMessages(checkDeployments(dep, verbose = FALSE))
+  out <- paste(capture.output(print(qc)), collapse = "\n")
+  # both gaps are coverage gaps, across two distinct stations
+  expect_match(out, "Coverage gap", fixed = TRUE)
+  expect_match(out, "2 stations", fixed = TRUE)
+})
+
+
+test_that("a clean report says so and points at nothing", {
+  dep <- data.frame(receiver = "R1", station = "A", lon = -8, lat = 37,
+                    deploy = as.POSIXct("2023-01-01", tz = "UTC"),
+                    recover = as.POSIXct("2023-12-01", tz = "UTC"), stringsAsFactors = FALSE)
+  qc <- suppressMessages(checkDeployments(dep, verbose = FALSE))
+  out <- paste(capture.output(print(qc)), collapse = "\n")
+  expect_match(out, "no issues flagged", fixed = TRUE)
+  expect_false(grepl("Issue summary", out, fixed = TRUE))
+  expect_false(grepl("$report", out, fixed = TRUE))
+})
+
+
+test_that("the three moby classes print through one shared layout", {
+  data(rays, envir = environment())
+  dep <- data.frame(receiver = "R1", station = "A", lon = -8, lat = 37,
+                    deploy = as.POSIXct("2023-01-01", tz = "UTC"),
+                    recover = as.POSIXct("2023-12-01", tz = "UTC"), stringsAsFactors = FALSE)
+  objs <- list(mobyData = rays,
+               mobyFilter = suppressMessages(filterDetections(rays, verbose = FALSE)),
+               mobyQC = suppressMessages(checkDeployments(dep, verbose = FALSE)))
+  g <- .mobyGlyphs()
+  for (nm in names(objs)) {
+    out <- capture.output(print(objs[[nm]]))
+    # opens with the class rule and closes with a full-width rule
+    expect_match(out[1], paste0("<", nm, ">"), fixed = TRUE)
+    expect_match(out[length(out)], paste0("^", g$rule, "+$"))
+    # sections are unindented headings, entries are indented
+    expect_true(any(grepl("^[A-Z][a-z]", out)))
+    expect_true(any(grepl("^  ", out)))
+  }
 })

@@ -22,7 +22,7 @@ as_moby(
   verbose = getOption("moby.verbose", TRUE)
 )
 
-\method{print}{mobyData}(x, preview = 3L, width = getOption("width"), ...)
+\method{print}{mobyData}(x, width = getOption("width"), ...)
 }
 \arguments{
 \item{data}{A data frame of detections (one row per detection, or per binned record).}
@@ -62,9 +62,6 @@ table carries a delay column.}
 \code{getOption("moby.verbose", TRUE)}.}
 
 \item{x}{A \code{mobyData} object.}
-
-\item{preview}{Number of leading rows shown under the summary. Defaults to 3; \code{0} prints the
-summary only.}
 
 \item{width}{Console width used to lay the summary out. Defaults to \code{getOption("width")}.}
 

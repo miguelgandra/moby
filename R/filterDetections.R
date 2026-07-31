@@ -132,9 +132,11 @@
 #'   \item{`data`}{the filtered detections as a `mobyData`, with an added `qc_flag` column
 #'     (`"valid"`, or `"overspeed_review"` for speed-flagged detections retained for review);}
 #'   \item{`data_discarded`}{the removed detections, each with a `reason` column;}
-#'   \item{`summary`}{a per-individual data frame of raw counts and removals by filter.}
+#'   \item{`filter_summary`}{a per-individual data frame of raw counts and removals by filter.}
 #' }
-#' The filtering parameters used are stored as the `"parameters"` attribute.
+#' The filtering parameters used are stored as the `"parameters"` attribute. The `print` method gives
+#' a high-level overview - what the run removed, under which filters, and where the detail lives -
+#' rather than the whole per-individual table, which is `$filter_summary`.
 #'
 #' @references
 #' Pincock, D.G. (2012) False detections: what they are and how to remove them from detection data.
@@ -303,7 +305,7 @@ filterDetections <- function(data,
     dup <- duplicated(data[, key_cols, drop = FALSE])
     if (any(dup)) {
       r <- data[dup, , drop = FALSE]; r$reason <- "duplicate detection"
-      add_discarded(r, "Duplicates")
+      add_discarded(r, "Duplicate detections")
       data <- data[!dup, , drop = FALSE]
     }
   }
@@ -330,14 +332,29 @@ filterDetections <- function(data,
   ## Stages 1-5: per-individual temporal / short-interval filters ##############
   ##############################################################################
 
-  # ---- header: what is being done, at what scale, under which criteria -------------------------
-  # Only choices that change what the analysis MEANS belong in 'criteria' (thresholds, limits).
-  # Cosmetic arguments, and anything print.mobyFilter() already reports, are deliberately left out.
+  # ---- header ----------------------------------------------------------------------------------
+  # EVERY filter that will actually run is listed, including those with nothing to tune (duplicate
+  # removal, the pre-tagging cut): the question the block answers is "what is being applied to my
+  # data", and a filter with no argument still removes detections. Entries with no value print as a
+  # bare name.
   crit <- c()
+  if (isTRUE(remove.duplicates)) crit["duplicate detections"] <- ""
+  if (!is.null(tagging.dates))   crit["before tagging date"] <- ""
+  if (!is.null(cutoff.dates))    crit["cut-off date"] <- ""
   if (do_minlag) {
-    crit["min_lag"] <- if (fixed_minlag) paste0(.fmtN(round(min.lag.threshold)), " s (fixed window)")
-      else paste0(.fmtN(round(min.lag.factor * stats::median(nominal.delay, na.rm = TRUE))), " s (",
-                  min.lag.factor, " ", .mobyGlyph("times"), " nominal delay)")
+    # Describe the RULE, not one realised threshold. With several tag families the filter applies a
+    # different window to each tag, so quoting a single number (the median, previously) implied a
+    # uniformity that does not exist.
+    crit["minimum lag"] <- if (fixed_minlag) {
+      paste0(.fmtN(round(min.lag.threshold)), " s (fixed)")
+    } else {
+      delays <- unique(stats::na.omit(as.numeric(nominal.delay)))
+      if (length(delays) == 1)
+        paste0(.fmtN(round(min.lag.factor * delays)), " s (", min.lag.factor, " ",
+               .mobyGlyph("times"), " nominal delay)")
+      else
+        paste0(min.lag.factor, " ", .mobyGlyph("times"), " nominal delay (per tag)")
+    }
   }
   if (!isFALSE(isolation.window) && !is.null(isolation.window))
     crit["isolation"] <- paste0(isolation.window, " h (whole array)")
@@ -350,12 +367,16 @@ filterDetections <- function(data,
     crit["speed"] <- paste0(sp_txt, " ", speed.unit,
                             if (!is.null(land.shape)) " (least-cost)" else " (great-circle)")
   }
-  if (min.detections > 0) crit["min detections"] <- .fmtN(min.detections)
-  if (min.days > 0)       crit["min days"] <- .fmtN(min.days)
+  if (min.detections > 0) crit["minimum detections"] <- .fmtN(min.detections)
+  if (min.days > 0)       crit["minimum days"] <- .fmtN(min.days)
 
-  .mobyHeader("filterDetections()", "Removing spurious detections",
+  # input scale, kept for print.mobyFilter(): after filtering these can no longer be recovered
+  st_col <- if (!is.null(prev_meta) && !is.null(prev_meta$station.col)) prev_meta$station.col else "station"
+  n_stations_in <- if (st_col %in% colnames(data)) length(unique(stats::na.omit(data[[st_col]]))) else NA_integer_
+
+  .mobyHeader("filterDetections()", "Filtering acoustic detections",
               input = paste0(.fmtCount(n_total, "detection"), " ", .mobyGlyph("mid"), " ", .fmtCount(nfish, "individual")),
-              criteria = crit, criteria.label = "Filtering criteria", verbose = verbose)
+              criteria = crit, criteria.label = "Filters", verbose = verbose)
 
   data_individual <- split(data, f = data[, id.col], drop = FALSE)
   pb <- .progressBar(nfish, verbose, name = "Filtering individuals")
@@ -370,7 +391,7 @@ filterDetections <- function(data,
     # (1) pre-tagging
     prior <- which(sub[, datetime.col] < tag_date)
     if (length(prior) > 0) {
-      r <- sub[prior, ]; r$reason <- "before tagging date"; add_discarded(r, "Before tagging")
+      r <- sub[prior, ]; r$reason <- "before tagging date"; add_discarded(r, "Before tagging date")
       sub <- sub[-prior, , drop = FALSE]
     }
 
@@ -378,7 +399,7 @@ filterDetections <- function(data,
     if (!is.null(off_date)) {
       after <- which(sub[, datetime.col] > off_date)
       if (length(after) > 0) {
-        r <- sub[after, ]; r$reason <- "after cut-off date"; add_discarded(r, "After cut-off")
+        r <- sub[after, ]; r$reason <- "after cut-off date"; add_discarded(r, "Cut-off date")
         sub <- sub[-after, , drop = FALSE]
       }
     }
@@ -389,8 +410,8 @@ filterDetections <- function(data,
       thr <- if (fixed_minlag) min.lag.threshold else min.lag.factor * nominal.delay[i]
       fl <- .minLagFlags(as.numeric(sub[, datetime.col]), as.character(sub[[station_col]]), thr)
       if (any(fl)) {
-        r <- sub[fl, ]; r$reason <- paste0("false detection (min_lag > ", round(thr), " s)")
-        add_discarded(r, "False detection"); sub <- sub[!fl, , drop = FALSE]
+        r <- sub[fl, ]; r$reason <- paste0("minimum lag (< ", round(thr), " s)")
+        add_discarded(r, "Minimum lag"); sub <- sub[!fl, , drop = FALSE]
       }
     }
 
@@ -402,7 +423,7 @@ filterDetections <- function(data,
                       which(hd > isolation.window & is.na(.lag(hd)))))
       if (length(iso) > 0) {
         r <- sub[iso, ]; r$reason <- paste0("isolated (>", isolation.window, "h both sides)")
-        add_discarded(r, "Isolated"); sub <- sub[-iso, , drop = FALSE]
+        add_discarded(r, "Isolation"); sub <- sub[-iso, , drop = FALSE]
       }
     }
 
@@ -454,7 +475,7 @@ filterDetections <- function(data,
     for (i in seq_along(di)) {
       if (nrow(di[[i]]) > 0 && nrow(di[[i]]) < min.detections) {
         r <- di[[i]]; r$reason <- paste0("individual with fewer than ", min.detections, " detections")
-        add_discarded(r, "Min detections"); di[[i]] <- di[[i]][0, , drop = FALSE]
+        add_discarded(r, "Minimum detections"); di[[i]] <- di[[i]][0, , drop = FALSE]
       }
     }
     data_filtered <- do.call("rbind", di)
@@ -467,7 +488,7 @@ filterDetections <- function(data,
       days <- strftime(di[[i]][, datetime.col], "%Y-%m-%d", tz = .dataTZ(di[[i]][, datetime.col]))
       if (length(unique(days)) < min.days) {
         r <- di[[i]]; r$reason <- paste0("individual detected on fewer than ", min.days, " days")
-        add_discarded(r, "Min days"); di[[i]] <- di[[i]][0, , drop = FALSE]
+        add_discarded(r, "Minimum days"); di[[i]] <- di[[i]][0, , drop = FALSE]
       }
     }
     data_filtered <- do.call("rbind", di)
@@ -503,8 +524,20 @@ filterDetections <- function(data,
   }
 
   # per-individual summary: pivot the accumulated removals by stage
-  stage_order <- c("Duplicates", "Before tagging", "After cut-off", "False detection",
-                   "Isolated", "Speed", "Min detections", "Min days")
+  # Short column labels for the per-individual table (same criteria, narrower).
+  .stageAbbrev <- function(x) {
+    map <- c("Duplicate detections" = "Duplicates", "Before tagging date" = "Before tag",
+             "Cut-off date" = "Cut-off", "Minimum lag" = "Min. lag", "Isolation" = "Isolation",
+             "Speed" = "Speed", "Minimum detections" = "Min. detect.", "Minimum days" = "Min. days")
+    ifelse(x %in% names(map), map[x], x)
+  }
+
+  # Filters are named for the CRITERION they apply, not for the implementation or for a verdict on the
+  # detection: "Minimum lag" rather than "False detection", since the speed and pre-tagging filters
+  # also reject implausible records. The same names are used by the verbose output and by
+  # print.mobyFilter(), which abbreviates them for the per-individual table.
+  stage_order <- c("Duplicate detections", "Before tagging date", "Cut-off date", "Minimum lag",
+                   "Isolation", "Speed", "Minimum detections", "Minimum days")
   all_disc <- do.call(.rbindFill, discarded)
   removed_mat <- matrix(0L, nrow = nfish, ncol = length(stage_order),
                         dimnames = list(all_ids, stage_order))
@@ -514,32 +547,53 @@ filterDetections <- function(data,
     removed_mat[, ] <- as.integer(tb)
   }
   active_stages <- stage_order[colSums(removed_mat) > 0 |
-                                 stage_order %in% c("Before tagging")]                 # always show pre-tagging
+                                 stage_order %in% c("Before tagging date")]                 # always show pre-tagging
   n_removed_ind <- rowSums(removed_mat)
-  filter_summary <- data.frame(ID = all_ids, "Raw detections" = n_individual, check.names = FALSE,
+  filter_summary <- data.frame(ID = all_ids, "Raw" = n_individual, check.names = FALSE,
                                row.names = NULL, stringsAsFactors = FALSE)
-  for (st in active_stages) filter_summary[[st]] <- removed_mat[, st]
+  # the table is one column per filter, so the criterion names are abbreviated to keep it readable;
+  # the words are the same ones the verbose output and the breakdown below use
+  for (st in active_stages) filter_summary[[.stageAbbrev(st)]] <- removed_mat[, st]
   pct <- sprintf("%.0f", ifelse(n_individual > 0, n_removed_ind / n_individual * 100, 0))
-  filter_summary[["Total removed"]] <- paste0(n_removed_ind, " (", pct, "%)")
-  filter_summary[["Total removed"]][n_removed_ind == 0 | n_individual == 0] <- "-"
+  filter_summary[["Total"]] <- paste0(n_removed_ind, " (", pct, "%)")
+  filter_summary[["Total"]][n_removed_ind == 0 | n_individual == 0] <- "-"
 
-  # ---- outcome: one line answering "did it work / what changed". The per-stage and per-individual
-  # breakdown belongs to print.mobyFilter(), so it is deliberately not repeated here.
+  # ---- outcome ----------------------------------------------------------------------------------
+  # A concise account of what the run did: the split, then which filters accounted for it. The
+  # per-individual table and the full parameter record stay with the returned object, which the
+  # closing note points at.
   if (verbose) {
     n_removed_total <- if (is.null(all_disc)) 0L else nrow(all_disc)
-    pct_total <- if (n_total > 0) sprintf("%.0f", n_removed_total / n_total * 100) else "0"
+    n_kept <- nrow(data_filtered)
+    pct <- function(n) if (n_total > 0) sprintf("%.1f%%", n / n_total * 100) else "0.0%"
     n_flagged <- sum(data_filtered$qc_flag == "overspeed_review")
     ids_discarded <- sum(n_individual > 0 & table(factor(data_filtered[, id.col], levels = all_ids)) == 0)
 
-    .mobyBlank(verbose)
-    .mobyOk(.fmtN(nrow(data_filtered)), " detections retained (", .fmtN(n_removed_total),
-            " removed, ", pct_total, "%)", verbose = verbose)
+    .mobyBlock("Results", c(
+      retained = paste0(.fmtCount(n_kept, "detection"), " (", pct(n_kept), ")"),
+      removed  = paste0(.fmtCount(n_removed_total, "detection"), " (", pct(n_removed_total), ")")),
+      verbose = verbose)
+
+    # one line per filter that actually removed something, largest first, with how many individuals
+    # it touched - the figure that says whether a filter hit the whole array or a few animals
+    if (n_removed_total > 0) {
+      n_by_stage <- colSums(removed_mat)
+      ids_by_stage <- colSums(removed_mat > 0)
+      hit <- names(n_by_stage)[n_by_stage > 0]
+      hit <- hit[order(n_by_stage[hit], decreasing = TRUE)]
+      .mobyBlock("Removal summary", stats::setNames(vapply(hit, function(st) paste0(
+        .fmtN(n_by_stage[[st]]), " (", pct(n_by_stage[[st]]), ") ", .mobyGlyph("dash"), " ",
+        .fmtCount(ids_by_stage[[st]], "individual")), character(1)), tolower(hit)),
+        verbose = verbose)
+    }
+
     # attention lines are for things worth a second look - not merely for a non-zero count
+    .mobyBlank(verbose)
     if (n_flagged > 0)
       .mobyAttention(.fmtN(n_flagged), " flagged for review (over-speed, retained)", verbose = verbose)
     if (ids_discarded > 0)
       .mobyAttention(.fmtN(ids_discarded), " individual(s) left with no detections", verbose = verbose)
-    .mobyArrow("Breakdown by filter: print() the result", verbose = verbose)
+    .mobyNote("Detailed diagnostics are available in the returned <mobyFilter> object.", verbose = verbose)
   }
   .mobyRuntime(start.time, verbose, min.secs = 1)
 
@@ -549,7 +603,15 @@ filterDetections <- function(data,
     class(data_filtered) <- unique(c("mobyData", "data.frame"))
   }
 
-  results <- list(data = data_filtered, data_discarded = data_discarded, summary = filter_summary)
+  results <- list(data = data_filtered, data_discarded = data_discarded,
+                  filter_summary = filter_summary)
+  # the SAME vector the header rendered, so print() and the verbose output can never drift apart, and
+  # only filters that actually ran are listed
+  attr(results, "filters") <- crit
+  attr(results, "input") <- list(detections = n_total, individuals = nfish,
+                                 stations = n_stations_in, station.col = st_col)
+  # per-filter removals under the FULL criterion names (the table abbreviates them for width)
+  attr(results, "removals") <- list(n = colSums(removed_mat), ids = colSums(removed_mat > 0))
   attr(results, "parameters") <- list(
     tagging.dates = tagging.dates, cutoff.dates = cutoff.dates, remove.duplicates = remove.duplicates,
     nominal.delay = nominal.delay, min.lag.factor = min.lag.factor, min.lag.threshold = min.lag.threshold,
@@ -635,7 +697,8 @@ filterDetections <- function(data,
   iteration <- 1L
 
   repeat {
-    if (verbose && interactive()) { cat(paste0("\rSpeed filter iteration: ", iteration)); utils::flush.console() }
+    # (iteration count is an implementation detail: it is not reported, and the totals below cover
+    # what the speed filter removed)
     removed_this <- 0L; new_shield <- 0L
 
     for (i in seq_along(d_split)) {
@@ -693,7 +756,6 @@ filterDetections <- function(data,
     if ((removed_this == 0L && new_shield == 0L) || iteration >= max.iterations) break
     iteration <- iteration + 1L
   }
-  if (verbose && interactive()) cat("\n")
 
   out_data <- do.call("rbind", d_split)
   removed <- do.call("rbind", lapply(removed_list, function(x) if (length(x)) do.call("rbind", x) else NULL))
@@ -734,20 +796,62 @@ filterDetections <- function(data,
 #' @return `x`, invisibly.
 #' @keywords internal
 #' @export
-print.mobyFilter <- function(x, ...) {
-  n_kept <- nrow(x$data); n_disc <- nrow(x$data_discarded)
-  n_flag <- if ("qc_flag" %in% names(x$data)) sum(x$data$qc_flag == "overspeed_review") else 0L
-  cat("<mobyFilter> filtered acoustic detections\n")
-  cat("  ", n_kept, " retained | ", n_disc, " removed", sep = "")
-  if (n_flag > 0) cat(" | ", n_flag, " flagged for review", sep = "")
-  cat("\n")
-  if (n_disc > 0) {
-    tb <- sort(table(x$data_discarded$reason), decreasing = TRUE)
-    for (nm in names(tb)) cat(sprintf("    - %-40s %d\n", nm, tb[[nm]]))
+print.mobyFilter <- function(x, width = getOption("width"), ...) {
+
+  g <- .mobyGlyphs()
+  w <- .printWidth(width)
+  inp <- attr(x, "input")
+  fl <- attr(x, "filters")
+  n_kept <- nrow(x$data)
+  n_in <- if (!is.null(inp)) inp$detections else n_kept + nrow(x$data_discarded)
+  n_disc <- n_in - n_kept
+  pct <- function(n) if (n_in > 0) sprintf("%.1f%%", n / n_in * 100) else "0.0%"
+
+  .printOpen("mobyFilter", w)
+
+  # ---- Input / Results: what went in, and how it came out -----------------------------------------
+  sm <- c(Detections = paste0(.fmtN(n_in), " ", g$arrow, " ", .fmtN(n_kept),
+                              " (", pct(n_kept), " retained)"))
+  id <- attr(x$data, "moby")$id.col
+  if (is.null(id)) id <- "ID"
+  if (!is.null(inp) && id %in% colnames(x$data))
+    sm["Individuals"] <- paste0(.fmtN(inp$individuals), " ", g$arrow, " ",
+                                .fmtN(.nObserved(x$data[[id]])))
+  st <- if (!is.null(inp)) inp$station.col else "station"
+  if (!is.null(inp) && !is.na(inp$stations) && st %in% colnames(x$data))
+    sm["Stations"] <- paste0(.fmtN(inp$stations), " ", g$arrow, " ",
+                             .fmtN(.nObserved(x$data[[st]])))
+  .printSection("Summary", sm, blank.before = FALSE)
+
+  # ---- which filters ran, and under what rule ----------------------------------------------------
+  if (length(fl) > 0) {
+    nms <- .capitalise(names(fl))
+    .printSection("Filtering", stats::setNames(as.character(unlist(fl)), nms), marker = "tick")
   }
-  cat("  Per-individual summary:\n")
-  print(x$summary, row.names = FALSE)
-  cat("  Inspect $data, $data_discarded and attr(, \"parameters\").\n")
+
+  # ---- what each filter removed ------------------------------------------------------------------
+  rm_by <- attr(x, "removals")
+  if (n_disc > 0 && !is.null(rm_by)) {
+    tot <- rm_by$n; ids <- rm_by$ids
+    hit <- names(tot)[tot > 0]
+    if (length(hit) > 0) {
+      hit <- hit[order(tot[hit], decreasing = TRUE)]
+      cw <- max(nchar(.fmtN(as.integer(tot[hit]))))
+      items <- stats::setNames(vapply(hit, function(nm) paste0(
+        formatC(.fmtN(tot[[nm]]), width = cw), " (", pct(tot[[nm]]), ") ", g$dash, " ",
+        .fmtCount(ids[[nm]], "individual")), character(1)), hit)
+      .printSection("Removal summary", items, marker = "bullet")
+    }
+  }
+
+  # ---- where the detail lives --------------------------------------------------------------------
+  .printSection("Inspect", c(
+    "$data" = "filtered detections",
+    "$data_discarded" = "removed detections",
+    "$filter_summary" = "per-individual filtering summary",
+    "attr(, \"parameters\")" = "filtering parameters"))
+
+  cat("\n"); .printClose(w)
   invisible(x)
 }
 

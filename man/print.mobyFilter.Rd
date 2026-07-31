@@ -4,7 +4,7 @@
 \alias{print.mobyFilter}
 \title{Print method for filterDetections() results}
 \usage{
-\method{print}{mobyFilter}(x, ...)
+\method{print}{mobyFilter}(x, width = getOption("width"), ...)
 }
 \arguments{
 \item{x}{A \code{mobyFilter} object.}

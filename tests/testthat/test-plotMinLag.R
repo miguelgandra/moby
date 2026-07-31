@@ -23,7 +23,8 @@ test_that("plotMinLag flagged counts equal filterDetections' min_lag removals (s
   filt <- suppressWarnings(suppressMessages(filterDetections(
     d, tagging.dates = as.POSIXct("2022-01-01", tz = "UTC"), nominal.delay = 120,
     min.lag.factor = 30, verbose = FALSE)))
-  n_false <- sum(grepl("false detection", filt$data_discarded$reason))
+  # the filter is named for its criterion ("minimum lag"), not for a verdict on the detection
+  n_false <- sum(grepl("minimum lag", filt$data_discarded$reason))
   expect_gt(n_false, 0)                                       # the case actually exercises the filter
   expect_equal(res$n_flagged[res$factor == 30], n_false)
 })

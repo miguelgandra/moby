@@ -61,7 +61,7 @@ test_that("min_lag removes an uncorroborated lone decode and is off without nomi
   r <- suppressWarnings(suppressMessages(filterDetections(d, tagging.dates = tg, nominal.delay = 120)))
   expect_equal(nrow(r$data), 6L)
   expect_true(all(r$data$station == "SA"))
-  expect_match(r$data_discarded$reason, "min_lag")
+  expect_match(r$data_discarded$reason, "minimum lag")
   # off without a nominal delay
   expect_equal(nrow(suppressWarnings(suppressMessages(filterDetections(d, tagging.dates = tg)))$data_discarded), 0L)
   # resolved from mobyData metadata when present
@@ -80,7 +80,7 @@ test_that("min.lag.threshold enables a standalone fixed per-receiver window (no 
   # a fixed threshold alone (no nominal.delay supplied or in metadata) enables the min_lag filter
   r <- suppressWarnings(suppressMessages(filterDetections(d, tagging.dates = tg, min.lag.threshold = 3600)))
   expect_equal(nrow(r$data), 6L)
-  expect_match(r$data_discarded$reason, "min_lag > 3600 s")
+  expect_match(r$data_discarded$reason, "minimum lag (< 3600 s)", fixed = TRUE)
 
   # a fixed threshold applies to every tag, including a foreign ID absent from a partial nominal.delay
   d2 <- rbind(d, data.frame(ID = "G", datetime = as.POSIXct("2023-06-01 05:00", tz = "UTC"),
@@ -174,4 +174,156 @@ test_that("input validation: NA datetimes error, and 0 no longer silently disabl
                    lon = Alon, lat = 37, station = "SA"); d2$ID <- factor(d2$ID)
   # isolation.window = 0 is a real (zero-hour) threshold, not an accidental off-switch
   expect_no_error(suppressWarnings(suppressMessages(filterDetections(d2, tagging.dates = tg, isolation.window = 0))))
+})
+
+
+# ---- verbose output contract ---------------------------------------------------------------------
+# Filters are named for the CRITERION they apply; the block lists every filter that RAN, not only the
+# ones with tunable arguments; and the min_lag entry describes the RULE rather than one realised
+# threshold, which would be a false statement whenever tag families differ.
+
+vtxt <- function(expr) paste(capture.output({r <- force(expr); invisible(NULL)}, type = "message"),
+                             collapse = "\n")
+
+test_that("the filter block lists every filter that ran, named by criterion", {
+  data(rays, envir = environment())
+  txt <- vtxt(filterDetections(rays, isolation.window = 24))
+  # filters with no tunable argument are listed too: they still remove detections
+  expect_match(txt, "duplicate detections", fixed = TRUE)
+  expect_match(txt, "before tagging date", fixed = TRUE)
+  expect_match(txt, "isolation", fixed = TRUE)
+  # named for the criterion, never for a verdict on the detection
+  expect_false(grepl("False detection", txt, fixed = TRUE))
+})
+
+
+test_that("the min_lag entry states the rule, not a single realised threshold", {
+  data(rays, envir = environment())
+  ids <- levels(factor(rays$ID))
+
+  # one shared delay -> the actual window can be quoted
+  one <- vtxt(filterDetections(as_moby(rays, nominal.delay = 60)))
+  expect_match(one, "1,800 s", fixed = TRUE)
+
+  # several tag families -> quoting one number would imply a uniformity that does not exist, since
+  # the filter applies a different window per tag
+  nd <- stats::setNames(rep(c(60, 90, 120, 54.5), length.out = length(ids)), ids)
+  many <- vtxt(filterDetections(as_moby(rays, nominal.delay = nd)))
+  expect_match(many, "nominal delay (per tag)", fixed = TRUE)
+  expect_false(grepl("1,800 s", many, fixed = TRUE))
+
+  # an explicit threshold is exactly that
+  fixed <- vtxt(filterDetections(rays, min.lag.threshold = 3600))
+  expect_match(fixed, "3,600 s (fixed)", fixed = TRUE)
+})
+
+
+test_that("the outcome summarises results and attributes the removals", {
+  data(rays, envir = environment())
+  txt <- vtxt(filterDetections(rays, isolation.window = 24))
+  expect_match(txt, "Results", fixed = TRUE)
+  expect_match(txt, "retained", fixed = TRUE)
+  expect_match(txt, "Removal summary", fixed = TRUE)
+  # each removing filter reports its share and how many individuals it touched
+  expect_match(txt, "individual", fixed = TRUE)
+  # the placeholder that asked the user to print() the object is replaced by a real summary
+  expect_false(grepl("Breakdown by filter", txt, fixed = TRUE))
+  expect_match(txt, "<mobyFilter>", fixed = TRUE)
+})
+
+
+test_that("no output escapes the cli block", {
+  data(rays, envir = environment())
+  # the speed filter's iteration counter used to cat() straight to stdout, interrupting the block
+  out <- capture.output({r <- filterDetections(rays, max.speed = 3); invisible(NULL)}, type = "output")
+  expect_length(out, 0L)
+  expect_false(any(grepl("iteration", vtxt(filterDetections(rays, max.speed = 3)), fixed = TRUE)))
+})
+
+
+test_that("the print method uses the same criterion names, abbreviated for the table", {
+  data(rays, envir = environment())
+  r <- suppressMessages(filterDetections(as_moby(rays, nominal.delay = 60), verbose = FALSE))
+  cols <- colnames(r$filter_summary)
+  expect_true("Raw" %in% cols)
+  expect_true("Total" %in% cols)
+  expect_true("Min. lag" %in% cols)
+  expect_false(any(grepl("False detection", cols, fixed = TRUE)))
+  expect_match(paste(r$data_discarded$reason, collapse = " "), "minimum lag", fixed = TRUE)
+})
+
+
+# ---- the mobyFilter print method -----------------------------------------------------------------
+# A high-level overview; the per-individual table stays in $filter_summary rather than being printed.
+
+ptxt <- function(x) paste(capture.output(print(x)), collapse = "\n")
+
+test_that("the object exposes $filter_summary, not the generic $summary", {
+  data(rays, envir = environment())
+  r <- suppressMessages(filterDetections(rays, verbose = FALSE))
+  expect_true("filter_summary" %in% names(r))
+  expect_false("summary" %in% names(r))
+  expect_s3_class(r$filter_summary, "data.frame")
+  expect_true(all(c("ID", "Raw", "Total") %in% colnames(r$filter_summary)))
+})
+
+
+test_that("print gives an overview and does not dump the per-individual table", {
+  data(rays, envir = environment())
+  r <- suppressMessages(filterDetections(rays, isolation.window = 24, verbose = FALSE))
+  txt <- ptxt(r)
+
+  expect_match(txt, "<mobyFilter>", fixed = TRUE)
+  for (section in c("Summary", "Filtering", "Inspect")) expect_match(txt, section, fixed = TRUE)
+  # before -> after on the three scales
+  expect_match(txt, "Detections", fixed = TRUE)
+  expect_match(txt, "Individuals", fixed = TRUE)
+  expect_match(txt, "Stations", fixed = TRUE)
+  # the detail is pointed at, not printed: no per-individual rows
+  expect_match(txt, "$filter_summary", fixed = TRUE)
+  expect_false(any(grepl(paste0("^\\s*", levels(factor(rays$ID))[1], "\\s"),
+                         strsplit(txt, "\n")[[1]])))
+  # and the output stays short whatever the number of animals
+  expect_lt(length(strsplit(txt, "\n")[[1]]), 30L)
+})
+
+
+test_that("print lists only the filters that actually ran, with their rule", {
+  data(rays, envir = environment())
+  # no speed limit and no cut-off dates supplied, so neither may be claimed
+  txt <- ptxt(suppressMessages(filterDetections(rays, isolation.window = 24, verbose = FALSE)))
+  expect_match(txt, "Duplicate detections", fixed = TRUE)
+  expect_match(txt, "Isolation", fixed = TRUE)
+  expect_false(grepl("Speed", txt, fixed = TRUE))
+  expect_false(grepl("Cut-off", txt, fixed = TRUE))
+
+  # the rule shown is the one the verbose header used, so the two can never disagree
+  ids <- levels(factor(rays$ID))
+  nd <- stats::setNames(rep(c(60, 90), length.out = length(ids)), ids)
+  txt2 <- ptxt(suppressMessages(filterDetections(as_moby(rays, nominal.delay = nd), verbose = FALSE)))
+  expect_match(txt2, "nominal delay (per tag)", fixed = TRUE)
+})
+
+
+test_that("the removal summary uses full criterion names, not the table's abbreviations", {
+  data(rays, envir = environment())
+  r <- suppressMessages(filterDetections(as_moby(rays, nominal.delay = 60), verbose = FALSE))
+  txt <- ptxt(r)
+  expect_match(txt, "Removal summary", fixed = TRUE)
+  expect_match(txt, "Minimum lag", fixed = TRUE)
+  # "Min. lag" is the per-individual table's column label; the overview spells it out
+  expect_true("Min. lag" %in% colnames(r$filter_summary))
+  expect_false(grepl("* Min. lag", txt, fixed = TRUE))
+})
+
+
+test_that("a run that removes nothing prints no removal summary", {
+  d <- data.frame(ID = factor(c("A", "A")),
+                  datetime = as.POSIXct(c("2023-06-01 08:00:00", "2023-06-01 08:00:30"), tz = "UTC"),
+                  station = "S1", lon = -8, lat = 37, stringsAsFactors = FALSE)
+  r <- suppressMessages(filterDetections(d, verbose = FALSE,
+                        tagging.dates = as.POSIXct("2023-05-01", tz = "UTC")))
+  txt <- ptxt(r)
+  expect_false(grepl("Removal summary", txt, fixed = TRUE))
+  expect_match(txt, "100.0% retained", fixed = TRUE)
 })

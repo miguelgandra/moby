@@ -63,36 +63,84 @@ test_that("as_moby stores, validates and inherits nominal.delay", {
   expect_error(as_moby(d, nominal.delay = "fast"), "nominal.delay")
 })
 
-test_that("print.mobyData shows the summary sections, including nominal.delay", {
+test_that("print.mobyData summarises the dataset and its metadata", {
   d <- as_moby(as.data.frame(rays), nominal.delay = 120)
   out <- paste(capture.output(print(d)), collapse = "\n")
-  expect_match(out, "<mobyData>")
-  expect_match(out, "overview\\s+1,643 detections")     # thousands separator
-  expect_match(out, "8 individuals")
-  expect_match(out, "9 variables")                      # 'variables', not 'columns'
-  expect_match(out, "period\\s+2023-04-02")
-  expect_match(out, "space\\s+6 stations")
-  expect_match(out, "lon \\[-9\\.02, -8\\.97\\]")
-  # regression: nominal.delay was previously never displayed
-  expect_match(out, "nominal.delay \\(1\\)")
-  expect_match(out, "tagging.dates \\(8\\)")
-  expect_match(out, "EPSG: 32629")
-  # preview: 3 rows by default, showing every variable
-  expect_match(out, "Preview \\(first 3 rows\\)")
-  for (v in colnames(rays)) expect_match(out, v, fixed = TRUE)
+  expect_match(out, "<mobyData>", fixed = TRUE)
+  for (section in c("Summary", "Coverage", "Metadata")) expect_match(out, section, fixed = TRUE)
+  expect_match(out, "1,643 detections", fixed = TRUE)   # thousands separator
+  expect_match(out, "8 individuals", fixed = TRUE)
+  expect_match(out, "6 stations", fixed = TRUE)
+  expect_match(out, "9 variables", fixed = TRUE)        # 'variables', not 'columns'
+  expect_match(out, "2023-04-02")
+  expect_match(out, "Time zone", fixed = TRUE)
+  expect_match(out, "Longitude", fixed = TRUE)
+  expect_match(out, "EPSG:32629", fixed = TRUE)
 })
 
-test_that("print.mobyData preview is controllable and degrades gracefully", {
-  expect_false(any(grepl("Preview", capture.output(print(rays, preview = 0)))))
-  expect_match(paste(capture.output(print(rays, preview = 1)), collapse = "\n"),
-               "Preview \\(first 1 row\\)")
-  # no rows / no optional roles -> the corresponding sections are simply omitted
+test_that("the metadata block lists every supported field, present or not", {
+  d <- as_moby(as.data.frame(rays), nominal.delay = 120)
+  g <- .mobyGlyphs()
+  out <- paste(capture.output(print(d)), collapse = "\n")
+  # every field is named whether or not it is attached: the absent ones say what this dataset
+  # cannot do downstream, which is as useful as knowing what it can
+  for (f in c("Tagging dates", "Nominal delays", "ID groups", "Land polygon", "Coordinate CRS"))
+    expect_match(out, f, fixed = TRUE)
+  expect_match(out, paste0(g$tick, " Tagging dates"), fixed = TRUE)
+  expect_match(out, paste0(g$cross, " Land polygon"), fixed = TRUE)   # not supplied here
+})
+
+test_that("counts are reported against the roster where one exists", {
+  d <- as.data.frame(rays)
+  d$ID <- factor(as.character(d$ID), levels = c(sort(unique(as.character(d$ID))), "GHOST1", "GHOST2"))
+  md <- as_moby(d, tagging.dates = mobyMeta(rays)$tagging.dates)
+  out <- paste(capture.output(print(md)), collapse = "\n")
+  # tagged and detected are reported separately, because they legitimately differ
+  expect_match(out, "10 individuals tagged", fixed = TRUE)
+  expect_match(out, "8 individuals detected", fixed = TRUE)
+  # and a metadata count is shown against that roster
+  expect_match(out, "(8/10)", fixed = TRUE)
+
+  # with no roster (a character ID column) there is nothing to compare against, so a bare count
+  out2 <- paste(capture.output(print(as_moby(as.data.frame(rays)))), collapse = "\n")
+  expect_match(out2, "8 individuals", fixed = TRUE)
+  expect_false(grepl("tagged", out2, fixed = TRUE))
+})
+
+test_that("the land layer is named when the caller gave it one", {
+  coastline <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(cbind(c(-9.1, -8.9, -8.9, -9.1, -9.1), c(38.4, 38.4, 38.5, 38.5, 38.4)))),
+    crs = 4326))
+  out <- paste(capture.output(print(as_moby(as.data.frame(rays), land.shape = coastline))),
+               collapse = "\n")
+  expect_match(out, "Land polygon", fixed = TRUE)
+  expect_match(out, "(coastline)", fixed = TRUE)
+})
+
+test_that("print shows no data rows: head() is what returns rows", {
+  out <- capture.output(print(rays))
+  # the preview is gone, so the output is short and fixed-height whatever the dataset
+  expect_lt(length(out), 25L)
+  expect_false(any(grepl("Preview", out, fixed = TRUE)))
+  # a value that only ever appeared in the preview must not be there
+  expect_false(any(grepl(as.character(rays$transmitter[1]), out, fixed = TRUE)))
+  # and the argument that controlled it is gone
+  expect_false("preview" %in% names(formals(moby:::print.mobyData)))
+  # head() still returns rows, as a plain data frame
+  expect_s3_class(head(rays, 2), "data.frame")
+  expect_equal(nrow(head(rays, 2)), 2L)
+})
+
+test_that("sections absent from the data are simply omitted", {
   expect_no_error(capture.output(print(rays[0, ])))
   minimal <- suppressMessages(as_moby(data.frame(
     ID = factor("a"), datetime = as.POSIXct("2024-01-01", tz = "UTC"))))
   out <- paste(capture.output(print(minimal)), collapse = "\n")
-  expect_false(grepl("space", out))
-  expect_false(grepl("metadata", out))
+  expect_false(grepl("Longitude", out, fixed = TRUE))
+  expect_false(grepl("stations", out, fixed = TRUE))
+  # the metadata block still lists the fields, all absent
+  expect_match(out, "Metadata", fixed = TRUE)
+  expect_match(out, paste0(.mobyGlyphs()$cross, " Tagging dates"), fixed = TRUE)
 })
 
 test_that("print.mobyData falls back to ASCII glyphs off UTF-8", {

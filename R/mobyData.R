@@ -115,6 +115,9 @@ as_moby <- function(data,
   # consults them, so passing verbose = FALSE cannot alter which metadata is inherited or reported.
   supplied <- names(as.list(match.call())[-1])
 
+  land_expr <- substitute(land.shape)
+  land_name <- if (is.symbol(land_expr)) as.character(land_expr) else NULL
+
   # coerce to a plain data.frame, then re-attach the class/metadata below
   data <- as.data.frame(data)
 
@@ -189,6 +192,10 @@ as_moby <- function(data,
   }
 
   attr(data, "moby") <- meta
+  # The name the caller gave the land layer, kept for print() only. Deliberately NOT part of `meta`:
+  # the internal callers rebuild a dataset with do.call(as_moby, meta), so anything in that list has
+  # to be a formal argument, and a display label has no business in the user-facing signature.
+  if ("land.shape" %in% supplied) attr(data, "moby.land.name") <- land_name
   class(data) <- unique(c("mobyData", "data.frame"))
   data
 }
@@ -224,13 +231,6 @@ is_moby <- function(x) inherits(x, "mobyData")
 mobyMeta <- function(x) attr(x, "moby")
 
 
-# glyphs used by print.mobyData, with ASCII fallbacks for non-UTF-8 consoles (Windows in a legacy
-# locale would otherwise render mojibake)
-.mobyGlyphs <- function() {
-  # \u escapes keep this file pure ASCII (so it behaves identically whatever locale R starts in)
-  if (isTRUE(l10n_info()$`UTF-8`)) list(rule = "\u2500", sep = "\u00b7", arrow = "\u2192")
-  else                             list(rule = "-",      sep = "|",      arrow = "->")
-}
 
 # (thousands-separated integers come from .fmtN() in helpers-messaging.R; this file used to carry a
 # byte-identical private copy, which collided with the count+noun .fmtCount() helper)
@@ -247,6 +247,14 @@ mobyMeta <- function(x) attr(x, "moby")
 }
 
 # emit "label      value", with continuation lines aligned under the value column
+# Title-case the first letter, leaving the rest alone (so "min_lag" style names keep their shape)
+.capitalise <- function(x) sub("^(.)", "\\U\\1", x, perl = TRUE)
+
+# the CRS may be a bare code or an sf crs object (whose $input already reads "EPSG:32629")
+.epsgLabel <- function(e) {
+  if (inherits(e, "crs")) sub("^EPSG:", "", as.character(e$input)[1]) else as.character(e)[1]
+}
+
 .mobyField <- function(label, lines, indent = 11L) {
   if (length(lines) == 0) return(invisible(NULL))
   cat(formatC(label, width = -indent), lines[1], "\n", sep = "")
@@ -298,82 +306,79 @@ mobyMeta <- function(x) attr(x, "moby")
 
 
 #' @param x A `mobyData` object.
-#' @param preview Number of leading rows shown under the summary. Defaults to 3; `0` prints the
-#' summary only.
 #' @param width Console width used to lay the summary out. Defaults to `getOption("width")`.
 #' @param ... Ignored.
 #' @rdname as_moby
 #' @export
-print.mobyData <- function(x, preview = 3L, width = getOption("width"), ...) {
+print.mobyData <- function(x, width = getOption("width"), ...) {
 
   meta <- attr(x, "moby")
   g <- .mobyGlyphs()
-  w <- max(40L, min(as.integer(width), 100L))
+  w <- .printWidth(width)
+  .printOpen("mobyData", w)
 
-  # ---- header rule -----------------------------------------------------------------------------
-  hdr <- paste0(strrep(g$rule, 2), " <mobyData> ")
-  cat(hdr, strrep(g$rule, max(0L, w - nchar(hdr))), "\n\n", sep = "")
-
-  # ---- overview --------------------------------------------------------------------------------
+  # ---- Input: the scale of what is held ----------------------------------------------------------
   noun <- .mobyRowNoun(x)
-  id <- meta$id.col
-  n_ids <- if (!is.null(id) && id %in% colnames(x)) length(unique(stats::na.omit(x[[id]]))) else NA_integer_
-  # a position table knows how many detections it was aggregated from - report both, so the row count
-  # is never mistaken for the detection count
   n_det <- if (noun == "positions") sum(x[["detections"]], na.rm = TRUE) else NA_real_
-  # .mobyRowNoun() returns the plural; all three nouns pluralise regularly, so the singular that
-  # .fmtCount() needs is recovered by dropping the trailing "s"
-  overview <- c(.fmtCount(nrow(x), sub("s$", "", noun)),
-                if (is.finite(n_det) && n_det > 0) .fmtCount(round(n_det), "detection"),
-                if (!is.na(n_ids)) .fmtCount(n_ids, "individual"),
-                .fmtCount(ncol(x), "variable"))
-  .mobyField("overview", .packItems(overview, g$sep, w - 11L))
-
-  # ---- period ----------------------------------------------------------------------------------
-  dt <- meta$datetime.col
-  if (!is.null(dt) && dt %in% colnames(x) && inherits(x[[dt]], "POSIXct") &&
-      any(!is.na(x[[dt]]))) {
-    rng <- range(x[[dt]], na.rm = TRUE)
-    dur <- .fmtDuration(rng[1], rng[2])
-    span <- paste0(format(rng[1], "%Y-%m-%d"), " ", g$arrow, " ", format(rng[2], "%Y-%m-%d"))
-    qual <- paste(c(dur, paste0("tz = ", .dataTZ(x[[dt]]))), collapse = ", ")
-    .mobyField("period", paste0(span, " (", qual, ")"))
+  scale <- c(.fmtCount(nrow(x), sub("s$", "", noun)),
+             if (is.finite(n_det) && n_det > 0) .fmtCount(round(n_det), "detection"))
+  id <- meta$id.col
+  if (!is.null(id) && id %in% colnames(x)) {
+    # TAGGED is the declared roster (the factor's levels), DETECTED the animals with data. They differ
+    # whenever an animal was tagged and never heard from, which is worth seeing rather than inferring.
+    n_obs <- .nObserved(x[[id]])
+    n_tagged <- if (is.factor(x[[id]])) nlevels(x[[id]]) else n_obs
+    scale <- c(scale,
+               if (n_tagged > n_obs) paste0(.fmtCount(n_tagged, "individual"), " tagged"),
+               paste0(.fmtCount(n_obs, "individual"), if (n_tagged > n_obs) " detected" else ""))
   }
-
-  # ---- space -----------------------------------------------------------------------------------
   st <- meta$station.col
-  space <- character(0)
   if (!is.null(st) && st %in% colnames(x))
-    space <- c(space, .fmtCount(length(unique(stats::na.omit(x[[st]]))), "station"))
-  for (ax in c("lon", "lat")) {
-    cc <- meta[[paste0(ax, ".col")]]
-    if (!is.null(cc) && cc %in% colnames(x) && is.numeric(x[[cc]]) && any(!is.na(x[[cc]]))) {
-      r <- range(x[[cc]], na.rm = TRUE)
-      space <- c(space, sprintf("%s [%.2f, %.2f]", ax, r[1], r[2]))
-    }
+    scale <- c(scale, .fmtCount(length(unique(stats::na.omit(x[[st]]))), "station"))
+  scale <- c(scale, .fmtCount(ncol(x), "variable"))
+  .printSection("Summary", stats::setNames(rep("", length(scale)), scale), blank.before = FALSE)
+
+  # ---- Coverage: the extent the data span --------------------------------------------------------
+  dt <- meta$datetime.col
+  has_time <- !is.null(dt) && dt %in% colnames(x) && inherits(x[[dt]], "POSIXct") && any(!is.na(x[[dt]]))
+  axes <- Filter(function(a) {
+    cc <- meta[[paste0(a, ".col")]]
+    !is.null(cc) && cc %in% colnames(x) && is.numeric(x[[cc]]) && any(!is.na(x[[cc]]))
+  }, c("lon", "lat"))
+  cov <- character(0)
+  if (has_time) {
+    rng <- range(x[[dt]], na.rm = TRUE)
+    cov["Time"] <- paste0(format(rng[1], "%Y-%m-%d"), " ", g$arrow, " ", format(rng[2], "%Y-%m-%d"),
+                          " (", .fmtDuration(rng[1], rng[2]), ")")
   }
-  .mobyField("space", .packItems(space, g$sep, w - 11L))
-
-  # ---- metadata (only what is actually attached) -----------------------------------------------
-  extras <- c(
-    if (!is.null(meta$tagging.dates)) paste0("tagging.dates (", length(meta$tagging.dates), ")"),
-    if (!is.null(meta$nominal.delay)) paste0("nominal.delay (", length(meta$nominal.delay), ")"),
-    if (!is.null(meta$id.groups))     paste0("id.groups (", length(meta$id.groups), ")"),
-    if (!is.null(meta$epsg.code))     paste0("EPSG: ", meta$epsg.code),
-    if (!is.null(meta$land.shape))    "land.shape")
-  .mobyField("metadata", .packItems(extras, g$sep, w - 11L))
-
-  # ---- preview ---------------------------------------------------------------------------------
-  preview <- as.integer(preview)
-  if (!is.na(preview) && preview > 0L && nrow(x) > 0L && ncol(x) > 0L) {
-    n <- min(preview, nrow(x))
-    cat("\nPreview (first ", n, if (n == 1L) " row)" else " rows)", "\n", sep = "")
-    # print as a plain data.frame: shows every variable and wraps to the console width, so nothing
-    # is silently hidden
-    print(utils::head(as.data.frame(x), n))
+  for (a in axes) {
+    r <- range(x[[meta[[paste0(a, ".col")]]]], na.rm = TRUE)
+    cov[c(lon = "Longitude", lat = "Latitude")[[a]]] <- sprintf("%.2f %s %.2f", r[1], g$arrow, r[2])
   }
+  if (has_time) cov["Time zone"] <- .dataTZ(x[[dt]])
+  .printSection("Coverage", cov)
 
-  cat("\n", strrep(g$rule, w), "\n", sep = "")
+  # ---- Metadata: every supported field, present or not -------------------------------------------
+  # Listing the absent ones too is the point: it says at a glance what this dataset can and cannot do
+  # downstream (no tagging dates means no residency; no CRS means no distances).
+  n_roster <- if (!is.null(id) && id %in% colnames(x) && is.factor(x[[id]])) nlevels(x[[id]]) else NA_integer_
+  covered <- function(v) {
+    if (is.na(n_roster) || is.null(names(v))) paste0("(", length(v), ")")
+    else paste0("(", sum(levels(x[[id]]) %in% names(v)), "/", n_roster, ")")
+  }
+  entries <- list(
+    "Tagging dates"  = if (!is.null(meta$tagging.dates)) covered(meta$tagging.dates),
+    "Nominal delays" = if (!is.null(meta$nominal.delay)) covered(meta$nominal.delay),
+    "ID groups"      = if (!is.null(meta$id.groups)) paste0("(", length(meta$id.groups), ")"),
+    "Land polygon"   = if (!is.null(meta$land.shape))
+                         if (!is.null(attr(x, "moby.land.name")))
+                           paste0("(", attr(x, "moby.land.name"), ")") else "",
+    "Coordinate CRS" = if (!is.null(meta$epsg.code)) paste0("EPSG:", .epsgLabel(meta$epsg.code)))
+  present <- !vapply(entries, is.null, logical(1))
+  entries[!present] <- ""
+  .printSection("Metadata", unlist(entries), marker = ifelse(present, "tick", "cross"))
+
+  .printClose(w)
   invisible(x)
 }
 

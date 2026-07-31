@@ -755,20 +755,55 @@ matchDeployments <- function(detections,
 
 
 #' @export
-print.mobyQC <- function(x, ...) {
-  n <- nrow(x$report)
-  cat("<mobyQC> deployment metadata quality-control report\n")
-  cat("  ", nrow(x$deployments), " deployment records | ",
-      length(unique(x$deployments$receiver)), " receivers | ",
-      length(unique(x$deployments$station)), " stations\n", sep = "")
-  if (n == 0) {
-    cat("  No issues flagged.\n")
-  } else {
-    cat("  ", n, " issue(s) flagged:\n", sep = "")
-    ct <- sort(x$counts, decreasing = TRUE)
-    for (nm in names(ct)) cat(sprintf("    - %-32s %d\n", nm, ct[[nm]]))
-    cat("  Inspect $report for details.\n")
+print.mobyQC <- function(x, width = getOption("width"), ...) {
+
+  w <- .printWidth(width)
+  rep <- x$report
+  dep <- x$deployments
+  n <- nrow(rep)
+
+  .printOpen("mobyQC", w)
+  cat("Deployment metadata quality-control report\n")
+
+  # ---- what was checked --------------------------------------------------------------------------
+  .printSection("Input", stats::setNames(rep("", 3L), c(
+    .fmtCount(nrow(dep), "deployment record"),
+    .fmtCount(length(unique(stats::na.omit(dep$receiver))), "receiver"),
+    .fmtCount(length(unique(stats::na.omit(dep$station))), "station"))), marker = "bullet")
+
+  # ---- the overall verdict -----------------------------------------------------------------------
+  .printSection("Results",
+                stats::setNames("", if (n == 0) "no issues flagged"
+                                    else paste0(.fmtCount(n, "issue"), " flagged")),
+                marker = "bullet")
+
+  # ---- the breakdown -----------------------------------------------------------------------------
+  if (n > 0) {
+    ct <- sort(table(rep$type), decreasing = TRUE)
+    items <- vapply(names(ct), function(ty) {
+      rows <- rep[rep$type == ty, , drop = FALSE]
+      # Report the affected count in whichever unit the issue's rows actually identify, rather than
+      # from a per-type table that would drift as checks are added: a station-level check leaves
+      # `receiver` empty, a receiver-level one leaves `station` empty.
+      n_st <- length(unique(stats::na.omit(rows$station)))
+      n_rc <- length(unique(stats::na.omit(rows$receiver)))
+      affected <- if (n_st > 0) .fmtCount(n_st, "station")
+                  else if (n_rc > 0) .fmtCount(n_rc, "receiver") else ""
+      paste0(.fmtN(ct[[ty]]), if (nzchar(affected)) paste0(" (", affected, ")") else "")
+    }, character(1))
+    # right-align the counts so the digits line up under each other, which is what makes a ranked
+    # list scannable
+    cw <- max(nchar(.fmtN(as.integer(ct))))
+    items <- vapply(seq_along(items), function(i)
+      sub("^([0-9,]+)", formatC(sub("^([0-9,]+).*$", "\\1", items[i]), width = cw), items[i]),
+      character(1), USE.NAMES = FALSE)
+    names(items) <- names(ct)
+    .printSection("Issue summary", items, marker = "bullet")
   }
+
+  # ---- where the detail lives --------------------------------------------------------------------
+  if (n > 0) .printNote("Detailed diagnostics are available in $report.")
+  cat("\n"); .printClose(w)
   invisible(x)
 }
 
