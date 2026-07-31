@@ -193,12 +193,14 @@ containing:
 
   the removed detections, each with a `reason` column;
 
-- `summary`:
+- `filter_summary`:
 
   a per-individual data frame of raw counts and removals by filter.
 
 The filtering parameters used are stored as the `"parameters"`
-attribute.
+attribute. The `print` method gives a high-level overview - what the run
+removed, under which filters, and where the detail lives - rather than
+the whole per-individual table, which is `$filter_summary`.
 
 ## Details
 
@@ -326,25 +328,36 @@ filtered <- filterDetections(rays)
 #> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.
 #> ── filterDetections() ────────────────────────────────────────────────── moby ──
 #> 
-#> ℹ Removing spurious detections
+#> ℹ Filtering acoustic detections
 #> • Input: 1,643 detections · 8 individuals
 #> 
-#> ✔ 1,643 detections retained (0 removed, 0%)
-#> → Breakdown by filter: print() the result
+#> → Filters
+#>   • duplicate detections
+#>   • before tagging date
+#> 
+#> → Results
+#>   • retained  1,643 detections (100.0%)
+#>   • removed   0 detections (0.0%)
+#> 
+#> ℹ Detailed diagnostics are available in the returned <mobyFilter> object.
 filtered                     # prints the summary
-#> <mobyFilter> filtered acoustic detections
-#>   1643 retained | 0 removed
-#>   Per-individual summary:
-#>   ID Raw detections Before tagging Total removed
-#>  D01            249              0             -
-#>  D02            154              0             -
-#>  D03            160              0             -
-#>  D04            169              0             -
-#>  R01            283              0             -
-#>  R02            160              0             -
-#>  R03            207              0             -
-#>  R04            261              0             -
-#>   Inspect $data, $data_discarded and attr(, "parameters").
+#> ── <mobyFilter> ────────────────────────────────────────────────────────────────
+#> Summary
+#>   Detections   1,643 → 1,643 (100.0% retained)
+#>   Individuals  8 → 8
+#>   Stations     6 → 6
+#> 
+#> Filtering
+#>   ✓ Duplicate detections
+#>   ✓ Before tagging date
+#> 
+#> Inspect
+#>   $data                 filtered detections
+#>   $data_discarded       removed detections
+#>   $filter_summary       per-individual filtering summary
+#>   attr(, "parameters")  filtering parameters
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 head(filtered$data_discarded[, c("ID", "datetime", "reason")])
 #> [1] ID       datetime reason  
 #> <0 rows> (or 0-length row.names)
@@ -354,28 +367,44 @@ filtered2 <- filterDetections(rays, nominal.delay = 120)   # 120 s tags
 #> Warning: - 'id.col' converted to factor.
 #> ── filterDetections() ────────────────────────────────────────────────── moby ──
 #> 
-#> ℹ Removing spurious detections
+#> ℹ Filtering acoustic detections
 #> • Input: 1,643 detections · 8 individuals
 #> 
-#> → Filtering criteria
-#>   • min_lag  3,600 s (30 × nominal delay)
+#> → Filters
+#>   • duplicate detections
+#>   • before tagging date
+#>   • minimum lag  3,600 s (30 × nominal delay)
 #> 
-#> ✔ 1,556 detections retained (87 removed, 5%)
-#> → Breakdown by filter: print() the result
+#> → Results
+#>   • retained  1,556 detections (94.7%)
+#>   • removed   87 detections (5.3%)
+#> 
+#> → Removal summary
+#>   • minimum lag  87 (5.3%) — 8 individuals
+#> 
+#> ℹ Detailed diagnostics are available in the returned <mobyFilter> object.
 
 # or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)
 filtered2b <- filterDetections(rays, min.lag.threshold = 3600)
 #> Warning: - 'id.col' converted to factor.
 #> ── filterDetections() ────────────────────────────────────────────────── moby ──
 #> 
-#> ℹ Removing spurious detections
+#> ℹ Filtering acoustic detections
 #> • Input: 1,643 detections · 8 individuals
 #> 
-#> → Filtering criteria
-#>   • min_lag  3,600 s (fixed window)
+#> → Filters
+#>   • duplicate detections
+#>   • before tagging date
+#>   • minimum lag  3,600 s (fixed)
 #> 
-#> ✔ 1,556 detections retained (87 removed, 5%)
-#> → Breakdown by filter: print() the result
+#> → Results
+#>   • retained  1,556 detections (94.7%)
+#>   • removed   87 detections (5.3%)
+#> 
+#> → Removal summary
+#>   • minimum lag  87 (5.3%) — 8 individuals
+#> 
+#> ℹ Detailed diagnostics are available in the returned <mobyFilter> object.
 
 # \donttest{
 # add a movement-speed filter (slower: computes step distances); on a 3-animal subset
@@ -385,15 +414,20 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.
 #> ── filterDetections() ────────────────────────────────────────────────── moby ──
 #> 
-#> ℹ Removing spurious detections
+#> ℹ Filtering acoustic detections
 #> • Input: 563 detections · 3 individuals
 #> 
-#> → Filtering criteria
+#> → Filters
+#>   • duplicate detections
+#>   • before tagging date
 #>   • speed  5 km/h (great-circle)
 #> 
-#> ✔ 563 detections retained (0 removed, 0%)
+#> → Results
+#>   • retained  563 detections (100.0%)
+#>   • removed   0 detections (0.0%)
+#> 
 #> ! 9 flagged for review (over-speed, retained)
-#> → Breakdown by filter: print() the result
-#> ⏱ runtime: 2.0s
+#> ℹ Detailed diagnostics are available in the returned <mobyFilter> object.
+#> ⏱ runtime: 1.5s
 # }
 ```

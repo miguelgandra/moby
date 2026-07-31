@@ -8,7 +8,7 @@ and `$summary` for details.
 
 ``` r
 # S3 method for class 'mobyFilter'
-print(x, ...)
+print(x, width = getOption("width"), ...)
 ```
 
 ## Arguments

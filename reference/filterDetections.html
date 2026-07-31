@@ -218,11 +218,13 @@ for unlimited.</p></dd>
 <dt><code>data_discarded</code></dt>
 <dd><p>the removed detections, each with a <code>reason</code> column;</p></dd>
 
-<dt><code>summary</code></dt>
+<dt><code>filter_summary</code></dt>
 <dd><p>a per-individual data frame of raw counts and removals by filter.</p></dd>
 
 
-</dl><p>The filtering parameters used are stored as the <code>"parameters"</code> attribute.</p>
+</dl><p>The filtering parameters used are stored as the <code>"parameters"</code> attribute. The <code>print</code> method gives
+a high-level overview - what the run removed, under which filters, and where the detail lives -
+rather than the whole per-individual table, which is <code>$filter_summary</code>.</p>
     </div>
     <div class="section level2">
     <h2 id="details">Details<a class="anchor" aria-label="anchor" href="#details"></a></h2>
@@ -311,25 +313,36 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Filtering acoustic detections</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,643 detections retained (0 removed, 0%)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filters</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • duplicate detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • before tagging date</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Results</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • retained  1,643 detections (100.0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • removed   0 detections (0.0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Detailed diagnostics are available in the returned &lt;mobyFilter&gt; object.</span>
 <span class="r-in"><span><span class="va">filtered</span>                     <span class="co"># prints the summary</span></span></span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyFilter&gt; filtered acoustic detections</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   1643 retained | 0 removed</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Per-individual summary:</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   ID Raw detections Before tagging Total removed</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  D01            249              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  D02            154              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  D03            160              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  D04            169              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  R01            283              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  R02            160              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  R03            207              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>  R04            261              0             -</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>   Inspect $data, $data_discarded and attr(, "parameters").</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ── &lt;mobyFilter&gt; ────────────────────────────────────────────────────────────────</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Summary</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Detections   1,643 → 1,643 (100.0% retained)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Individuals  8 → 8</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   Stations     6 → 6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Filtering</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ✓ Duplicate detections</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   ✓ Before tagging date</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> Inspect</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   $data                 filtered detections</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   $data_discarded       removed detections</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   $filter_summary       per-individual filtering summary</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>   attr(, "parameters")  filtering parameters</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ────────────────────────────────────────────────────────────────────────────────</span>
 <span class="r-in"><span><span class="fu"><a href="https://rdrr.io/r/utils/head.html" class="external-link">head</a></span><span class="op">(</span><span class="va">filtered</span><span class="op">$</span><span class="va">data_discarded</span><span class="op">[</span>, <span class="fu"><a href="https://rdrr.io/r/base/c.html" class="external-link">c</a></span><span class="op">(</span><span class="st">"ID"</span>, <span class="st">"datetime"</span>, <span class="st">"reason"</span><span class="op">)</span><span class="op">]</span><span class="op">)</span></span></span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> [1] ID       datetime reason  </span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> &lt;0 rows&gt; (or 0-length row.names)</span>
@@ -339,28 +352,44 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Filtering acoustic detections</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filtering criteria</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • min_lag  3,600 s (30 × nominal delay)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filters</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • duplicate detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • before tagging date</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • minimum lag  3,600 s (30 × nominal delay)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,556 detections retained (87 removed, 5%)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Results</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • retained  1,556 detections (94.7%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • removed   87 detections (5.3%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Removal summary</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • minimum lag  87 (5.3%) — 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Detailed diagnostics are available in the returned &lt;mobyFilter&gt; object.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># or, without a known nominal delay, a fixed per-receiver isolation window (1 h = 3600 s)</span></span></span>
 <span class="r-in"><span><span class="va">filtered2b</span> <span class="op">&lt;-</span> <span class="fu">filterDetections</span><span class="op">(</span><span class="va">rays</span>, min.lag.threshold <span class="op">=</span> <span class="fl">3600</span><span class="op">)</span></span></span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- 'id.col' converted to factor.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Filtering acoustic detections</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 1,643 detections · 8 individuals</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filtering criteria</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span>   • min_lag  3,600 s (fixed window)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filters</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • duplicate detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • before tagging date</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • minimum lag  3,600 s (fixed)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 1,556 detections retained (87 removed, 5%)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Results</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • retained  1,556 detections (94.7%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • removed   87 detections (5.3%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Removal summary</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • minimum lag  87 (5.3%) — 8 individuals</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Detailed diagnostics are available in the returned &lt;mobyFilter&gt; object.</span>
 <span class="r-in"><span></span></span>
 <span class="r-in"><span><span class="co"># \donttest{</span></span></span>
 <span class="r-in"><span><span class="co"># add a movement-speed filter (slower: computes step distances); on a 3-animal subset</span></span></span>
@@ -370,16 +399,21 @@ Fish Biology and Fisheries, 24:199-218.</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> - No 'nominal.delay' or 'min.lag.threshold' supplied or found in metadata: the min_lag false-detection filter is OFF. Supply the transmitter nominal delay (s) for an adaptive window, or a fixed 'min.lag.threshold' (s), to enable it.</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">filterDetections()</span> ────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Removing spurious detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Filtering acoustic detections</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> • Input: 563 detections · 3 individuals</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filtering criteria</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Filters</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • duplicate detections</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • before tagging date</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • speed  5 km/h (great-circle)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 563 detections retained (0 removed, 0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> → Results</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • retained  563 detections (100.0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span>   • removed   0 detections (0.0%)</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #BBBB00;">!</span> 9 flagged for review (over-speed, retained)</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> → Breakdown by filter: print() the result</span>
-<span class="r-msg co"><span class="r-pr">#&gt;</span> ⏱ runtime: 2.0s</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Detailed diagnostics are available in the returned &lt;mobyFilter&gt; object.</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ⏱ runtime: 1.5s</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

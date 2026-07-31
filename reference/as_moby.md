@@ -44,7 +44,7 @@ as_moby(
 )
 
 # S3 method for class 'mobyData'
-print(x, preview = 3L, width = getOption("width"), ...)
+print(x, width = getOption("width"), ...)
 ```
 
 ## Arguments
@@ -127,11 +127,6 @@ print(x, preview = 3L, width = getOption("width"), ...)
 
   A `mobyData` object.
 
-- preview:
-
-  Number of leading rows shown under the summary. Defaults to 3; `0`
-  prints the summary only.
-
 - width:
 
   Console width used to lay the summary out. Defaults to
@@ -173,18 +168,24 @@ df <- data.frame(
 md <- as_moby(df, tagging.dates = as.POSIXct("2023-01-01", tz = "UTC"))
 md
 #> ── <mobyData> ──────────────────────────────────────────────────────────────────
+#> Summary
+#>   3 detections
+#>   2 individuals
+#>   2 stations
+#>   5 variables
 #> 
-#> overview   3 detections · 2 individuals · 5 variables
-#> period     2023-01-01 → 2023-01-01 (1.0 hours, tz = UTC)
-#> space      2 stations · lon [-8.20, -8.00] · lat [37.00, 37.10]
-#> metadata   tagging.dates (1)
+#> Coverage
+#>   Time       2023-01-01 → 2023-01-01 (1.0 hours)
+#>   Longitude  -8.20 → -8.00
+#>   Latitude   37.00 → 37.10
+#>   Time zone  UTC
 #> 
-#> Preview (first 3 rows)
-#>   ID            datetime  lon  lat station
-#> 1  A 2023-01-01 00:00:00 -8.1 37.0      R1
-#> 2  A 2023-01-01 01:00:00 -8.2 37.1      R2
-#> 3  B 2023-01-01 00:00:00 -8.0 37.0      R1
-#> 
+#> Metadata
+#>   ✓ Tagging dates  (1)
+#>   ✗ Nominal delays
+#>   ✗ ID groups
+#>   ✗ Land polygon
+#>   ✗ Coordinate CRS
 #> ────────────────────────────────────────────────────────────────────────────────
 
 # add or update metadata later

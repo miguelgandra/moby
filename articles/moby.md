@@ -44,17 +44,22 @@ df <- data.frame(
 md <- as_moby(df)
 md
 #> ── <mobyData> ──────────────────────────────────────────────────────────────────
+#> Summary
+#>   3 detections
+#>   2 individuals
+#>   2 stations
+#>   3 variables
 #> 
-#> overview   3 detections · 2 individuals · 3 variables
-#> period     2023-06-01 → 2023-06-01 (1.0 hours, tz = UTC)
-#> space      2 stations
+#> Coverage
+#>   Time       2023-06-01 → 2023-06-01 (1.0 hours)
+#>   Time zone  UTC
 #> 
-#> Preview (first 3 rows)
-#>   ID            datetime station
-#> 1  A 2023-06-01 00:00:00      R1
-#> 2  A 2023-06-01 01:00:00      R2
-#> 3  B 2023-06-01 00:00:00      R1
-#> 
+#> Metadata
+#>   ✗ Tagging dates
+#>   ✗ Nominal delays
+#>   ✗ ID groups
+#>   ✗ Land polygon
+#>   ✗ Coordinate CRS
 #> ────────────────────────────────────────────────────────────────────────────────
 ```
 

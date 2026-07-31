@@ -239,9 +239,18 @@ checkDeployments(rays_deployments)
 #>   • coord tolerance  500 m
 #>   • gap tolerance    1 d
 #> 
-#> <mobyQC> deployment metadata quality-control report
-#>   6 deployment records | 6 receivers | 6 stations
-#>   No issues flagged.
+#> ── <mobyQC> ────────────────────────────────────────────────────────────────────
+#> Deployment metadata quality-control report
+#> 
+#> Input
+#>   • 6 deployment records
+#>   • 6 receivers
+#>   • 6 stations
+#> 
+#> Results
+#>   • no issues flagged
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 
 # also cross-check the detections against the deployment windows
 data(rays)
@@ -259,9 +268,18 @@ checkDeployments(rays_deployments, detections = rays)
 #> 
 #> ℹ Cross-checking: 1,643 detections
 #> 
-#> <mobyQC> deployment metadata quality-control report
-#>   6 deployment records | 6 receivers | 6 stations
-#>   No issues flagged.
+#> ── <mobyQC> ────────────────────────────────────────────────────────────────────
+#> Deployment metadata quality-control report
+#> 
+#> Input
+#>   • 6 deployment records
+#>   • 6 receivers
+#>   • 6 stations
+#> 
+#> Results
+#>   • no issues flagged
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 
 # restrict the metadata checks to receivers that actually recorded detections
 checkDeployments(rays_deployments, detections = rays, scope = "detected")
@@ -278,9 +296,18 @@ checkDeployments(rays_deployments, detections = rays, scope = "detected")
 #> 
 #> ℹ Cross-checking: 1,643 detections
 #> 
-#> <mobyQC> deployment metadata quality-control report
-#>   6 deployment records | 6 receivers | 6 stations
-#>   No issues flagged.
+#> ── <mobyQC> ────────────────────────────────────────────────────────────────────
+#> Deployment metadata quality-control report
+#> 
+#> Input
+#>   • 6 deployment records
+#>   • 6 receivers
+#>   • 6 stations
+#> 
+#> Results
+#>   • no issues flagged
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 
 # additionally flag (never remove) stations monitored for under ~6 months
 checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
@@ -298,9 +325,21 @@ checkDeployments(rays_deployments, detections = rays, min.active.days = 30 * 6)
 #> 
 #> ℹ Cross-checking: 1,643 detections
 #> 
-#> <mobyQC> deployment metadata quality-control report
-#>   6 deployment records | 6 receivers | 6 stations
-#>   6 issue(s) flagged:
-#>     - Short monitoring duration        6
-#>   Inspect $report for details.
+#> ── <mobyQC> ────────────────────────────────────────────────────────────────────
+#> Deployment metadata quality-control report
+#> 
+#> Input
+#>   • 6 deployment records
+#>   • 6 receivers
+#>   • 6 stations
+#> 
+#> Results
+#>   • 6 issues flagged
+#> 
+#> Issue summary
+#>   • Short monitoring duration  6 (6 stations)
+#> 
+#> ℹ Detailed diagnostics are available in $report.
+#> 
+#> ────────────────────────────────────────────────────────────────────────────────
 ```
