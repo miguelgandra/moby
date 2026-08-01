@@ -87,3 +87,25 @@ test_that("matchDeployments no longer demands an ID column it never uses", {
   expect_false(is_moby(res))
   expect_false("ID" %in% names(res))
 })
+
+test_that("as_moby(tags=) keys derived metadata to the declared roster, not the observed IDs", {
+  # an animal tagged but never detected stays a declared level; filterDetections() validates
+  # tagging.dates against those levels, so the derivation has to cover them too
+  tg <- data.frame(transmitter = c("T1", "T2", "T3"), ID = c("a", "b", "ghost"),
+                   tagging_date = as.POSIXct(c("2023-01-01", "2023-01-02", "2023-01-03"), tz = "UTC"),
+                   nominal_delay = c(90, 90, 90), stringsAsFactors = FALSE)
+  d <- data.frame(ID = factor(c("a", "a", "b"), levels = c("a", "b", "ghost")),
+                  transmitter = c("T1", "T1", "T2"),
+                  datetime = as.POSIXct(c("2023-06-01", "2023-06-02", "2023-06-03"), tz = "UTC"),
+                  station = "S1", lon = -8, lat = 37, stringsAsFactors = FALSE)
+
+  md <- as_moby(d, tags = tg, verbose = FALSE)
+  expect_setequal(names(mobyMeta(md)$tagging.dates), c("a", "b", "ghost"))
+  expect_setequal(names(mobyMeta(md)$nominal.delay), c("a", "b", "ghost"))
+  # and the dataset it produces is one filterDetections() will accept
+  expect_no_error(filterDetections(md, verbose = FALSE))
+
+  # a plain character ID column declares nothing, so the observed values are the right key
+  d2 <- d; d2$ID <- as.character(d2$ID)
+  expect_setequal(names(mobyMeta(as_moby(d2, tags = tg, verbose = FALSE))$tagging.dates), c("a", "b"))
+})

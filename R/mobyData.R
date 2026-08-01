@@ -160,10 +160,15 @@ as_moby <- function(data,
            call. = FALSE)
     }
     tg$ID <- .tagIDs(tg)
-    # restrict to the animals actually present, so the metadata describes this dataset rather than
-    # the whole tag roster. A missing id.col is left to the validation below to report.
+    # Key on the DECLARED roster, not the observed values: a factor ID column states which animals
+    # the study covers, and an animal that was tagged but never detected is a legitimate level (it
+    # keeps per-individual summaries honest). filterDetections() validates tagging.dates against
+    # those levels, so deriving from unique() instead would attach 24 dates for a 26-animal roster
+    # and then reject the dataset. Fall back to the observed values for a plain character column,
+    # which declares nothing. A missing id.col is left to the validation below to report.
     if (is.character(meta$id.col) && length(meta$id.col) == 1 && meta$id.col %in% colnames(data)) {
-      ids <- as.character(unique(data[[meta$id.col]]))
+      id_values <- data[[meta$id.col]]
+      ids <- if (is.factor(id_values)) levels(id_values) else as.character(unique(id_values))
       if (!("tagging.dates" %in% supplied)) {
         derived <- .deriveTaggingDates(tg, ids)
         if (!is.null(derived)) meta$tagging.dates <- derived
