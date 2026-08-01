@@ -44,7 +44,7 @@
   <rect x="490" y="40" width="316" height="134" rx="9" fill="#f6f8fb" stroke="#b9c4d3" stroke-width="1.2" filter="url(#cardshadow)"/>
   <text x="502" y="61" font-size="12.5" font-weight="700" fill="#3f4a5a" letter-spacing="0.3">2 · CURATE &amp; QUALITY CONTROL</text>
   <text x="502" y="77" font-size="9.5" font-style="italic" fill="#94a3b8">match, label, filter</text>
-  <text x="502" y="100" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()  →  assignAnimalIDs()</text>
+  <text x="502" y="100" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()  →  matchTags()</text>
   <text x="502" y="118" font-size="10.5" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">filterDetections()</text>
   <line x1="502" y1="128" x2="794" y2="128" stroke="#d2dae4" stroke-width="0.9" stroke-dasharray="3 3"/>
   <text x="502" y="141" font-size="9" fill="#b0b9c6">audit only (read-only reports):</text>

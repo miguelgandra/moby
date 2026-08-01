@@ -2,7 +2,7 @@
      font-family="system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif"
      role="img" aria-label="moby data preparation in five stages: import, validate, enrich, clean and bin, declare - producing a mobyData object that feeds the analysis pathways. Teal dots mark essential steps, ochre dots optional ones.">
   <title>moby data preparation, in five stages</title>
-  <desc>Raw detections, a receiver deployment log and tag metadata are imported (optional); the receiver log is validated read-only with checkDeployments; the side tables are folded in with assignAnimalIDs and matchDeployments; the data is cleaned and binned with filterDetections, correctPositions and getTimeBins; as_moby declares study metadata. The result is a mobyData object feeding residency, space use, movement, social network and spatial network analyses. Teal dots mark the two essential steps, ochre dots the optional ones.</desc>
+  <desc>Raw detections, a receiver deployment log and tag metadata are imported (optional); the receiver log is validated read-only with checkDeployments; the side tables are folded in with matchTags and matchDeployments; the data is cleaned and binned with filterDetections, correctPositions and getTimeBins; as_moby declares study metadata. The result is a mobyData object feeding residency, space use, movement, social network and spatial network analyses. Teal dots mark the two essential steps, ochre dots the optional ones.</desc>
 
   <defs>
     <marker id="qa" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
@@ -70,12 +70,12 @@
   <rect x="32" y="302" width="352" height="180" rx="9" fill="#EFF7F7" stroke="#C3DBDC" stroke-width="1.2" filter="url(#qc)"/>
   <text x="52" y="332" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">3 &#183; ENRICH</text>
   <text x="52" y="352" font-size="12.5" font-style="italic" fill="#7c93a0">folds the side tables in</text>
-  <circle cx="58" cy="376" r="4" fill="#2F7E8C"/>
-  <text x="72" y="380" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">assignAnimalIDs()</text>
+  <circle cx="58" cy="376" r="4" fill="#AD7132"/>
+  <text x="72" y="380" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchTags()</text>
   <circle cx="58" cy="403" r="4" fill="#AD7132"/>
   <text x="72" y="407" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">matchDeployments()</text>
   <text x="72" y="432" font-size="13" fill="#5d7480">&#183; either order &#8212; different keys</text>
-  <text x="52" y="462" font-size="12" fill="#a8bcc2">&#8594; animals, dates, stations, coords</text>
+  <text x="52" y="462" font-size="12" fill="#a8bcc2">&#8594; animals, stations, coords</text>
 
   <line x1="388" y1="392" x2="418" y2="392" stroke="#8ba3aa" stroke-width="2" marker-end="url(#qa)"/>
 
@@ -97,10 +97,10 @@
   <rect x="816" y="302" width="352" height="180" rx="9" fill="#E4F0F0" stroke="#A9C9CB" stroke-width="1.3" filter="url(#qc)"/>
   <text x="836" y="332" font-size="16" font-weight="700" fill="#38505c" letter-spacing="0.2">5 &#183; DECLARE</text>
   <text x="836" y="352" font-size="12.5" font-style="italic" fill="#7c93a0">any time &#8212; idempotent</text>
-  <circle cx="842" cy="376" r="4" fill="#AD7132"/>
+  <circle cx="842" cy="376" r="4" fill="#2F7E8C"/>
   <text x="856" y="380" font-size="15" font-family="ui-monospace, Menlo, Consolas, monospace" fill="#2d3748">as_moby()</text>
-  <text x="856" y="405" font-size="13" fill="#5d7480">&#183; column roles &#183; id.groups</text>
-  <text x="856" y="430" font-size="13" fill="#5d7480">&#183; epsg.code &#183; land.shape</text>
+  <text x="856" y="405" font-size="13" fill="#5d7480">&#183; column roles &#183; tagging dates</text>
+  <text x="856" y="430" font-size="13" fill="#5d7480">&#183; id.groups &#183; epsg.code &#183; land.shape</text>
   <text x="836" y="462" font-size="12" fill="#a8bcc2">&#8594; metadata every function reads</text>
 
   <!-- ============ outcome ============ -->
