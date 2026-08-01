@@ -19,3 +19,4 @@
 ^vignettes/\.gitignore$
 \.quarto$
 ^man-roxygen$
+^man/figures/.*\.pdf$

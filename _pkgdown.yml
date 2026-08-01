@@ -27,10 +27,10 @@ navbar:
 
 reference:
 - title: Data model
-  contents: [as_moby, mobyData, mobyMeta, is_moby, head.mobyData, rays]
+  contents: [as_moby, mobyData, mobyMeta, is_moby, head.mobyData, as.data.frame.mobyData, rays]
 - title: Import, quality control & curation
   contents: [moby_pipeline, moby_import_schema, importDetections, importDeployments, importTags, checkDeployments,
-             matchDeployments, plotArray, assignAnimalIDs, filterDetections, plotMinLag]
+             matchDeployments, matchTags, plotArray, filterDetections, plotMinLag]
 - title: Temporal & spatial classification
   contents: [getTimeBins, getDielPhase, getSeason, getReprodPeriod, getSunTimes,
              calculateCOAs, calculateStepDistances, getTrajectories, interpolateDistances,

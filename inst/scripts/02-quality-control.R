@@ -43,9 +43,10 @@ data(rays_tags)
 #| eval: false
 # tags <- importTags(rays_tags, source = "generic",
 #                    col.map = list(ID = "ID", tagging_date = "tagging_date"))
-# detections <- assignAnimalIDs(detections, tags)
+# detections <- matchTags(detections, tags)
+# detections <- as_moby(detections, tags = tags)
 # 
-# mobyMeta(detections)$tagging.dates   # already attached
+# mobyMeta(detections)$tagging.dates   # derived from 'tags' by as_moby()
 
 
 ## -----------------------------------------------------------------------------

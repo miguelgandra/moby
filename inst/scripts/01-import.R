@@ -15,7 +15,7 @@ detections_csv <- system.file("extdata", "rays_detections.csv", package = "moby"
 #     station     = "station_name",
 #     lon         = "deploy_longitude",
 #     lat         = "deploy_latitude",
-#     transmitter = "transmitter"      # kept so assignAnimalIDs() can join tag metadata
+#     transmitter = "transmitter"      # kept so matchTags() can join tag metadata
 #   )
 # )
 
@@ -25,7 +25,7 @@ detections_csv <- system.file("extdata", "rays_detections.csv", package = "moby"
 # tags <- importTags(rays_tags, source = "generic",
 #                    col.map = list(ID = "ID", tagging_date = "tagging_date"))
 # 
-# detections <- assignAnimalIDs(detections, tags)
+# detections <- matchTags(detections, tags)
 
 
 ## -----------------------------------------------------------------------------
@@ -33,8 +33,8 @@ detections_csv <- system.file("extdata", "rays_detections.csv", package = "moby"
 # # one named list element per species -> drives per-species outputs everywhere
 # id_groups <- split(rays_tags$ID, rays_tags$species)
 # 
-# dataset <- as_moby(detections, id.groups = id_groups)
+# dataset <- as_moby(detections, tags = tags, id.groups = id_groups)
 # 
-# mobyMeta(dataset)   # tagging dates are already there, from assignAnimalIDs()
+# mobyMeta(dataset)   # tagging dates, derived from 'tags' at this call
 # dataset             # the print method summarises what is attached
 
