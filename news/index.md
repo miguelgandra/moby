@@ -91,7 +91,7 @@ polygon as impassable and pins the behaviour with a regression test.
 - [`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md)
   matches detections to deployment windows and back-fills coordinates
   and station names;
-  [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+  [`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md)
   joins tag metadata to assign animal IDs and tagging dates.
 - [`plotArray()`](https://miguelgandra.github.io/moby/reference/plotArray.md)
   maps a receiver array from a deployment log — station positions,

@@ -13,8 +13,8 @@
 <url><loc>https://miguelgandra.github.io/moby/authors.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/index.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/news/index.html</loc></url>
+<url><loc>https://miguelgandra.github.io/moby/reference/as.data.frame.mobyData.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/as_moby.html</loc></url>
-<url><loc>https://miguelgandra.github.io/moby/reference/assignAnimalIDs.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/calculateAssociations.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/calculateCOAs.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/calculateLandDists.html</loc></url>
@@ -48,6 +48,7 @@
 <url><loc>https://miguelgandra.github.io/moby/reference/interpolateDistances.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/is_moby.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/matchDeployments.html</loc></url>
+<url><loc>https://miguelgandra.github.io/moby/reference/matchTags.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/moby-package.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/mobyMeta.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/mobyNetwork.html</loc></url>

@@ -40,17 +40,18 @@ ochre.](figures/moby-pipeline.svg)
   Returns a report and **modifies nothing**. Recommended.
 
 - **3. Enrich** -
-  [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md),
+  [`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md),
   [`matchDeployments`](https://miguelgandra.github.io/moby/reference/matchDeployments.md):
 
   Fold a side table into the detections.
-  [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-  resolves transmitter codes to animals and attaches per-animal tagging
-  dates and nominal delays;
+  [`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md)
+  resolves transmitter codes to animals;
   [`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md)
   matches detections to deployment windows and back-fills station names
   and coordinates. They key on different columns (transmitter vs
-  receiver) and are **order-independent**.
+  receiver) and are **order-independent**. Both change rows and columns
+  only: neither attaches study metadata, and both return the same class
+  they were given.
 
 - **4. Clean & bin** -
   [`filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md),
@@ -64,10 +65,11 @@ ochre.](figures/moby-pipeline.svg)
 - **5. Declare** -
   [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md):
 
-  Records which column plays which role and attaches study metadata
-  (`id.groups`, `epsg.code`, `land.shape`). Not really a stage - it is
-  idempotent, so call it whenever you want to add metadata without
-  losing what is already attached.
+  The package's only constructor, and the one place study metadata
+  enters a dataset: which column plays which role, plus `id.groups`,
+  `epsg.code`, `land.shape`, and - via `tags` - each animal's tagging
+  date and nominal delay. Idempotent, so call it whenever you want to
+  add metadata without losing what is already attached.
 
 ## A typical run
 
@@ -75,8 +77,8 @@ ochre.](figures/moby-pipeline.svg)
     det  <- importDetections(det_file, source = "vue")
     tags <- importTags(tag_file, source = "vue")
 
-    # 2 - enrich: animal identity, plus tagging dates and nominal delays
-    det <- assignAnimalIDs(det, tags)
+    # 2 - enrich: animal identity (rows and columns only; nothing is attached)
+    det <- matchTags(det, tags)
     det <- det[!is.na(det$ID), ]          # drop transmitters absent from 'tags'
     det$ID <- droplevels(det$ID)
 
@@ -85,9 +87,9 @@ ochre.](figures/moby-pipeline.svg)
     qc                                    # what was removed, and why
     det <- qc$data
 
-    # 4 - bin, and declare anything only you know
+    # 4 - bin, and declare: tagging dates and nominal delays come from 'tags', the rest from you
     det$timebin <- getTimeBins(det$datetime, interval = "30 mins")
-    dataset <- as_moby(det, id.groups = groups, epsg.code = 32629)
+    dataset <- as_moby(det, tags = tags, id.groups = groups, epsg.code = 32629)
 
 Add the receiver-log branch when you need it - audit, then match:
 
@@ -109,11 +111,11 @@ Already hold a tidy data frame? No moby object is required at any point:
 | [`importDeployments()`](https://miguelgandra.github.io/moby/reference/importDeployments.md) | optional | nothing breaks; only needed if you use the receiver log |
 | [`checkDeployments()`](https://miguelgandra.github.io/moby/reference/checkDeployments.md) | recommended | nothing breaks; you may match against a log with real errors |
 | [`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md) | optional | coordinates stay as exported, unvalidated and ungapfilled |
-| [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md) | **essential in practice** | [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md) **errors** without tagging dates; the min_lag filter is unavailable |
+| [`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md) | recommended | IDs stay as exported transmitter codes |
 | [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md) | **essential** | false detections, pre-tagging records and impossible speeds stay in |
 | [`correctPositions()`](https://miguelgandra.github.io/moby/reference/correctPositions.md) | optional | nothing breaks unless coordinates sit on land |
 | [`getTimeBins()`](https://miguelgandra.github.io/moby/reference/getTimeBins.md) | recommended | no per-bin analyses (COAs, wide tables, chronograms) |
-| [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md) | recommended | no `id.groups`, projected CRS or land-aware distances |
+| [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md) | **essential in practice** | [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md) **errors** without tagging dates; no `id.groups`, projected CRS or land-aware distances |
 
 ## Ordering rules (there are only two)
 
@@ -126,11 +128,11 @@ Already hold a tidy data frame? No moby object is required at any point:
     that four of its five detection-side checks rely on. Under the
     default (`FALSE`) nothing is lost and order is free.
 
-2.  **Enrich before you filter.**
+2.  **Declare before you filter.**
     [`filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
-    needs tagging dates, which
-    [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-    supplies. The two enrich steps themselves may run in either order.
+    needs tagging dates, which reach the dataset through
+    `as_moby(det, tags = tags)` (or its own `tagging.dates` argument).
+    The two enrich steps themselves may run in either order.
 
 ## Three easy traps
 
@@ -144,7 +146,7 @@ Already hold a tidy data frame? No moby object is required at any point:
 - [`getTimeBins`](https://miguelgandra.github.io/moby/reference/getTimeBins.md)
   returns a **vector**; assign it to a column yourself.
 
-- [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+- [`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md)
   leaves `NA` IDs (with a warning) for transmitters that are not in your
   tag table - typically other projects' tags. Remove them, or they
   travel into the analysis.

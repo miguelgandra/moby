@@ -40,7 +40,7 @@ need a missing field say so when you call them).
 
 If `ID` is absent it is initialised from `transmitter` (with a message);
 assign true animal IDs afterwards with
-[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md).
+[`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md).
 
 ## Tag fields — [`importTags()`](https://miguelgandra.github.io/moby/reference/importTags.md)
 
@@ -70,7 +70,7 @@ assign true animal IDs afterwards with
 ## What happens when an optional field is omitted
 
 - No `ID` — initialised from `transmitter`; attach real animal IDs with
-  [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md).
+  [`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md).
 
 - No `station` / `lon` / `lat`, but a `receiver` is present —
   [`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md)
@@ -112,10 +112,10 @@ what [`read.csv()`](https://rdrr.io/r/utils/read.table.html) is to
 [`data.frame()`](https://rdrr.io/r/base/data.frame.html) — a reader,
 then a constructor. The usual pipeline runs both:
 
-    det <- importDetections(file, source = "vue")      # 1. reshape  -> data frame
-    det <- assignAnimalIDs(det, tags)                  # 2. join tags -> mobyData (IDs, delays, dates)
-    det <- as_moby(det, id.groups = groups,            # 3. annotate  -> add the rest
-                   epsg.code = 3395, land.shape = coast)
+    det <- importDetections(file, source = "vue")      # 1. reshape -> data frame
+    det <- matchTags(det, tags)                        # 2. join    -> data frame
+    det <- as_moby(det, tags = tags,                   # 3. declare -> mobyData
+                   id.groups = groups, epsg.code = 3395, land.shape = coast)
 
 If you **already have a tidy data frame in R** (your own column names,
 date-times already parsed), skip the importers and call
@@ -149,6 +149,6 @@ canonical renaming, date parsing and `ID` derivation.
 [`importDetections()`](https://miguelgandra.github.io/moby/reference/importDetections.md),
 [`importTags()`](https://miguelgandra.github.io/moby/reference/importTags.md),
 [`importDeployments()`](https://miguelgandra.github.io/moby/reference/importDeployments.md),
-[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md),
+[`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md),
 [`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md),
 [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)

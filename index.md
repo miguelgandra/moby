@@ -98,10 +98,10 @@ pathways. Essential steps are marked in teal, optional ones in
 ochre.](reference/figures/moby-pipeline.svg)
 
 Only two of those steps have teeth:
-[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-(without it
+[`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
+(without tagging dates
 [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
-has no tagging dates and stops) and
+stops) and
 [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
 itself. Everything else is a convenience you can skip by supplying the
 columns or metadata yourself — every function also accepts an ordinary

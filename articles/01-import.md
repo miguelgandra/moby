@@ -20,7 +20,7 @@
 2.  Attach tag metadata with
     [`importTags()`](https://miguelgandra.github.io/moby/reference/importTags.md)
     /
-    [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md).
+    [`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md).
 3.  Understand the `mobyData` data model and create one with
     [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md).
 4.  Define `id.groups` (two species) once, for reuse everywhere.
@@ -51,7 +51,7 @@ detections <- importDetections(
     station     = "station_name",
     lon         = "deploy_longitude",
     lat         = "deploy_latitude",
-    transmitter = "transmitter"      # kept so assignAnimalIDs() can join tag metadata
+    transmitter = "transmitter"      # kept so matchTags() can join tag metadata
   )
 )
 ```
@@ -83,17 +83,17 @@ detections <- importDetections(
 tags <- importTags(rays_tags, source = "generic",
                    col.map = list(ID = "ID", tagging_date = "tagging_date"))
 
-detections <- assignAnimalIDs(detections, tags)
+detections <- matchTags(detections, tags)
 ```
 
-[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+[`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md)
 resolves transmitter codes to animals — several codes can belong to one
 animal, typically because a sensor tag transmits on more than one code
-space — and it **derives per-animal metadata** from the tag table:
-tagging dates, and transmitter nominal delays where present. Those are
-attached to the returned object, so you do not pass them again later:
-[`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
-picks them up on its own.
+space. It changes rows and columns only: it returns the same kind of
+object you gave it and attaches nothing behind your back. Its console
+output names the per-animal metadata the tag table can supply — tagging
+dates, and transmitter nominal delays where present — which you attach
+in the next step.
 
 > **Tip**
 >
@@ -108,21 +108,22 @@ A `mobyData` *is* a data frame, but it carries metadata (column mapping,
 tagging dates, `id.groups`) as an attribute, so you don’t repeat those
 arguments on every call.
 
-The object returned above is already a `mobyData` with its column roles
-and tagging dates attached. Call
 [`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
-to add what only you can supply — here the species grouping (and, when
-you have them, a projected CRS and a coastline). Because the columns
-already use moby’s canonical names, no column arguments are needed.
+is the only function that creates one, and the single place metadata
+enters your data: hand it the tag table and it derives each animal’s
+tagging date and nominal delay, alongside what only you can supply —
+here the species grouping (and, when you have them, a projected CRS and
+a coastline). Because the columns already use moby’s canonical names, no
+column arguments are needed.
 
 ``` r
 
 # one named list element per species -> drives per-species outputs everywhere
 id_groups <- split(rays_tags$ID, rays_tags$species)
 
-dataset <- as_moby(detections, id.groups = id_groups)
+dataset <- as_moby(detections, tags = tags, id.groups = id_groups)
 
-mobyMeta(dataset)   # tagging dates are already there, from assignAnimalIDs()
+mobyMeta(dataset)   # tagging dates, derived from 'tags' at this call
 dataset             # the print method summarises what is attached
 ```
 

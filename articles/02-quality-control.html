@@ -145,14 +145,15 @@
 <code class="sourceCode R"><span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchDeployments.html">matchDeployments</a></span><span class="op">(</span><span class="va">rays_detections</span>, <span class="va">deployments</span>,</span>
 <span>                               station.col <span class="op">=</span> <span class="st">"station"</span><span class="op">)</span></span></code></pre></div>
 </div>
-<p>Then attach the tag metadata, exactly as in <a href="01-import.html">module 01</a>. This is what makes the next step short: <code><a href="../reference/assignAnimalIDs.html">assignAnimalIDs()</a></code> derives each animal’s tagging date and transmitter nominal delay and stores them on the object, so <code><a href="../reference/filterDetections.html">filterDetections()</a></code> does not have to be told them.</p>
+<p>Then attach the tag metadata, exactly as in <a href="01-import.html">module 01</a>. <code><a href="../reference/matchTags.html">matchTags()</a></code> resolves the transmitter codes to animals; <code><a href="../reference/as_moby.html">as_moby()</a></code> derives each animal’s tagging date and transmitter nominal delay from the same tag table and stores them on the object, so <code><a href="../reference/filterDetections.html">filterDetections()</a></code> does not have to be told them.</p>
 <div class="cell">
 <div class="sourceCode cell-code" id="cb8"><pre class="downlit sourceCode r">
 <code class="sourceCode R"><span><span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importTags.html">importTags</a></span><span class="op">(</span><span class="va">rays_tags</span>, source <span class="op">=</span> <span class="st">"generic"</span>,</span>
 <span>                   col.map <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/list.html" class="external-link">list</a></span><span class="op">(</span>ID <span class="op">=</span> <span class="st">"ID"</span>, tagging_date <span class="op">=</span> <span class="st">"tagging_date"</span><span class="op">)</span><span class="op">)</span></span>
-<span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assignAnimalIDs.html">assignAnimalIDs</a></span><span class="op">(</span><span class="va">detections</span>, <span class="va">tags</span><span class="op">)</span></span>
+<span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchTags.html">matchTags</a></span><span class="op">(</span><span class="va">detections</span>, <span class="va">tags</span><span class="op">)</span></span>
+<span><span class="va">detections</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_moby.html">as_moby</a></span><span class="op">(</span><span class="va">detections</span>, tags <span class="op">=</span> <span class="va">tags</span><span class="op">)</span></span>
 <span></span>
-<span><span class="fu"><a href="../reference/mobyMeta.html">mobyMeta</a></span><span class="op">(</span><span class="va">detections</span><span class="op">)</span><span class="op">$</span><span class="va">tagging.dates</span>   <span class="co"># already attached</span></span></code></pre></div>
+<span><span class="fu"><a href="../reference/mobyMeta.html">mobyMeta</a></span><span class="op">(</span><span class="va">detections</span><span class="op">)</span><span class="op">$</span><span class="va">tagging.dates</span>   <span class="co"># derived from 'tags' by as_moby()</span></span></code></pre></div>
 </div>
 </section><section class="level2"><h2 id="filter-spurious-detections">5. Filter spurious detections<a class="anchor" aria-label="anchor" href="#filter-spurious-detections"></a>
 </h2>
@@ -171,7 +172,7 @@
 <div>
 <blockquote>
 <p><strong>Note</strong></p>
-<p>The short-interval false-detection filter needs a transmitter nominal delay, which this example tag table does not carry — so it stays off here. When your tag export has a delay (or a min/max delay range), <code><a href="../reference/importTags.html">importTags()</a></code> picks it up and <code><a href="../reference/assignAnimalIDs.html">assignAnimalIDs()</a></code> attaches it per animal, and the filter then runs with no extra arguments. You can also pass <code>nominal.delay</code> directly, or set a fixed per-receiver window with <code>min.lag.threshold</code> when the delay is unknown. See <code><a href="../reference/filterDetections.html">?filterDetections</a></code>, section <em>Isolation-based filtering</em>.</p>
+<p>The short-interval false-detection filter needs a transmitter nominal delay, which this example tag table does not carry — so it stays off here. When your tag export has a delay (or a min/max delay range), <code><a href="../reference/importTags.html">importTags()</a></code> picks it up and <code>as_moby(det, tags = tags)</code> attaches it per animal, and the filter then runs with no extra arguments. You can also pass <code>nominal.delay</code> directly, or set a fixed per-receiver window with <code>min.lag.threshold</code> when the delay is unknown. See <code><a href="../reference/filterDetections.html">?filterDetections</a></code>, section <em>Isolation-based filtering</em>.</p>
 </blockquote>
 </div>
 </section><section class="level2"><h2 id="bin-detections-into-regular-intervals">6. Bin detections into regular intervals<a class="anchor" aria-label="anchor" href="#bin-detections-into-regular-intervals"></a>

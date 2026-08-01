@@ -5,7 +5,7 @@ harmonises them into a single consistent schema - moby's canonical
 column names, with date-times parsed - ready to be turned into a
 [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md)
 by
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+[`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md)
 / [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md).
 Supported sources are Innovasea/VEMCO VUE exports, Innovasea VDAT/Fathom
 `DET.csv` files, and detection extracts from the GLATOS, OTN and ETN
@@ -86,13 +86,13 @@ A data frame with harmonised columns (`ID`, `datetime`, `transmitter`,
 `receiver`, `station`, `lon`, `lat`, ...), sorted by animal and time.
 When the source has no animal identifier, `ID` is initialised from
 `transmitter` (assign true animal IDs afterwards with
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)).
+[`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md)).
 
 This is a *harmonised table*, not yet a
 [`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md):
 importing reshapes columns, it does not attach study metadata. Turn it
 into a `mobyData` with
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md)
 (animal IDs, tagging dates, nominal delays) and/or
 [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md)
 (`id.groups`, CRS, land layer) - see the ‘Which function do I use?’
@@ -106,7 +106,7 @@ functions need no explicit column arguments.
 [`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
 for the canonical field list and how importing relates to
 [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md);
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md),
+[`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md),
 [`importDeployments`](https://miguelgandra.github.io/moby/reference/importDeployments.md),
 [`checkDeployments`](https://miguelgandra.github.io/moby/reference/checkDeployments.md),
 [`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md)

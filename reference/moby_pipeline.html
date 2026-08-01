@@ -89,12 +89,13 @@ overlapping deployments, duplicate stations, invalid dates, implausible or on-la
 short monitoring effort) and cross-checks detections against it. Returns a report and
 <strong>modifies nothing</strong>. Recommended.</p></dd>
 
-<dt><strong>3. Enrich</strong> - <code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code>, <code><a href="matchDeployments.html">matchDeployments</a></code></dt>
+<dt><strong>3. Enrich</strong> - <code><a href="matchTags.html">matchTags</a></code>, <code><a href="matchDeployments.html">matchDeployments</a></code></dt>
 <dd><p>Fold a side
-table into the detections. <code><a href="assignAnimalIDs.html">assignAnimalIDs()</a></code> resolves transmitter codes to animals and attaches
-per-animal tagging dates and nominal delays; <code><a href="matchDeployments.html">matchDeployments()</a></code> matches detections to deployment
-windows and back-fills station names and coordinates. They key on different columns (transmitter vs
-receiver) and are <strong>order-independent</strong>.</p></dd>
+table into the detections. <code><a href="matchTags.html">matchTags()</a></code> resolves transmitter codes to animals;
+<code><a href="matchDeployments.html">matchDeployments()</a></code> matches detections to deployment windows and back-fills station names and
+coordinates. They key on different columns (transmitter vs receiver) and are
+<strong>order-independent</strong>. Both change rows and columns only: neither attaches study
+metadata, and both return the same class they were given.</p></dd>
 
 <dt><strong>4. Clean &amp; bin</strong> - <code><a href="filterDetections.html">filterDetections</a></code>, <code><a href="correctPositions.html">correctPositions</a></code>,
 <code><a href="getTimeBins.html">getTimeBins</a></code></dt>
@@ -102,9 +103,11 @@ receiver) and are <strong>order-independent</strong>.</p></dd>
 detections, relocating positions that fall on land, and assigning regular time bins.</p></dd>
 
 <dt><strong>5. Declare</strong> - <code><a href="as_moby.html">as_moby</a></code></dt>
-<dd><p>Records which column plays which role and attaches
-study metadata (<code>id.groups</code>, <code>epsg.code</code>, <code>land.shape</code>). Not really a stage - it is idempotent, so
-call it whenever you want to add metadata without losing what is already attached.</p></dd>
+<dd><p>The package's only constructor, and the one
+place study metadata enters a dataset: which column plays which role, plus <code>id.groups</code>,
+<code>epsg.code</code>, <code>land.shape</code>, and - via <code>tags</code> - each animal's tagging date and nominal delay.
+Idempotent, so call it whenever you want to add metadata without losing what is already
+attached.</p></dd>
 
 
 </dl></div>
@@ -117,8 +120,8 @@ call it whenever you want to add metadata without losing what is already attache
 <span><span class="va">det</span>  <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importDetections.html">importDetections</a></span><span class="op">(</span><span class="va">det_file</span>, source <span class="op">=</span> <span class="st">"vue"</span><span class="op">)</span></span>
 <span><span class="va">tags</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importTags.html">importTags</a></span><span class="op">(</span><span class="va">tag_file</span>, source <span class="op">=</span> <span class="st">"vue"</span><span class="op">)</span></span>
 <span></span>
-<span><span class="co"># 2 - enrich: animal identity, plus tagging dates and nominal delays</span></span>
-<span><span class="va">det</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/assignAnimalIDs.html">assignAnimalIDs</a></span><span class="op">(</span><span class="va">det</span>, <span class="va">tags</span><span class="op">)</span></span>
+<span><span class="co"># 2 - enrich: animal identity (rows and columns only; nothing is attached)</span></span>
+<span><span class="va">det</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/matchTags.html">matchTags</a></span><span class="op">(</span><span class="va">det</span>, <span class="va">tags</span><span class="op">)</span></span>
 <span><span class="va">det</span> <span class="op">&lt;-</span> <span class="va">det</span><span class="op">[</span><span class="op">!</span><span class="fu"><a href="https://rdrr.io/r/base/NA.html" class="external-link">is.na</a></span><span class="op">(</span><span class="va">det</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span>, <span class="op">]</span>          <span class="co"># drop transmitters absent from 'tags'</span></span>
 <span><span class="va">det</span><span class="op">$</span><span class="va">ID</span> <span class="op">&lt;-</span> <span class="fu"><a href="https://rdrr.io/r/base/droplevels.html" class="external-link">droplevels</a></span><span class="op">(</span><span class="va">det</span><span class="op">$</span><span class="va">ID</span><span class="op">)</span></span>
 <span></span>
@@ -127,9 +130,9 @@ call it whenever you want to add metadata without losing what is already attache
 <span><span class="va">qc</span>                                    <span class="co"># what was removed, and why</span></span>
 <span><span class="va">det</span> <span class="op">&lt;-</span> <span class="va">qc</span><span class="op">$</span><span class="va">data</span></span>
 <span></span>
-<span><span class="co"># 4 - bin, and declare anything only you know</span></span>
+<span><span class="co"># 4 - bin, and declare: tagging dates and nominal delays come from 'tags', the rest from you</span></span>
 <span><span class="va">det</span><span class="op">$</span><span class="va">timebin</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/getTimeBins.html">getTimeBins</a></span><span class="op">(</span><span class="va">det</span><span class="op">$</span><span class="va">datetime</span>, interval <span class="op">=</span> <span class="st">"30 mins"</span><span class="op">)</span></span>
-<span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_moby.html">as_moby</a></span><span class="op">(</span><span class="va">det</span>, id.groups <span class="op">=</span> <span class="va">groups</span>, epsg.code <span class="op">=</span> <span class="fl">32629</span><span class="op">)</span></span></code></pre><p></p></div>
+<span><span class="va">dataset</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/as_moby.html">as_moby</a></span><span class="op">(</span><span class="va">det</span>, tags <span class="op">=</span> <span class="va">tags</span>, id.groups <span class="op">=</span> <span class="va">groups</span>, epsg.code <span class="op">=</span> <span class="fl">32629</span><span class="op">)</span></span></code></pre><p></p></div>
 <p>Add the receiver-log branch when you need it - audit, then match:</p>
 <p></p><div class="sourceCode r"><pre><code><span><span class="va">deployments</span> <span class="op">&lt;-</span> <span class="fu"><a href="../reference/importDeployments.html">importDeployments</a></span><span class="op">(</span><span class="va">log_file</span>, source <span class="op">=</span> <span class="st">"vue"</span><span class="op">)</span></span>
 <span><span class="fu"><a href="../reference/checkDeployments.html">checkDeployments</a></span><span class="op">(</span><span class="va">deployments</span>, detections <span class="op">=</span> <span class="va">det</span><span class="op">)</span>     <span class="co"># report only; fix what it flags</span></span>
@@ -141,7 +144,7 @@ call it whenever you want to add metadata without losing what is already attache
     <h2 id="what-happens-if-you-skip-a-step">What happens if you skip a step<a class="anchor" aria-label="anchor" href="#what-happens-if-you-skip-a-step"></a></h2>
 
 
-<table class="table table"><tr><td><strong>function</strong></td><td><strong>status</strong></td><td><strong>skip it and...</strong></td></tr><tr><td><code><a href="importDetections.html">importDetections()</a></code></td><td>optional</td><td>nothing breaks; supply canonical columns yourself</td></tr><tr><td><code><a href="importTags.html">importTags()</a></code></td><td>optional</td><td>nothing breaks; you must supply tagging dates another way</td></tr><tr><td><code><a href="importDeployments.html">importDeployments()</a></code></td><td>optional</td><td>nothing breaks; only needed if you use the receiver log</td></tr><tr><td><code><a href="checkDeployments.html">checkDeployments()</a></code></td><td>recommended</td><td>nothing breaks; you may match against a log with real errors</td></tr><tr><td><code><a href="matchDeployments.html">matchDeployments()</a></code></td><td>optional</td><td>coordinates stay as exported, unvalidated and ungapfilled</td></tr><tr><td><code><a href="assignAnimalIDs.html">assignAnimalIDs()</a></code></td><td><strong>essential in practice</strong></td><td><code><a href="filterDetections.html">filterDetections()</a></code> <strong>errors</strong> without tagging dates; the min_lag filter is unavailable</td></tr><tr><td><code><a href="filterDetections.html">filterDetections()</a></code></td><td><strong>essential</strong></td><td>false detections, pre-tagging records and impossible speeds stay in</td></tr><tr><td><code><a href="correctPositions.html">correctPositions()</a></code></td><td>optional</td><td>nothing breaks unless coordinates sit on land</td></tr><tr><td><code><a href="getTimeBins.html">getTimeBins()</a></code></td><td>recommended</td><td>no per-bin analyses (COAs, wide tables, chronograms)</td></tr><tr><td><code><a href="as_moby.html">as_moby()</a></code></td><td>recommended</td><td>no <code>id.groups</code>, projected CRS or land-aware distances</td></tr></table></div>
+<table class="table table"><tr><td><strong>function</strong></td><td><strong>status</strong></td><td><strong>skip it and...</strong></td></tr><tr><td><code><a href="importDetections.html">importDetections()</a></code></td><td>optional</td><td>nothing breaks; supply canonical columns yourself</td></tr><tr><td><code><a href="importTags.html">importTags()</a></code></td><td>optional</td><td>nothing breaks; you must supply tagging dates another way</td></tr><tr><td><code><a href="importDeployments.html">importDeployments()</a></code></td><td>optional</td><td>nothing breaks; only needed if you use the receiver log</td></tr><tr><td><code><a href="checkDeployments.html">checkDeployments()</a></code></td><td>recommended</td><td>nothing breaks; you may match against a log with real errors</td></tr><tr><td><code><a href="matchDeployments.html">matchDeployments()</a></code></td><td>optional</td><td>coordinates stay as exported, unvalidated and ungapfilled</td></tr><tr><td><code><a href="matchTags.html">matchTags()</a></code></td><td>recommended</td><td>IDs stay as exported transmitter codes</td></tr><tr><td><code><a href="filterDetections.html">filterDetections()</a></code></td><td><strong>essential</strong></td><td>false detections, pre-tagging records and impossible speeds stay in</td></tr><tr><td><code><a href="correctPositions.html">correctPositions()</a></code></td><td>optional</td><td>nothing breaks unless coordinates sit on land</td></tr><tr><td><code><a href="getTimeBins.html">getTimeBins()</a></code></td><td>recommended</td><td>no per-bin analyses (COAs, wide tables, chronograms)</td></tr><tr><td><code><a href="as_moby.html">as_moby()</a></code></td><td><strong>essential in practice</strong></td><td><code><a href="filterDetections.html">filterDetections()</a></code> <strong>errors</strong> without tagging dates; no <code>id.groups</code>, projected CRS or land-aware distances</td></tr></table></div>
     <div class="section level2">
     <h2 id="ordering-rules-there-are-only-two-">Ordering rules (there are only two)<a class="anchor" aria-label="anchor" href="#ordering-rules-there-are-only-two-"></a></h2>
 
@@ -151,8 +154,9 @@ it has no single correct slot - run it early to find problems, and again after c
 they landed. The one position that matters: run it <em>before</em>
 <code>matchDeployments(drop.unmatched = TRUE)</code>, which removes the records that four of its five
 detection-side checks rely on. Under the default (<code>FALSE</code>) nothing is lost and order is free.</p></li>
-<li><p><strong>Enrich before you filter.</strong> <code><a href="filterDetections.html">filterDetections</a></code> needs tagging dates, which
-<code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code> supplies. The two enrich steps themselves may run in either order.</p></li>
+<li><p><strong>Declare before you filter.</strong> <code><a href="filterDetections.html">filterDetections</a></code> needs tagging dates,
+which reach the dataset through <code>as_moby(det, tags = tags)</code> (or its own <code>tagging.dates</code>
+argument). The two enrich steps themselves may run in either order.</p></li>
 </ol></div>
     <div class="section level2">
     <h2 id="three-easy-traps">Three easy traps<a class="anchor" aria-label="anchor" href="#three-easy-traps"></a></h2>
@@ -162,7 +166,7 @@ detection-side checks rely on. Under the default (<code>FALSE</code>) nothing is
 frames - take <code>$data</code>. Writing <code>det &lt;- filterDetections(det)</code> leaves you holding a <code>mobyFilter</code>
 object and the next call fails.</p></li>
 <li><p><code><a href="getTimeBins.html">getTimeBins</a></code> returns a <strong>vector</strong>; assign it to a column yourself.</p></li>
-<li><p><code><a href="assignAnimalIDs.html">assignAnimalIDs</a></code> leaves <code>NA</code> IDs (with a warning) for transmitters that are not in
+<li><p><code><a href="matchTags.html">matchTags</a></code> leaves <code>NA</code> IDs (with a warning) for transmitters that are not in
 your tag table - typically other projects' tags. Remove them, or they travel into the analysis.</p></li>
 </ul></div>
     <div class="section level2">

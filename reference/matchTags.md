@@ -1,0 +1,146 @@
+# Match detections to tagged animals and assign IDs
+
+Resolves the transmitter codes in a detection dataset to the animals
+that carried them, using a tag table (see
+[`importTags`](https://miguelgandra.github.io/moby/reference/importTags.md)).
+This is more than a column join: several transmitter codes can map to
+the same animal, and the matching is deliberately tolerant of how tag
+tables store codes. Optional biometric columns can be joined in as well.
+
+The tag-derived study metadata - per-animal tagging dates and
+transmitter nominal delays - is attached by
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md),
+not here: `matchTags(det, tags)` changes rows and columns,
+`as_moby(det, tags = tags)` declares what the dataset means. The verbose
+output names whatever the tag table would supply, so nothing has to be
+discovered by inspecting attributes.
+
+## Usage
+
+``` r
+matchTags(
+  detections,
+  tags,
+  id.col = NULL,
+  transmitter.col = "transmitter",
+  keep.cols = NULL,
+  verbose = getOption("moby.verbose", TRUE)
+)
+```
+
+## Arguments
+
+- detections:
+
+  A detection dataset (`mobyData` or data frame) with a transmitter
+  column.
+
+- tags:
+
+  A harmonised tag table from
+  [`importTags`](https://miguelgandra.github.io/moby/reference/importTags.md)
+  (or a data frame with at least a `transmitter` column).
+
+- id.col:
+
+  Name of the animal-ID column to (re)create in `detections`. Resolved
+  from the `mobyData` metadata or `"ID"` when `NULL`.
+
+- transmitter.col:
+
+  Name of the transmitter column in `detections`. Defaults to
+  `"transmitter"`.
+
+- keep.cols:
+
+  Optional character vector of additional `tags` columns (e.g. `"sex"`,
+  `"length"`, `"species"`) to join into the detections.
+
+- verbose:
+
+  Logical; print a summary of the operation. Defaults to
+  `getOption("moby.verbose", TRUE)`.
+
+## Value
+
+An object of the same class as `detections`: a plain data frame in, a
+plain data frame out; a
+[`mobyData`](https://miguelgandra.github.io/moby/reference/as_moby.md)
+in, a `mobyData` out with its metadata carried over. The `ID` column is
+assigned (plus any `keep.cols`); detections whose transmitter is absent
+from `tags` keep `NA` IDs (with a warning). No study metadata is
+attached - see
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md).
+
+## Details
+
+**Why several codes can mean one animal.** Most often this is because a
+single physical transmitter emits on more than one code space: sensor
+tags (for example depth-sensing Vemco V16P transmitters) report their
+identity and their sensor data under different code spaces, so one tag
+appears in the detection file under two or more transmitter codes.
+Animals genuinely carrying several transmitters at once are uncommon;
+the other routine case is an animal that was recaptured and re-tagged,
+so its history spans consecutive tags. List each code as its own row of
+`tags`, mapped to the same animal `ID`, and all of them resolve to that
+animal.
+
+**Matching.** The full transmitter string is matched first. A
+trailing-numeric fallback then covers tag tables that store the bare
+code (so `"A69-1602-111"` matches a tag stored as `"111"`). The fallback
+is deliberately conservative: a detection whose code space differs from
+the candidate tag's is left unmatched rather than assigned, because
+`"A69-9999-111"` and `"A69-1602-111"` are different transmitters and
+guessing would attribute another project's animal to yours. Such codes
+are reported, so you can add them to `tags` if they are further code
+spaces of your own tags.
+
+**Where it sits in the pipeline.** This step is independent of
+[`matchDeployments`](https://miguelgandra.github.io/moby/reference/matchDeployments.md):
+one resolves transmitters to animals, the other resolves receivers to
+deployment windows, and they key on different columns. Either order
+gives the same result.
+
+## See also
+
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md),
+[`importTags`](https://miguelgandra.github.io/moby/reference/importTags.md),
+[`importDetections`](https://miguelgandra.github.io/moby/reference/importDetections.md),
+[`matchDeployments`](https://miguelgandra.github.io/moby/reference/matchDeployments.md)
+
+## Examples
+
+``` r
+# join tag metadata to detections to assign animal IDs
+tags <- importTags(rays_tags, source = "generic",
+                   col.map = list(ID = "ID", transmitter = "transmitter",
+                                  tagging_date = "tagging_date"))
+#> ── importTags() ──────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Reading and harmonising tag and animal metadata
+#> • Input: data frame
+#> 
+#> → Method
+#>   • source    generic (user col.map)
+#>   • timezone  UTC
+#> 
+#> ✔ 8 tags imported
+#> ℹ Fields resolved: ID, transmitter, tagging_date
+# detections carrying the tagged rays' transmitters
+det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
+det <- matchTags(det, tags)
+#> ── matchTags() ───────────────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Joining tag metadata to replace placeholder IDs with real animal IDs
+#> • Input: 1,643 detections · 8 transmitters
+#> 
+#> ✔ 1,643 detections matched to 8 animals
+#> ℹ 'tags' supplies tagging.dates (8 individuals). Attach with: as_moby(<detections>, tags = <tags>)
+levels(det$ID)
+#> [1] "D01" "D02" "D03" "D04" "R01" "R02" "R03" "R04"
+
+# the tagging dates the tag table supplies are attached by the constructor, explicitly
+det <- as_moby(det, tags = tags)
+names(mobyMeta(det)$tagging.dates)
+#> [1] "D01" "D02" "D03" "D04" "R01" "R02" "R03" "R04"
+```

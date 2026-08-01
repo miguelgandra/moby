@@ -29,6 +29,7 @@ are absent from the data, which `verbose` (or
 ``` r
 as_moby(
   data,
+  tags = NULL,
   id.col = .mobyDefaults[["id.col"]],
   datetime.col = .mobyDefaults[["datetime.col"]],
   timebin.col = .mobyDefaults[["timebin.col"]],
@@ -53,6 +54,19 @@ print(x, width = getOption("width"), ...)
 
   A data frame of detections (one row per detection, or per binned
   record).
+
+- tags:
+
+  Optional tag table (see
+  [`importTags`](https://miguelgandra.github.io/moby/reference/importTags.md))
+  from which to derive the per-animal `tagging.dates` and
+  `nominal.delay` metadata, keyed by the IDs present in `data`. This is
+  where tag-derived metadata enters a dataset:
+  [`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md)
+  joins the tag table to the detections but attaches nothing, so nothing
+  is added to your object without an explicit `as_moby()` call. Values
+  passed directly to `tagging.dates` or `nominal.delay` take precedence
+  over anything derived here.
 
 - id.col:
 
@@ -114,9 +128,8 @@ print(x, width = getOption("width"), ...)
   and 120 s tags). Stored in the metadata and read automatically by
   [`filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
   to scale its short-interval (min_lag) false-detection filter. Usually
-  populated for you by
-  [`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-  when the tag table carries a delay column.
+  populated by passing `tags` to `as_moby()`, when the tag table carries
+  a delay column.
 
 - verbose:
 
@@ -149,7 +162,7 @@ need renaming and whose date-times need parsing) before declaring it
 here, see
 [`importDetections`](https://miguelgandra.github.io/moby/reference/importDetections.md)
 and
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md);
+[`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md);
 the ‘Which function do I use?’ section of
 [`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
 contrasts importing with `as_moby()`.

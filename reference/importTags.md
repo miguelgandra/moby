@@ -3,10 +3,12 @@
 Reads a tag/animal metadata table and harmonises it into a consistent
 schema (`transmitter`, `ID`, `tagging_date`, plus biometrics such as
 `species`, `sex`, `length`, and the transmitter `nominal_delay` when the
-source provides one). Use together with
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-to attach animal IDs, tagging dates and nominal delays to a detection
-dataset.
+source provides one). Feed the result to
+[`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md)
+to assign animal IDs to a detection dataset, and to
+[`as_moby`](https://miguelgandra.github.io/moby/reference/as_moby.md)'s
+`tags` argument to attach the per-animal tagging dates and nominal
+delays.
 
 ## Usage
 
@@ -89,7 +91,7 @@ carrying it through here means that filter can be enabled automatically.
 
 [`moby_import_schema`](https://miguelgandra.github.io/moby/reference/moby_import_schema.md)
 for the canonical field list;
-[`assignAnimalIDs`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md),
+[`matchTags`](https://miguelgandra.github.io/moby/reference/matchTags.md),
 [`importDetections`](https://miguelgandra.github.io/moby/reference/importDetections.md)
 
 ## Examples

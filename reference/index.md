@@ -18,6 +18,9 @@
 
   Return the first or last rows of a `mobyData`
 
+- [`as.data.frame(`*`<mobyData>`*`)`](https://miguelgandra.github.io/moby/reference/as.data.frame.mobyData.md)
+  : Demote a mobyData to a plain data frame
+
 - [`rays`](https://miguelgandra.github.io/moby/reference/rays.md)
   [`rays_detections`](https://miguelgandra.github.io/moby/reference/rays.md)
   [`rays_tags`](https://miguelgandra.github.io/moby/reference/rays.md)
@@ -40,11 +43,10 @@
   : Check receiver deployment metadata (quality control)
 - [`matchDeployments()`](https://miguelgandra.github.io/moby/reference/matchDeployments.md)
   : Match detections to receiver deployments and back-fill metadata
+- [`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md)
+  : Match detections to tagged animals and assign IDs
 - [`plotArray()`](https://miguelgandra.github.io/moby/reference/plotArray.md)
   : Map the receiver array
-- [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-  : Assign animal IDs (and tagging dates) to detections from tag
-  metadata
 - [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
   : Filter and quality-control acoustic detections
 - [`plotMinLag()`](https://miguelgandra.github.io/moby/reference/plotMinLag.md)

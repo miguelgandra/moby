@@ -109,11 +109,12 @@ detections <- matchDeployments(rays_detections, deployments,
 ```
 
 Then attach the tag metadata, exactly as in [module
-01](https://miguelgandra.github.io/moby/articles/01-import.md). This is
-what makes the next step short:
-[`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-derives each animal’s tagging date and transmitter nominal delay and
-stores them on the object, so
+01](https://miguelgandra.github.io/moby/articles/01-import.md).
+[`matchTags()`](https://miguelgandra.github.io/moby/reference/matchTags.md)
+resolves the transmitter codes to animals;
+[`as_moby()`](https://miguelgandra.github.io/moby/reference/as_moby.md)
+derives each animal’s tagging date and transmitter nominal delay from
+the same tag table and stores them on the object, so
 [`filterDetections()`](https://miguelgandra.github.io/moby/reference/filterDetections.md)
 does not have to be told them.
 
@@ -121,9 +122,10 @@ does not have to be told them.
 
 tags <- importTags(rays_tags, source = "generic",
                    col.map = list(ID = "ID", tagging_date = "tagging_date"))
-detections <- assignAnimalIDs(detections, tags)
+detections <- matchTags(detections, tags)
+detections <- as_moby(detections, tags = tags)
 
-mobyMeta(detections)$tagging.dates   # already attached
+mobyMeta(detections)$tagging.dates   # derived from 'tags' by as_moby()
 ```
 
 ## 5. Filter spurious detections
@@ -159,12 +161,10 @@ clean <- filtered$data          # the cleaned detections (with a qc_flag column)
 > delay, which this example tag table does not carry — so it stays off
 > here. When your tag export has a delay (or a min/max delay range),
 > [`importTags()`](https://miguelgandra.github.io/moby/reference/importTags.md)
-> picks it up and
-> [`assignAnimalIDs()`](https://miguelgandra.github.io/moby/reference/assignAnimalIDs.md)
-> attaches it per animal, and the filter then runs with no extra
-> arguments. You can also pass `nominal.delay` directly, or set a fixed
-> per-receiver window with `min.lag.threshold` when the delay is
-> unknown. See
+> picks it up and `as_moby(det, tags = tags)` attaches it per animal,
+> and the filter then runs with no extra arguments. You can also pass
+> `nominal.delay` directly, or set a fixed per-receiver window with
+> `min.lag.threshold` when the delay is unknown. See
 > [`?filterDetections`](https://miguelgandra.github.io/moby/reference/filterDetections.md),
 > section *Isolation-based filtering*.
 
