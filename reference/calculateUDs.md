@@ -294,6 +294,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • grouping   id.groups
 #> 
 #> ✔ 8 utilization distributions estimated
+#> ⏱ runtime: 1.0s
 #>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)
 #> 1 Dasyatis pastinaca D01    249         4.61        17.56
 #> 2 Dasyatis pastinaca D02    154         3.42        16.55
