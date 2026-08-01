@@ -99,17 +99,19 @@ detections <- matchDeployments(rays_detections, deployments,
                                station.col = "station")
 ```
 
-Then attach the tag metadata, exactly as in [module 01](01-import.html). This is what makes the next
-step short: `assignAnimalIDs()` derives each animal's tagging date and transmitter nominal delay and
-stores them on the object, so `filterDetections()` does not have to be told them.
+Then attach the tag metadata, exactly as in [module 01](01-import.html). `matchTags()` resolves the
+transmitter codes to animals; `as_moby()` derives each animal's tagging date and transmitter nominal
+delay from the same tag table and stores them on the object, so `filterDetections()` does not have to
+be told them.
 
 ```{r}
 #| eval: false
 tags <- importTags(rays_tags, source = "generic",
                    col.map = list(ID = "ID", tagging_date = "tagging_date"))
-detections <- assignAnimalIDs(detections, tags)
+detections <- matchTags(detections, tags)
+detections <- as_moby(detections, tags = tags)
 
-mobyMeta(detections)$tagging.dates   # already attached
+mobyMeta(detections)$tagging.dates   # derived from 'tags' by as_moby()
 ```
 
 ## 5. Filter spurious detections
@@ -138,8 +140,8 @@ clean <- filtered$data          # the cleaned detections (with a qc_flag column)
 ::: {.callout-note}
 The short-interval false-detection filter needs a transmitter nominal delay, which this example tag
 table does not carry — so it stays off here. When your tag export has a delay (or a min/max delay
-range), `importTags()` picks it up and `assignAnimalIDs()` attaches it per animal, and the filter then
-runs with no extra arguments. You can also pass `nominal.delay` directly, or set a fixed per-receiver
+range), `importTags()` picks it up and `as_moby(det, tags = tags)` attaches it per animal, and the
+filter then runs with no extra arguments. You can also pass `nominal.delay` directly, or set a fixed per-receiver
 window with `min.lag.threshold` when the delay is unknown. See `?filterDetections`, section
 *Isolation-based filtering*.
 :::

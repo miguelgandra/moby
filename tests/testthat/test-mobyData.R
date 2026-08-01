@@ -64,7 +64,9 @@ test_that("as_moby stores, validates and inherits nominal.delay", {
 })
 
 test_that("print.mobyData summarises the dataset and its metadata", {
-  d <- as_moby(as.data.frame(rays), nominal.delay = 120)
+  # 'rays' itself, not as.data.frame(rays): demoting now genuinely removes the metadata, so the
+  # coerced frame would print every field as absent and assert nothing about a populated dataset
+  d <- as_moby(rays, nominal.delay = 120)
   out <- paste(capture.output(print(d)), collapse = "\n")
   expect_match(out, "<mobyData>", fixed = TRUE)
   for (section in c("Summary", "Coverage", "Metadata")) expect_match(out, section, fixed = TRUE)
@@ -79,7 +81,9 @@ test_that("print.mobyData summarises the dataset and its metadata", {
 })
 
 test_that("the metadata block lists every supported field, present or not", {
-  d <- as_moby(as.data.frame(rays), nominal.delay = 120)
+  # 'rays' itself, not as.data.frame(rays): demoting now genuinely removes the metadata, so the
+  # coerced frame would print every field as absent and assert nothing about a populated dataset
+  d <- as_moby(rays, nominal.delay = 120)
   g <- .mobyGlyphs()
   out <- paste(capture.output(print(d)), collapse = "\n")
   # every field is named whether or not it is attached: the absent ones say what this dataset

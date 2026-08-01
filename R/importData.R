@@ -490,7 +490,7 @@
 #' | `sensor_value`, `sensor_unit` | Sensor reading and its unit | no |
 #'
 #' If `ID` is absent it is initialised from `transmitter` (with a message); assign true animal IDs
-#' afterwards with [assignAnimalIDs()].
+#' afterwards with [matchTags()].
 #'
 #' @section Tag fields — `importTags()`:
 #' | Field | Description | Required |
@@ -515,7 +515,7 @@
 #'
 #' @section What happens when an optional field is omitted:
 #' \itemize{
-#'   \item No `ID` — initialised from `transmitter`; attach real animal IDs with [assignAnimalIDs()].
+#'   \item No `ID` — initialised from `transmitter`; attach real animal IDs with [matchTags()].
 #'   \item No `station` / `lon` / `lat`, but a `receiver` is present — [matchDeployments()] can
 #'     back-fill them from the deployment log.
 #'   \item No `receiver` — deployment matching ([matchDeployments()], [checkDeployments()]) is
@@ -543,10 +543,10 @@
 #' constructor. The usual pipeline runs both:
 #'
 #' ```r
-#' det <- importDetections(file, source = "vue")      # 1. reshape  -> data frame
-#' det <- assignAnimalIDs(det, tags)                  # 2. join tags -> mobyData (IDs, delays, dates)
-#' det <- as_moby(det, id.groups = groups,            # 3. annotate  -> add the rest
-#'                epsg.code = 3395, land.shape = coast)
+#' det <- importDetections(file, source = "vue")      # 1. reshape -> data frame
+#' det <- matchTags(det, tags)                        # 2. join    -> data frame
+#' det <- as_moby(det, tags = tags,                   # 3. declare -> mobyData
+#'                id.groups = groups, epsg.code = 3395, land.shape = coast)
 #' ```
 #'
 #' If you **already have a tidy data frame in R** (your own column names, date-times already parsed),
@@ -575,7 +575,7 @@
 #'                           min_delay = "Minoff_sec", max_delay = "Maxoff_sec"))
 #' ```
 #'
-#' @seealso [importDetections()], [importTags()], [importDeployments()], [assignAnimalIDs()],
+#' @seealso [importDetections()], [importTags()], [importDeployments()], [matchTags()],
 #' [matchDeployments()], [as_moby()]
 #' @name moby_import_schema
 NULL
@@ -586,7 +586,7 @@ NULL
 #' @description Reads acoustic-telemetry detections from a range of common sources and
 #' harmonises them into a single consistent schema - moby's canonical column names, with
 #' date-times parsed - ready to be turned into a \code{\link{mobyData}} by
-#' \code{\link{assignAnimalIDs}} / \code{\link{as_moby}}. Supported sources are Innovasea/VEMCO VUE
+#' \code{\link{matchTags}} / \code{\link{as_moby}}. Supported sources are Innovasea/VEMCO VUE
 #' exports, Innovasea VDAT/Fathom `DET.csv` files, and detection extracts from the GLATOS,
 #' OTN and ETN (`etn` package) systems. A `generic` mode plus a user-supplied `col.map`
 #' handle non-standard layouts.
@@ -618,17 +618,17 @@ NULL
 #' @return A data frame with harmonised columns (`ID`, `datetime`, `transmitter`, `receiver`,
 #' `station`, `lon`, `lat`, ...), sorted by animal and time. When the source has no animal
 #' identifier, `ID` is initialised from `transmitter` (assign true animal IDs afterwards with
-#' \code{\link{assignAnimalIDs}}).
+#' \code{\link{matchTags}}).
 #'
 #' This is a *harmonised table*, not yet a \code{\link{mobyData}}: importing reshapes columns, it
-#' does not attach study metadata. Turn it into a `mobyData` with \code{\link{assignAnimalIDs}}
+#' does not attach study metadata. Turn it into a `mobyData` with \code{\link{as_moby}}
 #' (animal IDs, tagging dates, nominal delays) and/or \code{\link{as_moby}} (`id.groups`, CRS, land
 #' layer) - see the \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}}.
 #' Because the output already uses moby's canonical column names, those functions need no explicit
 #' column arguments.
 #'
 #' @seealso \code{\link{moby_import_schema}} for the canonical field list and how importing relates
-#' to \code{\link{as_moby}}; \code{\link{assignAnimalIDs}}, \code{\link{importDeployments}},
+#' to \code{\link{as_moby}}; \code{\link{matchTags}}, \code{\link{importDeployments}},
 #' \code{\link{checkDeployments}}, \code{\link{as_moby}}
 #' @examples
 #' # harmonise a generic-layout detection CSV via an explicit column map
@@ -868,9 +868,9 @@ importDeployments <- function(x,
 #'
 #' @description Reads a tag/animal metadata table and harmonises it into a consistent schema
 #' (`transmitter`, `ID`, `tagging_date`, plus biometrics such as `species`, `sex`, `length`, and the
-#' transmitter `nominal_delay` when the source provides one). Use together with
-#' \code{\link{assignAnimalIDs}} to attach animal IDs, tagging dates and nominal delays to a
-#' detection dataset.
+#' transmitter `nominal_delay` when the source provides one). Feed the result to
+#' \code{\link{matchTags}} to assign animal IDs to a detection dataset, and to
+#' \code{\link{as_moby}}'s `tags` argument to attach the per-animal tagging dates and nominal delays.
 #'
 #' @details When the source specifies a delay RANGE (`min_delay`/`max_delay`) rather than a nominal
 #' delay - as many tag-specification exports do - `nominal_delay` is derived as their midpoint. The
@@ -903,7 +903,7 @@ importDeployments <- function(x,
 #' (POSIXct), `nominal_delay` (seconds) and biometric columns.
 #'
 #' @seealso \code{\link{moby_import_schema}} for the canonical field list;
-#' \code{\link{assignAnimalIDs}}, \code{\link{importDetections}}
+#' \code{\link{matchTags}}, \code{\link{importDetections}}
 #' @examples
 #' # harmonise a tag-metadata table (here the bundled 'rays_tags' data frame)
 #' tags <- importTags(rays_tags, source = "generic",
@@ -1002,7 +1002,7 @@ importTags <- function(x,
 # them on the shared suffix would silently attribute another project's animal to one of yours.
 # A tag that legitimately transmits on several code spaces (e.g. a Vemco V16P sensor tag) should list
 # each of its codes as a row of the tag table, all mapped to the same animal ID; exact matching then
-# resolves them, and assignAnimalIDs() reports any code that needs adding. Numeric codes shared by
+# resolves them, and matchTags() reports any code that needs adding. Numeric codes shared by
 # more than one tag are likewise left unmatched rather than resolved arbitrarily.
 .matchTransmitter <- function(det_tx, tag_tx) {
   idx <- match(det_tx, tag_tx)
@@ -1027,14 +1027,68 @@ importTags <- function(x,
 }
 
 
-#' Assign animal IDs (and tagging dates) to detections from tag metadata
+#' Animal IDs for a tag table, falling back when there is no ID column.
+#'
+#' A tag table is allowed to identify animals by `serial` or, failing that, by `transmitter`. An
+#' all-NA `serial` counts as absent rather than usable.
+#' @keywords internal
+#' @noRd
+.tagIDs <- function(tg) {
+  if ("ID" %in% colnames(tg)) return(as.character(tg$ID))
+  use_serial <- "serial" %in% colnames(tg) && !all(is.na(tg$serial))
+  as.character(if (use_serial) tg$serial else tg$transmitter)
+}
+
+#' Per-animal tagging dates derived from a tag table.
+#'
+#' Earliest tagging date per animal (an animal recaptured and re-tagged has several rows), keeping
+#' only animals present in `ids`. Returns NULL - not an empty vector - when nothing usable is found,
+#' so the caller can distinguish "no dates" from "dates for nobody".
+#'
+#' Lives here beside the other tag-table helpers, but its consumer is `as_moby()`: tag-derived
+#' metadata enters the object at the constructor, not at the join step.
+#' @keywords internal
+#' @noRd
+.deriveTaggingDates <- function(tg, ids) {
+  if (!"tagging_date" %in% colnames(tg) || !inherits(tg$tagging_date, "POSIXct")) return(NULL)
+  valid <- !is.na(tg$ID) & !is.na(tg$tagging_date)
+  if (!any(valid)) return(NULL)
+  epoch <- tapply(as.numeric(tg$tagging_date[valid]), tg$ID[valid], min)
+  out <- as.POSIXct(epoch, origin = "1970-01-01", tz = .dataTZ(tg$tagging_date))
+  names(out) <- names(epoch)
+  out <- out[names(out) %in% ids]
+  if (length(out) == 0) NULL else out
+}
+
+#' Per-animal transmitter nominal delays derived from a tag table.
+#'
+#' The median guards against duplicate tag rows for one animal. `filterDetections()` reads these to
+#' scale its short-interval (min_lag) filter per animal, so arrays mixing tag families work.
+#' @keywords internal
+#' @noRd
+.deriveNominalDelay <- function(tg, ids) {
+  if (!"nominal_delay" %in% colnames(tg)) return(NULL)
+  nd <- suppressWarnings(as.numeric(tg$nominal_delay))
+  valid <- !is.na(tg$ID) & !is.na(nd) & nd > 0
+  if (!any(valid)) return(NULL)
+  agg <- tapply(nd[valid], tg$ID[valid], stats::median)
+  out <- stats::setNames(as.numeric(agg), names(agg))
+  out <- out[names(out) %in% ids]
+  if (length(out) == 0) NULL else out
+}
+
+
+#' Match detections to tagged animals and assign IDs
 #'
 #' @description Resolves the transmitter codes in a detection dataset to the animals that carried
 #' them, using a tag table (see \code{\link{importTags}}). This is more than a column join: several
-#' transmitter codes can map to the same animal, and the function also derives the per-animal
-#' metadata - tagging dates and transmitter nominal delays - that later steps such as
-#' \code{\link{filterDetections}} and \code{\link{summaryTable}} read automatically. Optional
-#' biometric columns can be joined in as well.
+#' transmitter codes can map to the same animal, and the matching is deliberately tolerant of how
+#' tag tables store codes. Optional biometric columns can be joined in as well.
+#'
+#' The tag-derived study metadata - per-animal tagging dates and transmitter nominal delays - is
+#' attached by \code{\link{as_moby}}, not here: `matchTags(det, tags)` changes rows and columns,
+#' `as_moby(det, tags = tags)` declares what the dataset means. The verbose output names whatever
+#' the tag table would supply, so nothing has to be discovered by inspecting attributes.
 #'
 #' @details
 #' \strong{Why several codes can mean one animal.} Most often this is because a single physical
@@ -1065,45 +1119,42 @@ importTags <- function(x,
 #' `mobyData` metadata or `"ID"` when `NULL`.
 #' @param keep.cols Optional character vector of additional `tags` columns (e.g. `"sex"`,
 #' `"length"`, `"species"`) to join into the detections.
-#' @param set.tagging.dates Logical; if `TRUE` (default) and `tags` has a `tagging_date` column,
-#' attach per-individual tagging dates to the returned object's metadata.
-#' @param set.nominal.delay Logical; if `TRUE` (default) and `tags` has a `nominal_delay` column
-#' (see \code{\link{importTags}}), attach per-individual transmitter nominal delays (seconds) to the
-#' returned object's metadata. \code{\link{filterDetections}} reads these automatically to scale its
-#' short-interval (min_lag) false-detection filter, so arrays mixing tag families (e.g. 60 s and
-#' 120 s tags) are handled per animal.
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
-#' @return A \code{\link{mobyData}} object with the `ID` column assigned (and, optionally,
-#' tagging dates and biometric columns attached). Detections whose transmitter is absent from
-#' `tags` keep `NA` IDs (with a warning).
+#' @return An object of the same class as `detections`: a plain data frame in, a plain data frame
+#' out; a \code{\link{mobyData}} in, a `mobyData` out with its metadata carried over. The `ID`
+#' column is assigned (plus any `keep.cols`); detections whose transmitter is absent from `tags`
+#' keep `NA` IDs (with a warning). No study metadata is attached - see \code{\link{as_moby}}.
 #'
-#' @seealso \code{\link{importTags}}, \code{\link{importDetections}}, \code{\link{as_moby}}
+#' @seealso \code{\link{as_moby}}, \code{\link{importTags}}, \code{\link{importDetections}},
+#' \code{\link{matchDeployments}}
 #' @examples
-#' # join tag metadata to detections to assign animal IDs (and tagging dates)
+#' # join tag metadata to detections to assign animal IDs
 #' tags <- importTags(rays_tags, source = "generic",
 #'                    col.map = list(ID = "ID", transmitter = "transmitter",
 #'                                   tagging_date = "tagging_date"))
 #' # detections carrying the tagged rays' transmitters
 #' det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
-#' det <- assignAnimalIDs(det, tags)
+#' det <- matchTags(det, tags)
 #' levels(det$ID)
+#'
+#' # the tagging dates the tag table supplies are attached by the constructor, explicitly
+#' det <- as_moby(det, tags = tags)
+#' names(mobyMeta(det)$tagging.dates)
 #'
 #' @export
 
-assignAnimalIDs <- function(detections,
-                            tags,
-                            id.col = NULL,
-                            transmitter.col = "transmitter",
-                            keep.cols = NULL,
-                            set.tagging.dates = TRUE,
-                            set.nominal.delay = TRUE,
-                            verbose = getOption("moby.verbose", TRUE)) {
+matchTags <- function(detections,
+                      tags,
+                      id.col = NULL,
+                      transmitter.col = "transmitter",
+                      keep.cols = NULL,
+                      verbose = getOption("moby.verbose", TRUE)) {
 
   id.col <- .resolveArgs(detections, list(id.col = id.col))$id.col
   prev_meta <- attr(detections, "moby")
-  det <- as.data.frame(detections)
+  det <- .stripMoby(detections)
   tg <- as.data.frame(tags)
 
   if (!transmitter.col %in% colnames(det)) {
@@ -1114,7 +1165,7 @@ assignAnimalIDs <- function(detections,
   # ---- header ---------------------------------------------------------------------------------
   # No criteria block: the join key is a column mapping, not a methodological choice, and the
   # framework reserves "-> Method" for settings that change what the result MEANS.
-  .mobyHeader("assignAnimalIDs()", "Joining tag metadata to replace placeholder IDs with real animal IDs",
+  .mobyHeader("matchTags()", "Joining tag metadata to replace placeholder IDs with real animal IDs",
               input = paste0(.fmtCount(nrow(det), "detection"), " ", .mobyGlyph("mid"), " ",
                              .fmtCount(length(unique(stats::na.omit(as.character(det[[transmitter.col]])))),
                                        "transmitter")),
@@ -1123,14 +1174,12 @@ assignAnimalIDs <- function(detections,
   # ensure the tag table has an animal-ID column
   if (!"ID" %in% colnames(tg)) {
     use_serial <- "serial" %in% colnames(tg) && !all(is.na(tg$serial))
-    key <- if (use_serial) tg$serial else tg$transmitter
-    tg$ID <- as.character(key)
     .mobyBlank(verbose)
     # report the column actually used: an all-NA 'serial' is present but unusable, and falls back
     .mobyNote("'tags' has no 'ID' column; animal IDs derived from ",
               if (use_serial) "'serial'" else "'transmitter'", ".", verbose = verbose)
   }
-  tg$ID <- as.character(tg$ID)
+  tg$ID <- .tagIDs(tg)
 
   idx <- .matchTransmitter(as.character(det[[transmitter.col]]), as.character(tg$transmitter))
   clash <- attr(idx, "codespace_clash")
@@ -1161,43 +1210,10 @@ assignAnimalIDs <- function(detections,
     for (cc in intersect(keep.cols, colnames(tg))) det[[cc]] <- tg[[cc]][idx]
   }
 
-  # build per-individual tagging dates for the object metadata
-  tagging.dates <- NULL
-  if (set.tagging.dates && "tagging_date" %in% colnames(tg) && inherits(tg$tagging_date, "POSIXct")) {
-    valid <- !is.na(tg$ID) & !is.na(tg$tagging_date)
-    if (any(valid)) {
-      epoch <- tapply(as.numeric(tg$tagging_date[valid]), tg$ID[valid], min)
-      tagging.dates <- as.POSIXct(epoch, origin = "1970-01-01", tz = .dataTZ(tg$tagging_date))
-      names(tagging.dates) <- names(epoch)
-      # keep only IDs present in the detections
-      tagging.dates <- tagging.dates[names(tagging.dates) %in% as.character(unique(det[[id.col]]))]
-      if (length(tagging.dates) == 0) tagging.dates <- NULL
-    }
-  }
-
-  # build per-individual nominal delays for the object metadata (scales filterDetections' min_lag
-  # false-detection filter); the median guards against duplicate tag rows for one animal
-  nominal.delay <- NULL
-  if (set.nominal.delay && "nominal_delay" %in% colnames(tg)) {
-    nd <- suppressWarnings(as.numeric(tg$nominal_delay))
-    valid <- !is.na(tg$ID) & !is.na(nd) & nd > 0
-    if (any(valid)) {
-      agg <- tapply(nd[valid], tg$ID[valid], stats::median)
-      nominal.delay <- stats::setNames(as.numeric(agg), names(agg))
-      # keep only IDs present in the detections
-      nominal.delay <- nominal.delay[names(nominal.delay) %in% as.character(unique(det[[id.col]]))]
-      if (length(nominal.delay) == 0) nominal.delay <- NULL
-    }
-  }
-
   det <- det[order(det[[id.col]], det[[if ("datetime" %in% colnames(det)) "datetime" else id.col]]), , drop = FALSE]
   rownames(det) <- NULL
 
   # ---- outcome --------------------------------------------------------------------------------
-  # Two of this function's effects are otherwise invisible: it writes tagging.dates and nominal.delay
-  # into the returned object's metadata, which is what filterDetections() later reads. Report them, so
-  # "did my tag table supply the delay the min_lag filter needs?" is answered here rather than by
-  # inspecting attributes.
   .mobyBlank(verbose)
   # count detections that actually RECEIVED an ID, not merely those that found a tag row: a tag whose
   # own ID is NA (a blank 'serial', or a blank ID column) matches but assigns nothing, and reporting
@@ -1206,27 +1222,36 @@ assignAnimalIDs <- function(detections,
   n_animals <- nlevels(droplevels(det[[id.col]]))
   .mobyOk(.fmtCount(n_assigned, "detection"), " matched to ", .fmtCount(n_animals, "animal"),
           verbose = verbose)
-  meta_set <- character(0)
-  if (!is.null(tagging.dates))
-    meta_set <- c(meta_set, paste0("tagging.dates (", .fmtCount(length(tagging.dates), "individual"), ")"))
-  if (!is.null(nominal.delay)) {
+
+  # Name what the tag table would contribute as study metadata, and the call that attaches it. This
+  # function no longer attaches it itself - a join must not silently reconfigure the dataset - so
+  # without this report the alternative is recomputing values that were already in hand.
+  ids <- as.character(unique(det[[id.col]]))
+  td <- .deriveTaggingDates(tg, ids)
+  nd <- .deriveNominalDelay(tg, ids)
+  avail <- character(0)
+  if (!is.null(td))
+    avail <- c(avail, paste0("tagging.dates (", .fmtCount(length(td), "individual"), ")"))
+  if (!is.null(nd)) {
     # a single shared delay prints as one value; a mixed-tag-family array prints as a range. The
-    # coverage is part of the answer: a delay attached for 2 of 8 animals scales the min_lag filter
-    # for 2 of 8, and would otherwise be indistinguishable from full coverage.
-    nd_rng <- range(nominal.delay)
+    # coverage is part of the answer: a delay for 2 of 8 animals scales the min_lag filter for 2 of
+    # 8, and would otherwise be indistinguishable from full coverage.
+    nd_rng <- range(nd)
     nd_txt <- if (isTRUE(all.equal(nd_rng[1], nd_rng[2]))) format(nd_rng[1])
               else paste0(format(nd_rng[1]), "-", format(nd_rng[2]))
-    cover <- if (length(nominal.delay) < n_animals)
-               paste0(", ", .fmtN(length(nominal.delay)), " of ", .fmtCount(n_animals, "individual")) else ""
-    meta_set <- c(meta_set, paste0("nominal.delay (", nd_txt, " s", cover, ")"))
+    cover <- if (length(nd) < n_animals)
+               paste0(", ", .fmtN(length(nd)), " of ", .fmtCount(n_animals, "individual")) else ""
+    avail <- c(avail, paste0("nominal.delay (", nd_txt, " s", cover, ")"))
   }
-  if (length(meta_set) > 0)
-    .mobyNote("Metadata attached: ", paste(meta_set, collapse = ", "), verbose = verbose)
-  # a requested metadata field that the tag table appeared to carry but yielded nothing is otherwise
-  # discoverable only by inspecting attributes
-  if (set.nominal.delay && "nominal_delay" %in% colnames(tg) && is.null(nominal.delay))
-    .mobyNote("No usable 'nominal_delay' in 'tags'; none attached (filterDetections' min_lag filter ",
-              "will need it supplied).", verbose = verbose)
+  if (length(avail) > 0) {
+    .mobyNote("'tags' supplies ", paste(avail, collapse = ", "),
+              ". Attach with: as_moby(<detections>, tags = <tags>)", verbose = verbose)
+  }
+  # a field the tag table appeared to carry but which yielded nothing is otherwise discoverable
+  # only by inspecting attributes
+  if ("nominal_delay" %in% colnames(tg) && is.null(nd))
+    .mobyNote("No usable 'nominal_delay' in 'tags' (filterDetections' min_lag filter will need it ",
+              "supplied).", verbose = verbose)
   # NB: detections left unassigned are NOT reported here - the warning() above already states it, and
   # saying the same thing twice in two different styles is precisely the inconsistency to avoid.
   # Tag rows that matched but carry no ID have no such warning, so they get one of their own.
@@ -1235,13 +1260,11 @@ assignAnimalIDs <- function(detections,
     warning(paste0("- ", n_blank, " detection(s) matched a tag row with no animal ID; their ID is NA."),
             call. = FALSE)
 
-  # rebuild the mobyData, preserving the original metadata (column map, CRS, etc.) and updating the
-  # ID column and (when available) the tagging dates and transmitter nominal delays
-  base_meta <- if (!is.null(prev_meta)) prev_meta else list()
-  base_meta$id.col <- id.col
-  if (!is.null(tagging.dates)) base_meta$tagging.dates <- tagging.dates
-  if (!is.null(nominal.delay)) base_meta$nominal.delay <- nominal.delay
-  do.call(as_moby, c(list(det), base_meta, list(verbose = FALSE)))
+  # PRESERVE the input's class rather than constructing: a plain data frame in, a plain data frame
+  # out. The ID column role is the one piece of metadata this step can legitimately update, and only
+  # when the caller already had metadata to update.
+  if (!is.null(prev_meta)) prev_meta$id.col <- id.col
+  .restoreClass(det, prev_meta)
 }
 
 #######################################################################################################

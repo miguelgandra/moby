@@ -58,7 +58,7 @@ calculateLandDists <- function(data,
   id.col <- .args$id.col; lon.col <- .args$lon.col; lat.col <- .args$lat.col; epsg.code <- .args$epsg.code
 
   # coerce to a plain data.frame for consistent indexing (tibble/data.table safe)
-  data <- as.data.frame(data)
+  data <- .stripMoby(data)
 
   # a projected (metric) CRS is required for distance calculations
   if (is.null(epsg.code)) {

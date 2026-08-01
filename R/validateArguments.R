@@ -106,8 +106,10 @@
   }
   # coerce to a plain data.frame so that downstream single-bracket indexing
   # (data[, col]) behaves consistently regardless of whether the user supplied a
-  # tibble, data.table or other data.frame subclass
-  data <- as.data.frame(data)
+  # tibble, data.table or other data.frame subclass. .stripMoby() (not as.data.frame())
+  # so a demoted object does not keep live metadata behind a plain class - the column
+  # roles were already resolved above, which is why that read has to come first.
+  data <- .stripMoby(data)
   # reject empty datasets early, with a clear message
   if (nrow(data) == 0) {
     stop(paste0(names(args)[1], " contains no rows (empty dataset)."), call.=FALSE)

@@ -627,7 +627,7 @@ matchDeployments <- function(detections,
   lon.col <- args$lon.col; lat.col <- args$lat.col
 
   prev_meta <- attr(detections, "moby")
-  det <- as.data.frame(detections)
+  det <- .stripMoby(detections)
   dep <- as.data.frame(deployments)
 
   if (!"receiver" %in% colnames(det)) stop("'detections' must contain a 'receiver' column.", call. = FALSE)
@@ -744,13 +744,16 @@ matchDeployments <- function(detections,
     det <- det[matched, , drop = FALSE]
     # discarding detections can leave an animal with none: drop its now-empty ID level and the
     # matching metadata entries, so this step gives the same result whether it runs before or after
-    # assignAnimalIDs()
+    # matchTags()
     synced <- .syncIDs(det, .resolveArgs(detections, list(id.col = NULL))$id.col, base_meta)
     det <- synced$data; base_meta <- synced$meta
   }
   rownames(det) <- NULL
 
-  do.call(as_moby, c(list(det), base_meta, list(verbose = FALSE)))
+  # PRESERVE the input's class rather than constructing: a plain data frame in, a plain data frame
+  # out. Re-attaching base_meta (instead of rebuilding through as_moby()) also keeps the caller's
+  # own column map, which the constructor would have overwritten with the canonical defaults.
+  .restoreClass(det, if (is.null(prev_meta)) NULL else base_meta)
 }
 
 

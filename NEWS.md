@@ -64,7 +64,7 @@ unaffected. v1.0.0 treats every polygon as impassable and pins the behaviour wit
   and cross-checks it against detections, returning a structured report; a `checks` argument selects
   which check groups to run.
 * `matchDeployments()` matches detections to deployment windows and back-fills coordinates and
-  station names; `assignAnimalIDs()` joins tag metadata to assign animal IDs and tagging dates.
+  station names; `matchTags()` joins tag metadata to assign animal IDs and tagging dates.
 * `plotArray()` maps a receiver array from a deployment log — station positions, nominal detection
   ranges, deployment status and per-station detection effort.
 * `filterDetections()` removes spurious detections through a configurable pipeline: exact-duplicate

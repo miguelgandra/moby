@@ -32,9 +32,7 @@
   # allows duplicate names (e.g. both frames carry an aggregate column "x"; the call sites rename the
   # result positionally) and preserves list-columns, which as.data.frame(as.list(x)) would expand. This
   # matches plyr::join, which returned a plain data.frame.
-  out <- x
-  class(out) <- "data.frame"
-  attr(out, "moby") <- NULL
+  out <- .stripMoby(x)
   for (col in ycols) out[[length(out) + 1L]] <- y[[col]][idx]
   names(out) <- c(names(x), ycols)
   rownames(out) <- NULL

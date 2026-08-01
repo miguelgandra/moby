@@ -126,14 +126,10 @@ calculateCOAs <- function(data,
   # COAs are a metadata-preserving transformation of the detections (a coarser, per-time-bin position
   # dataset), so carry the input's mobyData metadata forward - CRS, tagging dates, id.groups, land
   # layer - keeping the downstream pipeline (step distances, UDs, maps) metadata-driven. Aggregation
-  # replaces the raw datetime column with the time bin, so the datetime role is dropped: simply
-  # omitting it from the arguments is not enough, because as_moby() then re-applies its canonical
-  # default, leaving the metadata pointing at a column that does not exist. Clear it explicitly.
-  if(!is.null(prev_meta)){
-    prev_meta$datetime.col <- NULL
-    result <- do.call(as_moby, c(list(result), prev_meta, list(verbose = FALSE)))
-    attr(result, "moby")$datetime.col <- NULL
-  }
+  # replaces the raw datetime column with the time bin, so the datetime role is dropped before the
+  # metadata is carried over - otherwise it would point at a column that no longer exists.
+  if(!is.null(prev_meta)) prev_meta$datetime.col <- NULL
+  result <- .restoreClass(result, prev_meta)
 
   # ---- outcome --------------------------------------------------------------------------------
   .mobyBlank(verbose)

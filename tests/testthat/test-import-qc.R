@@ -13,7 +13,7 @@ test_that("importDetections harmonises a VUE export into a canonical data frame"
   write.csv(vue_detections(), f, row.names = FALSE)
   d <- importDetections(f, source = "vue", verbose = FALSE)
   # importing reshapes only: it returns a plain data frame (as importTags/importDeployments do), and
-  # as_moby()/assignAnimalIDs(verbose = FALSE) are what attach metadata
+  # as_moby()/matchTags(verbose = FALSE) are what attach metadata
   expect_false(is_moby(d))
   expect_s3_class(d, "data.frame")
   expect_true(all(c("ID", "datetime", "transmitter", "receiver", "station", "lon", "lat") %in% colnames(d)))
@@ -50,7 +50,7 @@ test_that("importDetections supports generic col.map and missing optional fields
   expect_false("lon" %in% colnames(d))  # absent optional field degrades gracefully
 })
 
-test_that("an imported table flows into as_moby()/assignAnimalIDs(verbose = FALSE) with no column arguments", {
+test_that("an imported table flows into as_moby()/matchTags(verbose = FALSE) with no column arguments", {
   # the payoff of canonical names: the harmonised data frame needs no explicit *.col arguments
   f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
   write.csv(vue_detections(), f, row.names = FALSE)
@@ -63,15 +63,20 @@ test_that("an imported table flows into as_moby()/assignAnimalIDs(verbose = FALS
   expect_equal(meta$datetime.col, "datetime")
   expect_equal(meta$station.col, "station")
 
-  # assignAnimalIDs(verbose = FALSE) also accepts the plain imported frame and returns a mobyData
+  # matchTags() accepts the plain imported frame and PRESERVES its class: the join assigns IDs and
+  # attaches nothing, the constructor is what turns the tag table into study metadata
   tags <- data.frame(transmitter = c("A69-1602-111", "A69-1602-222"), ID = c("shark1", "shark2"),
                      tagging_date = as.POSIXct(c("2023-01-01", "2023-01-01"), tz = "UTC"),
                      nominal_delay = c(120, 120))
-  out <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, verbose = FALSE)))
-  expect_true(is_moby(out))
+  out <- suppressWarnings(suppressMessages(matchTags(det, tags, verbose = FALSE)))
+  expect_false(is_moby(out))
+  expect_null(mobyMeta(out))
   expect_setequal(as.character(unique(out$ID)), c("shark1", "shark2"))
-  expect_false(is.null(mobyMeta(out)$tagging.dates))
-  expect_false(is.null(mobyMeta(out)$nominal.delay))
+
+  md2 <- suppressMessages(as_moby(out, tags = tags))
+  expect_true(is_moby(md2))
+  expect_false(is.null(mobyMeta(md2)$tagging.dates))
+  expect_false(is.null(mobyMeta(md2)$nominal.delay))
 })
 
 test_that("importDeployments produces the canonical deployment schema", {
@@ -342,13 +347,15 @@ test_that("importTags harmonises the transmitter nominal delay (incl. min/max mi
   expect_true(all(out2$nominal_delay == 120))
 })
 
-test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections uses automatically", {
+test_that("as_moby(tags=) populates meta$nominal.delay, which filterDetections uses automatically", {
   tg <- rays_tags; tg$nominal_delay <- 120
   tags <- importTags(tg, source = "generic",
                      col.map = list(ID = "ID", transmitter = "transmitter",
                                     tagging_date = "tagging_date", nominal_delay = "nominal_delay"), verbose = FALSE)
   det <- rays_detections[rays_detections$transmitter %in% rays_tags$transmitter, ]
-  md <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, verbose = FALSE)))
+  joined <- suppressWarnings(suppressMessages(matchTags(det, tags, verbose = FALSE)))
+  expect_false(is_moby(joined))   # the join itself reconfigures nothing
+  md <- suppressMessages(as_moby(joined, tags = tags))
 
   nd <- mobyMeta(md)$nominal.delay
   expect_false(is.null(nd))
@@ -360,8 +367,8 @@ test_that("assignAnimalIDs populates meta$nominal.delay, which filterDetections 
   res <- suppressWarnings(suppressMessages(filterDetections(md)))
   expect_true(any(grepl("minimum lag (< 3600 s)", res$data_discarded$reason, fixed = TRUE)))
 
-  # and it can be opted out of
-  md_off <- suppressWarnings(suppressMessages(assignAnimalIDs(det, tags, set.nominal.delay = FALSE, verbose = FALSE)))
+  # opting out is now simply declining to hand the tag table to the constructor
+  md_off <- suppressMessages(as_moby(joined))
   expect_null(mobyMeta(md_off)$nominal.delay)
 })
 
@@ -381,7 +388,7 @@ test_that(".matchTransmitter refuses ambiguous and cross-code-space fallbacks", 
   expect_true(is.na(as.integer(.matchTransmitter("A69-1602-111", c("A69-1303-111", "A69-9002-111")))))
 })
 
-test_that("assignAnimalIDs and matchDeployments commute", {
+test_that("matchTags and matchDeployments commute", {
   det <- as.data.frame(rays)[, c("ID", "datetime", "station", "lon", "lat", "transmitter", "receiver")]
   tags <- unique(data.frame(transmitter = det$transmitter, ID = as.character(det$ID),
                             tagging_date = as.POSIXct("2023-01-01", tz = "UTC"), nominal_delay = 120))
@@ -396,8 +403,8 @@ test_that("assignAnimalIDs and matchDeployments commute", {
                     recover = as.POSIXct("2023-12-01", tz = "UTC"))
 
   quiet <- function(e) suppressWarnings(suppressMessages(e))
-  a <- quiet(matchDeployments(quiet(assignAnimalIDs(detp, tags, verbose = FALSE)), dep, drop.unmatched = TRUE, verbose = FALSE))
-  b <- quiet(assignAnimalIDs(quiet(matchDeployments(detp, dep, drop.unmatched = TRUE, verbose = FALSE)), tags))
+  a <- quiet(matchDeployments(quiet(matchTags(detp, tags, verbose = FALSE)), dep, drop.unmatched = TRUE, verbose = FALSE))
+  b <- quiet(matchTags(quiet(matchDeployments(detp, dep, drop.unmatched = TRUE, verbose = FALSE)), tags))
 
   expect_equal(nrow(a), nrow(b))
   expect_equal(nlevels(a$ID), nlevels(b$ID))

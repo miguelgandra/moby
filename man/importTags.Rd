@@ -50,9 +50,9 @@ A data frame with at least \code{transmitter} and (when available) \code{ID}, \c
 \description{
 Reads a tag/animal metadata table and harmonises it into a consistent schema
 (\code{transmitter}, \code{ID}, \code{tagging_date}, plus biometrics such as \code{species}, \code{sex}, \code{length}, and the
-transmitter \code{nominal_delay} when the source provides one). Use together with
-\code{\link{assignAnimalIDs}} to attach animal IDs, tagging dates and nominal delays to a
-detection dataset.
+transmitter \code{nominal_delay} when the source provides one). Feed the result to
+\code{\link{matchTags}} to assign animal IDs to a detection dataset, and to
+\code{\link{as_moby}}'s \code{tags} argument to attach the per-animal tagging dates and nominal delays.
 }
 \details{
 When the source specifies a delay RANGE (\code{min_delay}/\code{max_delay}) rather than a nominal
@@ -70,5 +70,5 @@ head(tags)
 }
 \seealso{
 \code{\link{moby_import_schema}} for the canonical field list;
-\code{\link{assignAnimalIDs}}, \code{\link{importDetections}}
+\code{\link{matchTags}}, \code{\link{importDetections}}
 }

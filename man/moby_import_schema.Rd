@@ -36,7 +36,7 @@ downstream if you do not supply it (functions that need a missing field say so w
 
 
 If \code{ID} is absent it is initialised from \code{transmitter} (with a message); assign true animal IDs
-afterwards with \code{\link[=assignAnimalIDs]{assignAnimalIDs()}}.
+afterwards with \code{\link[=matchTags]{matchTags()}}.
 }
 
 \section{Tag fields — \code{importTags()}}{
@@ -67,7 +67,7 @@ afterwards with \code{\link[=assignAnimalIDs]{assignAnimalIDs()}}.
 \section{What happens when an optional field is omitted}{
 
 \itemize{
-\item No \code{ID} — initialised from \code{transmitter}; attach real animal IDs with \code{\link[=assignAnimalIDs]{assignAnimalIDs()}}.
+\item No \code{ID} — initialised from \code{transmitter}; attach real animal IDs with \code{\link[=matchTags]{matchTags()}}.
 \item No \code{station} / \code{lon} / \code{lat}, but a \code{receiver} is present — \code{\link[=matchDeployments]{matchDeployments()}} can
 back-fill them from the deployment log.
 \item No \code{receiver} — deployment matching (\code{\link[=matchDeployments]{matchDeployments()}}, \code{\link[=checkDeployments]{checkDeployments()}}) is
@@ -96,10 +96,10 @@ as alternatives:\tabular{lll}{
 Roughly: importing is to \code{\link[=as_moby]{as_moby()}} what \code{read.csv()} is to \code{data.frame()} — a reader, then a
 constructor. The usual pipeline runs both:
 
-\if{html}{\out{<div class="sourceCode r">}}\preformatted{det <- importDetections(file, source = "vue")      # 1. reshape  -> data frame
-det <- assignAnimalIDs(det, tags)                  # 2. join tags -> mobyData (IDs, delays, dates)
-det <- as_moby(det, id.groups = groups,            # 3. annotate  -> add the rest
-               epsg.code = 3395, land.shape = coast)
+\if{html}{\out{<div class="sourceCode r">}}\preformatted{det <- importDetections(file, source = "vue")      # 1. reshape -> data frame
+det <- matchTags(det, tags)                        # 2. join    -> data frame
+det <- as_moby(det, tags = tags,                   # 3. declare -> mobyData
+               id.groups = groups, epsg.code = 3395, land.shape = coast)
 }\if{html}{\out{</div>}}
 
 If you \strong{already have a tidy data frame in R} (your own column names, date-times already parsed),
@@ -132,6 +132,6 @@ importTags(file, source = "generic",
 }
 
 \seealso{
-\code{\link[=importDetections]{importDetections()}}, \code{\link[=importTags]{importTags()}}, \code{\link[=importDeployments]{importDeployments()}}, \code{\link[=assignAnimalIDs]{assignAnimalIDs()}},
+\code{\link[=importDetections]{importDetections()}}, \code{\link[=importTags]{importTags()}}, \code{\link[=importDeployments]{importDeployments()}}, \code{\link[=matchTags]{matchTags()}},
 \code{\link[=matchDeployments]{matchDeployments()}}, \code{\link[=as_moby]{as_moby()}}
 }

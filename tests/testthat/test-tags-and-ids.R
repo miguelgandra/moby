@@ -16,7 +16,7 @@ test_that("importTags combines GLATOS codespace + id", {
   expect_equal(tg$ID, "f1")
 })
 
-test_that("assignAnimalIDs maps transmitters to animal IDs and attaches tagging dates", {
+test_that("matchTags maps transmitters to animal IDs and preserves existing metadata", {
   det <- as_moby(data.frame(
     ID = factor(c("A69-1602-111", "A69-1602-222")),
     transmitter = c("A69-1602-111", "A69-1602-222"),
@@ -26,21 +26,27 @@ test_that("assignAnimalIDs maps transmitters to animal IDs and attaches tagging 
                                 ID = c("shark_01", "shark_02"),
                                 Tagdeployed = c("2023-06-01", "2023-06-02"),
                                 Sex = c("F", "M"), Tl_cm = c(120, 135)), source = "vue", verbose = FALSE)
-  res <- assignAnimalIDs(det, tags, keep.cols = c("sex", "length"), verbose = FALSE)
+  res <- matchTags(det, tags, keep.cols = c("sex", "length"), verbose = FALSE)
   expect_true(all(as.character(res$ID) %in% c("shark_01", "shark_02")))
   expect_true(all(c("sex", "length") %in% colnames(res)))
-  expect_false(is.null(mobyMeta(res)$tagging.dates))
+  expect_true(is_moby(res))                     # mobyData in, mobyData out
+  expect_null(mobyMeta(res)$tagging.dates)      # but a join attaches no study metadata
   expect_equal(mobyMeta(res)$epsg.code, 32629)  # original metadata preserved
+
+  # tagging dates enter at the constructor, explicitly
+  res2 <- as_moby(res, tags = tags, verbose = FALSE)
+  expect_false(is.null(mobyMeta(res2)$tagging.dates))
+  expect_equal(mobyMeta(res2)$epsg.code, 32629)
 })
 
-test_that("assignAnimalIDs matches by trailing numeric code and warns on unmatched", {
+test_that("matchTags matches by trailing numeric code and warns on unmatched", {
   det <- as_moby(data.frame(ID = factor(c("A69-1602-111", "A69-1602-999")),
                             transmitter = c("A69-1602-111", "A69-1602-999"),
                             datetime = as.POSIXct(c("2023-06-05", "2023-06-06"), tz = "UTC")))
   tags <- importTags(data.frame(Transmitter = "111", ID = "s1", Tagdeployed = "2023-06-01"),
                      source = "vue", verbose = FALSE)
-  res <- suppressWarnings(assignAnimalIDs(det, tags, verbose = FALSE))
+  res <- suppressWarnings(matchTags(det, tags, verbose = FALSE))
   expect_equal(as.character(res$ID[res$transmitter == "A69-1602-111"]), "s1")  # numeric match
   expect_true(any(is.na(res$ID)))                                              # 999 unmatched
-  expect_warning(assignAnimalIDs(det, tags, verbose = FALSE), "not found")
+  expect_warning(matchTags(det, tags, verbose = FALSE), "not found")
 })

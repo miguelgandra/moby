@@ -30,17 +30,20 @@ See \code{\link{moby_import_schema}} for every field.}
 overlapping deployments, duplicate stations, invalid dates, implausible or on-land coordinates,
 short monitoring effort) and cross-checks detections against it. Returns a report and
 \strong{modifies nothing}. Recommended.}
-\item{\strong{3. Enrich} - \code{\link{assignAnimalIDs}}, \code{\link{matchDeployments}}}{Fold a side
-table into the detections. \code{assignAnimalIDs()} resolves transmitter codes to animals and attaches
-per-animal tagging dates and nominal delays; \code{matchDeployments()} matches detections to deployment
-windows and back-fills station names and coordinates. They key on different columns (transmitter vs
-receiver) and are \strong{order-independent}.}
+\item{\strong{3. Enrich} - \code{\link{matchTags}}, \code{\link{matchDeployments}}}{Fold a side
+table into the detections. \code{matchTags()} resolves transmitter codes to animals;
+\code{matchDeployments()} matches detections to deployment windows and back-fills station names and
+coordinates. They key on different columns (transmitter vs receiver) and are
+\strong{order-independent}. Both change rows and columns only: neither attaches study
+metadata, and both return the same class they were given.}
 \item{\strong{4. Clean & bin} - \code{\link{filterDetections}}, \code{\link{correctPositions}},
 \code{\link{getTimeBins}}}{Where the data actually becomes analysis-ready: removing spurious
 detections, relocating positions that fall on land, and assigning regular time bins.}
-\item{\strong{5. Declare} - \code{\link{as_moby}}}{Records which column plays which role and attaches
-study metadata (\code{id.groups}, \code{epsg.code}, \code{land.shape}). Not really a stage - it is idempotent, so
-call it whenever you want to add metadata without losing what is already attached.}
+\item{\strong{5. Declare} - \code{\link{as_moby}}}{The package's only constructor, and the one
+place study metadata enters a dataset: which column plays which role, plus \code{id.groups},
+\code{epsg.code}, \code{land.shape}, and - via \code{tags} - each animal's tagging date and nominal delay.
+Idempotent, so call it whenever you want to add metadata without losing what is already
+attached.}
 }
 }
 
@@ -51,8 +54,8 @@ call it whenever you want to add metadata without losing what is already attache
 det  <- importDetections(det_file, source = "vue")
 tags <- importTags(tag_file, source = "vue")
 
-# 2 - enrich: animal identity, plus tagging dates and nominal delays
-det <- assignAnimalIDs(det, tags)
+# 2 - enrich: animal identity (rows and columns only; nothing is attached)
+det <- matchTags(det, tags)
 det <- det[!is.na(det$ID), ]          # drop transmitters absent from 'tags'
 det$ID <- droplevels(det$ID)
 
@@ -61,9 +64,9 @@ qc  <- filterDetections(det, max.speed = 2, speed.unit = "m/s")
 qc                                    # what was removed, and why
 det <- qc$data
 
-# 4 - bin, and declare anything only you know
+# 4 - bin, and declare: tagging dates and nominal delays come from 'tags', the rest from you
 det$timebin <- getTimeBins(det$datetime, interval = "30 mins")
-dataset <- as_moby(det, id.groups = groups, epsg.code = 32629)
+dataset <- as_moby(det, tags = tags, id.groups = groups, epsg.code = 32629)
 }\if{html}{\out{</div>}}
 
 Add the receiver-log branch when you need it - audit, then match:
@@ -88,11 +91,11 @@ Already hold a tidy data frame? No moby object is required at any point:
 \code{importDeployments()} \tab optional    \tab nothing breaks; only needed if you use the receiver log \cr
 \code{checkDeployments()}  \tab recommended \tab nothing breaks; you may match against a log with real errors \cr
 \code{matchDeployments()}  \tab optional    \tab coordinates stay as exported, unvalidated and ungapfilled \cr
-\code{assignAnimalIDs()}   \tab \strong{essential in practice} \tab \code{filterDetections()} \strong{errors} without tagging dates; the min_lag filter is unavailable \cr
+\code{matchTags()}         \tab recommended \tab IDs stay as exported transmitter codes \cr
 \code{filterDetections()}  \tab \strong{essential} \tab false detections, pre-tagging records and impossible speeds stay in \cr
 \code{correctPositions()}  \tab optional    \tab nothing breaks unless coordinates sit on land \cr
 \code{getTimeBins()}       \tab recommended \tab no per-bin analyses (COAs, wide tables, chronograms) \cr
-\code{as_moby()}           \tab recommended \tab no \code{id.groups}, projected CRS or land-aware distances \cr
+\code{as_moby()}           \tab \strong{essential in practice} \tab \code{filterDetections()} \strong{errors} without tagging dates; no \code{id.groups}, projected CRS or land-aware distances \cr
 }
 }
 
@@ -104,8 +107,9 @@ it has no single correct slot - run it early to find problems, and again after c
 they landed. The one position that matters: run it \emph{before}
 \code{matchDeployments(drop.unmatched = TRUE)}, which removes the records that four of its five
 detection-side checks rely on. Under the default (\code{FALSE}) nothing is lost and order is free.
-\item \strong{Enrich before you filter.} \code{\link{filterDetections}} needs tagging dates, which
-\code{\link{assignAnimalIDs}} supplies. The two enrich steps themselves may run in either order.
+\item \strong{Declare before you filter.} \code{\link{filterDetections}} needs tagging dates,
+which reach the dataset through \code{as_moby(det, tags = tags)} (or its own \code{tagging.dates}
+argument). The two enrich steps themselves may run in either order.
 }
 }
 
@@ -116,7 +120,7 @@ detection-side checks rely on. Under the default (\code{FALSE}) nothing is lost 
 frames - take \verb{$data}. Writing \code{det <- filterDetections(det)} leaves you holding a \code{mobyFilter}
 object and the next call fails.
 \item \code{\link{getTimeBins}} returns a \strong{vector}; assign it to a column yourself.
-\item \code{\link{assignAnimalIDs}} leaves \code{NA} IDs (with a warning) for transmitters that are not in
+\item \code{\link{matchTags}} leaves \code{NA} IDs (with a warning) for transmitters that are not in
 your tag table - typically other projects' tags. Remove them, or they travel into the analysis.
 }
 }

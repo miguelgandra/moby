@@ -109,8 +109,8 @@ plotMetricComparison <- function(data,
   # Initial checks #####################################################################
   ######################################################################################
 
-  data <- as.data.frame(data)
   id.col <- .resolveArgs(data, list(id.col = id.col))$id.col
+  data <- .stripMoby(data)
   plot.type <- match.arg(plot.type)
   test <- match.arg(test)
 

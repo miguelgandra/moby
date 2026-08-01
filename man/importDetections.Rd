@@ -49,10 +49,10 @@ Defaults to \code{FALSE}.}
 A data frame with harmonised columns (\code{ID}, \code{datetime}, \code{transmitter}, \code{receiver},
 \code{station}, \code{lon}, \code{lat}, ...), sorted by animal and time. When the source has no animal
 identifier, \code{ID} is initialised from \code{transmitter} (assign true animal IDs afterwards with
-\code{\link{assignAnimalIDs}}).
+\code{\link{matchTags}}).
 
 This is a \emph{harmonised table}, not yet a \code{\link{mobyData}}: importing reshapes columns, it
-does not attach study metadata. Turn it into a \code{mobyData} with \code{\link{assignAnimalIDs}}
+does not attach study metadata. Turn it into a \code{mobyData} with \code{\link{as_moby}}
 (animal IDs, tagging dates, nominal delays) and/or \code{\link{as_moby}} (\code{id.groups}, CRS, land
 layer) - see the \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}}.
 Because the output already uses moby's canonical column names, those functions need no explicit
@@ -62,7 +62,7 @@ column arguments.
 Reads acoustic-telemetry detections from a range of common sources and
 harmonises them into a single consistent schema - moby's canonical column names, with
 date-times parsed - ready to be turned into a \code{\link{mobyData}} by
-\code{\link{assignAnimalIDs}} / \code{\link{as_moby}}. Supported sources are Innovasea/VEMCO VUE
+\code{\link{matchTags}} / \code{\link{as_moby}}. Supported sources are Innovasea/VEMCO VUE
 exports, Innovasea VDAT/Fathom \code{DET.csv} files, and detection extracts from the GLATOS,
 OTN and ETN (\code{etn} package) systems. A \code{generic} mode plus a user-supplied \code{col.map}
 handle non-standard layouts.
@@ -80,6 +80,6 @@ head(det)
 }
 \seealso{
 \code{\link{moby_import_schema}} for the canonical field list and how importing relates
-to \code{\link{as_moby}}; \code{\link{assignAnimalIDs}}, \code{\link{importDeployments}},
+to \code{\link{as_moby}}; \code{\link{matchTags}}, \code{\link{importDeployments}},
 \code{\link{checkDeployments}}, \code{\link{as_moby}}
 }

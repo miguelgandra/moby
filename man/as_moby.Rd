@@ -8,6 +8,7 @@
 \usage{
 as_moby(
   data,
+  tags = NULL,
   id.col = .mobyDefaults[["id.col"]],
   datetime.col = .mobyDefaults[["datetime.col"]],
   timebin.col = .mobyDefaults[["timebin.col"]],
@@ -26,6 +27,13 @@ as_moby(
 }
 \arguments{
 \item{data}{A data frame of detections (one row per detection, or per binned record).}
+
+\item{tags}{Optional tag table (see \code{\link{importTags}}) from which to derive the
+per-animal \code{tagging.dates} and \code{nominal.delay} metadata, keyed by the IDs present in \code{data}.
+This is where tag-derived metadata enters a dataset: \code{\link{matchTags}} joins the tag
+table to the detections but attaches nothing, so nothing is added to your object without an
+explicit \code{as_moby()} call. Values passed directly to \code{tagging.dates} or \code{nominal.delay} take
+precedence over anything derived here.}
 
 \item{id.col}{Name of the column containing animal IDs. Defaults to \code{"ID"}.}
 
@@ -55,7 +63,7 @@ reference system, used when projecting coordinates or computing distances/areas.
 value (applied to all individuals) or a named numeric vector whose names match the animal IDs
 (for arrays mixing tag families, e.g. 60 s and 120 s tags). Stored in the metadata and read
 automatically by \code{\link{filterDetections}} to scale its short-interval (min_lag)
-false-detection filter. Usually populated for you by \code{\link{assignAnimalIDs}} when the tag
+false-detection filter. Usually populated by passing \code{tags} to \code{as_moby()}, when the tag
 table carries a delay column.}
 
 \item{verbose}{Logical; print informational notes about the operation. Defaults to
@@ -109,7 +117,7 @@ md <- as_moby(md, id.groups = list(grp1 = c("A", "B")))
 \seealso{
 \code{\link{mobyMeta}}, \code{\link{is_moby}}. To read a raw export from a receiver
 system (or a table whose columns need renaming and whose date-times need parsing) before declaring
-it here, see \code{\link{importDetections}} and \code{\link{assignAnimalIDs}}; the
+it here, see \code{\link{importDetections}} and \code{\link{matchTags}}; the
 \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}} contrasts importing
 with \code{as_moby()}.
 }

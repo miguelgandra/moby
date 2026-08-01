@@ -418,10 +418,7 @@ calculateStepDistances <- function(data,
 
 
   # restore the mobyData class/metadata when the input carried it
-  if(!is.null(meta)){
-    attr(final_data, "moby") <- meta
-    class(final_data) <- unique(c("mobyData", "data.frame"))
-  }
+  final_data <- .restoreClass(final_data, meta)
 
   # return the distance-enriched data (trajectories retrieved via getTrajectories()) alongside the cost
   # graph, for internal reuse only - calculateStepDistances() hands users just the data.

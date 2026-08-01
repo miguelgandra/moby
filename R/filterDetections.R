@@ -598,10 +598,7 @@ filterDetections <- function(data,
   .mobyRuntime(start.time, verbose, min.secs = 1)
 
   # re-attach mobyData metadata so the filtered detections stay chainable
-  if (!is.null(prev_meta)) {
-    attr(data_filtered, "moby") <- prev_meta
-    class(data_filtered) <- unique(c("mobyData", "data.frame"))
-  }
+  data_filtered <- .restoreClass(data_filtered, prev_meta)
 
   results <- list(data = data_filtered, data_discarded = data_discarded,
                   filter_summary = filter_summary)

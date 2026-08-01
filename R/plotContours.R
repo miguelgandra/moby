@@ -141,7 +141,7 @@ plotContours <- function(data,
 
   reviewed_params <- .validateArguments()
   data <- reviewed_params$data
-  data <- as.data.frame(data)
+  data <- .stripMoby(data)
 
   # timezone is taken from the data (most moby functions do this), avoiding a silent hour shift
   tz <- .dataTZ(data[[datetime.col]])

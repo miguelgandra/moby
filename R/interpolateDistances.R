@@ -115,10 +115,7 @@ interpolateDistances <- function(data,
   }
 
   # re-attach mobyData metadata so the (detection-like) output stays chainable
-  if(!is.null(prev_meta)){
-    attr(result, "moby") <- prev_meta
-    class(result) <- unique(c("mobyData", "data.frame"))
-  }
+  result <- .restoreClass(result, prev_meta)
 
   return(result)
 }

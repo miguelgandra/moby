@@ -62,8 +62,8 @@ can follow every tutorial without supplying your own data.
        alt="moby data preparation in five stages: import, validate, enrich, clean and bin, declare — producing a mobyData object that feeds the analysis pathways. Essential steps are marked in teal, optional ones in ochre.">
 </p>
 
-Only two of those steps have teeth: `assignAnimalIDs()` (without it `filterDetections()` has no tagging
-dates and stops) and `filterDetections()` itself. Everything else is a convenience you can skip by
+Only two of those steps have teeth: `as_moby()` (without tagging dates `filterDetections()` stops)
+and `filterDetections()` itself. Everything else is a convenience you can skip by
 supplying the columns or metadata yourself — every function also accepts an ordinary data frame.
 `?moby_pipeline` has the full table of consequences, the two ordering rules, and the return-shape traps
 worth knowing.

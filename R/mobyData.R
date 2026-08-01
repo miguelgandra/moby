@@ -39,6 +39,12 @@
 #' (or `options(moby.verbose = FALSE)`) silences.
 #'
 #' @param data A data frame of detections (one row per detection, or per binned record).
+#' @param tags Optional tag table (see \code{\link{importTags}}) from which to derive the
+#' per-animal `tagging.dates` and `nominal.delay` metadata, keyed by the IDs present in `data`.
+#' This is where tag-derived metadata enters a dataset: \code{\link{matchTags}} joins the tag
+#' table to the detections but attaches nothing, so nothing is added to your object without an
+#' explicit `as_moby()` call. Values passed directly to `tagging.dates` or `nominal.delay` take
+#' precedence over anything derived here.
 #' @param id.col Name of the column containing animal IDs. Defaults to `"ID"`.
 #' @param datetime.col Name of the column containing date-times in POSIXct format. Defaults to `"datetime"`.
 #' @param timebin.col Name of the column containing time bins (in POSIXct format). Defaults to `"timebin"`.
@@ -53,7 +59,7 @@
 #' value (applied to all individuals) or a named numeric vector whose names match the animal IDs
 #' (for arrays mixing tag families, e.g. 60 s and 120 s tags). Stored in the metadata and read
 #' automatically by \code{\link{filterDetections}} to scale its short-interval (min_lag)
-#' false-detection filter. Usually populated for you by \code{\link{assignAnimalIDs}} when the tag
+#' false-detection filter. Usually populated by passing `tags` to `as_moby()`, when the tag
 #' table carries a delay column.
 #' @param id.groups Optional named list grouping IDs (e.g. by species, sex or life stage),
 #' used by many functions to compute metrics or draw plots independently per group.
@@ -67,7 +73,7 @@
 #' @aliases mobyData
 #' @seealso \code{\link{mobyMeta}}, \code{\link{is_moby}}. To read a raw export from a receiver
 #' system (or a table whose columns need renaming and whose date-times need parsing) before declaring
-#' it here, see \code{\link{importDetections}} and \code{\link{assignAnimalIDs}}; the
+#' it here, see \code{\link{importDetections}} and \code{\link{matchTags}}; the
 #' \sQuote{Which function do I use?} section of \code{\link{moby_import_schema}} contrasts importing
 #' with `as_moby()`.
 #'
@@ -89,6 +95,7 @@
 #' @export
 
 as_moby <- function(data,
+                    tags         = NULL,
                     id.col       = .mobyDefaults[["id.col"]],
                     datetime.col = .mobyDefaults[["datetime.col"]],
                     timebin.col  = .mobyDefaults[["timebin.col"]],
@@ -140,6 +147,33 @@ as_moby <- function(data,
     id.groups    = pick("id.groups", id.groups),
     land.shape   = pick("land.shape", land.shape)
   )
+
+  # ---- metadata derived from a tag table --------------------------------------
+  # as_moby() is the package's only constructor, so per-animal metadata enters the object HERE
+  # rather than being attached invisibly by the join step that happens to have seen the tag table.
+  # Precedence: an explicitly supplied tagging.dates/nominal.delay always wins, then whatever the
+  # tag table yields, then metadata inherited from a mobyData being re-declared.
+  if (!is.null(tags)) {
+    tg <- as.data.frame(tags)
+    if (!any(c("ID", "serial", "transmitter") %in% colnames(tg))) {
+      stop("'tags' must contain an 'ID', 'serial' or 'transmitter' column (see importTags()).",
+           call. = FALSE)
+    }
+    tg$ID <- .tagIDs(tg)
+    # restrict to the animals actually present, so the metadata describes this dataset rather than
+    # the whole tag roster. A missing id.col is left to the validation below to report.
+    if (is.character(meta$id.col) && length(meta$id.col) == 1 && meta$id.col %in% colnames(data)) {
+      ids <- as.character(unique(data[[meta$id.col]]))
+      if (!("tagging.dates" %in% supplied)) {
+        derived <- .deriveTaggingDates(tg, ids)
+        if (!is.null(derived)) meta$tagging.dates <- derived
+      }
+      if (!("nominal.delay" %in% supplied)) {
+        derived <- .deriveNominalDelay(tg, ids)
+        if (!is.null(derived)) meta$nominal.delay <- derived
+      }
+    }
+  }
 
   # ---- validation -------------------------------------------------------------
   errors <- c()
@@ -230,6 +264,67 @@ is_moby <- function(x) inherits(x, "mobyData")
 #' @export
 mobyMeta <- function(x) attr(x, "moby")
 
+
+#' Demote a dataset to a plain data frame.
+#'
+#' `as.data.frame()` drops `oldClass()` but keeps every other attribute, so coercing a `mobyData`
+#' left the metadata attached to an object that `is_moby()` reported as plain - and every metadata
+#' read in the package goes to `attr(x, "moby")` rather than checking the class, so that orphaned
+#' metadata stayed *live*. One function's "plain data frame" was another's fully-configured dataset.
+#'
+#' Class and metadata are two halves of one fact, so they are removed together. Use this wherever a
+#' function coerces its input for plain-data-frame indexing, and note that anything needing the
+#' metadata must read it BEFORE coercing (which is why `.validateArguments()` resolves column roles
+#' first and demotes second).
+#' @keywords internal
+#' @noRd
+.stripMoby <- function(x) {
+  # drop the subclass BEFORE coercing, so as.data.frame() dispatches to the data.frame (or tibble /
+  # data.table) method rather than recursing into as.data.frame.mobyData() below
+  if (inherits(x, "mobyData")) class(x) <- setdiff(class(x), "mobyData")
+  x <- as.data.frame(x)
+  attr(x, "moby") <- NULL
+  attr(x, "moby.land.name") <- NULL
+  x
+}
+
+#' Demote a mobyData to a plain data frame
+#'
+#' @description Drops the `mobyData` class **and** its metadata, returning an ordinary data frame.
+#' Without this method `as.data.frame()` would remove the class but keep the metadata attribute,
+#' leaving an object that `is_moby()` calls plain while moby's column resolution still reads its
+#' stored roles.
+#'
+#' @param x A `mobyData` object.
+#' @param ... Ignored.
+#' @return A plain `data.frame`, carrying no moby metadata.
+#' @seealso \code{\link{as_moby}}, \code{\link{is_moby}}, \code{\link{mobyMeta}}
+#' @examples
+#' data(rays)
+#' plain <- as.data.frame(rays)
+#' is_moby(plain)         # FALSE
+#' mobyMeta(plain)        # NULL - the metadata is gone, not merely hidden
+#' @export
+as.data.frame.mobyData <- function(x, ...) .stripMoby(x)
+
+#' Re-attach mobyData metadata to a result, when the input carried it.
+#'
+#' The inverse of `.stripMoby()`, and the package's single convention for class handling: an
+#' operation PRESERVES its input's class (mobyData in, mobyData out; plain in, plain out), while
+#' only `as_moby()` CONSTRUCTS. Passing `meta = NULL` - which is what `attr(data, "moby")` yields
+#' for a plain input - is therefore not an edge case but the ordinary plain-data-frame path.
+#'
+#' Deliberately re-attaches rather than calling `as_moby()`: the constructor fills unsupplied roles
+#' from `.mobyDefaults`, so rebuilding through it silently rewrites a caller's column map to the
+#' canonical names (see the bug this replaced in `matchDeployments()`).
+#' @keywords internal
+#' @noRd
+.restoreClass <- function(x, meta) {
+  if (is.null(meta) || !is.data.frame(x)) return(x)
+  attr(x, "moby") <- meta
+  class(x) <- unique(c("mobyData", "data.frame"))
+  x
+}
 
 
 # (thousands-separated integers come from .fmtN() in helpers-messaging.R; this file used to carry a
@@ -406,11 +501,11 @@ print.mobyData <- function(x, width = getOption("width"), ...) {
 #' dim(rays[1:100, ]) # '[' keeps the mobyData class and its metadata
 #'
 #' @export
-head.mobyData <- function(x, n = 6L, ...) utils::head(as.data.frame(x), n = n, ...)
+head.mobyData <- function(x, n = 6L, ...) utils::head(.stripMoby(x), n = n, ...)
 
 #' @rdname head.mobyData
 #' @export
-tail.mobyData <- function(x, n = 6L, ...) utils::tail(as.data.frame(x), n = n, ...)
+tail.mobyData <- function(x, n = 6L, ...) utils::tail(.stripMoby(x), n = n, ...)
 
 
 #' @export
@@ -418,12 +513,7 @@ tail.mobyData <- function(x, n = 6L, ...) utils::tail(as.data.frame(x), n = n, .
   meta <- attr(x, "moby")
   # subset as a plain data.frame, then re-attach metadata/class when the result is
   # still a (row/column) data frame
-  out <- NextMethod()
-  if (is.data.frame(out)) {
-    attr(out, "moby") <- meta
-    class(out) <- unique(c("mobyData", "data.frame"))
-  }
-  out
+  .restoreClass(NextMethod(), meta)
 }
 
 
