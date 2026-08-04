@@ -511,6 +511,18 @@ test_that("importDeployments reads a position-only station list (no deployment d
                                  verbose = FALSE), "'receiver' or 'station'")
 })
 
+test_that("a deployment log with nothing resolved says what the absence costs", {
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  writeLines(c("Station Name,Receiver,X,Y", "BD01,VR2W-113455,-0.7,37.6"), f)
+  # lon/lat left unmapped on purpose: the import succeeds but the log can back-fill nothing
+  msg <- paste(capture.output(
+    importDeployments(f, source = "generic",
+                      col.map = list(station = "Station Name", receiver = "Receiver"),
+                      verbose = TRUE), type = "message"), collapse = " ")
+  expect_match(msg, "No coordinates in this log")
+  expect_match(msg, "No deploy dates in this log")
+})
+
 test_that("several files import as one table, each harmonised on its own", {
   # the batch deliberately disagrees about date layout: per-file harmonising is what makes it stack
   f1 <- tempfile(fileext = ".csv"); f2 <- tempfile(fileext = ".csv")

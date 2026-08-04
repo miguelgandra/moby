@@ -981,6 +981,13 @@ importDeployments <- function(x,
     .mobyNote("No deploy dates in this log: usable for coordinates, but matchDeployments() and ",
               "checkDeployments() need a 'deploy' column.", verbose = verbose)
   }
+  # A log with neither dates nor coordinates resolved is almost always a column-mapping miss rather
+  # than a real file: it can back-fill nothing and match nothing. The field list above says which
+  # names went unmatched; this says what the absence costs.
+  if (all(is.na(out$lon)) && all(is.na(out$lat))) {
+    .mobyNote("No coordinates in this log: matchDeployments() cannot back-fill positions from it. ",
+              "Check the lon/lat column names against 'col.map'.", verbose = verbose)
+  }
 
   out
 }
