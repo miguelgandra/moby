@@ -111,3 +111,41 @@ test_that("month names parse the same way whatever the session locale", {
   # and the session's locale is left as it was found
   expect_equal(Sys.getlocale("LC_TIME"), "fr_FR.UTF-8")
 })
+
+# --- two-digit years, mixed columns, and the %Y/%y collision -----------------------------------
+test_that("two-digit years are read as this century, not as year 8", {
+  r <- .parseDatetime(c("5/26/08 8:43", "12/31/09 23:00"), tz = "UTC")
+  expect_equal(format(r, "%Y-%m-%d %H:%M"), c("2008-05-26 08:43", "2009-12-31 23:00"))
+})
+
+test_that("a four-digit year is not truncated by the %y candidates", {
+  # strptime reads "2012" as %y = 20 and ignores the "12", so %d/%m/%y "fits" a 4-digit year too and
+  # would give 2020. %Y consumed the whole token, so it wins whenever both are still standing.
+  # (day 25 settles day-first vs month-first, leaving the %Y/%y question on its own.)
+  r <- .parseDatetime(c("25/01/2012", "13/08/2013"), tz = "UTC")
+  expect_equal(format(r, "%Y-%m-%d"), c("2012-01-25", "2013-08-13"))
+})
+
+test_that("a column mixing layouts errors with a usable suggestion, not a subscript error", {
+  x <- c("2008-05-23 14:23:19", "2008-05-23 14:25:00", "5/23/08 14:30", "5/24/08 09:00")
+  expect_error(.parseDatetime(x, tz = "UTC"), "mixes date-time layouts")
+  expect_error(.parseDatetime(x, tz = "UTC"), "datetime.format = c\\(")
+  # the layouts it suggests must actually work, and give plausible years
+  r <- .parseDatetime(x, tz = "UTC", format = c("%Y-%m-%d %H:%M:%S", "%m/%d/%y %H:%M"))
+  expect_false(any(is.na(r)))
+  expect_equal(unique(format(r, "%Y")), "2008")
+})
+
+test_that("datetime.format accepts several formats, applied in order", {
+  r <- .parseDatetime(c("2008-05-23 14:23:19", "5/23/08 14:30"), tz = "UTC",
+                      format = c("%Y-%m-%d %H:%M:%S", "%m/%d/%y %H:%M"))
+  expect_equal(format(r, "%Y-%m-%d %H:%M"), c("2008-05-23 14:23", "2008-05-23 14:30"))
+  # order decides: an earlier format that fits is not overridden by a later one
+  expect_error(.parseDatetime("x", tz = "UTC", format = c("%Y", "%d")), "could not be parsed")
+})
+
+test_that("a layout that only fits by giving an absurd year is refused", {
+  # only the ISO candidates read this, and they give year 3 - better to stop than hand back 0003
+  expect_error(.parseDatetime(c("0003-05-26 10:00:00", "0003-05-27 11:00:00"), tz = "UTC"),
+               "plausible date")
+})

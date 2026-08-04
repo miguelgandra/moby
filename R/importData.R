@@ -10,7 +10,10 @@
   list(
     vue = list(
       datetime         = c("Date and Time (UTC)", "Date.and.Time..UTC.", "Date Time", "Date.Time", "datetime"),
-      transmitter      = c("Transmitter"),
+      # "Transmitter" is the whole code; where a source splits it, the bare id lives under ID/tag.id
+      # and is joined to the code space below (see the codespace join in importDetections)
+      transmitter      = c("Transmitter", "ID", "tag.id", "id_code"),
+      transmitter_codespace = c("Code Space", "CodeSpace", "code.space", "tag_code_space"),
       transmitter_name = c("Transmitter Name"),
       receiver         = c("Receiver"),
       station          = c("Station Name", "Station"),
@@ -126,7 +129,12 @@
   "%Y-%m-%d %H:%M", "%Y/%m/%d %H:%M", "%d/%m/%Y %H:%M", "%m/%d/%Y %H:%M",
   "%d-%m-%Y %H:%M", "%m-%d-%Y %H:%M", "%d-%b-%Y %H:%M",
   # date only
-  "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d-%b-%Y", "%d %b %Y")
+  "%Y-%m-%d", "%Y/%m/%d", "%d/%m/%Y", "%m/%d/%Y", "%d-%m-%Y", "%d-%b-%Y", "%d %b %Y",
+  # two-digit years. Needed, not optional: without them "5/26/08" is matched only by "%m/%d/%Y",
+  # which reads the year as 8 AD. strptime maps %y to 1969-2068, which covers acoustic telemetry.
+  "%d/%m/%y %H:%M:%S", "%m/%d/%y %H:%M:%S", "%d-%m-%y %H:%M:%S", "%m-%d-%y %H:%M:%S",
+  "%d/%m/%y %H:%M", "%m/%d/%y %H:%M", "%d-%m-%y %H:%M", "%m-%d-%y %H:%M",
+  "%d/%m/%y", "%m/%d/%y", "%d-%b-%y")
 
 # number of conversion specifications in a format: its information content, used to prefer
 # "%Y-%m-%d %H:%M:%S" over "%Y-%m-%d". strptime ignores trailing text, so the shorter format also
@@ -183,10 +191,19 @@
   try(Sys.setlocale("LC_TIME", "C"), silent = TRUE)
 
   if (!is.null(format)) {
-    out <- suppressWarnings(as.POSIXct(x, format = format, tz = tz))
+    # Several formats may be given for a column that genuinely mixes layouts (files stacked before
+    # import): they are applied in order and the first that reads a given value wins, so the caller
+    # states the priority instead of the parser guessing it.
+    out <- as.POSIXct(rep(NA_real_, length(x)), tz = tz)
+    for (fmt in format) {
+      todo <- non_na & is.na(out)
+      if (!any(todo)) break
+      out[todo] <- suppressWarnings(as.POSIXct(x[todo], format = fmt, tz = tz))
+    }
     if (all(is.na(out[non_na])))
-      stop("'", field, "' could not be parsed with datetime.format = \"", format,
-           "\" (e.g. \"", x[non_na][1], "\"). Check the format string.", call. = FALSE)
+      stop("'", field, "' could not be parsed with datetime.format = ",
+           paste(sprintf("\"%s\"", format), collapse = ", "),
+           " (e.g. \"", x[non_na][1], "\"). Check the format string.", call. = FALSE)
     return(out)
   }
 
@@ -207,12 +224,56 @@
   # "%Y/%m/%d" accepts "25/06/2013" as year 25 - a full match on paper, nonsense in fact. Acoustic
   # telemetry post-dates 1970, so an implausible year is proof the layout is wrong. If the filter
   # would leave nothing, it is not applied and the errors below still report honestly.
-  if (length(parsed) > 1) {
-    yr_ok <- vapply(parsed, function(p) {
-      y <- as.integer(format(p[non_na], "%Y"))
+  # A column no single layout can read end to end is a MIXED column - most often several files
+  # stacked before import. Say so, and name the way out, rather than falling through to the
+  # subscript error an empty candidate set used to produce.
+  if (length(parsed) == 0) {
+    # rank by rows read, but only among layouts giving a plausible year: "%m/%d/%Y" reads "5/26/08"
+    # as fully as "%m/%d/%y" does, and suggesting it would hand back year 8
+    plausible <- function(p, idx) {
+      if (!any(idx)) return(FALSE)
+      y <- suppressWarnings(as.integer(format(p[idx], "%Y")))
       all(!is.na(y) & y >= 1970 & y <= as.integer(format(Sys.Date(), "%Y")) + 1L)
-    }, logical(1))
-    if (any(yr_ok)) parsed <- parsed[yr_ok]
+    }
+    score <- function(idx) vapply(all_parsed, function(p) {
+      n <- sum(!is.na(p[idx])); if (n > 0 && plausible(p, idx & !is.na(p))) n else 0L
+    }, integer(1))
+    cover <- score(parseable)
+    if (max(cover) == 0) cover <- vapply(all_parsed, function(p) sum(!is.na(p[parseable])), integer(1))
+    first <- names(which.max(cover))
+    # the second suggestion must cover the rows the first could NOT read, or the advice is useless
+    left <- parseable & is.na(all_parsed[[first]])
+    rest <- score(left)
+    if (max(rest) == 0) rest <- vapply(all_parsed, function(p) sum(!is.na(p[left])), integer(1))
+    second <- names(which.max(rest))
+    stop("'", field, "' mixes date-time layouts: no single format reads every value (\"", first,
+         "\" reads ", max(cover), " of ", sum(parseable), "; \"", second, "\" reads ", max(rest),
+         " of the remaining ", sum(left), "). Import the sources separately, or supply the layouts ",
+         "in order, e.g. datetime.format = c(\"", first, "\", \"", second, "\").", call. = FALSE)
+  }
+
+  # An implausible year proves the layout is wrong: "%m/%d/%Y" accepts "5/26/08" and returns 8 AD.
+  # Acoustic telemetry post-dates 1970, so drop those layouts - and if that leaves NOTHING, every
+  # candidate is wrong and the column must not travel on with silently absurd dates.
+  yr_ok <- vapply(parsed, function(p) {
+    y <- as.integer(format(p[non_na], "%Y"))
+    all(!is.na(y) & y >= 1970 & y <= as.integer(format(Sys.Date(), "%Y")) + 1L)
+  }, logical(1))
+  if (!any(yr_ok)) {
+    stop("'", field, "' could not be read as a plausible date: the only layouts that fit (",
+         paste(sprintf("\"%s\"", names(parsed)), collapse = ", "), ") give year ",
+         format(parsed[[1]][non_na][1], "%Y"), " for \"", x[non_na][1],
+         "\". Supply datetime.format.", call. = FALSE)
+  }
+  parsed <- parsed[yr_ok]
+
+  # A four-digit year satisfies %y as well as %Y - strptime reads "2012" as 20 and ignores the "12" -
+  # so both survive and disagree (2020 vs 2012). %Y consumed the whole token and %y truncated it, so
+  # %Y is right whenever both are still standing: where the years really are two digits, %Y has
+  # already been dropped above for giving year 8.
+  if (length(parsed) > 1) {
+    four <- !grepl("%y", names(parsed), fixed = TRUE)
+    if (any(four)) parsed <- parsed[four]
   }
 
   # keep the most informative layouts, then require them to agree
@@ -304,9 +365,19 @@
                   error = function(e) NA_integer_)
     if (length(k) != 1 || is.na(k)) 0L else as.integer(k)
   }, integer(1))
+  if (max(n) > 1) return(cand[which.max(n)])
+
+  # Last resort: whitespace. write.table()'s default output is space-separated with quoted strings -
+  # common wherever a table has been round-tripped through R - and none of the candidates above split
+  # it, so it would otherwise be read as a single column. Accepted only when no real separator found
+  # anything AND whitespace splits every sampled line into the same number of fields, so a
+  # single-column file of free text cannot be mistaken for a table.
+  k <- tryCatch(utils::count.fields(textConnection(lines), sep = "", quote = "\""),
+                error = function(e) NA_integer_)
+  if (length(k) > 0 && !anyNA(k) && k[1] > 1 && length(unique(k)) == 1) return("")
+
   # comma wins ties: it is the commonest, and a tie means neither separator actually splits anything
-  if (max(n) <= 1) return(",")
-  cand[which.max(n)]
+  ","
 }
 
 #' Detect the decimal mark of a delimited text file.
@@ -317,7 +388,8 @@
 #' @noRd
 .detectDec <- function(lines, delim) {
   if (identical(delim, ",")) return(".")
-  fields <- unlist(strsplit(lines[-1], delim, fixed = TRUE))
+  fields <- if (identical(delim, "")) unlist(strsplit(lines[-1], "[[:space:]]+"))
+            else unlist(strsplit(lines[-1], delim, fixed = TRUE))
   fields <- trimws(gsub("\"", "", fields))
   if (any(grepl("^-?[0-9]+,[0-9]+$", fields))) "," else "."
 }
@@ -355,7 +427,7 @@
 #' }
 #' @keywords internal
 #' @noRd
-.readTabular <- function(x) {
+.readTabular <- function(x, sheet = 1) {
   if (is.data.frame(x)) return(as.data.frame(x))
   if (!is.character(x) || length(x) != 1 || !file.exists(x)) {
     stop("'x' must be a data frame or a path to an existing .csv/.xlsx file.", call. = FALSE)
@@ -366,7 +438,9 @@
     if (!requireNamespace("readxl", quietly = TRUE)) {
       stop("Reading Excel files requires the 'readxl' package. Install it with install.packages('readxl'), or export to CSV.", call. = FALSE)
     }
-    return(.normaliseRead(as.data.frame(readxl::read_excel(x))))
+    # readxl narrates header repairs ("New names: `` -> ...3") on its own channel; the importer
+    # reports what it mapped, so the reader stays quiet
+    return(.normaliseRead(as.data.frame(suppressMessages(readxl::read_excel(x, sheet = sheet)))))
   }
 
   lines <- readLines(x, n = 20L, warn = FALSE)
@@ -375,7 +449,13 @@
   delim <- .detectDelim(lines)
   dec   <- .detectDec(lines, delim)
 
-  out <- if (.hasDataTable()) {
+  # A whitespace-separated file is read with the base reader alone: sep = "" means "any run of
+  # whitespace", which fread has no equivalent for (sep = " " would emit an empty field per extra
+  # space). Using one backend keeps the two-backend equivalence contract true by construction.
+  out <- if (identical(delim, "")) {
+    utils::read.table(x, sep = "", dec = dec, header = TRUE, quote = "\"",
+                      stringsAsFactors = FALSE, check.names = FALSE, comment.char = "")
+  } else if (.hasDataTable()) {
     # integer64 = "double" so a long numeric code (a 16-digit serial) matches read.csv's numeric
     # rather than arriving as an integer64, which is not the same object.
     args <- list(x, sep = delim, dec = dec, header = TRUE, fill = TRUE, stringsAsFactors = FALSE,
@@ -401,8 +481,9 @@
   # A file that resolves to one column DESPITE containing a candidate separator almost always means
   # the separator was misread, and the failure is otherwise silent: every canonical field simply goes
   # "not found". A file with no separator at all legitimately has one column, so it must not warn.
-  if (ncol(out) == 1 && any(vapply(c(",", ";", "\t", "|"),
-                                   function(d) grepl(d, lines[1], fixed = TRUE), logical(1))))
+  if (ncol(out) == 1 && !identical(delim, "") &&
+      any(vapply(c(",", ";", "\t", "|"),
+                 function(d) grepl(d, lines[1], fixed = TRUE), logical(1))))
     warning("'", basename(x), "' was read as a single column; check the file's delimiter.", call. = FALSE)
 
   .normaliseRead(out)
@@ -426,7 +507,28 @@
 }
 
 # kept as the name the importers call; every reader decision lives in .readTabular()
-.readSource <- function(x) .readTabular(x)
+.readSource <- function(x, sheet = 1) .readTabular(x, sheet = sheet)
+
+#' Import several files as one table.
+#'
+#' A study's detections routinely arrive as one file per receiver, per fish or per download, and the
+#' boilerplate is always the same: read each, harmonise each, stack them. Doing it HERE rather than in
+#' the caller matters for more than tidiness - each file is harmonised on its own, so a batch whose
+#' files disagree about column names or date layout still stacks cleanly, where a raw rbind of the
+#' sources first would have to reconcile them by hand.
+#'
+#' Discovery stays the caller's job (`list.files()`): guessing which files in a folder are detections
+#' is exactly the kind of magic that silently imports the wrong thing.
+#' @keywords internal
+#' @noRd
+.importMany <- function(x, importer, verbose, ...) {
+  parts <- vector("list", length(x))
+  for (i in seq_along(x)) parts[[i]] <- importer(x[i], ..., verbose = FALSE)
+  out <- .rbindFill(parts)
+  rownames(out) <- NULL
+  attr(out, "n_files") <- length(x)
+  out
+}
 
 
 # ---- console helpers shared by the three importers ------------------------------------------------
@@ -593,6 +695,10 @@ NULL
 #'
 #' @param x A path to a `.csv` (or `.xlsx`) detection file, or a data frame already loaded in
 #' R (e.g. the output of `etn::get_acoustic_detections()` or `glatos::read_glatos_detections()`).
+#' Several paths may be given: each file is read and harmonised on its own and the results are
+#' stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+#' date layout import in one call. Discovery stays yours - `list.files()` - so nothing is imported
+#' that you did not name.
 #' @param source One of `"vue"`, `"vdat"`, `"glatos"`, `"otn"`, `"etn"` or `"generic"`.
 #' For `"generic"`, supply `col.map`.
 #' @param tz Time zone used to parse date-times. Defaults to `"UTC"` (the convention for
@@ -610,8 +716,12 @@ NULL
 #' while parsing. A column that is ALREADY `POSIXct` (as when a data frame is passed in, e.g. from an
 #' API) is an absolute instant chosen by the caller: it is never reinterpreted, and `tz` changes only
 #' how it is displayed.
+#' Several formats may be given as a character vector, applied in order, with the first that reads a
+#' given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+#' several files stacked before import, which moby will otherwise refuse to guess at).
 #' @param keep.extra Logical; retain source columns that were not mapped to a canonical field.
 #' Defaults to `FALSE`.
+#' @param sheet For Excel input, the worksheet to read: a number or a name. Defaults to the first.
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
@@ -648,9 +758,22 @@ importDetections <- function(x,
                              col.map = NULL,
                              datetime.format = NULL,
                              keep.extra = FALSE,
+                             sheet = 1,
                              verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
+
+  # Several files (one per receiver, per fish, per download) import as one table: each is harmonised
+  # on its own, so a batch whose files disagree about column names or date layout still stacks.
+  if (is.character(x) && length(x) > 1) {
+    out <- .importMany(x, importDetections, verbose = verbose, source = source, tz = tz, col.map = col.map,
+                       datetime.format = datetime.format, keep.extra = keep.extra, sheet = sheet)
+    .mobyHeader("importDetections()", "Reading and harmonising acoustic detections",
+                input = .fmtCount(length(x), "file"), verbose = verbose)
+    .mobyBlank(verbose)
+    .mobyOk(.fmtCount(nrow(out), "record"), " from ", .fmtCount(length(x), "file"), verbose = verbose)
+    return(out)
+  }
 
   # mapping assembled first: it needs no data, so an unusable 'col.map' or 'source' still errors
   # before anything is printed
@@ -670,7 +793,7 @@ importDetections <- function(x,
               input = .importSource(x), criteria = .importCriteria(source, col.map, tz, datetime.format),
               verbose = verbose)
 
-  data <- .readSource(x)
+  data <- .readSource(x, sheet = sheet)
 
   out <- .harmonise(data, mapping, datetime_fields = "datetime", tz = tz,
                     datetime.format = datetime.format, keep.extra = keep.extra)
@@ -731,6 +854,10 @@ importDetections <- function(x,
 #'
 #' @param x A path to a `.csv`/`.xlsx` deployment log, or a data frame (e.g. the output of
 #' `etn::get_acoustic_deployments()`).
+#' Several paths may be given: each file is read and harmonised on its own and the results are
+#' stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+#' date layout import in one call. Discovery stays yours - `list.files()` - so nothing is imported
+#' that you did not name.
 #' @param source One of `"vue"`, `"glatos"`, `"otn"`, `"etn"` or `"generic"`.
 #' @param tz Time zone used to parse deploy/recover date-times. Defaults to `"UTC"`.
 #' @param col.map Optional named list mapping canonical deployment fields to source column name(s),
@@ -746,11 +873,19 @@ importDetections <- function(x,
 #' while parsing. A column that is ALREADY `POSIXct` (as when a data frame is passed in, e.g. from an
 #' API) is an absolute instant chosen by the caller: it is never reinterpreted, and `tz` changes only
 #' how it is displayed.
+#' Several formats may be given as a character vector, applied in order, with the first that reads a
+#' given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+#' several files stacked before import, which moby will otherwise refuse to guess at).
+#' @param sheet For Excel input, the worksheet to read: a number or a name. Defaults to the first.
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
 #' @return A data frame with columns `receiver`, `station`, `lon`, `lat`, `deploy` (POSIXct),
-#' `recover` (POSIXct) and, where available, `depth`; sorted by receiver and deployment date.
+#' `recover` (POSIXct) and, where available, `depth`; sorted by receiver and deployment date. Only a
+#' locator - `receiver` or `station` - is required: a position-only station list imports fine, and
+#' the columns it does not carry are present but `NA`, so the schema is the same either way.
+#' \code{\link{matchDeployments}} and \code{\link{checkDeployments}} do need real `deploy` dates,
+#' and say so if they are missing.
 #'
 #' @seealso \code{\link{moby_import_schema}} for the canonical field list;
 #' \code{\link{importDetections}}, \code{\link{checkDeployments}}
@@ -767,9 +902,22 @@ importDeployments <- function(x,
                               tz = "UTC",
                               col.map = NULL,
                               datetime.format = NULL,
+                              sheet = 1,
                               verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
+
+  # Several files (one per receiver, per fish, per download) import as one table: each is harmonised
+  # on its own, so a batch whose files disagree about column names or date layout still stacks.
+  if (is.character(x) && length(x) > 1) {
+    out <- .importMany(x, importDeployments, verbose = verbose, source = source, tz = tz, col.map = col.map,
+                       datetime.format = datetime.format, sheet = sheet)
+    .mobyHeader("importDeployments()", "Reading and harmonising a receiver deployment log",
+                input = .fmtCount(length(x), "file"), verbose = verbose)
+    .mobyBlank(verbose)
+    .mobyOk(.fmtCount(nrow(out), "record"), " from ", .fmtCount(length(x), "file"), verbose = verbose)
+    return(out)
+  }
 
   # mapping assembled first: it needs no data, so an unusable 'col.map' or 'source' still errors
   # before anything is printed
@@ -789,18 +937,30 @@ importDeployments <- function(x,
               input = .importSource(x), criteria = .importCriteria(source, col.map, tz, datetime.format),
               verbose = verbose)
 
-  data <- .readSource(x)
+  data <- .readSource(x, sheet = sheet)
 
   out <- .harmonise(data, mapping, datetime_fields = c("deploy", "recover"), tz = tz,
                     datetime.format = datetime.format, keep.extra = FALSE)
 
-  for (req in c("receiver", "station", "deploy")) {
-    if (!req %in% names(out)) stop(paste0("Could not locate a '", req, "' column. Check 'source' or provide 'col.map'."), call. = FALSE)
+  # A deployment log needs only to say WHERE: many real station tables are a pure position lookup
+  # (station, lon, lat) with no dates at all, and refusing to read one because it lacks a 'deploy'
+  # column blocks a perfectly ordinary file. So require just a locator here, and let the functions
+  # that genuinely need deployment windows - matchDeployments(), checkDeployments() - ask for them.
+  if (!any(c("receiver", "station") %in% names(out))) {
+    stop("Could not locate a 'receiver' or 'station' column - one is needed to say which place each ",
+         "row describes. Check 'source' or provide 'col.map'.", call. = FALSE)
   }
 
   # resolution record, kept by .harmonise() itself (names(out) cannot answer it under keep.extra)
   resolved <- attr(out, "mapped_fields")
   attr(out, "mapped_fields") <- NULL
+  # absent optional fields are materialised as NA so the returned schema is stable: downstream code
+  # (and the user) can rely on the columns existing whatever the source happened to carry
+  for (fld in c("receiver", "station")) if (!fld %in% names(out)) out[[fld]] <- NA_character_
+  for (fld in c("lon", "lat")) if (!fld %in% names(out)) out[[fld]] <- NA_real_
+  for (fld in c("deploy", "recover")) {
+    if (!fld %in% names(out)) out[[fld]] <- as.POSIXct(rep(NA_real_, nrow(out)), tz = tz)
+  }
   out$receiver <- as.character(out$receiver)
   out$station <- as.character(out$station)
 
@@ -815,6 +975,12 @@ importDeployments <- function(x,
   .mobyOk(.fmtCount(nrow(out), "deployment record"), " imported across ",
           .fmtCount(length(unique(stats::na.omit(out$receiver))), "receiver"), verbose = verbose)
   .reportFieldMapping(resolved, setdiff(names(mapping), resolved), verbose)
+  # A log with no deployment windows is a valid position lookup, but it cannot drive the functions
+  # that key on time. Say so here rather than letting them fail later with a column-not-found error.
+  if (all(is.na(out$deploy))) {
+    .mobyNote("No deploy dates in this log: usable for coordinates, but matchDeployments() and ",
+              "checkDeployments() need a 'deploy' column.", verbose = verbose)
+  }
 
   out
 }
@@ -879,6 +1045,10 @@ importDeployments <- function(x,
 #'
 #' @param x A path to a `.csv`/`.xlsx` tag-metadata file, or a data frame (e.g. from
 #' `etn::get_tags()` / `etn::get_animals()`).
+#' Several paths may be given: each file is read and harmonised on its own and the results are
+#' stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+#' date layout import in one call. Discovery stays yours - `list.files()` - so nothing is imported
+#' that you did not name.
 #' @param source One of `"vue"`, `"glatos"`, `"otn"`, `"etn"` or `"generic"`.
 #' @param tz Time zone used to parse the tagging date. Defaults to `"UTC"`.
 #' @param col.map Optional named list mapping canonical tag fields to the column name(s) in `x`,
@@ -894,8 +1064,12 @@ importDeployments <- function(x,
 #' while parsing. A column that is ALREADY `POSIXct` (as when a data frame is passed in, e.g. from an
 #' API) is an absolute instant chosen by the caller: it is never reinterpreted, and `tz` changes only
 #' how it is displayed.
+#' Several formats may be given as a character vector, applied in order, with the first that reads a
+#' given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+#' several files stacked before import, which moby will otherwise refuse to guess at).
 #' @param keep.extra Logical; retain unmapped source columns. Defaults to `TRUE` so that
 #' additional biometric fields are preserved.
+#' @param sheet For Excel input, the worksheet to read: a number or a name. Defaults to the first.
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
@@ -919,9 +1093,22 @@ importTags <- function(x,
                        col.map = NULL,
                        datetime.format = NULL,
                        keep.extra = TRUE,
+                       sheet = 1,
                        verbose = getOption("moby.verbose", TRUE)) {
 
   source <- match.arg(source)
+
+  # Several files (one per receiver, per fish, per download) import as one table: each is harmonised
+  # on its own, so a batch whose files disagree about column names or date layout still stacks.
+  if (is.character(x) && length(x) > 1) {
+    out <- .importMany(x, importTags, verbose = verbose, source = source, tz = tz, col.map = col.map,
+                       datetime.format = datetime.format, keep.extra = keep.extra, sheet = sheet)
+    .mobyHeader("importTags()", "Reading and harmonising tag metadata",
+                input = .fmtCount(length(x), "file"), verbose = verbose)
+    .mobyBlank(verbose)
+    .mobyOk(.fmtCount(nrow(out), "record"), " from ", .fmtCount(length(x), "file"), verbose = verbose)
+    return(out)
+  }
 
   # mapping assembled first: it needs no data, so an unusable 'col.map' or 'source' still errors
   # before anything is printed
@@ -941,7 +1128,7 @@ importTags <- function(x,
               input = .importSource(x), criteria = .importCriteria(source, col.map, tz, datetime.format),
               verbose = verbose)
 
-  data <- .readSource(x)
+  data <- .readSource(x, sheet = sheet)
 
   out <- .harmonise(data, mapping, datetime_fields = "tagging_date", tz = tz,
                     datetime.format = datetime.format, keep.extra = keep.extra)

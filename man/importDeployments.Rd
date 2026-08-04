@@ -10,12 +10,17 @@ importDeployments(
   tz = "UTC",
   col.map = NULL,
   datetime.format = NULL,
+  sheet = 1,
   verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
 \item{x}{A path to a \code{.csv}/\code{.xlsx} deployment log, or a data frame (e.g. the output of
-\code{etn::get_acoustic_deployments()}).}
+\code{etn::get_acoustic_deployments()}).
+Several paths may be given: each file is read and harmonised on its own and the results are
+stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+date layout import in one call. Discovery stays yours - \code{list.files()} - so nothing is imported
+that you did not name.}
 
 \item{source}{One of \code{"vue"}, \code{"glatos"}, \code{"otn"}, \code{"etn"} or \code{"generic"}.}
 
@@ -34,14 +39,23 @@ unreadable column can never travel on as silent \code{NA}s.
 Timezone handling depends on the input type. TEXT carries no zone, so \code{tz} is applied as the zone
 while parsing. A column that is ALREADY \code{POSIXct} (as when a data frame is passed in, e.g. from an
 API) is an absolute instant chosen by the caller: it is never reinterpreted, and \code{tz} changes only
-how it is displayed.}
+how it is displayed.
+Several formats may be given as a character vector, applied in order, with the first that reads a
+given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+several files stacked before import, which moby will otherwise refuse to guess at).}
+
+\item{sheet}{For Excel input, the worksheet to read: a number or a name. Defaults to the first.}
 
 \item{verbose}{Logical; print a summary of the operation. Defaults to
 \code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
 A data frame with columns \code{receiver}, \code{station}, \code{lon}, \code{lat}, \code{deploy} (POSIXct),
-\code{recover} (POSIXct) and, where available, \code{depth}; sorted by receiver and deployment date.
+\code{recover} (POSIXct) and, where available, \code{depth}; sorted by receiver and deployment date. Only a
+locator - \code{receiver} or \code{station} - is required: a position-only station list imports fine, and
+the columns it does not carry are present but \code{NA}, so the schema is the same either way.
+\code{\link{matchDeployments}} and \code{\link{checkDeployments}} do need real \code{deploy} dates,
+and say so if they are missing.
 }
 \description{
 Reads a receiver-deployment / station log from a range of common sources and

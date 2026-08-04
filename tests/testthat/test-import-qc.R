@@ -490,3 +490,47 @@ test_that("the three moby classes print through one shared layout", {
     expect_true(any(grepl("^  ", out)))
   }
 })
+
+test_that("importDeployments reads a position-only station list (no deployment dates)", {
+  # a great many real station tables are a pure lookup: where each station is, and nothing more.
+  # Refusing to read one for lacking 'deploy' blocked an entirely ordinary file.
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  writeLines(c("Station Name,Receiver,X,Y", "BD01,VR2W-113455,-0.7,37.6", "BD02,VR2W-113456,-0.8,37.7"), f)
+  d <- importDeployments(f, source = "generic",
+                         col.map = list(station = "Station Name", receiver = "Receiver",
+                                        lon = "X", lat = "Y"), verbose = FALSE)
+  expect_equal(nrow(d), 2L)
+  # the schema stays stable: the date columns exist, they are simply empty
+  expect_true(all(c("receiver", "station", "lon", "lat", "deploy", "recover") %in% names(d)))
+  expect_true(all(is.na(d$deploy)))
+  expect_s3_class(d$deploy, "POSIXct")
+  # but a table that says nowhere is still an error
+  g <- tempfile(fileext = ".csv"); on.exit(unlink(g), add = TRUE)
+  writeLines(c("a,b", "1,2"), g)
+  expect_error(importDeployments(g, source = "generic", col.map = list(lon = "a", lat = "b"),
+                                 verbose = FALSE), "'receiver' or 'station'")
+})
+
+test_that("several files import as one table, each harmonised on its own", {
+  # the batch deliberately disagrees about date layout: per-file harmonising is what makes it stack
+  f1 <- tempfile(fileext = ".csv"); f2 <- tempfile(fileext = ".csv")
+  on.exit(unlink(c(f1, f2)))
+  writeLines(c("Date and Time (UTC),Transmitter,Receiver",
+               "2011-05-12 11:55:03,A69-1303-11903,VR2W-102937"), f1)
+  writeLines(c("Date and Time (UTC),Transmitter,Receiver,Station Name",
+               "5/26/08 8:43,A69-1105-102,VR2W-102659,Teineholmen"), f2)
+  d <- importDetections(c(f1, f2), verbose = FALSE)
+  expect_equal(nrow(d), 2L)
+  expect_equal(attr(d, "n_files"), 2L)
+  expect_equal(sort(format(d$datetime, "%Y")), c("2008", "2011"))
+  # the column union is kept: station came from only one of the two files
+  expect_true("station" %in% names(d))
+})
+
+test_that("a transmitter split across code space and id is composed", {
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  writeLines(c("Date/Time,Code Space,ID,Station Name",
+               "2008-05-23 14:23:19,A69-1105,102,Teineholmen"), f)
+  d <- importDetections(f, verbose = FALSE)
+  expect_equal(d$transmitter, "A69-1105-102")
+})

@@ -11,12 +11,17 @@ importTags(
   col.map = NULL,
   datetime.format = NULL,
   keep.extra = TRUE,
+  sheet = 1,
   verbose = getOption("moby.verbose", TRUE)
 )
 }
 \arguments{
 \item{x}{A path to a \code{.csv}/\code{.xlsx} tag-metadata file, or a data frame (e.g. from
-\code{etn::get_tags()} / \code{etn::get_animals()}).}
+\code{etn::get_tags()} / \code{etn::get_animals()}).
+Several paths may be given: each file is read and harmonised on its own and the results are
+stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+date layout import in one call. Discovery stays yours - \code{list.files()} - so nothing is imported
+that you did not name.}
 
 \item{source}{One of \code{"vue"}, \code{"glatos"}, \code{"otn"}, \code{"etn"} or \code{"generic"}.}
 
@@ -35,10 +40,15 @@ unreadable column can never travel on as silent \code{NA}s.
 Timezone handling depends on the input type. TEXT carries no zone, so \code{tz} is applied as the zone
 while parsing. A column that is ALREADY \code{POSIXct} (as when a data frame is passed in, e.g. from an
 API) is an absolute instant chosen by the caller: it is never reinterpreted, and \code{tz} changes only
-how it is displayed.}
+how it is displayed.
+Several formats may be given as a character vector, applied in order, with the first that reads a
+given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+several files stacked before import, which moby will otherwise refuse to guess at).}
 
 \item{keep.extra}{Logical; retain unmapped source columns. Defaults to \code{TRUE} so that
 additional biometric fields are preserved.}
+
+\item{sheet}{For Excel input, the worksheet to read: a number or a name. Defaults to the first.}
 
 \item{verbose}{Logical; print a summary of the operation. Defaults to
 \code{getOption("moby.verbose", TRUE)}.}

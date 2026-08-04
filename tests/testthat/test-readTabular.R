@@ -191,3 +191,43 @@ test_that("structural oddities read identically under both backends", {
   expect_identical(both_backends(tmp_csv(c("a,b", "1,2", "")))$fread,
                    both_backends(tmp_csv(c("a,b", "1,2", "")))$base)
 })
+
+# --- whitespace-delimited sources ------------------------------------------------------------
+# write.table()'s default output is space-separated with quoted strings; none of the comma/semicolon/
+# tab/pipe candidates split it, so it used to be read as a single column.
+test_that(".detectDelim falls back to whitespace, but only for a real table", {
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  writeLines(c('"Line" "Date.and.Time..UTC." "Receiver" "Transmitter"',
+               '"1" "2016-07-20 12:59:37" "VR2W-105874" "A69-1601-65012"',
+               '"2" "2016-07-20 12:59:38" "VR2W-113455" "A69-1601-65012"'), f)
+  d <- .readTabular(f)
+  expect_equal(ncol(d), 4L)
+  expect_equal(names(d)[2], "Date.and.Time..UTC.")
+  expect_equal(d$Receiver, c("VR2W-105874", "VR2W-113455"))
+
+  # free text with an inconsistent word count is NOT a whitespace-delimited table
+  g <- tempfile(fileext = ".csv"); on.exit(unlink(g), add = TRUE)
+  writeLines(c("notes", "a short note", "a rather longer note here"), g)
+  expect_equal(ncol(.readTabular(g)), 1L)
+})
+
+test_that("a whitespace-delimited file survives a moby import end to end", {
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  writeLines(c('"Line" "Date.and.Time..UTC." "Receiver" "Transmitter"',
+               '"1" "2016-07-20 12:59:37" "VR2W-105874" "A69-1601-65012"'), f)
+  d <- importDetections(f, source = "generic",
+                        col.map = list(datetime = "Date.and.Time..UTC.", receiver = "Receiver",
+                                       transmitter = "Transmitter"), verbose = FALSE)
+  expect_s3_class(d$datetime, "POSIXct")
+  expect_equal(d$transmitter, "A69-1601-65012")
+})
+
+test_that("Excel sheets can be chosen by number or name", {
+  skip_if_not_installed("writexl")
+  f <- tempfile(fileext = ".xlsx"); on.exit(unlink(f))
+  writexl::write_xlsx(list(Detections = data.frame(a = 1:2),
+                           Receivers  = data.frame(b = 3:5)), f)
+  expect_equal(nrow(.readTabular(f)), 2L)                    # sheet 1 by default
+  expect_equal(nrow(.readTabular(f, sheet = 2)), 3L)
+  expect_equal(nrow(.readTabular(f, sheet = "Receivers")), 3L)
+})
