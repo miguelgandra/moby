@@ -546,3 +546,13 @@ test_that("a transmitter split across code space and id is composed", {
   d <- importDetections(f, verbose = FALSE)
   expect_equal(d$transmitter, "A69-1105-102")
 })
+
+test_that("the network presets map the species column they actually ship", {
+  # ETN/OTN/GLATOS detection exports carry scientific_name; no preset mapped it, so every caller
+  # had to name it by hand even though `species` is a canonical field
+  f <- tempfile(fileext = ".csv"); on.exit(unlink(f))
+  writeLines(c('"date_time","acoustic_tag_id","receiver_id","station_name","scientific_name"',
+               '"2020-09-15 03:26:48","A69-1303-533","VR2W-136756","G15","Pomatomus saltatrix"'), f)
+  d <- importDetections(f, source = "etn", verbose = FALSE)
+  expect_equal(d$species, "Pomatomus saltatrix")
+})

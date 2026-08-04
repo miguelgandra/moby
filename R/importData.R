@@ -19,6 +19,7 @@
       station          = c("Station Name", "Station"),
       lat              = c("Latitude", "Station Latitude"),
       lon              = c("Longitude", "Station Longitude"),
+      species          = c("Species", "scientific_name", "common_name"),
       sensor_value     = c("Sensor Value", "Sensor.1"),
       sensor_unit      = c("Sensor Unit", "Units.1")
     ),
@@ -29,6 +30,7 @@
       station          = c("Station Name", "stationname", "Station"),
       lat              = c("Latitude", "latitude"),
       lon              = c("Longitude", "longitude"),
+      species          = c("Species", "scientific_name", "common_name"),
       sensor_value     = c("Sensor Value", "Data", "rawdata"),
       sensor_unit      = c("Sensor Unit", "Units")
     ),
@@ -42,6 +44,7 @@
       station          = c("station", "glatos_array"),
       lat              = c("deploy_lat", "deploy_latitude"),
       lon              = c("deploy_long", "deploy_longitude"),
+      species          = c("Species", "scientific_name", "common_name"),
       sensor_value     = c("sensor_value"),
       sensor_unit      = c("sensor_unit")
     ),
@@ -53,6 +56,7 @@
       station          = c("station", "station_name"),
       lat              = c("latitude", "deploy_lat"),
       lon              = c("longitude", "deploy_long"),
+      species          = c("Species", "scientific_name", "common_name"),
       sensor_value     = c("sensorvalue", "sensor_value"),
       sensor_unit      = c("sensorunit", "sensor_unit")
     ),
@@ -65,6 +69,7 @@
       station          = c("station_name"),
       lat              = c("deploy_latitude"),
       lon              = c("deploy_longitude"),
+      species          = c("Species", "scientific_name", "common_name"),
       sensor_value     = c("sensor_value"),
       sensor_unit      = c("sensor_unit")
     )
