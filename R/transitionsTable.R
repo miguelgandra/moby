@@ -25,8 +25,25 @@
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
-#' @return A data frame with one row per directed transition (and group-label rows when the
-#' network was built with `id.groups`).
+#' @return A \code{mobyTable}: a TYPED data frame (counts stay integer, indices numeric, dates
+#' POSIXct), one row per directed transition, so the result can be computed on directly. Presentation - fixed
+#' precision, the display-only `mean +/- error` row, group headings - is applied by
+#' \code{\link[=format.mobyTable]{format}} and \code{\link[=print.mobyTable]{print}}. Export the
+#' rendered version with \code{write.csv(format(x), file, row.names = FALSE)}.
+#'
+#' Columns use stable snake_case names, which is what `format(decimals=)` and `format(group.by=)`
+#' are keyed on; the publication headers live in `format(style = "report")`.
+#' \itemize{
+#'   \item `transition` (`"A --> B"`), and a `group` factor when the network was built with `id.groups`
+#'   \item `n_movements`, `n_individuals`, `pct_individuals`
+#'   \item `mean_duration`, `error_duration` (hours, or days when transits are long - the unit is
+#'     recorded on the table and named in the header)
+#'   \item `mean_<var>` for each numeric `id.metadata` column, and the raw column for each
+#'     categorical one
+#' }
+#'
+#' The count and the share of individuals are separate columns, as are the mean duration and its
+#' error: written as one string (`"3 (75%)"`, `"30.7 +/- 12.6"`) neither could be computed on.
 #'
 #' @seealso \code{\link{calculateTransitions}}, \code{\link{summaryTable}}
 #'
@@ -77,10 +94,11 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
                                      else "standard deviation (sd)"),
               verbose = verbose)
 
-  # overall duration unit (days if mean transit time is long)
+  # overall duration unit (days if mean transit time is long). A display choice, so it travels as
+  # table metadata and the column keeps one stable name whatever the data does.
   all_dur <- edges$mean_duration_h
   use_days <- length(all_dur) > 0 && mean(all_dur, na.rm = TRUE) > 72
-  dur_label <- if (use_days) "Mean duration (d)" else "Mean duration (h)"
+  dur_units <- if (use_days) "d" else "h"
 
   # metadata column types
   if (!is.null(id.metadata)) {
@@ -100,13 +118,15 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
     gsize <- if (!is.null(group_sizes)) group_sizes[[g]] else NA
 
     if (nrow(e_g) == 0) {
-      tab <- data.frame(Type = character(0), Movements = integer(0), Individuals = character(0),
+      tab <- data.frame(transition = character(0), n_movements = integer(0),
+                        n_individuals = integer(0), pct_individuals = numeric(0),
+                        mean_duration = numeric(0), error_duration = numeric(0),
                         check.names = FALSE, stringsAsFactors = FALSE)
     } else {
       type <- paste(e_g$from, "-->", e_g$to)
-      pct <- if (!is.na(gsize) && gsize > 0) round(e_g$n_individuals / gsize * 100) else NA
-      individuals <- if (all(is.na(pct))) as.character(e_g$n_individuals) else
-        paste0(e_g$n_individuals, " (", pct, "%)")
+      # count and share are two facts, so they are two columns. As one string ("3 (75%)") neither
+      # could be computed on, and the share was unrecoverable once the group size was gone.
+      pct <- if (!is.na(gsize) && gsize > 0) e_g$n_individuals / gsize * 100 else NA_real_
 
       # per-transition duration (mean +/- error), from the records
       dur_mean <- dur_err <- rep(NA_real_, nrow(e_g))
@@ -116,12 +136,12 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
         if (length(d) > 0) { dur_mean[k] <- mean(d); dur_err[k] <- if (length(d) > 1) errFun(d) else NA }
       }
       if (use_days) { dur_mean <- dur_mean / 24; dur_err <- dur_err / 24 }
-      duration <- paste0(sprintf("%.1f", dur_mean),
-                         ifelse(is.na(dur_err), "", paste0(" \u00b1 ", sprintf("%.1f", dur_err))))
 
-      tab <- data.frame(Type = type, Movements = e_g$n_movements, Individuals = individuals,
+      tab <- data.frame(transition = type, n_movements = e_g$n_movements,
+                        n_individuals = e_g$n_individuals,
+                        pct_individuals = as.numeric(rep(pct, length.out = nrow(e_g))),
+                        mean_duration = dur_mean, error_duration = dur_err,
                         check.names = FALSE, stringsAsFactors = FALSE)
-      tab[[dur_label]] <- duration
 
       # per-transition metadata summaries
       if (!is.null(id.metadata)) {
@@ -131,13 +151,10 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
           vals <- vapply(tx_ids, function(ids) {
             v <- id.metadata[[nc]][as.character(id.metadata[[id.col]]) %in% ids]
             v <- v[!is.na(v)]
-            if (length(v) == 0) return(NA_character_)
-            m <- mean(v); e <- if (length(v) > 1) errFun(v) else NA
-            digits <- max(.decimalPlaces(id.metadata[[nc]]), na.rm = TRUE) + 1
-            paste0(sprintf(paste0("%.", digits, "f"), m),
-                   ifelse(is.na(e), "", paste0(" \u00b1 ", sprintf(paste0("%.", digits, "f"), e))))
-          }, character(1))
-          tab[[paste("Mean", tools::toTitleCase(nc))]] <- vals
+            if (length(v) == 0) return(NA_real_)
+            mean(v)
+          }, numeric(1))
+          tab[[paste0("mean_", nc)]] <- vals
         }
         for (cc in character_cols) {
           vals <- vapply(tx_ids, function(ids) {
@@ -147,7 +164,7 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
             tb <- table(v)
             paste(paste0(as.integer(tb), " ", names(tb)), collapse = " | ")
           }, character(1))
-          tab[[tools::toTitleCase(cc)]] <- vals
+          tab[[cc]] <- vals
         }
       }
 
@@ -156,20 +173,17 @@ transitionsTable <- function(network, id.metadata = NULL, error.stat = "se",
       tab <- tab[ord, , drop = FALSE]
     }
 
-    # group title row when several groups
-    if (length(group_levels) > 1) {
-      title_row <- tab[0, , drop = FALSE]
-      title_row[1, ] <- ""
-      title_row$Type <- g
-      tab <- rbind(title_row, tab)
-    }
+    if (length(group_levels) > 1 && nrow(tab) > 0) tab$group <- g
     tables[[g]] <- tab
   }
 
   out <- do.call(.rbindFill, tables)
-  out[is.na(out)] <- "-"
+  if (length(group_levels) > 1 && "group" %in% names(out))
+    out$group <- factor(out$group, levels = group_levels)
   rownames(out) <- NULL
-  out
+  .newMobyTable(out, kind = "transitions", error.stat = error.stat, label.col = "transition",
+                units = list(duration = dur_units),
+                extra = list(id.groups = id.groups, processing.date = Sys.time()))
 }
 
 #######################################################################################################

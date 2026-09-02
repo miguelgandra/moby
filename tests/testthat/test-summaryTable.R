@@ -8,7 +8,7 @@ test_that("summaryTable reports dates in the input timezone (UTC-shift regressio
     summaryTable(d, tagging.dates = as.POSIXct("2020-06-01 00:00:00", tz = "Australia/Sydney"),
                  residency.index = "IR1")
   ))
-  expect_true(any(grepl("01/06/2020", st[["Last detection"]])))
+  expect_true(any(grepl("01/06/2020", format(st)[["last_detection"]])))
 })
 
 test_that("summaryTable works with a single individual (single-column apply regression)", {

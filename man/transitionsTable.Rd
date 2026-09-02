@@ -25,8 +25,25 @@ default) or \code{"sd"} (standard deviation).}
 \code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
-A data frame with one row per directed transition (and group-label rows when the
-network was built with \code{id.groups}).
+A \code{mobyTable}: a TYPED data frame (counts stay integer, indices numeric, dates
+POSIXct), one row per directed transition, so the result can be computed on directly. Presentation - fixed
+precision, the display-only \verb{mean +/- error} row, group headings - is applied by
+\code{\link[=format.mobyTable]{format}} and \code{\link[=print.mobyTable]{print}}. Export the
+rendered version with \code{write.csv(format(x), file, row.names = FALSE)}.
+
+Columns use stable snake_case names, which is what \code{format(decimals=)} and \code{format(group.by=)}
+are keyed on; the publication headers live in \code{format(style = "report")}.
+\itemize{
+\item \code{transition} (\code{"A --> B"}), and a \code{group} factor when the network was built with \code{id.groups}
+\item \code{n_movements}, \code{n_individuals}, \code{pct_individuals}
+\item \code{mean_duration}, \code{error_duration} (hours, or days when transits are long - the unit is
+recorded on the table and named in the header)
+\item \verb{mean_<var>} for each numeric \code{id.metadata} column, and the raw column for each
+categorical one
+}
+
+The count and the share of individuals are separate columns, as are the mean duration and its
+error: written as one string (\code{"3 (75\%)"}, \code{"30.7 +/- 12.6"}) neither could be computed on.
 }
 \description{
 Produces a publication-ready summary table from a movement network (the output of

@@ -63,33 +63,24 @@
 #' @param verbose Logical; print a summary of the operation. Defaults to
 #' \code{getOption("moby.verbose", TRUE)}.
 #'
-#' @return A data frame summarizing information on tagged animals, with the following columns:
-#' - `ID`: Unique identifier for each tagged animal.
-#' - Any additional metadata columns from `id.metadata` if provided.
-#' - `Tagging date`: The date when the animal was tagged.
-#' - `Last detection`: The date of the last detection.
-#' - `N Detect`: Total number of detections for the animal.
-#' - `N Receiv`: Number of unique receivers that detected the animal.
-#' - `Monitoring duration (d)`: Total duration of monitoring in days. This is determined
-#' by the tag duration, if provided, or alternatively calculated as the time
-#' between release and the last detection in the dataset (assumed to represent the
-#' final data download).
-#' - `Detection span (d)`: Number of days between release/first detection and last detection (days at liberty)
-#' - `N days detected`: Total number of days the animal was detected.
-#' - Additional columns for each residency index specified in the `residency.index` parameter.
-#' - If `residency.by` is specified, additional columns for partial residency metrics will be included.
-#' - Sensor data metrics: For each column in `sensor.cols`, the mean, minimum, and maximum values, using titles specified in `sensor.titles` (if provided).
+#' @return A \code{mobyTable}: a TYPED data frame (counts stay integer, indices numeric, dates
+#' POSIXct), one row per tagged animal, so the result can be computed on directly. Presentation - fixed
+#' precision, the display-only `mean +/- error` row, group headings - is applied by
+#' \code{\link[=format.mobyTable]{format}} and \code{\link[=print.mobyTable]{print}}. Export the
+#' rendered version with \code{write.csv(format(x), file, row.names = FALSE)}.
 #'
-#' @references
-#' Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
-#' Residency and space use estimation methods based on passive acoustic telemetry data.
-#' Movement Ecology, 11(1), 12.
-#' https://doi.org/10.1186/s40462-023-00349-y
-#'
-#' Appert, C., Udyawer, V., Simpfendorfer, C. A., Heupel, M. R., Scott, M., Currey-Randall, L. M., ... & Chin, A. (2023).
-#' Use, misuse, and ambiguity of indices of residence in acoustic telemetry studies.
-#' Marine Ecology Progress Series, 714, 27-44.
-#' https://doi.org/10.3354/meps14300
+#' Columns use stable snake_case names, which is what `format(decimals=)` and `format(group.by=)`
+#' are keyed on; the publication headers live in `format(style = "report")`.
+#' \itemize{
+#'   \item `ID` (or your `id.col`), and a `group` factor when `id.groups` names more than one group
+#'   \item `tagging_date`, `last_detection` (POSIXct)
+#'   \item `n_detections`, `n_receivers`, `monitoring_duration_d`, `detection_span_d`,
+#'     `n_days_detected`
+#'   \item one column per requested `residency.index` (`IR1`, `IR2`, `IR2/IR1`, ...), plus the
+#'     `residency.by` variants when supplied
+#'   \item `<sensor>_mean`, `<sensor>_min`, `<sensor>_max` for each of `sensor.cols`
+#'   \item any columns carried over from `id.metadata`
+#' }
 #'
 #' @seealso \code{\link{calculateResidency}} for the underlying numeric residency indices
 #' (useful for plotting or downstream statistical analysis).
@@ -233,12 +224,11 @@ summaryTable <- function(data,
   tz <- .dataTZ(data[,datetime.col])
 
   # format tagging dates
-  tag_dates <- strftime(tagging.dates, format="%d/%m/%Y", tz=.dataTZ(tagging.dates))
+  # kept as POSIXct: the table is typed, and format() renders the dates on the way out
 
   # retrieve last detections dates
   last_detections <- tapply(X=data[,datetime.col], INDEX=data[,id.col], FUN=max, na.rm=TRUE)
   last_detections <- as.POSIXct(last_detections, origin='1970-01-01', tz=tz)
-  last_dates <- strftime(last_detections, format="%d/%m/%Y", tz=tz)
 
   # calculate number of detections
   if("detections" %in% colnames(data)){
@@ -276,13 +266,13 @@ summaryTable <- function(data,
 
   # aggregate stats
   stats <- data.frame("ID" = levels(data[,id.col]),
-                      "Tagging date" = tag_dates,
-                      "Last detection" = last_dates,
-                      "N Detect" = detections,
-                      "N Receiv" = receivers,
-                      "Monitoring duration (d)" = Dt,
-                      "Detection span (d)" = Di,
-                      "N days detected" = Dd,
+                      "tagging_date" = tagging.dates,
+                      "last_detection" = last_detections,
+                      "n_detections" = detections,
+                      "n_receivers" = receivers,
+                      "monitoring_duration_d" = Dt,
+                      "detection_span_d" = Di,
+                      "n_days_detected" = Dd,
                       row.names = NULL,
                       check.names = FALSE)
 
@@ -291,18 +281,18 @@ summaryTable <- function(data,
     if(is.null(sensor.titles)) sensor.titles <- tools::toTitleCase(sensor.cols)
     sensor_mean <- stats::aggregate(data[,sensor.cols], by=list(data[,id.col]), function(x){
       if(all(is.na(x))) return(NA) else round(mean(x, na.rm=TRUE), 1)})
-    colnames(sensor_mean) <- c("ID", paste(sensor.titles, "- mean"))
+    colnames(sensor_mean) <- c("ID", paste0(sensor.titles, "_mean"))
     sensor_min <- stats::aggregate(data[,sensor.cols], by=list(data[,id.col]), function(x){
       if(all(is.na(x))) return(NA) else round(min(x, na.rm=TRUE), 1)})
-    colnames(sensor_min) <- c("ID", paste(sensor.titles, "- min"))
+    colnames(sensor_min) <- c("ID", paste0(sensor.titles, "_min"))
     sensor_max <- stats::aggregate(data[,sensor.cols], by=list(data[,id.col]), function(x){
       if(all(is.na(x))) return(NA) else round(max(x, na.rm=TRUE), 1)})
-    colnames(sensor_max) <- c("ID", paste(sensor.titles, "- max"))
+    colnames(sensor_max) <- c("ID", paste0(sensor.titles, "_max"))
     sensor_stats <- Reduce(function(x, y) .joinKeep(x, y, by="ID", type="left"), list(sensor_mean, sensor_min, sensor_max))
     # merge and reorder columns
-    ordered_cols <- c("ID", unlist(lapply(sensor.titles, function(x) c(paste(x, "- mean"), paste(x, "- min"), paste(x, "- max")))))
+    ordered_cols <- c("ID", unlist(lapply(sensor.titles, function(x) paste0(x, c("_mean", "_min", "_max")))))
     sensor_stats <- sensor_stats[,ordered_cols]
-    col_index <- which(colnames(stats)=="Last detection")
+    col_index <- which(colnames(stats)=="last_detection")
     first_cols <- names(stats)[seq_len(col_index)]
     last_cols <- names(stats)[(col_index+1):ncol(stats)]
     stats <- .joinKeep(stats, sensor_stats, by="ID", type="left")
@@ -337,66 +327,34 @@ summaryTable <- function(data,
     stats <- .joinKeep(animal_info, stats, by="ID", type="left")
   }
 
-  # calculate means ± se and format missing values
+  # ---- typed output ---------------------------------------------------------------------------
+  # The table returns its NUMBERS. Precision, the mean row, the group headings and the "-" for
+  # missing all belong to format()/print(), so the object stays something you can compute on.
   stats$ID <- as.character(stats$ID)
-  column_types <- sapply(seq_len(ncol(stats)),function(c) class(stats[,c]))
-  # residency-index columns produced by calculateResidency(): IR1, IR2, IWR, IR2/IR1 and their
-  # residency.by variants ("IR1 <level>"). Anchor to the exact index names so an arbitrary user
-  # metadata column that merely contains "IR"/"IWR" (e.g. "WEIR", "AIR_temp") is not misformatted.
-  IR_cols <- which(grepl("^(IR1|IR2|IWR|IR2/IR1)( |$)", colnames(stats)))
-  numeric_cols <- which(column_types %in% c("numeric", "integer"))
-  numeric_cols <- numeric_cols[!numeric_cols %in% IR_cols]
-  # per-column maximum number of decimal places (robust to a single numeric column
-  # and to single-row inputs, where the original nested apply() failed)
-  decimal_digits <- apply(stats[,numeric_cols, drop=FALSE], 2, function(col){
-    dp <- .decimalPlaces(col)
-    if(all(is.na(dp))) 0 else max(dp, na.rm=TRUE)
-  })
   n_groups <- length(id.groups)
-  group_stats <- lapply(id.groups, function(x) stats[stats$ID %in% x,])
-  for(i in seq_len(n_groups)){
-    group <- group_stats[[i]]
-    group[nrow(group)+1,] <- NA
-    group$ID[nrow(group)] <- "mean"
-    # format numeric columns
-    group[nrow(group), numeric_cols] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(group[,numeric_cols, drop=FALSE], na.rm=TRUE))
-    errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(group[,numeric_cols, drop=FALSE], 2, getErrorFun)))
-    group[nrow(group), numeric_cols] <- paste(group[nrow(group), numeric_cols], "\u00b1", errors)
-    for(c in numeric_cols) group[-nrow(group), c] <- sprintf(paste0("%.", decimal_digits[which(numeric_cols==c)], "f"),  as.numeric(group[-nrow(group), c]))
-    # format residency columns
-    group[nrow(group), IR_cols] <- sprintf("%.2f", colMeans(group[,IR_cols, drop=FALSE], na.rm=TRUE))
-    errors <- sprintf("%.2f", unlist(apply(group[,IR_cols, drop=FALSE], 2, getErrorFun)))
-    group[nrow(group), IR_cols] <- paste(group[nrow(group), IR_cols], "\u00b1", errors)
-    for(c in IR_cols) group[-nrow(group), c] <- sprintf("%.2f", as.numeric(group[-nrow(group), c]))
-    group[group=="NA"] <- "-"
-    group[group=="NaN \u00b1 NA"] <- "-"
-    group[is.na(group)] <- "-"
-    group_stats[[i]]<-group
+
+  # A `group` column when the caller declared named ID groups. Previously the split was rendered as
+  # blank heading rows spliced into the table, which exported to CSV as empty records; as a column it
+  # is both analysable and what format(group.by=) groups on.
+  if (n_groups > 1) {
+    grp <- rep(NA_character_, nrow(stats))
+    for (i in seq_len(n_groups)) {
+      grp[stats$ID %in% as.character(id.groups[[i]])] <- names(id.groups)[i]
+    }
+    stats$group <- factor(grp, levels = names(id.groups))
+    # rows are emitted in group order, as they were when each group was its own block
+    stats <- stats[order(stats$group, seq_len(nrow(stats))), , drop = FALSE]
   }
 
-  # add group names
-  if(n_groups>1){
-    group_labels <- stats[0,]
-    group_labels[seq_len(n_groups),] <- ""
-    group_labels$ID <- names(id.groups)
-    group_labels <- split(group_labels, f=group_labels$ID)
-    group_labels <- group_labels[match(names(group_labels), names(id.groups))]
-    group_stats <- mapply(function(label, stats) {rbind(label, stats)}, label=group_labels, stats=group_stats, SIMPLIFY=FALSE)
-  }
+  # the ID column carries the caller's own name
+  if (!identical(id.col, "ID")) colnames(stats)[colnames(stats) == "ID"] <- id.col
 
-  # aggregate table
-  stats <- do.call("rbind", group_stats)
-  rownames(stats) <- NULL
-
-  # create new attributes to save relevant params
-  attr(stats, 'residency.index') <- residency.index
-  attr(stats, 'start.point') <- start.point
-  attr(stats, 'residency.by') <- residency.by
-  attr(stats, 'id.groups') <- id.groups
-  attr(stats, 'processing.date') <- Sys.time()
-
-  # return table
-  return(stats)
+  .newMobyTable(stats, kind = "summary", error.stat = error.stat, label.col = id.col,
+                extra = list(residency.index = residency.index,
+                             start.point = start.point,
+                             residency.by = residency.by,
+                             id.groups = id.groups,
+                             processing.date = Sys.time()))
 }
 
 #######################################################################################################

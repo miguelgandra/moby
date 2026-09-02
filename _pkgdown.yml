@@ -37,7 +37,8 @@ reference:
              calculateLandDists, correctPositions, createWideTable]
 - title: Summaries, residency & home range
   contents: [calculateResidency, calculateVisits, summaryTable, calculateROM, calculateLinearityIndex,
-             movementTable, calculateUDs, calculateUDOverlap, plotMaps]
+             movementTable, calculateUDs, calculateUDOverlap, plotMaps,
+             format.mobyTable, print.mobyTable]
 - title: Network analysis
   contents: [mobyNetwork, plot.mobyNetwork, calculateAssociations, randomizeAssociations,
              plotAssociations, plotAssociationMatrix, plotGroupSizeDistribution, calculateTransitions,

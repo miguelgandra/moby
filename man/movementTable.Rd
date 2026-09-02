@@ -54,6 +54,25 @@ If not supplied, CRS is assumed to be the same as in land.shape.}
 \code{\link{calculateStepDistances}}), used to calculate distances between the first and last recorded
 detections for each individual (e.g., \code{grid.resolution}, \code{mov.directions} and \code{cores}).}
 }
+\value{
+A \code{mobyTable}: a TYPED data frame (counts stay integer, indices numeric, dates
+POSIXct), one row per individual, so the result can be computed on directly. Presentation - fixed
+precision, the display-only \verb{mean +/- error} row, group headings - is applied by
+\code{\link[=format.mobyTable]{format}} and \code{\link[=print.mobyTable]{print}}. Export the
+rendered version with \code{write.csv(format(x), file, row.names = FALSE)}.
+
+Columns use stable snake_case names, which is what \code{format(decimals=)} and \code{format(group.by=)}
+are keyed on; the publication headers live in \code{format(style = "report")}.
+\itemize{
+\item your \code{id.col}, and a \code{group} factor when \code{id.groups} names more than one group
+\item \code{distance_km}, \code{rom}, \code{rom_max}, \code{linearity_index}
+\item the home-range columns from \code{\link{calculateUDs}}
+}
+
+\code{rom}/\code{rom_max} are in m/h unless every group is fast enough to warrant km/h, in which case they
+are scaled and the unit is recorded on the table - so the column NAME never changes with the data,
+and \code{format()} names the unit in the header.
+}
 \description{
 Creates a publication-ready table of per-animal movement metrics (total distance
 travelled, rate of movement, linearity index and home-range areas), with a summary mean +/- SE

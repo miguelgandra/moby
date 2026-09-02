@@ -11,24 +11,28 @@ test_that("transitionsTable formats a movement network into a clean table", {
   net <- calculateTransitions(tt_dataset(), spatial.col = "site")
   tt <- transitionsTable(net)
   expect_s3_class(tt, "data.frame")
-  expect_true(all(c("Type", "Movements", "Individuals") %in% colnames(tt)))
-  expect_true(any(grepl("Mean duration", colnames(tt))))
-  expect_true(all(grepl("-->", tt$Type)))           # transitions only (no stationary rows)
-  expect_true(any(grepl("%", tt$Individuals)))       # n (pct%)
+  expect_true(all(c("transition", "n_movements", "n_individuals", "pct_individuals",
+                    "mean_duration") %in% colnames(tt)))
+  expect_true(all(grepl("-->", tt$transition)))      # transitions only (no stationary rows)
+  expect_true(is.numeric(tt$pct_individuals))        # count and share are separate, typed columns
+  expect_true(any(grepl("Mean duration", colnames(format(tt, style = "report")))))
 })
 
 test_that("transitionsTable summarises id.metadata per transition type", {
   net <- calculateTransitions(tt_dataset(), spatial.col = "site")
   meta <- data.frame(ID = c("A", "B"), sex = c("F", "M"), length = c(120, 135))
   tt <- transitionsTable(net, id.metadata = meta)
-  expect_true(any(grepl("Mean Length", colnames(tt))))
-  expect_true("Sex" %in% colnames(tt))
+  expect_true(any(grepl("^mean_", colnames(tt))))
+  # a categorical metadata column keeps its own name; a numeric one is summarised as mean_<var>
+  expect_true("sex" %in% colnames(tt))
+  expect_true("mean_length" %in% colnames(tt))
+  expect_true(is.numeric(tt$mean_length))
 })
 
-test_that("transitionsTable adds group rows for id.groups and rejects non-movement input", {
+test_that("transitionsTable adds a group column for id.groups and rejects non-movement input", {
   net <- calculateTransitions(tt_dataset(), spatial.col = "site",
                               id.groups = list(grp1 = "A", grp2 = "B"))
   tt <- transitionsTable(net)
-  expect_true(any(tt$Type %in% c("grp1", "grp2")))
+  expect_true(all(levels(tt$group) %in% c("grp1", "grp2")))
   expect_error(transitionsTable(data.frame(a = 1)), "movement")
 })

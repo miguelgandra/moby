@@ -80,8 +80,8 @@ test_that("movementTable ROM values match calculateROM (single source of truth)"
     movementTable(d, uds = kud_mock, id.col = "ID", timebin.col = "timebin",
                   lon.col = "lon", lat.col = "lat", dist.col = "dist_m")))
 
-  rom_col <- grep("^ROM", colnames(mt), value = TRUE)
-  expect_length(rom_col, 1)
-  expect_equal(mt[mt$ID == "A", rom_col], sprintf("%.1f", m$mean_rom[m$ID == "A"]))
-  expect_equal(mt[mt$ID == "B", rom_col], sprintf("%.1f", m$mean_rom[m$ID == "B"]))
+  # the table is typed now: the ROM column has a stable name and holds numbers
+  expect_true("rom" %in% colnames(mt))
+  expect_equal(mt$rom[mt$ID == "A"], m$mean_rom[m$ID == "A"])
+  expect_equal(mt$rom[mt$ID == "B"], m$mean_rom[m$ID == "B"])
 })

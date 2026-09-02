@@ -72,7 +72,7 @@ test_that("transition counts agree with transitionsTable", {
   md <- trans_dataset()
   net <- calculateTransitions(md, spatial.col = "site")
   tt <- transitionsTable(net)
-  expect_equal(sum(networkEdges(net)$n_movements), sum(as.numeric(tt$Movements)))
+  expect_equal(sum(networkEdges(net)$n_movements), sum(tt$n_movements))
 })
 
 test_that("calculateTransitions supports id.groups", {

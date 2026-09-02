@@ -33,6 +33,9 @@ test_that("movementTable combines fast and slow id.groups (per-group rom_units r
 
   expect_s3_class(mt, "data.frame")
   # a single, shared rate-of-movement unit is used across the combined table
-  expect_length(grep("^ROM \\(", colnames(mt)), 1)
-  expect_length(grep("^Max ROM \\(", colnames(mt)), 1)
+  # the column NAME no longer carries the unit (it would change with the data); the unit is
+  # recorded on the table and rendered into the header by format()
+  expect_true(all(c("rom", "rom_max") %in% colnames(mt)))
+  expect_length(grep("^ROM \\(", colnames(format(mt, style = "report"))), 1)
+  expect_length(grep("^Max ROM \\(", colnames(format(mt, style = "report"))), 1)
 })

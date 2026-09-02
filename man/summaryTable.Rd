@@ -102,23 +102,23 @@ or 'se' (standard error). Defaults to 'sd'.}
 \code{getOption("moby.verbose", TRUE)}.}
 }
 \value{
-A data frame summarizing information on tagged animals, with the following columns:
+A \code{mobyTable}: a TYPED data frame (counts stay integer, indices numeric, dates
+POSIXct), one row per tagged animal, so the result can be computed on directly. Presentation - fixed
+precision, the display-only \verb{mean +/- error} row, group headings - is applied by
+\code{\link[=format.mobyTable]{format}} and \code{\link[=print.mobyTable]{print}}. Export the
+rendered version with \code{write.csv(format(x), file, row.names = FALSE)}.
+
+Columns use stable snake_case names, which is what \code{format(decimals=)} and \code{format(group.by=)}
+are keyed on; the publication headers live in \code{format(style = "report")}.
 \itemize{
-\item \code{ID}: Unique identifier for each tagged animal.
-\item Any additional metadata columns from \code{id.metadata} if provided.
-\item \verb{Tagging date}: The date when the animal was tagged.
-\item \verb{Last detection}: The date of the last detection.
-\item \verb{N Detect}: Total number of detections for the animal.
-\item \verb{N Receiv}: Number of unique receivers that detected the animal.
-\item \verb{Monitoring duration (d)}: Total duration of monitoring in days. This is determined
-by the tag duration, if provided, or alternatively calculated as the time
-between release and the last detection in the dataset (assumed to represent the
-final data download).
-\item \verb{Detection span (d)}: Number of days between release/first detection and last detection (days at liberty)
-\item \verb{N days detected}: Total number of days the animal was detected.
-\item Additional columns for each residency index specified in the \code{residency.index} parameter.
-\item If \code{residency.by} is specified, additional columns for partial residency metrics will be included.
-\item Sensor data metrics: For each column in \code{sensor.cols}, the mean, minimum, and maximum values, using titles specified in \code{sensor.titles} (if provided).
+\item \code{ID} (or your \code{id.col}), and a \code{group} factor when \code{id.groups} names more than one group
+\item \code{tagging_date}, \code{last_detection} (POSIXct)
+\item \code{n_detections}, \code{n_receivers}, \code{monitoring_duration_d}, \code{detection_span_d},
+\code{n_days_detected}
+\item one column per requested \code{residency.index} (\code{IR1}, \code{IR2}, \code{IR2/IR1}, ...), plus the
+\code{residency.by} variants when supplied
+\item \verb{<sensor>_mean}, \verb{<sensor>_min}, \verb{<sensor>_max} for each of \code{sensor.cols}
+\item any columns carried over from \code{id.metadata}
 }
 }
 \description{
@@ -135,17 +135,6 @@ data(rays)
 summaryTable(rays,
              last.monitoring.date = as.POSIXct("2023-12-31", tz = "UTC"),
              id.groups = mobyMeta(rays)$id.groups)
-}
-\references{
-Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
-Residency and space use estimation methods based on passive acoustic telemetry data.
-Movement Ecology, 11(1), 12.
-https://doi.org/10.1186/s40462-023-00349-y
-
-Appert, C., Udyawer, V., Simpfendorfer, C. A., Heupel, M. R., Scott, M., Currey-Randall, L. M., ... & Chin, A. (2023).
-Use, misuse, and ambiguity of indices of residence in acoustic telemetry studies.
-Marine Ecology Progress Series, 714, 27-44.
-https://doi.org/10.3354/meps14300
 }
 \seealso{
 \code{\link{calculateResidency}} for the underlying numeric residency indices

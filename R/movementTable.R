@@ -29,6 +29,24 @@
 #' \code{\link{calculateStepDistances}}), used to calculate distances between the first and last recorded
 #' detections for each individual (e.g., `grid.resolution`, `mov.directions` and `cores`).
 #' @seealso \code{\link{calculateROM}}, \code{\link{calculateLinearityIndex}}
+#' @return A \code{mobyTable}: a TYPED data frame (counts stay integer, indices numeric, dates
+#' POSIXct), one row per individual, so the result can be computed on directly. Presentation - fixed
+#' precision, the display-only `mean +/- error` row, group headings - is applied by
+#' \code{\link[=format.mobyTable]{format}} and \code{\link[=print.mobyTable]{print}}. Export the
+#' rendered version with \code{write.csv(format(x), file, row.names = FALSE)}.
+#'
+#' Columns use stable snake_case names, which is what `format(decimals=)` and `format(group.by=)`
+#' are keyed on; the publication headers live in `format(style = "report")`.
+#' \itemize{
+#'   \item your `id.col`, and a `group` factor when `id.groups` names more than one group
+#'   \item `distance_km`, `rom`, `rom_max`, `linearity_index`
+#'   \item the home-range columns from \code{\link{calculateUDs}}
+#' }
+#'
+#' `rom`/`rom_max` are in m/h unless every group is fast enough to warrant km/h, in which case they
+#' are scaled and the unit is recorded on the table - so the column NAME never changes with the data,
+#' and `format()` names the unit in the header.
+#'
 #' @examples
 #' \donttest{
 #' data(rays)
@@ -150,8 +168,6 @@ movementTable <- function(data,
   #####################################################################
   ## Format stats #####################################################
 
-  movement_table <- list()
-
   # decide the rate-of-movement display unit ONCE for the whole table. Deciding it per id.group (as
   # before) gave group-specific column names ("ROM (m/h)" vs "ROM (km/h)") that broke the final
   # rbind() whenever groups differed in speed. Switch to km/h only when EVERY group is fast, so a slow
@@ -167,67 +183,37 @@ movementTable <- function(data,
     rom_units <- "m/h"; rom_scale <- 1
   }
 
-  for(i in seq_along(id.groups)){
+  # ---- typed output -----------------------------------------------------------------------------
+  # One table of NUMBERS, in group order. Precision, the mean row and the group headings are applied
+  # by format()/print(); the unit chosen above travels as metadata so the header can name it without
+  # the column name changing with the data.
+  n_groups <- length(id.groups)
+  group_ids <- lapply(id.groups, function(g) {
+    g <- as.character(g)
+    if (discard.missing) g[g %in% detected] else g
+  })
+  ids <- unlist(group_ids, use.names = FALSE)
+  sub <- core[match(ids, as.character(core[[id.col]])), , drop = FALSE]
 
-    # select this group's individuals (optionally dropping those without detections)
-    group_ids <- as.character(id.groups[[i]])
-    if(discard.missing) group_ids <- group_ids[group_ids %in% detected]
-    sub <- core[match(group_ids, core[[id.col]]), , drop=FALSE]
+  movement_table <- data.frame(ids,
+                               distance_km      = sub$total_distance_m / 1000,
+                               rom              = sub$mean_rom / rom_scale,
+                               rom_max          = sub$max_rom / rom_scale,
+                               linearity_index  = sub$linearity_index,
+                               row.names = NULL, check.names = FALSE, stringsAsFactors = FALSE)
+  colnames(movement_table)[1] <- id.col
 
-    # total distance traveled (km)
-    total_distance <- sprintf("%.1f", sub$total_distance_m/1000)
-
-    # rate of movement (hourly distance); unit/scale decided once above so every group shares columns
-    mean_rom <- sprintf("%.1f", sub$mean_rom/rom_scale)
-    max_rom <- sprintf("%.1f", sub$max_rom/rom_scale)
-
-    # linearity index
-    li_index <- sprintf("%.2f", sub$linearity_index)
-    li_index[li_index=="NaN" | li_index=="NA"] <- "NA"
-
-    # overall movement stats
-    movement_stats <- data.frame("ID"=group_ids, "Distance (km)"=total_distance,
-                                 "ROM"=mean_rom, "Max ROM"=max_rom,
-                                 "LI"=li_index, check.names=FALSE, row.names=NULL)
-    colnames(movement_stats)[1] <- id.col
-    colnames(movement_stats)[3] <- paste0(colnames(movement_stats)[3], " (", rom_units,")")
-    colnames(movement_stats)[4] <- paste0(colnames(movement_stats)[4], " (", rom_units,")")
-    movement_stats <- .joinKeep(movement_stats, uds[[i]], by=id.col, type="left")
-    if("group" %in% colnames(movement_stats)) movement_stats <- .dropCols(movement_stats, "group")
-
-    # calculate means ± se and format missing values
-    values_chr <- as.matrix(movement_stats[,-1, drop=FALSE])
-    values <- suppressWarnings(matrix(as.numeric(values_chr), nrow=nrow(values_chr),
-                                      ncol=ncol(values_chr), dimnames=dimnames(values_chr)))
-    # per-column maximum number of decimal places (robust to single columns / rows)
-    decimal_digits <- apply(values, 2, function(col){
-      dp <- .decimalPlaces(col)
-      if(all(is.na(dp))) 0 else max(dp, na.rm=TRUE)
-    })
-    movement_stats[[id.col]] <- as.character(movement_stats[[id.col]])
-    movement_stats[nrow(movement_stats)+1,] <- NA
-    movement_stats[[id.col]][nrow(movement_stats)] <- "mean"
-    movement_stats[nrow(movement_stats), -1] <- sprintf(paste0("%.", decimal_digits, "f"), colMeans(values, na.rm=TRUE))
-    errors <- sprintf(paste0("%.", decimal_digits, "f"), unlist(apply(values, 2, .stdError)))
-    movement_stats[nrow(movement_stats), -1] <- paste(movement_stats[nrow(movement_stats), -1], "\u00b1", errors)
-    movement_stats[is.na(movement_stats)] <- "-"
-    movement_stats[movement_stats=="NA"] <- "-"
-
-    # add title
-    if(length(id.groups)>1){
-      table_title <- movement_stats[0,]
-      table_title[1,] <- ""
-      table_title[[id.col]] <- names(id.groups)[i]
-      movement_stats <- rbind(table_title, movement_stats)
-    }
-
-    # save table
-    movement_table[[i]] <- movement_stats
+  # home-range columns from calculateUDs(), stacked across groups and joined once
+  ud_all <- .rbindFill(uds)
+  if (!is.null(ud_all) && nrow(ud_all) > 0) {
+    ud_all <- .dropCols(ud_all, "group")
+    movement_table <- .joinKeep(movement_table, ud_all, by = id.col, type = "left")
   }
 
-
-  # aggregate group tables
-  movement_table <- do.call("rbind", movement_table)
+  if (n_groups > 1 && !is.null(names(id.groups))) {
+    movement_table$group <- factor(rep(names(id.groups), lengths(group_ids)),
+                                   levels = names(id.groups))
+  }
 
   # ---- outcome --------------------------------------------------------------------------------
   # No completion line: the returned table IS the summary, and restating its size would only repeat
@@ -239,7 +225,9 @@ movementTable <- function(data,
   }
 
   # return table
-  return(movement_table)
+  .newMobyTable(movement_table, kind = "movement", error.stat = "se", label.col = id.col,
+                units = list(rom = rom_units),
+                extra = list(id.groups = id.groups, processing.date = Sys.time()))
 }
 
 

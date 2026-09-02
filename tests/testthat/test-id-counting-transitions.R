@@ -4,7 +4,7 @@
 #
 # This is the NULL-id.groups branch. It stores the DECLARED count (the factor roster) as the
 # network's "group.sizes" attribute, and transitionsTable() divides by that to produce the
-# percentage in its "Individuals" column. When the roster carries levels the data never had, every
+# percentage in its "pct_individuals" column. When the roster carries levels the data never had, every
 # percentage is deflated and nothing warns.
 #
 # The sibling branch at :127 (group_sizes <- lengths(id.groups)) is CORRECT to stay declared: an
@@ -71,23 +71,23 @@ test_that("transitionsTable percentages divide by the declared roster", {
 
   # REGRESSION: both animals made the R1 --> R2 move, so the denominator is 2, not the 4 declared
   # levels. Before the fix this read "2 (50%)".
-  expect_equal(tt$Individuals[tt$Type == "R1 --> R2"], "2 (100%)")
+  expect_equal(tt$pct_individuals[tt$transition == "R1 --> R2"], 100)
   # one of the two made R2 --> R1. Before the fix this read "1 (25%)".
-  expect_equal(tt$Individuals[tt$Type == "R2 --> R1"], "1 (50%)")
+  expect_equal(tt$pct_individuals[tt$transition == "R2 --> R1"], 50)
 
   # the whole column, against the same column computed from the droplevels() run
-  expect_equal(truth$table$Individuals[truth$table$Type == "R1 --> R2"], "2 (100%)")
-  expect_equal(truth$table$Individuals[truth$table$Type == "R2 --> R1"], "1 (50%)")
+  expect_equal(truth$table$pct_individuals[truth$table$transition == "R1 --> R2"], 100)
+  expect_equal(truth$table$pct_individuals[truth$table$transition == "R2 --> R1"], 50)
   # REGRESSION: every percentage now matches the droplevels() run. This is the headline assertion -
   # a published transitions table no longer depends on whether the input carried stale levels.
-  expect_equal(tt$Individuals, truth$table$Individuals)
+  expect_equal(tt$pct_individuals, truth$table$pct_individuals)
 
   # INVARIANT: must be identical before and after the fix. Only the denominator is wrong - the
   # numerator (how many distinct animals made each move) is already counted from the data.
-  expect_equal(sub(" .*$", "", tt$Individuals), sub(" .*$", "", truth$table$Individuals))
-  expect_equal(tt$Type, truth$table$Type)
-  expect_equal(tt$Movements, truth$table$Movements)
-  expect_equal(colnames(tt), c("Type", "Movements", "Individuals", "Mean duration (h)"))
+  expect_equal(tt$n_individuals, truth$table$n_individuals)
+  expect_equal(tt$transition, truth$table$transition)
+  expect_equal(tt$n_movements, truth$table$n_movements)
+  expect_equal(colnames(tt), c("transition", "n_movements", "n_individuals", "pct_individuals", "mean_duration", "error_duration"))
   expect_equal(nrow(tt), 6L)                   # 3 stations, both directions, all realised
 })
 
@@ -132,12 +132,12 @@ test_that("a phantom factor level deflates the percentages the same way", {
   expect_equal(unname(attr(truth$net, "group.sizes")), 3L)
 
   # REGRESSION: all three animals made R1 --> R2. Before the fix this read "3 (75%)".
-  expect_equal(tt$Individuals[tt$Type == "R1 --> R2"], "3 (100%)")
-  expect_equal(truth$table$Individuals[truth$table$Type == "R1 --> R2"], "3 (100%)")
+  expect_equal(tt$pct_individuals[tt$transition == "R1 --> R2"], 100)
+  expect_equal(truth$table$pct_individuals[truth$table$transition == "R1 --> R2"], 100)
 
   # INVARIANT: must be identical before and after the fix.
   expect_equal(edge_core(net), edge_core(truth$net))
-  expect_equal(sub(" .*$", "", tt$Individuals), sub(" .*$", "", truth$table$Individuals))
+  expect_equal(tt$n_individuals, truth$table$n_individuals)
 })
 
 
@@ -156,7 +156,7 @@ test_that("an explicit id.groups roster stays the denominator (the branch that m
   tt <- suppressWarnings(transitionsTable(net, verbose = FALSE))
   # 1 of the 4 declared animals = 25%, and 2 of 4 = 50%: percentages against the declared roster,
   # which is correct here precisely because the roster was declared.
-  expect_true(all(grepl("^[0-9]+ \\([0-9]+%\\)$", tt$Individuals[nzchar(tt$Individuals)])))
-  expect_equal(tt$Individuals[tt$Type == "ST01 --> ST05"], "1 (25%)")
-  expect_equal(tt$Individuals[tt$Type == "ST01 --> ST04"], "2 (50%)")
+  expect_true(all(tt$pct_individuals >= 0 & tt$pct_individuals <= 100, na.rm = TRUE))
+  expect_equal(tt$pct_individuals[tt$transition == "ST01 --> ST05"], 25)
+  expect_equal(tt$pct_individuals[tt$transition == "ST01 --> ST04"], 50)
 })

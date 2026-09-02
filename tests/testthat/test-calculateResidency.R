@@ -51,6 +51,6 @@ test_that("summaryTable residency values match calculateResidency (single source
   res <- suppressWarnings(suppressMessages(
     calculateResidency(md, tag.durations = c(A = 30, B = 30), residency.index = c("IR1", "IR2"))))
   ind <- st[st$ID %in% c("A", "B"), ]
-  expect_equal(ind[["IR1"]], sprintf("%.2f", res$IR1[match(ind$ID, res$ID)]))
-  expect_equal(as.integer(ind[["N days detected"]]), res$days_detected[match(ind$ID, res$ID)])
+  expect_equal(ind[["IR1"]], res$IR1[match(ind$ID, res$ID)])
+  expect_equal(as.integer(ind[["n_days_detected"]]), res$days_detected[match(ind$ID, res$ID)])
 })
