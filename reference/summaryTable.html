@@ -189,33 +189,21 @@ or 'se' (standard error). Defaults to 'sd'.</p></dd>
 </dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
-    <p>A data frame summarizing information on tagged animals, with the following columns:</p><ul><li><p><code>ID</code>: Unique identifier for each tagged animal.</p></li>
-<li><p>Any additional metadata columns from <code>id.metadata</code> if provided.</p></li>
-<li><p><code>Tagging date</code>: The date when the animal was tagged.</p></li>
-<li><p><code>Last detection</code>: The date of the last detection.</p></li>
-<li><p><code>N Detect</code>: Total number of detections for the animal.</p></li>
-<li><p><code>N Receiv</code>: Number of unique receivers that detected the animal.</p></li>
-<li><p><code>Monitoring duration (d)</code>: Total duration of monitoring in days. This is determined
-by the tag duration, if provided, or alternatively calculated as the time
-between release and the last detection in the dataset (assumed to represent the
-final data download).</p></li>
-<li><p><code>Detection span (d)</code>: Number of days between release/first detection and last detection (days at liberty)</p></li>
-<li><p><code>N days detected</code>: Total number of days the animal was detected.</p></li>
-<li><p>Additional columns for each residency index specified in the <code>residency.index</code> parameter.</p></li>
-<li><p>If <code>residency.by</code> is specified, additional columns for partial residency metrics will be included.</p></li>
-<li><p>Sensor data metrics: For each column in <code>sensor.cols</code>, the mean, minimum, and maximum values, using titles specified in <code>sensor.titles</code> (if provided).</p></li>
+    <p>A <code>mobyTable</code>: a TYPED data frame (counts stay integer, indices numeric, dates
+POSIXct), one row per tagged animal, so the result can be computed on directly. Presentation - fixed
+precision, the display-only <code>mean +/- error</code> row, group headings - is applied by
+<code><a href="format.mobyTable.html">format</a></code> and <code><a href="print.mobyTable.html">print</a></code>. Export the
+rendered version with <code>write.csv(format(x), file, row.names = FALSE)</code>.</p>
+<p>Columns use stable snake_case names, which is what <code>format(decimals=)</code> and <code>format(group.by=)</code>
+are keyed on; the publication headers live in <code>format(style = "report")</code>.</p><ul><li><p><code>ID</code> (or your <code>id.col</code>), and a <code>group</code> factor when <code>id.groups</code> names more than one group</p></li>
+<li><p><code>tagging_date</code>, <code>last_detection</code> (POSIXct)</p></li>
+<li><p><code>n_detections</code>, <code>n_receivers</code>, <code>monitoring_duration_d</code>, <code>detection_span_d</code>,
+<code>n_days_detected</code></p></li>
+<li><p>one column per requested <code>residency.index</code> (<code>IR1</code>, <code>IR2</code>, <code>IR2/IR1</code>, ...), plus the
+<code>residency.by</code> variants when supplied</p></li>
+<li><p><code>&lt;sensor&gt;_mean</code>, <code>&lt;sensor&gt;_min</code>, <code>&lt;sensor&gt;_max</code> for each of <code>sensor.cols</code></p></li>
+<li><p>any columns carried over from <code>id.metadata</code></p></li>
 </ul></div>
-    <div class="section level2">
-    <h2 id="references">References<a class="anchor" aria-label="anchor" href="#references"></a></h2>
-    <p>Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., &amp; Abecasis, D. (2023).
-Residency and space use estimation methods based on passive acoustic telemetry data.
-Movement Ecology, 11(1), 12.
-https://doi.org/10.1186/s40462-023-00349-y</p>
-<p>Appert, C., Udyawer, V., Simpfendorfer, C. A., Heupel, M. R., Scott, M., Currey-Randall, L. M., ... &amp; Chin, A. (2023).
-Use, misuse, and ambiguity of indices of residence in acoustic telemetry studies.
-Marine Ecology Progress Series, 714, 27-44.
-https://doi.org/10.3354/meps14300</p>
-    </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="calculateResidency.html">calculateResidency</a></code> for the underlying numeric residency indices
@@ -240,45 +228,47 @@ https://doi.org/10.3354/meps14300</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • start point      release date</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • error            standard deviation (sd)</span>
 <span class="r-wrn co"><span class="r-pr">#&gt;</span> <span class="warning">Warning: </span>- No 'detections' column found, assuming one detection per row.</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    ID Tagging date Last detection N Detect N Receiv</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1        Raja clavata                                              </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 R01   03/04/2023     29/06/2023      283        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                 R02   08/04/2023     28/06/2023      160        5</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                 R03   10/04/2023     29/06/2023      207        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                 R04   01/04/2023     25/06/2023      261        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                mean            -              - 228 ± 48    6 ± 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  Dasyatis pastinaca                                              </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                 D01   07/04/2023     28/06/2023      249        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9                 D02   02/04/2023     28/06/2023      154        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10                D03   05/04/2023     30/06/2023      160        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11                D04   02/04/2023     24/06/2023      169        6</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12               mean            -              - 183 ± 38    6 ± 0</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>    Monitoring duration (d) Detection span (d) N days detected         IR1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                      272                 88              38        0.43</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                      267                 82              23        0.28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                      265                 81              30        0.37</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                      274                 86              36        0.42</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                  270 ± 4             84 ± 3          32 ± 6 0.38 ± 0.06</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                                                                        </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                      268                 83              31        0.37</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9                      273                 88              25        0.28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10                     270                 87              24        0.28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11                     273                 84              30        0.36</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12                 271 ± 2             86 ± 2          28 ± 3 0.32 ± 0.04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>            IR2     IR2/IR1</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2         0.14        0.32</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3         0.09        0.31</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4         0.11        0.31</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5         0.13        0.31</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  0.12 ± 0.02 0.31 ± 0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                         </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8         0.12        0.31</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9         0.09        0.32</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10        0.09        0.32</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11        0.11        0.31</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12 0.10 ± 0.01 0.32 ± 0.01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyTable: summary&gt; 8 rows (2 groups; one mean ± sd row per group)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ─ Raja clavata</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         ID tagging_date last_detection n_detections n_receivers</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R01   03/04/2023     29/06/2023          283           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R02   08/04/2023     28/06/2023          160           5</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R03   10/04/2023     29/06/2023          207           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R04   01/04/2023     25/06/2023          261           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  mean ± sd            -              -     228 ± 55       6 ± 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  monitoring_duration_d detection_span_d n_days_detected         IR1         IR2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    272               88              38        0.43        0.14</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    267               82              23        0.28        0.09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    265               81              30        0.37        0.11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    274               86              36        0.42        0.13</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                270 ± 4           84 ± 3          32 ± 7 0.38 ± 0.07 0.12 ± 0.02</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      IR2/IR1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.32</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.31 ± 0.01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ─ Dasyatis pastinaca</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         ID tagging_date last_detection n_detections n_receivers</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D01   07/04/2023     28/06/2023          249           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D02   02/04/2023     28/06/2023          154           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D03   05/04/2023     30/06/2023          160           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D04   02/04/2023     24/06/2023          169           6</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  mean ± sd            -              -     183 ± 44       6 ± 0</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  monitoring_duration_d detection_span_d n_days_detected         IR1         IR2</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    268               83              31        0.37        0.12</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    273               88              25        0.28        0.09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    270               87              24        0.28        0.09</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                    273               84              30        0.36        0.11</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>                271 ± 2           86 ± 2          28 ± 4 0.32 ± 0.05 0.10 ± 0.01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>      IR2/IR1</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.32</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.32</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         0.31</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  0.32 ± 0.01</span>
 </code></pre></div>
     </div>
   </main><aside class="col-md-3"><nav id="toc" aria-label="Table of contents"><h2>On this page</h2>

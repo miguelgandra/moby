@@ -61,6 +61,7 @@ of the <code>moby</code> workflow.</p>
 <span>  tz <span class="op">=</span> <span class="st">"UTC"</span>,</span>
 <span>  col.map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.format <span class="op">=</span> <span class="cn">NULL</span>,</span>
+<span>  sheet <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -71,7 +72,11 @@ of the <code>moby</code> workflow.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>A path to a <code>.csv</code>/<code>.xlsx</code> deployment log, or a data frame (e.g. the output of
-<code>etn::get_acoustic_deployments()</code>).</p></dd>
+<code>etn::get_acoustic_deployments()</code>).
+Several paths may be given: each file is read and harmonised on its own and the results are
+stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+date layout import in one call. Discovery stays yours - <code><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files()</a></code> - so nothing is imported
+that you did not name.</p></dd>
 
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
@@ -97,7 +102,14 @@ unreadable column can never travel on as silent <code>NA</code>s.</p>
 <p>Timezone handling depends on the input type. TEXT carries no zone, so <code>tz</code> is applied as the zone
 while parsing. A column that is ALREADY <code>POSIXct</code> (as when a data frame is passed in, e.g. from an
 API) is an absolute instant chosen by the caller: it is never reinterpreted, and <code>tz</code> changes only
-how it is displayed.</p></dd>
+how it is displayed.
+Several formats may be given as a character vector, applied in order, with the first that reads a
+given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+several files stacked before import, which moby will otherwise refuse to guess at).</p></dd>
+
+
+<dt id="arg-sheet">sheet<a class="anchor" aria-label="anchor" href="#arg-sheet"></a></dt>
+<dd><p>For Excel input, the worksheet to read: a number or a name. Defaults to the first.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>
@@ -108,7 +120,11 @@ how it is displayed.</p></dd>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A data frame with columns <code>receiver</code>, <code>station</code>, <code>lon</code>, <code>lat</code>, <code>deploy</code> (POSIXct),
-<code>recover</code> (POSIXct) and, where available, <code>depth</code>; sorted by receiver and deployment date.</p>
+<code>recover</code> (POSIXct) and, where available, <code>depth</code>; sorted by receiver and deployment date. Only a
+locator - <code>receiver</code> or <code>station</code> - is required: a position-only station list imports fine, and
+the columns it does not carry are present but <code>NA</code>, so the schema is the same either way.
+<code><a href="matchDeployments.html">matchDeployments</a></code> and <code><a href="checkDeployments.html">checkDeployments</a></code> do need real <code>deploy</code> dates,
+and say so if they are missing.</p>
     </div>
     <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>

@@ -74,6 +74,7 @@ handle non-standard layouts.</p>
 <span>  col.map <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  datetime.format <span class="op">=</span> <span class="cn">NULL</span>,</span>
 <span>  keep.extra <span class="op">=</span> <span class="cn">FALSE</span>,</span>
+<span>  sheet <span class="op">=</span> <span class="fl">1</span>,</span>
 <span>  verbose <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/options.html" class="external-link">getOption</a></span><span class="op">(</span><span class="st">"moby.verbose"</span>, <span class="cn">TRUE</span><span class="op">)</span></span>
 <span><span class="op">)</span></span></code></pre></div>
     </div>
@@ -84,7 +85,11 @@ handle non-standard layouts.</p>
 
 <dl><dt id="arg-x">x<a class="anchor" aria-label="anchor" href="#arg-x"></a></dt>
 <dd><p>A path to a <code>.csv</code> (or <code>.xlsx</code>) detection file, or a data frame already loaded in
-R (e.g. the output of <code>etn::get_acoustic_detections()</code> or <code>glatos::read_glatos_detections()</code>).</p></dd>
+R (e.g. the output of <code>etn::get_acoustic_detections()</code> or <code>glatos::read_glatos_detections()</code>).
+Several paths may be given: each file is read and harmonised on its own and the results are
+stacked (columns unioned), which is what lets a batch whose files disagree about column names or
+date layout import in one call. Discovery stays yours - <code><a href="https://rdrr.io/r/base/list.files.html" class="external-link">list.files()</a></code> - so nothing is imported
+that you did not name.</p></dd>
 
 
 <dt id="arg-source">source<a class="anchor" aria-label="anchor" href="#arg-source"></a></dt>
@@ -112,12 +117,19 @@ unreadable column can never travel on as silent <code>NA</code>s.</p>
 <p>Timezone handling depends on the input type. TEXT carries no zone, so <code>tz</code> is applied as the zone
 while parsing. A column that is ALREADY <code>POSIXct</code> (as when a data frame is passed in, e.g. from an
 API) is an absolute instant chosen by the caller: it is never reinterpreted, and <code>tz</code> changes only
-how it is displayed.</p></dd>
+how it is displayed.
+Several formats may be given as a character vector, applied in order, with the first that reads a
+given value winning - the escape hatch for a column that genuinely mixes layouts (most often
+several files stacked before import, which moby will otherwise refuse to guess at).</p></dd>
 
 
 <dt id="arg-keep-extra">keep.extra<a class="anchor" aria-label="anchor" href="#arg-keep-extra"></a></dt>
 <dd><p>Logical; retain source columns that were not mapped to a canonical field.
 Defaults to <code>FALSE</code>.</p></dd>
+
+
+<dt id="arg-sheet">sheet<a class="anchor" aria-label="anchor" href="#arg-sheet"></a></dt>
+<dd><p>For Excel input, the worksheet to read: a number or a name. Defaults to the first.</p></dd>
 
 
 <dt id="arg-verbose">verbose<a class="anchor" aria-label="anchor" href="#arg-verbose"></a></dt>

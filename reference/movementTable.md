@@ -102,6 +102,36 @@ movementTable(
   detections for each individual (e.g., `grid.resolution`,
   `mov.directions` and `cores`).
 
+## Value
+
+A `mobyTable`: a TYPED data frame (counts stay integer, indices numeric,
+dates POSIXct), one row per individual, so the result can be computed on
+directly. Presentation - fixed precision, the display-only
+`mean +/- error` row, group headings - is applied by
+[`format`](https://miguelgandra.github.io/moby/reference/format.mobyTable.md)
+and
+[`print`](https://miguelgandra.github.io/moby/reference/print.mobyTable.md).
+Export the rendered version with
+`write.csv(format(x), file, row.names = FALSE)`.
+
+Columns use stable snake_case names, which is what `format(decimals=)`
+and `format(group.by=)` are keyed on; the publication headers live in
+`format(style = "report")`.
+
+- your `id.col`, and a `group` factor when `id.groups` names more than
+  one group
+
+- `distance_km`, `rom`, `rom_max`, `linearity_index`
+
+- the home-range columns from
+  [`calculateUDs`](https://miguelgandra.github.io/moby/reference/calculateUDs.md)
+
+`rom`/`rom_max` are in m/h unless every group is fast enough to warrant
+km/h, in which case they are scaled and the unit is recorded on the
+table - so the column NAME never changes with the data, and
+[`format()`](https://rdrr.io/r/base/format.html) names the unit in the
+header.
+
 ## See also
 
 [`calculateROM`](https://miguelgandra.github.io/moby/reference/calculateROM.md),
@@ -148,6 +178,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • grouping   id.groups
 #> 
 #> ✔ 8 utilization distributions estimated
+#> ⏱ runtime: 1.5s
 #> ── movementTable() ───────────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Summarising distance, rate of movement and space use per individual
@@ -157,31 +188,34 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • net displacement  straight-line (great-circle)
 #> 
 #> ℹ Irregular time-bin widths detected · distances interpolated to a common interval
-#>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI
-#> 1        Raja clavata                                                    
-#> 2                 R01          62.2       31.3         2019.6        0.02
-#> 3                 R02          42.1       21.5         2106.6        0.08
-#> 4                 R03          71.6       43.3         1799.8        0.00
-#> 5                 R04          51.6       25.8         1467.6        0.03
-#> 6                mean    56.9 ± 6.4 30.5 ± 4.7 1848.4 ± 142.4 0.03 ± 0.02
-#> 7  Dasyatis pastinaca                                                    
-#> 8                 D01          60.2       30.9         2275.3        0.02
-#> 9                 D02          46.7       22.5          273.3        0.00
-#> 10                D03          45.5       23.2          979.4        0.00
-#> 11                D04          54.0       28.3         2097.9        0.04
-#> 12               mean    51.6 ± 3.4 26.2 ± 2.0 1406.5 ± 474.3 0.01 ± 0.01
-#>      N COAs UD 50% (Km2) UD 95% (Km2)
-#> 1                                    
-#> 2       130         3.64        16.94
-#> 3        85         3.69        15.91
-#> 4       106         4.65        18.18
-#> 5       126         3.61        16.28
-#> 6  112 ± 10  3.90 ± 0.25 16.83 ± 0.50
-#> 7                                    
-#> 8       116         4.53        17.65
-#> 9        72         3.57        17.42
-#> 10       83         3.54        17.19
-#> 11       76         3.90        17.57
-#> 12  87 ± 10  3.88 ± 0.23 17.46 ± 0.10
+#> <mobyTable: movement> 8 rows (2 groups; one mean ± se row per group)
+#> 
+#> ─ Raja clavata
+#>         ID distance_km        rom        rom_max linearity_index         N COAs
+#>        R01        62.2       31.3         2019.6            0.02         130.00
+#>        R02        42.1       21.5         2106.6            0.08          85.00
+#>        R03        71.6       43.3         1799.8            0.00         106.00
+#>        R04        51.6       25.8         1467.6            0.03         126.00
+#>  mean ± se  56.8 ± 6.4 30.5 ± 4.7 1848.4 ± 142.4     0.03 ± 0.02 111.75 ± 10.35
+#>  UD 50% (Km2) UD 95% (Km2)
+#>          3.64        16.94
+#>          3.69        15.91
+#>          4.65        18.18
+#>          3.61        16.28
+#>             -            -
+#> 
+#> ─ Dasyatis pastinaca
+#>         ID distance_km        rom        rom_max linearity_index        N COAs
+#>        D01        60.2       30.9         2275.3            0.02        116.00
+#>        D02        46.7       22.5          273.3            0.00         72.00
+#>        D03        45.5       23.2          979.4            0.00         83.00
+#>        D04        54.0       28.3         2097.9            0.04         76.00
+#>  mean ± se  51.6 ± 3.4 26.2 ± 2.0 1406.5 ± 474.3     0.02 ± 0.01 86.75 ± 10.01
+#>  UD 50% (Km2) UD 95% (Km2)
+#>          4.53        17.65
+#>          3.57        17.42
+#>          3.54        17.19
+#>          3.90        17.57
+#>             -            -
 # }
 ```

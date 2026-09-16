@@ -145,6 +145,21 @@ detections for each individual (e.g., <code>grid.resolution</code>, <code>mov.di
 
 </dl></div>
     <div class="section level2">
+    <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
+    <p>A <code>mobyTable</code>: a TYPED data frame (counts stay integer, indices numeric, dates
+POSIXct), one row per individual, so the result can be computed on directly. Presentation - fixed
+precision, the display-only <code>mean +/- error</code> row, group headings - is applied by
+<code><a href="format.mobyTable.html">format</a></code> and <code><a href="print.mobyTable.html">print</a></code>. Export the
+rendered version with <code>write.csv(format(x), file, row.names = FALSE)</code>.</p>
+<p>Columns use stable snake_case names, which is what <code>format(decimals=)</code> and <code>format(group.by=)</code>
+are keyed on; the publication headers live in <code>format(style = "report")</code>.</p><ul><li><p>your <code>id.col</code>, and a <code>group</code> factor when <code>id.groups</code> names more than one group</p></li>
+<li><p><code>distance_km</code>, <code>rom</code>, <code>rom_max</code>, <code>linearity_index</code></p></li>
+<li><p>the home-range columns from <code><a href="calculateUDs.html">calculateUDs</a></code></p></li>
+</ul><p><code>rom</code>/<code>rom_max</code> are in m/h unless every group is fast enough to warrant km/h, in which case they
+are scaled and the unit is recorded on the table - so the column NAME never changes with the data,
+and <code><a href="https://rdrr.io/r/base/format.html" class="external-link">format()</a></code> names the unit in the header.</p>
+    </div>
+    <div class="section level2">
     <h2 id="see-also">See also<a class="anchor" aria-label="anchor" href="#see-also"></a></h2>
     <div class="dont-index"><p><code><a href="calculateROM.html">calculateROM</a></code>, <code><a href="calculateLinearityIndex.html">calculateLinearityIndex</a></code></p></div>
     </div>
@@ -189,6 +204,7 @@ detections for each individual (e.g., <code>grid.resolution</code>, <code>mov.di
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • grouping   id.groups</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 utilization distributions estimated</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ⏱ runtime: 1.5s</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> ── <span style="font-weight: bold;">movementTable()</span> ───────────────────────────────────────────────────── moby ──</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Summarising distance, rate of movement and space use per individual</span>
@@ -198,32 +214,35 @@ detections for each individual (e.g., <code>grid.resolution</code>, <code>mov.di
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • net displacement  straight-line (great-circle)</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BBBB;">ℹ</span> Irregular time-bin widths detected · distances interpolated to a common interval</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>                    ID Distance (km)  ROM (m/h)  Max ROM (m/h)          LI</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1        Raja clavata                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2                 R01          62.2       31.3         2019.6        0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3                 R02          42.1       21.5         2106.6        0.08</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4                 R03          71.6       43.3         1799.8        0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5                 R04          51.6       25.8         1467.6        0.03</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6                mean    56.9 ± 6.4 30.5 ± 4.7 1848.4 ± 142.4 0.03 ± 0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7  Dasyatis pastinaca                                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8                 D01          60.2       30.9         2275.3        0.02</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9                 D02          46.7       22.5          273.3        0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10                D03          45.5       23.2          979.4        0.00</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11                D04          54.0       28.3         2097.9        0.04</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12               mean    51.6 ± 3.4 26.2 ± 2.0 1406.5 ± 474.3 0.01 ± 0.01</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span>      N COAs UD 50% (Km2) UD 95% (Km2)</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 1                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 2       130         3.64        16.94</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 3        85         3.69        15.91</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 4       106         4.65        18.18</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 5       126         3.61        16.28</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 6  112 ± 10  3.90 ± 0.25 16.83 ± 0.50</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 7                                    </span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 8       116         4.53        17.65</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 9        72         3.57        17.42</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 10       83         3.54        17.19</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 11       76         3.90        17.57</span>
-<span class="r-out co"><span class="r-pr">#&gt;</span> 12  87 ± 10  3.88 ± 0.23 17.46 ± 0.10</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> &lt;mobyTable: movement&gt; 8 rows (2 groups; one mean ± se row per group)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ─ Raja clavata</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         ID distance_km        rom        rom_max linearity_index         N COAs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R01        62.2       31.3         2019.6            0.02         130.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R02        42.1       21.5         2106.6            0.08          85.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R03        71.6       43.3         1799.8            0.00         106.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        R04        51.6       25.8         1467.6            0.03         126.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  mean ± se  56.8 ± 6.4 30.5 ± 4.7 1848.4 ± 142.4     0.03 ± 0.02 111.75 ± 10.35</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  UD 50% (Km2) UD 95% (Km2)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          3.64        16.94</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          3.69        15.91</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          4.65        18.18</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          3.61        16.28</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             -            -</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> </span>
+<span class="r-out co"><span class="r-pr">#&gt;</span> ─ Dasyatis pastinaca</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>         ID distance_km        rom        rom_max linearity_index        N COAs</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D01        60.2       30.9         2275.3            0.02        116.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D02        46.7       22.5          273.3            0.00         72.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D03        45.5       23.2          979.4            0.00         83.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>        D04        54.0       28.3         2097.9            0.04         76.00</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  mean ± se  51.6 ± 3.4 26.2 ± 2.0 1406.5 ± 474.3     0.02 ± 0.01 86.75 ± 10.01</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>  UD 50% (Km2) UD 95% (Km2)</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          4.53        17.65</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          3.57        17.42</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          3.54        17.19</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>          3.90        17.57</span>
+<span class="r-out co"><span class="r-pr">#&gt;</span>             -            -</span>
 <span class="r-in"><span><span class="co"># }</span></span></span>
 </code></pre></div>
     </div>

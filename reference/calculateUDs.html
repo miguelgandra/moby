@@ -147,7 +147,7 @@ reference system, used when projecting coordinates or computing distances/areas.
 
 
 <dt id="arg-spatial-grid">spatial.grid<a class="anchor" aria-label="anchor" href="#arg-spatial-grid"></a></dt>
-<dd><p>Optional. A <code>Raster</code> or <code>SpatialPixels</code> object representing the
+<dd><p>Optional. A <code>SpatRaster</code>, <code>Raster</code>, or <code>SpatialPixels</code> object representing the
 grid over which the animal kernel utilization distributions (UDs) will be estimated
 (see the <code>grid</code> argument in <code><a href="https://rdrr.io/pkg/adehabitatHR/man/kernelUD.html" class="external-link">kernelUD</a></code>). If set to <code>NULL</code>,
 the function will automatically generate an appropriate grid based on the spatial extent
@@ -217,6 +217,10 @@ home-range estimation methods, check out Kraft et al. (2023) (full reference bel
 The function also includes options for handling landmasses and for grouping data by
 subsets or groups for independent analysis.</p>
 <p><strong>Land clipping</strong>: Land clipping is applied post-hoc, after kernel density estimation.
+Density at grid-cell centres that intersect <code>land.shape</code> is set to zero and the remaining
+density is renormalized to its pre-clipping total. If clipping leaves an individual with no
+density, the calculation stops and identifies the affected individual(s); enlarging the grid
+cannot resolve a fully land-masked UD.
 If you need to account for physical barriers like land during UD estimation, consider alternative
 methods (e.g. dynamic Brownian Bridge Movement Models as provided in the <code>RSP</code> package;
 Niella et al. 2020).</p>
@@ -303,6 +307,7 @@ https://doi.org/10.1890/14-2010.1</p>
 <span class="r-msg co"><span class="r-pr">#&gt;</span>   • grouping   id.groups</span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> </span>
 <span class="r-msg co"><span class="r-pr">#&gt;</span> <span style="color: #00BB00;">✔</span> 8 utilization distributions estimated</span>
+<span class="r-msg co"><span class="r-pr">#&gt;</span> ⏱ runtime: 1.6s</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 1 Dasyatis pastinaca D01    249         4.61        17.56</span>
 <span class="r-out co"><span class="r-pr">#&gt;</span> 2 Dasyatis pastinaca D02    154         3.42        16.55</span>

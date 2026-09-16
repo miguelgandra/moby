@@ -22,6 +22,7 @@ importDetections(
   col.map = NULL,
   datetime.format = NULL,
   keep.extra = FALSE,
+  sheet = 1,
   verbose = getOption("moby.verbose", TRUE)
 )
 ```
@@ -33,7 +34,12 @@ importDetections(
   A path to a `.csv` (or `.xlsx`) detection file, or a data frame
   already loaded in R (e.g. the output of
   `etn::get_acoustic_detections()` or
-  `glatos::read_glatos_detections()`).
+  `glatos::read_glatos_detections()`). Several paths may be given: each
+  file is read and harmonised on its own and the results are stacked
+  (columns unioned), which is what lets a batch whose files disagree
+  about column names or date layout import in one call. Discovery stays
+  yours - [`list.files()`](https://rdrr.io/r/base/list.files.html) - so
+  nothing is imported that you did not name.
 
 - source:
 
@@ -68,12 +74,21 @@ importDetections(
   `tz` is applied as the zone while parsing. A column that is ALREADY
   `POSIXct` (as when a data frame is passed in, e.g. from an API) is an
   absolute instant chosen by the caller: it is never reinterpreted, and
-  `tz` changes only how it is displayed.
+  `tz` changes only how it is displayed. Several formats may be given as
+  a character vector, applied in order, with the first that reads a
+  given value winning - the escape hatch for a column that genuinely
+  mixes layouts (most often several files stacked before import, which
+  moby will otherwise refuse to guess at).
 
 - keep.extra:
 
   Logical; retain source columns that were not mapped to a canonical
   field. Defaults to `FALSE`.
+
+- sheet:
+
+  For Excel input, the worksheet to read: a number or a name. Defaults
+  to the first.
 
 - verbose:
 

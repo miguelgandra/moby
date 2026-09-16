@@ -284,45 +284,47 @@ summaryTable(rays, last.monitoring.date = monitoring_end, id.groups = id_groups)
 #>   • start point      release date
 #>   • error            standard deviation (sd)
 #> Warning: - No 'detections' column found, assuming one detection per row.
-#>                    ID Tagging date Last detection N Detect N Receiv
-#> 1        Raja clavata                                              
-#> 2                 R01   03/04/2023     29/06/2023      283        6
-#> 3                 R02   08/04/2023     28/06/2023      160        5
-#> 4                 R03   10/04/2023     29/06/2023      207        6
-#> 5                 R04   01/04/2023     25/06/2023      261        6
-#> 6                mean            -              - 228 ± 48    6 ± 0
-#> 7  Dasyatis pastinaca                                              
-#> 8                 D01   07/04/2023     28/06/2023      249        6
-#> 9                 D02   02/04/2023     28/06/2023      154        6
-#> 10                D03   05/04/2023     30/06/2023      160        6
-#> 11                D04   02/04/2023     24/06/2023      169        6
-#> 12               mean            -              - 183 ± 38    6 ± 0
-#>    Monitoring duration (d) Detection span (d) N days detected         IR1
-#> 1                                                                        
-#> 2                       93                 88              38        0.43
-#> 3                       88                 82              23        0.28
-#> 4                       86                 81              30        0.37
-#> 5                       95                 86              36        0.42
-#> 6                   90 ± 4             84 ± 3          32 ± 6 0.38 ± 0.06
-#> 7                                                                        
-#> 8                       89                 83              31        0.37
-#> 9                       94                 88              25        0.28
-#> 10                      91                 87              24        0.28
-#> 11                      94                 84              30        0.36
-#> 12                  92 ± 2             86 ± 2          28 ± 3 0.32 ± 0.04
-#>            IR2     IR2/IR1
-#> 1                         
-#> 2         0.41        0.95
-#> 3         0.26        0.93
-#> 4         0.35        0.94
-#> 5         0.38        0.91
-#> 6  0.35 ± 0.06 0.93 ± 0.02
-#> 7                         
-#> 8         0.35        0.93
-#> 9         0.27        0.94
-#> 10        0.26        0.96
-#> 11        0.32        0.89
-#> 12 0.30 ± 0.04 0.93 ± 0.02
+#> <mobyTable: summary> 8 rows (2 groups; one mean ± sd row per group)
+#> 
+#> ─ Raja clavata
+#>         ID tagging_date last_detection n_detections n_receivers
+#>        R01   03/04/2023     29/06/2023          283           6
+#>        R02   08/04/2023     28/06/2023          160           5
+#>        R03   10/04/2023     29/06/2023          207           6
+#>        R04   01/04/2023     25/06/2023          261           6
+#>  mean ± sd            -              -     228 ± 55       6 ± 0
+#>  monitoring_duration_d detection_span_d n_days_detected         IR1         IR2
+#>                     93               88              38        0.43        0.41
+#>                     88               82              23        0.28        0.26
+#>                     86               81              30        0.37        0.35
+#>                     95               86              36        0.42        0.38
+#>                 90 ± 4           84 ± 3          32 ± 7 0.38 ± 0.07 0.35 ± 0.06
+#>      IR2/IR1
+#>         0.95
+#>         0.93
+#>         0.94
+#>         0.91
+#>  0.93 ± 0.02
+#> 
+#> ─ Dasyatis pastinaca
+#>         ID tagging_date last_detection n_detections n_receivers
+#>        D01   07/04/2023     28/06/2023          249           6
+#>        D02   02/04/2023     28/06/2023          154           6
+#>        D03   05/04/2023     30/06/2023          160           6
+#>        D04   02/04/2023     24/06/2023          169           6
+#>  mean ± sd            -              -     183 ± 44       6 ± 0
+#>  monitoring_duration_d detection_span_d n_days_detected         IR1         IR2
+#>                     89               83              31        0.37        0.35
+#>                     94               88              25        0.28        0.27
+#>                     91               87              24        0.28        0.26
+#>                     94               84              30        0.36        0.32
+#>                 92 ± 2           86 ± 2          28 ± 4 0.32 ± 0.05 0.30 ± 0.04
+#>      IR2/IR1
+#>         0.93
+#>         0.94
+#>         0.96
+#>         0.89
+#>  0.93 ± 0.03
 ```
 
 ## Recap & what’s next

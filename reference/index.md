@@ -100,6 +100,10 @@
   : Pairwise overlap between utilization distributions
 - [`plotMaps()`](https://miguelgandra.github.io/moby/reference/plotMaps.md)
   : Plot home-range maps with movement trajectories
+- [`format(`*`<mobyTable>`*`)`](https://miguelgandra.github.io/moby/reference/format.mobyTable.md)
+  : Format a moby summary table for display or export
+- [`print(`*`<mobyTable>`*`)`](https://miguelgandra.github.io/moby/reference/print.mobyTable.md)
+  : Print a moby summary table
 
 ## Network analysis
 

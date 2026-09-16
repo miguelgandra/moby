@@ -179,52 +179,35 @@ summaryTable(
 
 ## Value
 
-A data frame summarizing information on tagged animals, with the
-following columns:
+A `mobyTable`: a TYPED data frame (counts stay integer, indices numeric,
+dates POSIXct), one row per tagged animal, so the result can be computed
+on directly. Presentation - fixed precision, the display-only
+`mean +/- error` row, group headings - is applied by
+[`format`](https://miguelgandra.github.io/moby/reference/format.mobyTable.md)
+and
+[`print`](https://miguelgandra.github.io/moby/reference/print.mobyTable.md).
+Export the rendered version with
+`write.csv(format(x), file, row.names = FALSE)`.
 
-- `ID`: Unique identifier for each tagged animal.
+Columns use stable snake_case names, which is what `format(decimals=)`
+and `format(group.by=)` are keyed on; the publication headers live in
+`format(style = "report")`.
 
-- Any additional metadata columns from `id.metadata` if provided.
+- `ID` (or your `id.col`), and a `group` factor when `id.groups` names
+  more than one group
 
-- `Tagging date`: The date when the animal was tagged.
+- `tagging_date`, `last_detection` (POSIXct)
 
-- `Last detection`: The date of the last detection.
+- `n_detections`, `n_receivers`, `monitoring_duration_d`,
+  `detection_span_d`, `n_days_detected`
 
-- `N Detect`: Total number of detections for the animal.
+- one column per requested `residency.index` (`IR1`, `IR2`, `IR2/IR1`,
+  ...), plus the `residency.by` variants when supplied
 
-- `N Receiv`: Number of unique receivers that detected the animal.
+- `<sensor>_mean`, `<sensor>_min`, `<sensor>_max` for each of
+  `sensor.cols`
 
-- `Monitoring duration (d)`: Total duration of monitoring in days. This
-  is determined by the tag duration, if provided, or alternatively
-  calculated as the time between release and the last detection in the
-  dataset (assumed to represent the final data download).
-
-- `Detection span (d)`: Number of days between release/first detection
-  and last detection (days at liberty)
-
-- `N days detected`: Total number of days the animal was detected.
-
-- Additional columns for each residency index specified in the
-  `residency.index` parameter.
-
-- If `residency.by` is specified, additional columns for partial
-  residency metrics will be included.
-
-- Sensor data metrics: For each column in `sensor.cols`, the mean,
-  minimum, and maximum values, using titles specified in `sensor.titles`
-  (if provided).
-
-## References
-
-Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., &
-Abecasis, D. (2023). Residency and space use estimation methods based on
-passive acoustic telemetry data. Movement Ecology, 11(1), 12.
-https://doi.org/10.1186/s40462-023-00349-y
-
-Appert, C., Udyawer, V., Simpfendorfer, C. A., Heupel, M. R., Scott, M.,
-Currey-Randall, L. M., ... & Chin, A. (2023). Use, misuse, and ambiguity
-of indices of residence in acoustic telemetry studies. Marine Ecology
-Progress Series, 714, 27-44. https://doi.org/10.3354/meps14300
+- any columns carried over from `id.metadata`
 
 ## See also
 
@@ -251,43 +234,45 @@ summaryTable(rays,
 #>   • start point      release date
 #>   • error            standard deviation (sd)
 #> Warning: - No 'detections' column found, assuming one detection per row.
-#>                    ID Tagging date Last detection N Detect N Receiv
-#> 1        Raja clavata                                              
-#> 2                 R01   03/04/2023     29/06/2023      283        6
-#> 3                 R02   08/04/2023     28/06/2023      160        5
-#> 4                 R03   10/04/2023     29/06/2023      207        6
-#> 5                 R04   01/04/2023     25/06/2023      261        6
-#> 6                mean            -              - 228 ± 48    6 ± 0
-#> 7  Dasyatis pastinaca                                              
-#> 8                 D01   07/04/2023     28/06/2023      249        6
-#> 9                 D02   02/04/2023     28/06/2023      154        6
-#> 10                D03   05/04/2023     30/06/2023      160        6
-#> 11                D04   02/04/2023     24/06/2023      169        6
-#> 12               mean            -              - 183 ± 38    6 ± 0
-#>    Monitoring duration (d) Detection span (d) N days detected         IR1
-#> 1                                                                        
-#> 2                      272                 88              38        0.43
-#> 3                      267                 82              23        0.28
-#> 4                      265                 81              30        0.37
-#> 5                      274                 86              36        0.42
-#> 6                  270 ± 4             84 ± 3          32 ± 6 0.38 ± 0.06
-#> 7                                                                        
-#> 8                      268                 83              31        0.37
-#> 9                      273                 88              25        0.28
-#> 10                     270                 87              24        0.28
-#> 11                     273                 84              30        0.36
-#> 12                 271 ± 2             86 ± 2          28 ± 3 0.32 ± 0.04
-#>            IR2     IR2/IR1
-#> 1                         
-#> 2         0.14        0.32
-#> 3         0.09        0.31
-#> 4         0.11        0.31
-#> 5         0.13        0.31
-#> 6  0.12 ± 0.02 0.31 ± 0.01
-#> 7                         
-#> 8         0.12        0.31
-#> 9         0.09        0.32
-#> 10        0.09        0.32
-#> 11        0.11        0.31
-#> 12 0.10 ± 0.01 0.32 ± 0.01
+#> <mobyTable: summary> 8 rows (2 groups; one mean ± sd row per group)
+#> 
+#> ─ Raja clavata
+#>         ID tagging_date last_detection n_detections n_receivers
+#>        R01   03/04/2023     29/06/2023          283           6
+#>        R02   08/04/2023     28/06/2023          160           5
+#>        R03   10/04/2023     29/06/2023          207           6
+#>        R04   01/04/2023     25/06/2023          261           6
+#>  mean ± sd            -              -     228 ± 55       6 ± 0
+#>  monitoring_duration_d detection_span_d n_days_detected         IR1         IR2
+#>                    272               88              38        0.43        0.14
+#>                    267               82              23        0.28        0.09
+#>                    265               81              30        0.37        0.11
+#>                    274               86              36        0.42        0.13
+#>                270 ± 4           84 ± 3          32 ± 7 0.38 ± 0.07 0.12 ± 0.02
+#>      IR2/IR1
+#>         0.32
+#>         0.31
+#>         0.31
+#>         0.31
+#>  0.31 ± 0.01
+#> 
+#> ─ Dasyatis pastinaca
+#>         ID tagging_date last_detection n_detections n_receivers
+#>        D01   07/04/2023     28/06/2023          249           6
+#>        D02   02/04/2023     28/06/2023          154           6
+#>        D03   05/04/2023     30/06/2023          160           6
+#>        D04   02/04/2023     24/06/2023          169           6
+#>  mean ± sd            -              -     183 ± 44       6 ± 0
+#>  monitoring_duration_d detection_span_d n_days_detected         IR1         IR2
+#>                    268               83              31        0.37        0.12
+#>                    273               88              25        0.28        0.09
+#>                    270               87              24        0.28        0.09
+#>                    273               84              30        0.36        0.11
+#>                271 ± 2           86 ± 2          28 ± 4 0.32 ± 0.05 0.10 ± 0.01
+#>      IR2/IR1
+#>         0.31
+#>         0.32
+#>         0.32
+#>         0.31
+#>  0.32 ± 0.01
 ```

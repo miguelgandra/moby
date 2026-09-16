@@ -34,6 +34,7 @@
 <url><loc>https://miguelgandra.github.io/moby/reference/dot-showWarningOnce.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/dot-validateArguments.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/filterDetections.html</loc></url>
+<url><loc>https://miguelgandra.github.io/moby/reference/format.mobyTable.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/getDielPhase.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/getReprodPeriod.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/getSeason.html</loc></url>
@@ -74,6 +75,7 @@
 <url><loc>https://miguelgandra.github.io/moby/reference/plotScalogram.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/plotStationStats.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/print.mobyFilter.html</loc></url>
+<url><loc>https://miguelgandra.github.io/moby/reference/print.mobyTable.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/randomizeAssociations.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/randomizeTransitions.html</loc></url>
 <url><loc>https://miguelgandra.github.io/moby/reference/rays.html</loc></url>

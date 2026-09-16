@@ -100,9 +100,9 @@ calculateUDs(
 
 - spatial.grid:
 
-  Optional. A `Raster` or `SpatialPixels` object representing the grid
-  over which the animal kernel utilization distributions (UDs) will be
-  estimated (see the `grid` argument in
+  Optional. A `SpatRaster`, `Raster`, or `SpatialPixels` object
+  representing the grid over which the animal kernel utilization
+  distributions (UDs) will be estimated (see the `grid` argument in
   [`kernelUD`](https://rdrr.io/pkg/adehabitatHR/man/kernelUD.html)). If
   set to `NULL`, the function will automatically generate an appropriate
   grid based on the spatial extent of the supplied animal's positions.
@@ -186,10 +186,14 @@ section). The function also includes options for handling landmasses and
 for grouping data by subsets or groups for independent analysis.
 
 **Land clipping**: Land clipping is applied post-hoc, after kernel
-density estimation. If you need to account for physical barriers like
-land during UD estimation, consider alternative methods (e.g. dynamic
-Brownian Bridge Movement Models as provided in the `RSP` package; Niella
-et al. 2020).
+density estimation. Density at grid-cell centres that intersect
+`land.shape` is set to zero and the remaining density is renormalized to
+its pre-clipping total. If clipping leaves an individual with no
+density, the calculation stops and identifies the affected
+individual(s); enlarging the grid cannot resolve a fully land-masked UD.
+If you need to account for physical barriers like land during UD
+estimation, consider alternative methods (e.g. dynamic Brownian Bridge
+Movement Models as provided in the `RSP` package; Niella et al. 2020).
 
 **Bandwidth (h)**: The smoothing factor, or bandwidth (h), is a critical
 parameter in kernel utilization distribution (UD) analysis, representing
@@ -294,6 +298,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • grouping   id.groups
 #> 
 #> ✔ 8 utilization distributions estimated
+#> ⏱ runtime: 1.6s
 #>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)
 #> 1 Dasyatis pastinaca D01    249         4.61        17.56
 #> 2 Dasyatis pastinaca D02    154         3.42        16.55
