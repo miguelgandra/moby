@@ -55,7 +55,7 @@ any portions of the estimated areas that overlap with landmasses.}
 \item{epsg.code}{Optional integer EPSG code of a \strong{projected} (metre-based) coordinate
 reference system, used when projecting coordinates or computing distances/areas.}
 
-\item{spatial.grid}{Optional. A \code{Raster} or \code{SpatialPixels} object representing the
+\item{spatial.grid}{Optional. A \code{SpatRaster}, \code{Raster}, or \code{SpatialPixels} object representing the
 grid over which the animal kernel utilization distributions (UDs) will be estimated
 (see the \code{grid} argument in \code{\link[adehabitatHR]{kernelUD}}). If set to \code{NULL},
 the function will automatically generate an appropriate grid based on the spatial extent
@@ -116,6 +116,10 @@ The function also includes options for handling landmasses and for grouping data
 subsets or groups for independent analysis.
 
 \strong{Land clipping}: Land clipping is applied post-hoc, after kernel density estimation.
+Density at grid-cell centres that intersect \code{land.shape} is set to zero and the remaining
+density is renormalized to its pre-clipping total. If clipping leaves an individual with no
+density, the calculation stops and identifies the affected individual(s); enlarging the grid
+cannot resolve a fully land-masked UD.
 If you need to account for physical barriers like land during UD estimation, consider alternative
 methods (e.g. dynamic Brownian Bridge Movement Models as provided in the \code{RSP} package;
 Niella et al. 2020).

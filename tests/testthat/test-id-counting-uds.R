@@ -38,12 +38,10 @@ ghost_coas <- function(pos = c("last", "first", "middle"), n = 20, ghost = "GHOS
   d
 }
 
-# A fixed grid keeps the run deterministic and fast (no repeat-loop expansion); values are filled
-# because terra::as.points() warns on a valueless SpatRaster.
+# A fixed, valueless grid keeps the run deterministic and fast (no repeat-loop expansion).
+# calculateUDs() reads its regular geometry directly; cell values are irrelevant to kernelUD().
 ud_grid <- function() {
-  g <- terra::rast(terra::ext(-3000, 8000, -3000, 8000), res = 250, crs = "EPSG:32629")
-  terra::values(g) <- 0
-  g
+  terra::rast(terra::ext(-3000, 8000, -3000, 8000), res = 250, crs = "EPSG:32629")
 }
 
 run_uds <- function(d, ...) {

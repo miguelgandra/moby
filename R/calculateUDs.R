@@ -30,7 +30,7 @@
 #' @param model.selection For `method = "akde"`: `"fit"` (default) fits a single movement model
 #' from an automated guess (faster); `"select"` runs \code{ctmm::ctmm.select} to choose among
 #' candidate models (more thorough, slower).
-#' @param spatial.grid Optional. A `Raster` or `SpatialPixels` object representing the
+#' @param spatial.grid Optional. A `SpatRaster`, `Raster`, or `SpatialPixels` object representing the
 #' grid over which the animal kernel utilization distributions (UDs) will be estimated
 #' (see the `grid` argument in \code{\link[adehabitatHR]{kernelUD}}). If set to `NULL`,
 #' the function will automatically generate an appropriate grid based on the spatial extent
@@ -80,6 +80,10 @@
 #' subsets or groups for independent analysis.
 #'
 #' **Land clipping**: Land clipping is applied post-hoc, after kernel density estimation.
+#' Density at grid-cell centres that intersect `land.shape` is set to zero and the remaining
+#' density is renormalized to its pre-clipping total. If clipping leaves an individual with no
+#' density, the calculation stops and identifies the affected individual(s); enlarging the grid
+#' cannot resolve a fully land-masked UD.
 #' If you need to account for physical barriers like land during UD estimation, consider alternative
 #' methods (e.g. dynamic Brownian Bridge Movement Models as provided in the `RSP` package;
 #' Niella et al. 2020).
@@ -260,7 +264,7 @@ calculateUDs <- function(data,
   # convert a user-supplied raster grid to SpatialPixels if required (adehabitatHR needs sp)
   if(!is.null(spatial.grid)){
     if(inherits(spatial.grid, "SpatRaster")){
-      spatial.grid <- methods::as(sf::as_Spatial(sf::st_as_sf(terra::as.points(spatial.grid[[1]]))), 'SpatialPixels')
+      spatial.grid <- .spatRasterToSpatialPixels(spatial.grid[[1]])
     } else if(inherits(spatial.grid, "Raster")){
       spatial.grid <- methods::as(spatial.grid, 'SpatialPixels')
     }
@@ -495,20 +499,70 @@ calculateUDs <- function(data,
 #' @keywords internal
 #' @noRd
 
+.landOverlapMaskSf <- function(grid.coords, land, epsg.code, chunk.size) {
+
+  n <- nrow(grid.coords)
+  overlap <- logical(n)
+  starts <- seq.int(1L, n, by=chunk.size)
+
+  for(lo in starts){
+    hi <- min(n, lo + chunk.size - 1L)
+    idx <- lo:hi
+    points <- sf::st_as_sf(
+      data.frame(x=grid.coords[idx, 1L], y=grid.coords[idx, 2L]),
+      coords=c("x", "y"), crs=epsg.code
+    )
+    overlap[idx] <- lengths(sf::st_intersects(points, land, sparse=TRUE)) > 0L
+  }
+
+  overlap
+}
+
+
+.landOverlapMask <- function(grid.coords, land.shape, epsg.code, chunk.size=250000L) {
+
+  n <- nrow(grid.coords)
+  overlap <- logical(n)
+  if(n==0L || nrow(land.shape)==0L || all(sf::st_is_empty(land.shape))) return(overlap)
+
+  chunk.size <- as.integer(chunk.size)
+  if(length(chunk.size)!=1L || is.na(chunk.size) || chunk.size < 1L){
+    stop("'chunk.size' must be a positive integer.", call.=FALSE)
+  }
+
+  # Union once. terra::extract() tests the supplied grid centres directly against the polygon,
+  # including centres on exterior and hole boundaries, without first creating millions of sf
+  # point geometries. Chunking also bounds terra's point-extraction workspace.
+  land <- sf::st_union(land.shape)
+  terra_mask <- tryCatch({
+    land_sf <- sf::st_sf(.moby_land=1L, geometry=land)
+    land_vect <- terra::vect(land_sf)
+    starts <- seq.int(1L, n, by=chunk.size)
+
+    for(lo in starts){
+      hi <- min(n, lo + chunk.size - 1L)
+      idx <- lo:hi
+      hits <- terra::extract(land_vect, grid.coords[idx, , drop=FALSE])
+      overlap[idx] <- !is.na(hits$.moby_land)
+    }
+    overlap
+  }, error=function(e) NULL)
+
+  if(!is.null(terra_mask)) return(terra_mask)
+
+  # Retain a same-engine fallback for geometries that terra cannot ingest. It has the former
+  # st_intersects() semantics but creates points in bounded chunks rather than all at once.
+  .landOverlapMaskSf(grid.coords, land, epsg.code, chunk.size)
+}
+
+
 .subtractLand <- function(uds, land.shape, epsg.code, verbose) {
 
-  # extract grid coordinates from the kernel density object
-  grid_coords <- as.data.frame(uds[[1]]@coords)
-  colnames(grid_coords) <- c("x","y")
-
-  # create an sf object from kernel density coordinates
-  grid_coords <- sf::st_as_sf(grid_coords, coords=c("x", "y"), crs=epsg.code)
-
-  # check for overlaps with the land.shape sf object
-  overlap_indexes <- as.logical(sf::st_intersects(grid_coords, sf::st_union(land.shape), sparse=FALSE))
-
-  # initialize a counter for the number of individuals with overlapping areas
-  n_corrected <- 0
+  # The mask is common to every individual because kernelUD() evaluates all UDs on the
+  # same grid. Compute it once without materialising the complete grid as sf points.
+  overlap_indexes <- .landOverlapMask(uds[[1]]@coords, land.shape, epsg.code)
+  fully_masked <- character()
+  ud_names <- names(uds)
 
   # iterate over each kernel density object
   for(i in seq_along(uds)){
@@ -519,9 +573,6 @@ calculateUDs <- function(data,
     # total density before correction (including any overlap with land)
     total_density <- sum(density_values, na.rm=TRUE)
 
-    # check if there are any density values overlapping with land
-    if(any(density_values[overlap_indexes]>0)) n_corrected <- n_corrected + 1
-
     # set the overlapping density values to zero
     density_values[overlap_indexes] <- 0
 
@@ -531,16 +582,23 @@ calculateUDs <- function(data,
     # standardize values back to the original total density
     if(corrected_density>0) {
       density_values <- density_values * (total_density / corrected_density)
+    } else if(total_density>0) {
+      label <- if(!is.null(ud_names) && nzchar(ud_names[i])) ud_names[i] else as.character(i)
+      fully_masked <- c(fully_masked, label)
     }
 
     # update the density values in the current kernel density object
     uds[[i]]$ud <- density_values
   }
 
-  # print a message indicating how many kernel densities were corrected
-  if(n_corrected==0){
-  }else{
-    kud_label <- ifelse(n_corrected==1, "UD", "UDs")
+  if(length(fully_masked)>0L){
+    noun <- if(length(fully_masked)==1L) "individual" else "individuals"
+    .mobyAbort(
+      "Land clipping removed all KDE density for ", noun, ": ",
+      paste(fully_masked, collapse=", "), ". The supplied 'land.shape' classifies the entire ",
+      "estimated UD as land. Review the land geometry or animal positions; enlarging ",
+      "'spatial.grid' will not resolve this condition."
+    )
   }
 
   # return the corrected kernel densities
@@ -548,8 +606,73 @@ calculateUDs <- function(data,
 }
 
 
+################################################################################
+# Helper function III - convert a terra grid without point materialisation ######
+################################################################################
+
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.spatRasterToSpatialPixels <- function(x) {
+
+  resolution <- terra::res(x)
+  dimensions <- c(terra::ncol(x), terra::nrow(x))
+  extent <- terra::ext(x)
+
+  if(length(resolution)!=2L || any(!is.finite(resolution)) || any(resolution <= 0) ||
+     any(!is.finite(dimensions)) || any(dimensions < 1L)){
+    stop("'spatial.grid' must be a non-empty regular SpatRaster.", call.=FALSE)
+  }
+
+  grid <- sp::GridTopology(
+    cellcentre.offset=c(extent$xmin + resolution[1L]/2,
+                        extent$ymin + resolution[2L]/2),
+    cellsize=resolution,
+    cells.dim=as.integer(dimensions)
+  )
+
+  raster_crs <- terra::crs(x)
+  grid_crs <- if(is.na(raster_crs) || !nzchar(raster_crs)) {
+    sp::CRS(as.character(NA))
+  } else {
+    sp::CRS(SRS_string=raster_crs)
+  }
+
+  methods::as(sp::SpatialGrid(grid, proj4string=grid_crs), "SpatialPixels")
+}
+
+
+################################################################################
+# Helper function IV - share invariant grid slots across an estUDm #############
+################################################################################
+
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.shareUDGrid <- function(uds) {
+
+  if(length(uds)<2L) return(uds)
+
+  # kernelUD() constructs every animal on the same supplied grid, but each estUD owns
+  # duplicate coordinate and grid-index vectors. Reusing the first object's immutable
+  # slots preserves the estUDm interface and values; R's copy-on-modify semantics still
+  # isolate an element if downstream code explicitly changes one of these slots.
+  shared_coords <- uds[[1L]]@coords
+  shared_grid_index <- uds[[1L]]@grid.index
+
+  for(i in 2:length(uds)){
+    uds[[i]]@coords <- shared_coords
+    uds[[i]]@grid.index <- shared_grid_index
+  }
+
+  uds
+}
+
+
 ##############################################################################
-## Helper function III - Set grid ############################################
+## Helper function V - Set grid ##############################################
 ##############################################################################
 
 #' @note This function is intended for internal use within the 'moby' package.
@@ -602,6 +725,57 @@ calculateUDs <- function(data,
 
 
 ################################################################################
+# Helper function VI - extract multiple contours from one volume UD per animal #
+################################################################################
+
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.extractKernelContours <- function(ud, contour.percent, grid.supplied) {
+
+  contour_parts <- lapply(contour.percent, function(x) vector("list", length(ud)))
+  contour_order <- order(contour.percent, decreasing=TRUE)
+
+  for(i in seq_along(ud)){
+    # getverticeshr() otherwise calls getvolumeUD() again for every requested contour.
+    # The volume transform depends only on the density surface, so calculate it once per
+    # animal and reuse it. The raw density UD returned to the user remains unchanged.
+    volume_ud <- tryCatch(
+      adehabitatHR::getvolumeUD(ud[[i]]),
+      error=function(e) .mobyAbort("Kernel utilization distribution estimation failed: ", e$message)
+    )
+
+    for(c in contour_order){
+      contour <- tryCatch({
+        adehabitatHR::getverticeshr(
+          volume_ud, percent=contour.percent[c], ida=names(ud)[i],
+          unin="m", unout="km2"
+        )
+      }, error=function(e) {
+        if(grepl("grid is too small", e$message, fixed=TRUE)){
+          if(grid.supplied){
+            .mobyAbort("The supplied 'spatial.grid' is too small for the requested ",
+                       "contour; enlarge its extent or omit it to auto-generate one. (",
+                       e$message, ")")
+          }
+          return(NULL)
+        }
+        .mobyAbort("Kernel utilization distribution estimation failed: ", e$message)
+      })
+
+      if(is.null(contour)) return(NULL)
+      contour_parts[[c]][[i]] <- contour
+    }
+  }
+
+  contours <- lapply(contour_parts, function(parts) do.call("rbind", parts))
+  names(contours) <- paste0("K", contour.percent)
+  contours
+}
+
+
+################################################################################
 # Define relocate point function ###############################################
 ################################################################################
 
@@ -645,45 +819,30 @@ calculateUDs <- function(data,
 
     # estimate the kernel utilization distributions (UD) for the provided coordinates
     ud <- adehabitatHR::kernelUD(filtered_coords[,id.col], h=bandwidth, grid=spatial.grid)
+    ud <- .shareUDGrid(ud)
+    if(length(ud)>1L) gc(verbose=FALSE)
 
     # clip out areas of the kernel density that overlap with landmasses
     if(!is.null(land.shape)){
       ud <- .subtractLand(ud, land.shape, epsg.code, verbose)
     }
 
-    # initialize a list to store kernel contours for each contour percentage (e.g., 50%, 95%)
-    kernel_contours <- vector("list", length(contour.percent))
-    names(kernel_contours) <- paste0("K", contour.percent)
+    kernel_contours <- .extractKernelContours(ud, contour.percent, grid_supplied)
 
-    # loop through each contour percentage and calculate corresponding UD contours
-    for(c in seq_along(contour.percent)){
-      # attempt to calculate kernel contours for the specified contour percent
-      kernel_contours[[c]] <- tryCatch({
-        adehabitatHR::getverticeshr(ud, percent=contour.percent[c], unin="m", unout="km2")
-      }, error = function(e) {
-        # check if grid extent needs to be increased
-        if (grepl("grid is too small", e$message, fixed=TRUE)) {
-          if(grid_supplied) .mobyAbort("The supplied 'spatial.grid' is too small for the requested ",
-                                       "contour; enlarge its extent or omit it to auto-generate one. (",
-                                       e$message, ")")
-          else {
-            return(NA)
-          }
-        } else {
-          .mobyAbort("Kernel utilization distribution estimation failed: ", e$message)
-        }
-      })
+    # A genuinely small automatically generated grid is retried after releasing the
+    # failed attempt. Fully land-masked UDs have already failed with a distinct error.
+    if(is.null(kernel_contours)){
+      rm(ud)
+      gc(verbose=FALSE)
+      next
     }
 
-    # if kernel contours were successfully generated
-    if(all(unlist(lapply(kernel_contours, function(x) inherits(x, "SpatialPolygonsDataFrame"))))){
-      # convert each contour to an `sf` object
-      kernel_contours <- lapply(kernel_contours, sf::st_as_sf)
-      # extract contour IDs and areas, removing geometry data
-      kernel_areas <- lapply(kernel_contours, sf::st_drop_geometry)
-      # break out of the repeat loop since contours were successfully calculated
-      break
-    }
+    # convert each contour to an `sf` object
+    kernel_contours <- lapply(kernel_contours, sf::st_as_sf)
+    # extract contour IDs and areas, removing geometry data
+    kernel_areas <- lapply(kernel_contours, sf::st_drop_geometry)
+    # break out of the repeat loop since contours were successfully calculated
+    break
   }
 
   #######################################################################################
