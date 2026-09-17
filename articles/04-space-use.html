@@ -134,6 +134,13 @@
 <span><span class="fu"><a href="../reference/plotMaps.html">plotMaps</a></span><span class="op">(</span><span class="va">coas</span>, uds <span class="op">=</span> <span class="va">kud</span>, animal.tracks <span class="op">=</span> <span class="va">tracks</span>,</span>
 <span>         id.groups <span class="op">=</span> <span class="va">id_groups</span><span class="op">)</span></span></code></pre></div>
 </div>
+<div>
+<blockquote>
+<p><strong>Diagnosing land clipping</strong></p>
+<p>When <code>land.shape</code> is supplied, <code><a href="../reference/calculateUDs.html">calculateUDs()</a></code> checks the projected positions before estimation and warns when positions intersect land or when the position and land-layer extents do not overlap. For classic KDE, density at land-intersecting grid-cell centres is removed and the remaining density is renormalized. If an individual’s entire KDE is removed, the default <code>on.empty = "warn"</code> keeps the other results, reports area <code>0</code>, and returns <code>POLYGON EMPTY</code> contours for that individual. Use <code>on.empty = "error"</code> when a strict fail-fast analysis is preferred.</p>
+<p>Common causes include an incorrect CRS, inaccurate or rounded near-shore positions, an overly generalized coastline, or a land layer that omits small inlets, estuaries, or rivers. Inspect both the positions and coastline rather than treating an empty home range as a biological zero.</p>
+</blockquote>
+</div>
 </section><section class="level2"><h2 id="a-movement-summary-table">5. A movement summary table<a class="anchor" aria-label="anchor" href="#a-movement-summary-table"></a>
 </h2>
 <div class="cell" data-layout-align="center">

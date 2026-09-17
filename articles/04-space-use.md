@@ -77,6 +77,25 @@ plotMaps(coas, uds = kud, animal.tracks = tracks,
          id.groups = id_groups)
 ```
 
+> **Diagnosing land clipping**
+>
+> When `land.shape` is supplied,
+> [`calculateUDs()`](https://miguelgandra.github.io/moby/reference/calculateUDs.md)
+> checks the projected positions before estimation and warns when
+> positions intersect land or when the position and land-layer extents
+> do not overlap. For classic KDE, density at land-intersecting
+> grid-cell centres is removed and the remaining density is
+> renormalized. If an individual’s entire KDE is removed, the default
+> `on.empty = "warn"` keeps the other results, reports area `0`, and
+> returns `POLYGON EMPTY` contours for that individual. Use
+> `on.empty = "error"` when a strict fail-fast analysis is preferred.
+>
+> Common causes include an incorrect CRS, inaccurate or rounded
+> near-shore positions, an overly generalized coastline, or a land layer
+> that omits small inlets, estuaries, or rivers. Inspect both the
+> positions and coastline rather than treating an empty home range as a
+> biological zero.
+
 ## 5. A movement summary table
 
 ``` r

@@ -31,6 +31,7 @@ calculateUDs(
   method = c("akde", "kde"),
   contour.percent = c(50, 95),
   model.selection = c("fit", "select"),
+  on.empty = c("warn", "error"),
   verbose = getOption("moby.verbose", TRUE)
 )
 ```
@@ -133,6 +134,15 @@ calculateUDs(
   [`ctmm::ctmm.select`](https://rdrr.io/pkg/ctmm/man/ctmm.fit.html) to
   choose among candidate models (more thorough, slower).
 
+- on.empty:
+
+  How `method = "kde"` handles an individual whose density is entirely
+  removed by `land.shape`. `"warn"` (default) returns zero areas and
+  empty isopleth polygons for that individual, excludes its unusable
+  zero-density object from `ud`, and warns after all groups have been
+  processed. `"error"` stops immediately with the affected individual
+  ID(s).
+
 - verbose:
 
   Logical. If TRUE, the function will print detailed processing
@@ -174,7 +184,9 @@ A list containing:
 The results list also contains multiple attributes to store relevant
 metadata, such as function options and processing details. These
 attributes might be useful for tracking parameters and ensuring
-reproducibility of the analysis.
+reproducibility of the analysis. For KDE, the `"empty.ids"` attribute
+records individuals represented by zero areas and empty contours after
+complete land masking (including group labels where applicable).
 
 ## Details
 
@@ -185,15 +197,33 @@ check out Kraft et al. (2023) (full reference below in the References
 section). The function also includes options for handling landmasses and
 for grouping data by subsets or groups for independent analysis.
 
-**Land clipping**: Land clipping is applied post-hoc, after kernel
-density estimation. Density at grid-cell centres that intersect
+**Land clipping**: Land clipping is applied post-hoc, after estimation.
+For classic KDE, density at grid-cell centres that intersect
 `land.shape` is set to zero and the remaining density is renormalized to
-its pre-clipping total. If clipping leaves an individual with no
-density, the calculation stops and identifies the affected
-individual(s); enlarging the grid cannot resolve a fully land-masked UD.
-If you need to account for physical barriers like land during UD
-estimation, consider alternative methods (e.g. dynamic Brownian Bridge
-Movement Models as provided in the `RSP` package; Niella et al. 2020).
+its pre-clipping total. For AKDE, the stored isopleth polygons are
+clipped for display while the model-based UD and area estimates remain
+unchanged. Before estimation, the function warns if any supplied
+positions intersect land, or if the position and land-layer extents do
+not overlap. No warning is issued merely because all positions are in
+water, which is normally the expected marine case. If clipping leaves an
+individual with no density, `on.empty = "warn"` retains that individual
+in `summary_table` with area zero, adds a `POLYGON EMPTY` feature to
+every requested contour, excludes the unusable zero-density object from
+`ud`, and reports all affected IDs in one warning at the end. Use
+`on.empty = "error"` for strict fail-fast behaviour. Enlarging the grid
+is not attempted for this condition.
+
+Positions classified as land, or an entirely land-masked UD, commonly
+indicate an incorrect coordinate reference system; inaccurate or
+coarsely rounded positions near shore; coastline generalisation,
+resolution, or boundary error that classifies water as land; or a land
+layer that omits a small inlet, estuary, or river, or otherwise does not
+match the study area. A pre-flight result with no positions on land does
+not by itself prove that the coastline is suitable, because a mismatched
+or incomplete layer may also miss genuine conflicts. If you need to
+account for physical barriers like land during UD estimation, consider
+alternative methods (e.g. dynamic Brownian Bridge Movement Models as
+provided in the `RSP` package; Niella et al. 2020).
 
 **Bandwidth (h)**: The smoothing factor, or bandwidth (h), is a critical
 parameter in kernel utilization distribution (UD) analysis, representing
@@ -298,7 +328,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • grouping   id.groups
 #> 
 #> ✔ 8 utilization distributions estimated
-#> ⏱ runtime: 1.2s
+#> ⏱ runtime: 1.3s
 #>                group  ID N COAs UD 50% (Km2) UD 95% (Km2)
 #> 1 Dasyatis pastinaca D01    249         4.61        17.56
 #> 2 Dasyatis pastinaca D02    154         3.42        16.55
