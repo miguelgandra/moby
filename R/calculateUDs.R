@@ -48,6 +48,10 @@
 #' any portions of the estimated areas that overlap with landmasses.
 #' @param contour.percent Numeric vector. The percentages for which isopleths (contour areas)
 #' are calculated. Defaults to 50% and 95%, representing core and total areas of utilization.
+#' @param on.empty How `method = "kde"` handles an individual whose density is entirely removed
+#' by `land.shape`. `"warn"` (default) returns zero areas and empty isopleth polygons for that
+#' individual, excludes its unusable zero-density object from `ud`, and warns after all groups have
+#' been processed. `"error"` stops immediately with the affected individual ID(s).
 #' @param verbose Logical. If TRUE, the function will print detailed processing
 #' information. Defaults to \code{getOption("moby.verbose", TRUE)}.
 #'
@@ -68,7 +72,9 @@
 #'
 #' The results list also contains multiple attributes to store relevant metadata,
 #' such as function options and processing details. These attributes might be useful
-#' for tracking parameters and ensuring reproducibility of the analysis.
+#' for tracking parameters and ensuring reproducibility of the analysis. For KDE,
+#' the `"empty.ids"` attribute records individuals represented by zero areas and empty
+#' contours after complete land masking (including group labels where applicable).
 #'
 #'
 #' @details
@@ -79,11 +85,25 @@
 #' The function also includes options for handling landmasses and for grouping data by
 #' subsets or groups for independent analysis.
 #'
-#' **Land clipping**: Land clipping is applied post-hoc, after kernel density estimation.
-#' Density at grid-cell centres that intersect `land.shape` is set to zero and the remaining
-#' density is renormalized to its pre-clipping total. If clipping leaves an individual with no
-#' density, the calculation stops and identifies the affected individual(s); enlarging the grid
-#' cannot resolve a fully land-masked UD.
+#' **Land clipping**: Land clipping is applied post-hoc, after estimation. For classic KDE,
+#' density at grid-cell centres that intersect `land.shape` is set to zero and the remaining
+#' density is renormalized to its pre-clipping total. For AKDE, the stored isopleth polygons are
+#' clipped for display while the model-based UD and area estimates remain unchanged. Before
+#' estimation, the function warns if
+#' any supplied positions intersect land, or if the position and land-layer extents do not overlap.
+#' No warning is issued merely because all positions are in water, which is normally the expected
+#' marine case. If clipping leaves an individual with no density, `on.empty = "warn"` retains that
+#' individual in `summary_table` with area zero, adds a `POLYGON EMPTY` feature to every requested
+#' contour, excludes the unusable zero-density object from `ud`, and reports all affected IDs in one
+#' warning at the end. Use `on.empty = "error"` for strict fail-fast behaviour. Enlarging the grid
+#' is not attempted for this condition.
+#'
+#' Positions classified as land, or an entirely land-masked UD, commonly indicate an incorrect
+#' coordinate reference system; inaccurate or coarsely rounded positions near shore; coastline
+#' generalisation, resolution, or boundary error that classifies water as land; or a land layer
+#' that omits a small inlet, estuary, or river, or otherwise does not match the study area. A
+#' pre-flight result with no positions on land does not by itself prove that the coastline is
+#' suitable, because a mismatched or incomplete layer may also miss genuine conflicts.
 #' If you need to account for physical barriers like land during UD estimation, consider alternative
 #' methods (e.g. dynamic Brownian Bridge Movement Models as provided in the `RSP` package;
 #' Niella et al. 2020).
@@ -179,6 +199,7 @@ calculateUDs <- function(data,
                          method = c("akde", "kde"),
                          contour.percent = c(50,95),
                          model.selection = c("fit", "select"),
+                         on.empty = c("warn", "error"),
                          verbose = getOption("moby.verbose", TRUE)) {
 
   ##############################################################################
@@ -191,6 +212,7 @@ calculateUDs <- function(data,
   method_missing <- missing(method)
   method <- match.arg(method)
   model.selection <- match.arg(model.selection)
+  on.empty <- match.arg(on.empty)
 
   # graceful default: if the user did not explicitly request a method and 'ctmm' (needed for the
   # default AKDE) is unavailable, fall back to classic KDE with a clear warning rather than failing
@@ -257,6 +279,7 @@ calculateUDs <- function(data,
   coords <- spatial_data$coords
   land.shape <- spatial_data$spatial.layer
   epsg.code <- spatial_data$epsg.code
+  .checkPositionsAgainstLand(coords, id.col, land.shape)
 
   # retrieve coords bounding box
   coords_bbox <- sf::st_bbox(coords)
@@ -319,7 +342,9 @@ calculateUDs <- function(data,
   if(!multiple) {
 
     # compute UDs for the entire dataset
-    final_results <- .computeUDs(coords, id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, epsg.code, verbose)
+    final_results <- .computeUDs(coords, id.col, bandwidth, coords_bbox, contour.percent,
+                                 spatial.grid, land.shape, epsg.code, on.empty, verbose)
+    empty_ids <- attr(final_results, "empty.ids")
 
     # extract the 'spatial.grid' from the final results
     spatial.grid <- final_results$spatial.grid
@@ -350,7 +375,9 @@ calculateUDs <- function(data,
 
     # compute UDs for each group separately
     kud_results <- lapply(seq_along(group_coords), function(i) {
-      group_results <- .computeUDs(group_coords[[i]], id.col, bandwidth, coords_bbox, contour.percent, spatial.grid, land.shape, epsg.code, verbose)
+      group_results <- .computeUDs(group_coords[[i]], id.col, bandwidth, coords_bbox,
+                                   contour.percent, spatial.grid, land.shape, epsg.code,
+                                   on.empty, verbose)
       if(is.null(group_results)) return(NA)
       else return(group_results)
     })
@@ -360,6 +387,12 @@ calculateUDs <- function(data,
 
     # remove empty elements from list
     kud_results <- kud_results[!unlist(lapply(kud_results, function(x) all(is.na(x))), recursive=FALSE)]
+
+    # Retain group labels when the same individual can have an empty UD in one subset but not another.
+    empty_ids <- unlist(Map(function(x, group) {
+      ids <- attr(x, "empty.ids")
+      if(length(ids)==0L) character() else paste0(ids, " [", group, "]")
+    }, kud_results, names(kud_results)), use.names=FALSE)
 
     #  extract and remove the 'spatial.grid' from the final results
     spatial.grid <- lapply(kud_results, function(x) x$spatial.grid)[[1]]
@@ -438,13 +471,30 @@ calculateUDs <- function(data,
   }
   .mobyRuntime(start.time, verbose, min.secs = 1)
 
+  if(length(empty_ids)>0L && on.empty=="warn"){
+    empty_count <- if(multiple) {
+      .fmtCount(length(empty_ids), "individual/group result")
+    } else {
+      .fmtCount(length(empty_ids), "individual")
+    }
+    .mobyWarn(
+      "Land clipping removed all KDE density for ",
+      empty_count, ": ", paste(empty_ids, collapse=", "),
+      ". Empty isopleth polygons and areas of 0 were returned; these individuals were ",
+      "excluded from 'ud' because no valid density remains. Check the coordinate CRS and ",
+      "accuracy, and the coverage and boundaries of 'land.shape'."
+    )
+  }
+
   # create attributes to save relevant metadata
   attr(final_results, 'method') <- "kde"
   attr(final_results, 'id.groups') <- id.groups
   attr(final_results, 'bandwidth') <- bandwidth
   attr(final_results, 'contour.percent') <- contour.percent
+  attr(final_results, 'on.empty') <- on.empty
   attr(final_results, 'subset') <- subset
   attr(final_results, 'land.shape') <- land_shape_name
+  attr(final_results, 'empty.ids') <- empty_ids
   attr(final_results, 'epsg.code') <- epsg.code
   attr(final_results, 'grid.extent') <- spatial.grid@bbox
   attr(final_results, 'grid.res') <- unique(spatial.grid@grid@cellsize)
@@ -487,13 +537,69 @@ calculateUDs <- function(data,
 
 
 ################################################################################
-# Helper function II - subtract area on land ###################################
+# Helper function II - pre-flight position/land diagnostics ####################
 ################################################################################
 
-#' Subtracts kernel density values that overlap with land areas.
+#' Check whether positions and the supplied land layer appear spatially coherent.
 #'
-#' This function iterates through kernel densities and sets density values to
-#' zero for coordinates that overlap with a given land shape.
+#' @note This function is intended for internal use within the 'moby' package.
+#' @keywords internal
+#' @noRd
+
+.checkPositionsAgainstLand <- function(coords, id.col, land.shape) {
+
+  if(is.null(land.shape)) return(invisible(NULL))
+  if(nrow(land.shape)==0L || all(sf::st_is_empty(land.shape))){
+    .mobyWarn("Pre-flight land check: 'land.shape' contains no non-empty geometry; land ",
+              "clipping will have no effect.")
+    return(invisible(NULL))
+  }
+
+  coords_bbox <- sf::st_bbox(coords)
+  land_bbox <- sf::st_bbox(land.shape)
+  bbox_overlap <- all(is.finite(coords_bbox)) && all(is.finite(land_bbox)) &&
+    coords_bbox[["xmin"]] <= land_bbox[["xmax"]] &&
+    coords_bbox[["xmax"]] >= land_bbox[["xmin"]] &&
+    coords_bbox[["ymin"]] <= land_bbox[["ymax"]] &&
+    coords_bbox[["ymax"]] >= land_bbox[["ymin"]]
+
+  if(!bbox_overlap){
+    .mobyWarn("Pre-flight land check: the position extent does not overlap the 'land.shape' ",
+              "extent. Land clipping may have no effect; verify the coordinate reference ",
+              "systems and study-area coverage.")
+    return(invisible(NULL))
+  }
+
+  on_land <- lengths(sf::st_intersects(coords, land.shape, sparse=TRUE)) > 0L
+  if(!any(on_land)) return(invisible(NULL))
+
+  ids <- as.character(coords[[id.col]])
+  affected_ids <- unique(ids[on_land])
+  by_id <- split(on_land, ids)
+  all_on_land <- names(by_id)[vapply(by_id, all, logical(1))]
+  detail <- if(length(all_on_land)>0L) {
+    paste0(" ", .fmtCount(length(all_on_land), "individual"),
+           if(length(all_on_land)==1L) " has" else " have",
+           " all supplied positions classified as land: ",
+           paste(all_on_land, collapse=", "), ".")
+  } else ""
+
+  .mobyWarn(
+    "Pre-flight land check: ", .fmtCount(sum(on_land), "position"), " of ",
+    .fmtN(length(on_land)), " intersect 'land.shape' across ",
+    .fmtCount(length(affected_ids), "individual"), ".", detail,
+    " Estimation will continue and the resulting UDs will be clipped. Check near-shore ",
+    "position accuracy and the land-layer projection and boundaries."
+  )
+  invisible(NULL)
+}
+
+
+################################################################################
+# Helper function III - subtract area on land ##################################
+################################################################################
+
+#' Subtract kernel density values that overlap with land areas.
 #'
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
@@ -591,23 +697,14 @@ calculateUDs <- function(data,
     uds[[i]]$ud <- density_values
   }
 
-  if(length(fully_masked)>0L){
-    noun <- if(length(fully_masked)==1L) "individual" else "individuals"
-    .mobyAbort(
-      "Land clipping removed all KDE density for ", noun, ": ",
-      paste(fully_masked, collapse=", "), ". The supplied 'land.shape' classifies the entire ",
-      "estimated UD as land. Review the land geometry or animal positions; enlarging ",
-      "'spatial.grid' will not resolve this condition."
-    )
-  }
-
-  # return the corrected kernel densities
-  return(uds)
+  # Return the affected IDs separately so the caller can either fail strictly or represent them
+  # as zero-area/empty-contour results without passing an invalid zero-density estUD downstream.
+  list(uds=uds, empty.ids=fully_masked)
 }
 
 
 ################################################################################
-# Helper function III - convert a terra grid without point materialisation ######
+# Helper function IV - convert a terra grid without point materialisation #######
 ################################################################################
 
 #' @note This function is intended for internal use within the 'moby' package.
@@ -644,7 +741,7 @@ calculateUDs <- function(data,
 
 
 ################################################################################
-# Helper function IV - share invariant grid slots across an estUDm #############
+# Helper function V - share invariant grid slots across an estUDm ##############
 ################################################################################
 
 #' @note This function is intended for internal use within the 'moby' package.
@@ -672,7 +769,7 @@ calculateUDs <- function(data,
 
 
 ##############################################################################
-## Helper function V - Set grid ##############################################
+## Helper function VI - Set grid #############################################
 ##############################################################################
 
 #' @note This function is intended for internal use within the 'moby' package.
@@ -725,7 +822,7 @@ calculateUDs <- function(data,
 
 
 ################################################################################
-# Helper function VI - extract multiple contours from one volume UD per animal #
+# Helper function VII - extract multiple contours from one volume UD per animal #
 ################################################################################
 
 #' @note This function is intended for internal use within the 'moby' package.
@@ -775,6 +872,18 @@ calculateUDs <- function(data,
 }
 
 
+.emptyKernelContour <- function(ids, epsg.code) {
+
+  sf::st_sf(
+    id=as.character(ids), area=rep(0, length(ids)),
+    geometry=sf::st_sfc(
+      lapply(seq_along(ids), function(i) sf::st_polygon(list())),
+      crs=sf::st_crs(epsg.code)
+    )
+  )
+}
+
+
 ################################################################################
 # Define relocate point function ###############################################
 ################################################################################
@@ -789,13 +898,14 @@ calculateUDs <- function(data,
 #' @noRd
 
 .computeUDs <- function(coords, id.col, bandwidth, coords.bbox, contour.percent,
-                         spatial.grid, land.shape, epsg.code, verbose){
+                         spatial.grid, land.shape, epsg.code, on.empty, verbose){
 
   # initialize the expand factor, which will be used to gradually increase the spatial grid extent
   expand_factor <- 0.05
 
   # check if a spatial.grid was supplied
   grid_supplied <- !is.null(spatial.grid)
+  empty_ids <- character()
 
    # filter out individuals with less than 5 detections
   filtered_coords <- .cleanData(coords, id.col)
@@ -824,10 +934,31 @@ calculateUDs <- function(data,
 
     # clip out areas of the kernel density that overlap with landmasses
     if(!is.null(land.shape)){
-      ud <- .subtractLand(ud, land.shape, epsg.code, verbose)
+      clipped <- .subtractLand(ud, land.shape, epsg.code, verbose)
+      ud <- clipped$uds
+      empty_ids <- clipped$empty.ids
+
+      if(length(empty_ids)>0L && on.empty=="error"){
+        .mobyAbort(
+          "Land clipping removed all KDE density for ",
+          .fmtCount(length(empty_ids), "individual"), ": ",
+          paste(empty_ids, collapse=", "), ". The supplied 'land.shape' classifies the entire ",
+          "estimated UD as land. Review the land geometry or animal positions; enlarging ",
+          "'spatial.grid' will not resolve this condition."
+        )
+      }
+
+      if(length(empty_ids)>0L){
+        ud <- ud[!names(ud) %in% empty_ids]
+        class(ud) <- "estUDm"
+      }
     }
 
-    kernel_contours <- .extractKernelContours(ud, contour.percent, grid_supplied)
+    kernel_contours <- if(length(ud)>0L) {
+      .extractKernelContours(ud, contour.percent, grid_supplied)
+    } else {
+      stats::setNames(vector("list", length(contour.percent)), paste0("K", contour.percent))
+    }
 
     # A genuinely small automatically generated grid is retried after releasing the
     # failed attempt. Fully land-masked UDs have already failed with a distinct error.
@@ -838,7 +969,13 @@ calculateUDs <- function(data,
     }
 
     # convert each contour to an `sf` object
-    kernel_contours <- lapply(kernel_contours, sf::st_as_sf)
+    if(length(ud)>0L) kernel_contours <- lapply(kernel_contours, sf::st_as_sf)
+    if(length(empty_ids)>0L){
+      empty_contour <- .emptyKernelContour(empty_ids, epsg.code)
+      kernel_contours <- lapply(kernel_contours, function(x) {
+        if(is.null(x)) empty_contour else rbind(x, empty_contour)
+      })
+    }
     # extract contour IDs and areas, removing geometry data
     kernel_areas <- lapply(kernel_contours, sf::st_drop_geometry)
     # break out of the repeat loop since contours were successfully calculated
@@ -872,6 +1009,7 @@ calculateUDs <- function(data,
 
   # append the kernel contours to the results list
   results <- c(results, kernel_contours, "spatial.grid"=spatial.grid)
+  attr(results, "empty.ids") <- empty_ids
 
   # return the results list, containing the kernel density, UD table, and contours
   return(results)
@@ -958,6 +1096,7 @@ calculateUDs <- function(data,
   coords <- spatial_data$coords
   land.shape <- spatial_data$spatial.layer
   epsg.code <- spatial_data$epsg.code
+  .checkPositionsAgainstLand(coords, id.col, land.shape)
   proj4 <- sf::st_crs(epsg.code)$proj4string
   # geographic coordinates for ctmm::as.telemetry (which projects internally to proj4)
   coords_wgs <- sf::st_transform(coords, 4326)

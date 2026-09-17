@@ -19,6 +19,7 @@ calculateUDs(
   method = c("akde", "kde"),
   contour.percent = c(50, 95),
   model.selection = c("fit", "select"),
+  on.empty = c("warn", "error"),
   verbose = getOption("moby.verbose", TRUE)
 )
 }
@@ -75,6 +76,11 @@ are calculated. Defaults to 50\% and 95\%, representing core and total areas of 
 from an automated guess (faster); \code{"select"} runs \code{ctmm::ctmm.select} to choose among
 candidate models (more thorough, slower).}
 
+\item{on.empty}{How \code{method = "kde"} handles an individual whose density is entirely removed
+by \code{land.shape}. \code{"warn"} (default) returns zero areas and empty isopleth polygons for that
+individual, excludes its unusable zero-density object from \code{ud}, and warns after all groups have
+been processed. \code{"error"} stops immediately with the affected individual ID(s).}
+
 \item{verbose}{Logical. If TRUE, the function will print detailed processing
 information. Defaults to \code{getOption("moby.verbose", TRUE)}.}
 }
@@ -95,7 +101,9 @@ individual and contour.}
 
 The results list also contains multiple attributes to store relevant metadata,
 such as function options and processing details. These attributes might be useful
-for tracking parameters and ensuring reproducibility of the analysis.
+for tracking parameters and ensuring reproducibility of the analysis. For KDE,
+the \code{"empty.ids"} attribute records individuals represented by zero areas and empty
+contours after complete land masking (including group labels where applicable).
 }
 \description{
 This function estimates animal utilization distributions (UDs) and home-range
@@ -115,11 +123,25 @@ home-range estimation methods, check out Kraft et al. (2023) (full reference bel
 The function also includes options for handling landmasses and for grouping data by
 subsets or groups for independent analysis.
 
-\strong{Land clipping}: Land clipping is applied post-hoc, after kernel density estimation.
-Density at grid-cell centres that intersect \code{land.shape} is set to zero and the remaining
-density is renormalized to its pre-clipping total. If clipping leaves an individual with no
-density, the calculation stops and identifies the affected individual(s); enlarging the grid
-cannot resolve a fully land-masked UD.
+\strong{Land clipping}: Land clipping is applied post-hoc, after estimation. For classic KDE,
+density at grid-cell centres that intersect \code{land.shape} is set to zero and the remaining
+density is renormalized to its pre-clipping total. For AKDE, the stored isopleth polygons are
+clipped for display while the model-based UD and area estimates remain unchanged. Before
+estimation, the function warns if
+any supplied positions intersect land, or if the position and land-layer extents do not overlap.
+No warning is issued merely because all positions are in water, which is normally the expected
+marine case. If clipping leaves an individual with no density, \code{on.empty = "warn"} retains that
+individual in \code{summary_table} with area zero, adds a \verb{POLYGON EMPTY} feature to every requested
+contour, excludes the unusable zero-density object from \code{ud}, and reports all affected IDs in one
+warning at the end. Use \code{on.empty = "error"} for strict fail-fast behaviour. Enlarging the grid
+is not attempted for this condition.
+
+Positions classified as land, or an entirely land-masked UD, commonly indicate an incorrect
+coordinate reference system; inaccurate or coarsely rounded positions near shore; coastline
+generalisation, resolution, or boundary error that classifies water as land; or a land layer
+that omits a small inlet, estuary, or river, or otherwise does not match the study area. A
+pre-flight result with no positions on land does not by itself prove that the coastline is
+suitable, because a mismatched or incomplete layer may also miss genuine conflicts.
 If you need to account for physical barriers like land during UD estimation, consider alternative
 methods (e.g. dynamic Brownian Bridge Movement Models as provided in the \code{RSP} package;
 Niella et al. 2020).

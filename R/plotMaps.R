@@ -167,9 +167,17 @@ plotMaps <- function(data,
           class(uds) <- "estUDm"
         } else stop("Supplied 'uds' are in the wrong format. Provide the output of calculateUDs().", call. = FALSE)
       }
-      ud_ids <- names(uds)
+      # A KDE result may legitimately contain no usable density objects when every individual was
+      # fully removed by land clipping (on.empty = "warn"). In that case draw positions/land only;
+      # the returned POLYGON EMPTY contours are deliberately not converted back into a raster UD.
+      if (length(uds) == 0L) {
+        ud_ids <- character()
+        uds <- NULL
+      } else {
+        ud_ids <- names(uds)
+      }
     }
-    if (all(!unique(data[, id.col]) %in% ud_ids))
+    if (length(ud_ids)>0L && all(!unique(data[, id.col]) %in% ud_ids))
       stop("Names of 'uds' do not match the supplied data IDs.", call. = FALSE)
   }
   has_ud <- akde || !is.null(uds)

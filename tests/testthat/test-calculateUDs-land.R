@@ -194,6 +194,8 @@ test_that("chunked land clipping is numerically identical to the former implemen
 
   reference <- legacy_subtract_land(ud, land, sf::st_crs(32629))
   result <- .subtractLand(ud, land, sf::st_crs(32629), verbose = FALSE)
+  expect_length(result$empty.ids, 0L)
+  result <- result$uds
 
   expect_identical(result[[1]]$ud, reference[[1]]$ud)
   expect_identical(sum(result[[1]]$ud), sum(reference[[1]]$ud))
@@ -206,7 +208,7 @@ test_that("chunked land clipping is numerically identical to the former implemen
 })
 
 
-test_that("a fully land-masked UD fails before contour extraction with its ID", {
+test_that("land clipping identifies a fully masked UD without passing it to contours", {
   skip_if_not_installed("adehabitatHR")
   skip_if_not_installed("sp")
   skip_if_not_installed("terra")
@@ -217,19 +219,13 @@ test_that("a fully land-masked UD fails before contour extraction with its ID", 
     c(-6000, 6000), c(-6000, -6000)
   ))), crs = 32629))
 
-  err <- tryCatch(
-    .subtractLand(ud, land, sf::st_crs(32629), verbose = FALSE),
-    error = identity
-  )
-  expect_s3_class(err, "error")
-  expect_match(conditionMessage(err), "Land clipping removed all KDE density")
-  expect_match(conditionMessage(err), "fish")
-  expect_match(conditionMessage(err), "enlarging 'spatial.grid' will not resolve", fixed = TRUE)
-  expect_false(grepl("too small", conditionMessage(err), fixed = TRUE))
+  result <- .subtractLand(ud, land, sf::st_crs(32629), verbose = FALSE)
+  expect_identical(result$empty.ids, "fish")
+  expect_true(all(result$uds[["fish"]]$ud == 0))
 })
 
 
-test_that("calculateUDs exposes fully masked UDs as a non-retryable input error", {
+test_that("calculateUDs returns zero areas and empty contours for fully masked UDs", {
   skip_if_not_installed("adehabitatHR")
   skip_if_not_installed("sp")
   skip_if_not_installed("terra")
@@ -245,17 +241,185 @@ test_that("calculateUDs exposes fully masked UDs as a non-retryable input error"
     c(-6000, 6000), c(-6000, -6000)
   ))), crs = 32629))
 
-  err <- tryCatch(
+  warnings <- character()
+  result <- withCallingHandlers(
     calculateUDs(
       d, id.col = "ID", timebin.col = "timebin", lon.col = "x", lat.col = "y",
       method = "kde", bandwidth = 500, contour.percent = c(50, 95),
       epsg.code = 32629, spatial.grid = land_test_grid(), land.shape = land,
       verbose = FALSE
     ),
-    error = identity
+    warning = function(w) {
+      warnings <<- c(warnings, conditionMessage(w))
+      invokeRestart("muffleWarning")
+    }
   )
+
+  expect_true(any(grepl("Pre-flight land check", warnings, fixed = TRUE)))
+  expect_true(any(grepl("Land clipping removed all KDE density", warnings, fixed = TRUE)))
+  expect_s3_class(result$ud, "estUDm")
+  expect_length(result$ud, 0L)
+  expect_identical(attr(result, "on.empty"), "warn")
+  expect_identical(attr(result, "empty.ids"), "fish")
+  expect_identical(result$summary_table[["UD 50% (Km2)"]], "0.00")
+  expect_identical(result$summary_table[["UD 95% (Km2)"]], "0.00")
+  expect_true(all(sf::st_is_empty(result$K50)))
+  expect_true(all(sf::st_is_empty(result$K95)))
+  expect_identical(result$K50$area, 0)
+  expect_identical(result$K95$area, 0)
+
+  overlap <- calculateUDOverlap(result, verbose = FALSE)
+  expect_equal(nrow(overlap), 0L)
+
+  map_file <- tempfile(fileext = ".png")
+  on.exit(unlink(map_file), add = TRUE)
+  expect_no_error(plotMaps(
+    d, uds = result, id.col = "ID", lon.col = "x", lat.col = "y",
+    epsg.code = 32629, coastline = FALSE, verbose = FALSE, file = map_file
+  ))
+  expect_true(file.exists(map_file))
+})
+
+
+test_that("a fully masked individual does not discard valid KDE results", {
+  skip_if_not_installed("adehabitatHR")
+  skip_if_not_installed("sp")
+  skip_if_not_installed("terra")
+
+  set.seed(7307)
+  d <- rbind(
+    data.frame(ID = "masked", x = stats::rnorm(20, -2500, 80),
+               y = stats::rnorm(20, 0, 80)),
+    data.frame(ID = "water", x = stats::rnorm(20, 2500, 80),
+               y = stats::rnorm(20, 0, 80))
+  )
+  d$ID <- factor(d$ID)
+  d$timebin <- as.POSIXct("2021-01-01", tz = "UTC") + seq_len(nrow(d)) * 3600
+  land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(-5000, -5000), c(0, -5000), c(0, 5000),
+    c(-5000, 5000), c(-5000, -5000)
+  ))), crs = 32629))
+
+  result <- suppressWarnings(calculateUDs(
+    d, id.col = "ID", timebin.col = "timebin", lon.col = "x", lat.col = "y",
+    method = "kde", bandwidth = 300, contour.percent = c(50, 95),
+    epsg.code = 32629, spatial.grid = land_test_grid(), land.shape = land,
+    verbose = FALSE
+  ))
+  reference <- calculateUDs(
+    d, id.col = "ID", timebin.col = "timebin", lon.col = "x", lat.col = "y",
+    method = "kde", bandwidth = 300, contour.percent = c(50, 95),
+    epsg.code = 32629, spatial.grid = land_test_grid(), verbose = FALSE
+  )
+
+  expect_identical(names(result$ud), "water")
+  expect_identical(result$ud[["water"]]$ud, reference$ud[["water"]]$ud)
+  expect_identical(attr(result, "empty.ids"), "masked")
+  masked <- result$summary_table[result$summary_table$ID == "masked", ]
+  water <- result$summary_table[result$summary_table$ID == "water", ]
+  reference_water <- reference$summary_table[reference$summary_table$ID == "water", ]
+  expect_identical(masked[["UD 50% (Km2)"]], "0.00")
+  expect_identical(masked[["UD 95% (Km2)"]], "0.00")
+  expect_identical(water[["UD 50% (Km2)"]], reference_water[["UD 50% (Km2)"]])
+  expect_identical(water[["UD 95% (Km2)"]], reference_water[["UD 95% (Km2)"]])
+  expect_true(sf::st_is_empty(result$K95[result$K95$id == "masked", ]))
+  expect_false(sf::st_is_empty(result$K95[result$K95$id == "water", ]))
+})
+
+
+test_that("grouped KDE retains an all-empty group alongside valid groups", {
+  skip_if_not_installed("adehabitatHR")
+  skip_if_not_installed("sp")
+  skip_if_not_installed("terra")
+
+  set.seed(7308)
+  d <- rbind(
+    data.frame(ID = "masked", group = "land", x = stats::rnorm(20, -2500, 80),
+               y = stats::rnorm(20, 0, 80)),
+    data.frame(ID = "water", group = "water", x = stats::rnorm(20, 2500, 80),
+               y = stats::rnorm(20, 0, 80))
+  )
+  d$ID <- factor(d$ID)
+  d$group <- factor(d$group)
+  d$timebin <- as.POSIXct("2021-01-01", tz = "UTC") + seq_len(nrow(d)) * 3600
+  land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(-5000, -5000), c(0, -5000), c(0, 5000),
+    c(-5000, 5000), c(-5000, -5000)
+  ))), crs = 32629))
+
+  result <- suppressWarnings(calculateUDs(
+    d, id.col = "ID", timebin.col = "timebin", lon.col = "x", lat.col = "y",
+    method = "kde", bandwidth = 300, contour.percent = c(50, 95),
+    epsg.code = 32629, spatial.grid = land_test_grid(), land.shape = land,
+    subset = "group", verbose = FALSE
+  ))
+
+  expect_length(result$ud[["land"]], 0L)
+  expect_identical(names(result$ud[["water"]]), "water")
+  expect_identical(attr(result, "empty.ids"), "masked [land]")
+  masked <- result$summary_table[result$summary_table$ID == "masked", ]
+  expect_identical(masked[["UD 50% (Km2)"]], "0.00")
+  expect_true(sf::st_is_empty(result$K95[result$K95$id == "masked", ]))
+})
+
+
+test_that("on.empty = 'error' retains strict non-retryable behaviour", {
+  skip_if_not_installed("adehabitatHR")
+  skip_if_not_installed("sp")
+  skip_if_not_installed("terra")
+
+  set.seed(7306)
+  d <- data.frame(
+    ID = factor(rep("fish", 12)),
+    timebin = as.POSIXct("2021-01-01", tz = "UTC") + seq_len(12) * 3600,
+    x = stats::rnorm(12, 0, 100), y = stats::rnorm(12, 0, 100)
+  )
+  land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(-6000, -6000), c(6000, -6000), c(6000, 6000),
+    c(-6000, 6000), c(-6000, -6000)
+  ))), crs = 32629))
+
+  err <- suppressWarnings(tryCatch(
+    calculateUDs(
+      d, id.col = "ID", timebin.col = "timebin", lon.col = "x", lat.col = "y",
+      method = "kde", bandwidth = 500, contour.percent = c(50, 95),
+      epsg.code = 32629, spatial.grid = land_test_grid(), land.shape = land,
+      on.empty = "error", verbose = FALSE
+    ),
+    error = identity
+  ))
 
   expect_s3_class(err, "error")
   expect_match(conditionMessage(err), "Land clipping removed all KDE density")
+  expect_match(conditionMessage(err), "fish")
+  expect_match(conditionMessage(err), "enlarging 'spatial.grid' will not resolve", fixed = TRUE)
   expect_false(grepl("too small", conditionMessage(err), fixed = TRUE))
+})
+
+
+test_that("pre-flight land checks distinguish expected water from actionable mismatches", {
+  coords <- sf::st_as_sf(
+    data.frame(ID = factor(c("water", "land")), x = c(5, 15), y = c(5, 5)),
+    coords = c("x", "y"), crs = 32629
+  )
+  land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(10, 0), c(20, 0), c(20, 10), c(10, 10), c(10, 0)
+  ))), crs = 32629))
+
+  expect_warning(.checkPositionsAgainstLand(coords, "ID", land),
+                 "1 position of 2.*1 individual", perl = TRUE)
+
+  water <- coords[1, ]
+  outer <- rbind(c(0, 0), c(10, 0), c(10, 10), c(0, 10), c(0, 0))
+  hole <- rbind(c(2, 2), c(2, 8), c(8, 8), c(8, 2), c(2, 2))
+  enclosing_land <- sf::st_sf(
+    geometry = sf::st_sfc(sf::st_polygon(list(outer, hole)), crs = 32629)
+  )
+  expect_no_warning(.checkPositionsAgainstLand(water, "ID", enclosing_land))
+
+  distant_land <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(rbind(
+    c(100, 100), c(110, 100), c(110, 110), c(100, 110), c(100, 100)
+  ))), crs = 32629))
+  expect_warning(.checkPositionsAgainstLand(coords, "ID", distant_land),
+                 "position extent does not overlap")
 })
