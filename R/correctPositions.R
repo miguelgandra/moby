@@ -22,7 +22,7 @@
 #' @param depth.threshold A numeric value. If set, shortest in-water paths will be calculated only
 #' for cells with depths >= this threshold. Only takes effect when raster
 #' is of type 'bathy'. Defaults to 0 (water vs land).
-#' @param max.distance.km A numeric value specifying the maximum distance (in kilometers) to consider when relocating points.
+#' @param max.distance.km A single positive, finite numeric value specifying the maximum distance (in kilometers) to consider when relocating points.
 #' This parameter limits the search radius for the nearest marine cell, ensuring that only cells within the specified distance are evaluated.
 #' Points that are further than this distance from the nearest water will have their coordinates set to NA.
 #' @param plot A logical value indicating whether to generate a plot of the relocation process.
@@ -87,6 +87,9 @@ correctPositions <- function(data,
   if (!inherits(spatial.layer, c("SpatRaster", "RasterLayer", "sf", "SpatialPolygons"))) errors <- c(errors, "The 'spatial.layer' argument must be a 'SpatRaster', 'RasterLayer', 'sf', or 'SpatialPolygons' object.")
   if (!raster.type %in% c("land", "water", "bathy")) errors <- c(errors, "The 'raster.type' must be either 'land', 'water' or 'bathy'")
   if (!inherits(depth.threshold, "numeric")) errors <- c(errors, "The 'depth.threshold' argument must be numeric")
+  if (!is.numeric(max.distance.km) || length(max.distance.km) != 1L ||
+      is.na(max.distance.km) || !is.finite(max.distance.km) || max.distance.km <= 0)
+    errors <- c(errors, "The 'max.distance.km' argument must be a single positive, finite number.")
   if (!inherits(plot, "logical"))  errors <- c(errors, "The 'plot' argument must be a logical value (TRUE or FALSE).")
   if(length(errors)>0){
       stop_message <- sapply(errors, function(x) paste(strwrap(x), collapse="\n"))
@@ -441,7 +444,9 @@ correctPositions <- function(data,
   if(coords_crs=="geographic" && length(relocated_indices)>0){
     # Not a warning: reprojecting for the spatial work and converting back is documented behaviour on
     # a successful run, and it is reported by the header's "projection" criterion.
-    pointsProjected <- sf::st_as_sf(as.data.frame(pointsCorrected[relocated_indices,]), coords=c(1,2), crs=epsg.code)
+    pointsProjected <- sf::st_as_sf(
+      as.data.frame(pointsCorrected[relocated_indices, , drop = FALSE]),
+      coords = c(1, 2), crs = epsg.code)
     pointsProjected <- sf::st_transform(pointsProjected, crs = 4326)
     pointsProjected <- sf::st_coordinates(pointsProjected)
     pointsCorrected[relocated_indices,] <- pointsProjected
@@ -488,14 +493,15 @@ correctPositions <- function(data,
 #'
 #' This function helps speed up distance calculations by incrementally expanding the search radius
 #' around a given position to find the nearest water body. It stops when a water cell is detected
-#' or when the search radius exceeds 50 km. The function supports both `RasterLayer` and `sf` objects as spatial inputs.
+#' or after the requested maximum search radius has been checked. The function supports both
+#' point and line features produced from raster and `sf` spatial inputs.
 #'
 #' @param point An `sf` object representing the coordinates (longitude, latitude)
 #' of the point of interest.
 #' @param land.mask An `sf` object that represents the spatial layer
 #' containing information about land and water. A value of 0 indicates water.
 #' @return A cropped spatial layer of class `sf`, centered around the identified water region.
-#' If no water is found within the maximum search radius of 50 kilometers, an error is raised.
+#' If no water is found within the maximum search radius, `NULL` is returned.
 #'
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
@@ -503,29 +509,23 @@ correctPositions <- function(data,
 
 .setSearchRegion <- function(point, land.mask, max.distance.km){
 
-  # initialize variables
-  water_found <- FALSE
-
-  # define initial search radius and step size (in meters)
+  # Define the maximum radius and step size in metres. The final increment is capped at the
+  # requested maximum so limits below 10 km and limits not divisible by 10 km are searched too.
+  max_radius <- max.distance.km * 1000
   search_radius <- 0
   search_step <- 10 * 1000
 
-  # loop until a water cell is found or maximum radius is reached
-  while(!water_found){
-
-    # increase the search radius
-    search_radius <- search_radius + search_step
-
-    # stop if the search radius exceeds 50 km
-    if(search_radius >= max.distance.km*1000){
-      return()
-    }
+  # Loop until a water feature is found or the maximum radius has actually been searched.
+  repeat {
+    search_radius <- min(search_radius + search_step, max_radius)
 
     # create a buffer around the point to extract from the sf object
     buffered_point <- sf::st_buffer(point, dist=search_radius)
 
     # check if any features in the sf object intersect with the buffered point
-    water_found <- any(sf::st_intersects(buffered_point, land.mask, sparse=FALSE))
+    if (any(sf::st_intersects(buffered_point, land.mask, sparse=FALSE))) break
+
+    if (search_radius >= max_radius) return(NULL)
   }
 
   # crop the sf object to the bounding box
@@ -560,7 +560,7 @@ correctPositions <- function(data,
   # reduce search region to speed up calculations
   land_mask_i <- .setSearchRegion(point, land.mask, max.distance.km)
 
-  # if no water if found within 50 km, return an empty point
+  # if no water is found within the requested maximum radius, return an empty point
   if(length(land_mask_i)==0) return(list(coords=data.frame("X"=NA, "Y"=NA), dist=NA))
 
   # get the nearest feature (line or pt) index

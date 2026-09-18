@@ -46,7 +46,7 @@ This parameter can be either 'land', 'water', or 'bathy'.
 for cells with depths >= this threshold. Only takes effect when raster
 is of type 'bathy'. Defaults to 0 (water vs land).}
 
-\item{max.distance.km}{A numeric value specifying the maximum distance (in kilometers) to consider when relocating points.
+\item{max.distance.km}{A single positive, finite numeric value specifying the maximum distance (in kilometers) to consider when relocating points.
 This parameter limits the search radius for the nearest marine cell, ensuring that only cells within the specified distance are evaluated.
 Points that are further than this distance from the nearest water will have their coordinates set to NA.}
 

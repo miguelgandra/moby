@@ -99,6 +99,83 @@ test_that("correctPositions SF path matches frozen golden (relocated set + coord
 })
 
 
+test_that("correctPositions searches the requested radius below 10 km", {
+  land_rast <- terra::rast(test_path("_spatial", "land_raster.tif"))
+  layers <- list(sf = fx$land_sf, raster = land_rast)
+
+  for (layer in layers) {
+    reference <- suppressWarnings(suppressMessages(
+      correctPositions(fx$onland, spatial.layer = layer, raster.type = fx$params$raster.type,
+                       epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                       max.distance.km = 50, verbose = FALSE)))
+    cp <- suppressWarnings(suppressMessages(
+      correctPositions(fx$onland, spatial.layer = layer, raster.type = fx$params$raster.type,
+                       epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                       max.distance.km = 5, verbose = FALSE)))
+
+    expect_identical(attr(cp, "points.relocated"), 3L)
+    expect_identical(attr(cp, "points.skipped"), 0L)
+    expect_true(all(cp$summary$distance_m < 5000))
+    expect_equal(cp$data[, c("lon", "lat")], reference$data[, c("lon", "lat")])
+  }
+})
+
+
+test_that("correctPositions converts a single relocated point back to geographic coordinates", {
+  one_on_land <- fx$onland[c(1, 2), , drop = FALSE]
+  # Place the first point fractionally inside the island boundary. It is classified as on land,
+  # but its sub-millimetre move to the boundary is reported as 0 m after summary rounding.
+  one_on_land$lon[1] <- -9.003999999
+  one_on_land$lat[1] <- 38.45
+
+  cp <- suppressWarnings(suppressMessages(
+    correctPositions(one_on_land, spatial.layer = fx$land_sf,
+                     epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                     max.distance.km = 5, verbose = FALSE)))
+
+  expect_identical(attr(cp, "points.relocated"), 1L)
+  expect_identical(attr(cp, "points.skipped"), 0L)
+  expect_equal(nrow(cp$summary), 1L)
+  expect_equal(cp$summary$distance_m, 0)
+  expect_true(all(abs(cp$data$lon) <= 180))
+  expect_true(all(abs(cp$data$lat) <= 90))
+  expect_equal(cp$data$lon[2], one_on_land$lon[2])
+  expect_equal(cp$data$lat[2], one_on_land$lat[2])
+})
+
+
+test_that("correctPositions includes the exact maximum and final partial increment", {
+  point <- sf::st_sf(geometry = sf::st_sfc(sf::st_point(c(0, 0)), crs = EPSG))
+  target <- sf::st_sf(geometry = sf::st_sfc(sf::st_point(c(12000, 0)), crs = EPSG))
+
+  expect_null(moby:::.setSearchRegion(point, target, max.distance.km = 11.999))
+  expect_s3_class(moby:::.setSearchRegion(point, target, max.distance.km = 12), "sf")
+  expect_s3_class(moby:::.setSearchRegion(point, target, max.distance.km = 15), "sf")
+})
+
+
+test_that("correctPositions enforces and validates the maximum radius", {
+  cp <- suppressWarnings(suppressMessages(
+    correctPositions(fx$onland, spatial.layer = fx$land_sf,
+                     epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                     max.distance.km = 0.25, verbose = FALSE)))
+
+  expect_identical(attr(cp, "points.relocated"), 0L)
+  expect_identical(attr(cp, "points.skipped"), 3L)
+  expect_true(all(is.na(cp$summary$distance_m)))
+
+  for (bad_radius in list(0, -1, NA_real_, Inf, c(1, 2), "5")) {
+    expect_error(
+      correctPositions(fx$onland, spatial.layer = fx$land_sf,
+                       epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                       max.distance.km = bad_radius, verbose = FALSE),
+      "positive, finite",
+      fixed = TRUE
+    )
+  }
+})
+
+
 test_that("calculateLandDists (terra) matches frozen golden within band", {
   ld <- calculateLandDists(fx$track, land.shape = fx$land_sf, epsg.code = EPSG,
                            id.col = "ID", lon.col = "lon", lat.col = "lat", verbose = FALSE)
