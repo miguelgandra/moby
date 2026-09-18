@@ -79,12 +79,12 @@ correctPositions(
 
 - max.distance.km:
 
-  A numeric value specifying the maximum distance (in kilometers) to
-  consider when relocating points. This parameter limits the search
-  radius for the nearest marine cell, ensuring that only cells within
-  the specified distance are evaluated. Points that are further than
-  this distance from the nearest water will have their coordinates set
-  to NA.
+  A single positive, finite numeric value specifying the maximum
+  distance (in kilometers) to consider when relocating points. This
+  parameter limits the search radius for the nearest marine cell,
+  ensuring that only cells within the specified distance are evaluated.
+  Points that are further than this distance from the nearest water will
+  have their coordinates set to NA.
 
 - plot:
 

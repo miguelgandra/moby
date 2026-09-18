@@ -441,6 +441,6 @@ filtered3 <- filterDetections(sub, max.speed = 5, speed.unit = "km/h")
 #> 
 #> ! 9 flagged for review (over-speed, retained)
 #> ℹ Detailed diagnostics are available in the returned <mobyFilter> object.
-#> ⏱ runtime: 2.1s
+#> ⏱ runtime: 2.2s
 # }
 ```
