@@ -11,8 +11,16 @@ changes and reduce the time it takes to get the function call right.
 ## Usage
 
 ``` r
-.validateArguments()
+.validateArguments(optional.cols = character())
 ```
+
+## Arguments
+
+- optional.cols:
+
+  Column-role arguments whose mapped column may be absent because the
+  calling function provides its own safe fallback. Other validation
+  still applies.
 
 ## Value
 

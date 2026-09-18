@@ -13,6 +13,7 @@ filterDetections(
   data,
   id.col = NULL,
   datetime.col = NULL,
+  station.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   land.shape = NULL,
@@ -51,6 +52,11 @@ filterDetections(
   Name of the column containing date-times in POSIXct format. Defaults
   to `"datetime"`.
 
+- station.col:
+
+  Name of the column containing station/receiver IDs. Defaults to
+  `"station"`.
+
 - lon.col:
 
   Name of the column containing longitude (or projected x) values.
@@ -86,8 +92,12 @@ filterDetections(
 
 - remove.duplicates:
 
-  Logical; drop exact-duplicate records (same animal ID, timestamp and
-  station) before any other filter. Defaults to TRUE.
+  Logical; drop repeated receiver records (same animal ID, exact
+  timestamp and station) before any other filter. Simultaneous
+  detections at different stations are distinct. If the station column
+  is absent, or its value is missing for a record, the function warns
+  and uses a conservative fallback for the affected records: only rows
+  identical across all input columns are removed. Defaults to TRUE.
 
 - nominal.delay:
 
@@ -207,9 +217,12 @@ the whole per-individual table, which is `$filter_summary`.
 Filters are applied in this order (a filter is skipped when its
 controlling argument is left at its "off" value):
 
-1.  **Duplicate removal** (`remove.duplicates`): exact-duplicate records
-    (same animal, timestamp and station) are dropped up front so they
-    cannot slip past the other filters.
+1.  **Duplicate removal** (`remove.duplicates`): repeated receiver
+    records (same animal, exact timestamp and station) are dropped up
+    front so they cannot slip past the other filters. Simultaneous
+    detections at different stations are retained. If no usable station
+    information is available, a warning is issued and only rows
+    identical across all input columns are removed.
 
 2.  **Pre-tagging**: detections before an animal's `tagging.date`.
 

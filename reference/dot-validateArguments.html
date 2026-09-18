@@ -61,9 +61,18 @@ completion of required changes and reduce the time it takes to get the function 
 
     <div class="section level2">
     <h2 id="ref-usage">Usage<a class="anchor" aria-label="anchor" href="#ref-usage"></a></h2>
-    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.validateArguments</span><span class="op">(</span><span class="op">)</span></span></code></pre></div>
+    <div class="sourceCode"><pre class="sourceCode r"><code><span><span class="fu">.validateArguments</span><span class="op">(</span>optional.cols <span class="op">=</span> <span class="fu"><a href="https://rdrr.io/r/base/character.html" class="external-link">character</a></span><span class="op">(</span><span class="op">)</span><span class="op">)</span></span></code></pre></div>
     </div>
 
+    <div class="section level2">
+    <h2 id="arguments">Arguments<a class="anchor" aria-label="anchor" href="#arguments"></a></h2>
+
+
+<dl><dt id="arg-optional-cols">optional.cols<a class="anchor" aria-label="anchor" href="#arg-optional-cols"></a></dt>
+<dd><p>Column-role arguments whose mapped column may be absent because the calling
+function provides its own safe fallback. Other validation still applies.</p></dd>
+
+</dl></div>
     <div class="section level2">
     <h2 id="value">Value<a class="anchor" aria-label="anchor" href="#value"></a></h2>
     <p>A list containing potentially modified versions of <code>data</code>, <code>tagging.dates</code>, and <code>tag.durations</code>.
