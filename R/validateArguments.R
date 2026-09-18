@@ -12,6 +12,8 @@
 #'
 #' @return A list containing potentially modified versions of `data`, `tagging.dates`, and `tag.durations`.
 #'         If validation fails, the function will stop and return an error message.
+#' @param optional.cols Column-role arguments whose mapped column may be absent because the calling
+#' function provides its own safe fallback. Other validation still applies.
 #'
 #' @details
 #' The `.validateArguments` function performs rigorous checks to ensure that all input arguments
@@ -55,7 +57,7 @@
 #' argument validation across multiple functions, ensuring consistency and reducing redundancy.
 #' @keywords internal
 
-.validateArguments <- function() {
+.validateArguments <- function(optional.cols = character()) {
 
 
   ##############################################################################
@@ -192,7 +194,13 @@
   if ("station.col" %in% names(args)) {
     station.col <- args$station.col
     if(!is.null(station.col)){
-      errors <- c(errors, .checkColumn(station.col, "station column", data))
+      station_msg <- .checkColumn(station.col, "station column", data)
+      # Some functions can operate conservatively without a station column. They still need the
+      # resolved column name, but handle its absence themselves rather than failing validation.
+      missing_optional <- "station.col" %in% optional.cols &&
+        is.character(station.col) && length(station.col) == 1L &&
+        !station.col %in% colnames(data)
+      if (!missing_optional) errors <- c(errors, station_msg)
     }
   }
 

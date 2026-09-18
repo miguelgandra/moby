@@ -13,8 +13,10 @@
 #' left at its "off" value):
 #'
 #' \enumerate{
-#'   \item \strong{Duplicate removal} (`remove.duplicates`): exact-duplicate records (same animal,
-#'     timestamp and station) are dropped up front so they cannot slip past the other filters.
+#'   \item \strong{Duplicate removal} (`remove.duplicates`): repeated receiver records (same animal,
+#'     exact timestamp and station) are dropped up front so they cannot slip past the other filters.
+#'     Simultaneous detections at different stations are retained. If no usable station information is
+#'     available, a warning is issued and only rows identical across all input columns are removed.
 #'   \item \strong{Pre-tagging}: detections before an animal's `tagging.date`.
 #'   \item \strong{Cut-off}: detections after an optional `cutoff.date`.
 #'   \item \strong{False-detection (min_lag)}: the standard short-interval false-detection filter
@@ -84,8 +86,11 @@
 #' @param data A data frame (or `mobyData`) of raw animal detections.
 #' @param cutoff.dates Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
 #' last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct vector keyed by `id.col`.
-#' @param remove.duplicates Logical; drop exact-duplicate records (same animal ID, timestamp and
-#' station) before any other filter. Defaults to TRUE.
+#' @param remove.duplicates Logical; drop repeated receiver records (same animal ID, exact timestamp
+#' and station) before any other filter. Simultaneous detections at different stations are distinct.
+#' If the station column is absent, or its value is missing for a record, the function warns and uses
+#' a conservative fallback for the affected records: only rows identical across all input columns are
+#' removed. Defaults to TRUE.
 #' @param nominal.delay Transmitter nominal (mean) delay, in seconds, used to scale the min_lag
 #' false-detection window. A single value applied to all individuals, or a named numeric vector keyed
 #' by `id.col` (for mixed tag families). Read from the `mobyData` metadata (`nominal.delay`) when not
@@ -174,6 +179,7 @@
 filterDetections <- function(data,
                              id.col = NULL,
                              datetime.col = NULL,
+                             station.col = NULL,
                              lon.col = NULL,
                              lat.col = NULL,
                              land.shape = NULL,
@@ -210,7 +216,7 @@ filterDetections <- function(data,
     nominal.delay <- prev_meta$nominal.delay
 
   # resolve NULL column/date/metadata arguments; coerce id.col to a factor
-  reviewed_params <- .validateArguments()
+  reviewed_params <- .validateArguments(optional.cols = "station.col")
   data <- reviewed_params$data
   tagging.dates <- reviewed_params$tagging.dates
   land.shape <- reviewed_params$land.shape
@@ -238,8 +244,10 @@ filterDetections <- function(data,
     .mobyAbort("'", datetime.col, "' contains ", sum(is.na(data[, datetime.col])),
                " missing value(s); please remove or fix them before filtering.")
 
-  # station column (only used by the min_lag filter); resolved from metadata, defaulting to 'station'
-  station_col <- if (!is.null(prev_meta) && !is.null(prev_meta$station.col)) prev_meta$station.col else "station"
+  # station.col was resolved by .validateArguments() from an explicit argument, mobyData metadata, or
+  # the canonical default. Its absence is allowed here because duplicate removal has a conservative
+  # exact-row fallback; the min_lag filter is skipped when receiver identity is unavailable.
+  station_available <- station.col %in% names(data)
 
   nfish <- nlevels(data[, id.col])
   all_ids <- levels(data[, id.col])
@@ -257,8 +265,8 @@ filterDetections <- function(data,
       nominal.delay <- cp$vector
     }
     do_minlag <- TRUE
-    if (!station_col %in% names(data)) {
-      .mobyWarn("The min_lag false-detection filter needs a station/receiver column ('", station_col,
+    if (!station_available) {
+      .mobyWarn("The min_lag false-detection filter needs a station/receiver column ('", station.col,
                 "'), which is not present; skipping it.")
       do_minlag <- FALSE
     }
@@ -284,6 +292,10 @@ filterDetections <- function(data,
   names(n_individual) <- all_ids
   n_total <- nrow(data)
 
+  # Columns supplied by the user, before internal tracking fields are added. These define the
+  # conservative exact-row duplicate fallback when receiver identity is unavailable.
+  duplicate_row_cols <- names(data)
+
   # stable per-detection id used to track speed-filter shielding across iterations
   data$.detid <- seq_len(nrow(data))
 
@@ -301,8 +313,32 @@ filterDetections <- function(data,
   ##############################################################################
 
   if (isTRUE(remove.duplicates)) {
-    key_cols <- c(id.col, datetime.col, if (station_col %in% names(data)) station_col)
-    dup <- duplicated(data[, key_cols, drop = FALSE])
+    dup <- rep(FALSE, nrow(data))
+
+    if (station_available) {
+      station_value <- as.character(data[[station.col]])
+      station_known <- !is.na(station_value) & nzchar(trimws(station_value))
+
+      # Receiver-aware key where station identity is known. Simultaneous receptions at different
+      # receivers are intentionally distinct detections.
+      if (any(station_known)) {
+        key_cols <- c(id.col, datetime.col, station.col)
+        dup[station_known] <- duplicated(data[station_known, key_cols, drop = FALSE])
+      }
+
+      # Without a receiver value, never collapse rows merely because animal and time match.
+      if (any(!station_known)) {
+        dup[!station_known] <- duplicated(data[!station_known, duplicate_row_cols, drop = FALSE])
+        if (any(station_known))
+          .mobyWarn("Some station values are missing; only identical rows were removed for those records.")
+        else
+          .mobyWarn("No usable station values found; duplicate filtering was limited to identical rows.")
+      }
+    } else {
+      dup <- duplicated(data[, duplicate_row_cols, drop = FALSE])
+      .mobyWarn("No station column found; duplicate filtering was limited to identical rows.")
+    }
+
     if (any(dup)) {
       r <- data[dup, , drop = FALSE]; r$reason <- "duplicate detection"
       add_discarded(r, "Duplicate detections")
@@ -371,8 +407,8 @@ filterDetections <- function(data,
   if (min.days > 0)       crit["minimum days"] <- .fmtN(min.days)
 
   # input scale, kept for print.mobyFilter(): after filtering these can no longer be recovered
-  st_col <- if (!is.null(prev_meta) && !is.null(prev_meta$station.col)) prev_meta$station.col else "station"
-  n_stations_in <- if (st_col %in% colnames(data)) length(unique(stats::na.omit(data[[st_col]]))) else NA_integer_
+  n_stations_in <- if (station_available)
+    length(unique(stats::na.omit(data[[station.col]]))) else NA_integer_
 
   .mobyHeader("filterDetections()", "Filtering acoustic detections",
               input = paste0(.fmtCount(n_total, "detection"), " ", .mobyGlyph("mid"), " ", .fmtCount(nfish, "individual")),
@@ -408,7 +444,7 @@ filterDetections <- function(data,
     # the per-ID nominal delay (IDs with an unknown delay are skipped)
     if (do_minlag && nrow(sub) > 0 && (fixed_minlag || !is.na(nominal.delay[i]))) {
       thr <- if (fixed_minlag) min.lag.threshold else min.lag.factor * nominal.delay[i]
-      fl <- .minLagFlags(as.numeric(sub[, datetime.col]), as.character(sub[[station_col]]), thr)
+      fl <- .minLagFlags(as.numeric(sub[, datetime.col]), as.character(sub[[station.col]]), thr)
       if (any(fl)) {
         r <- sub[fl, ]; r$reason <- paste0("minimum lag (< ", round(thr), " s)")
         add_discarded(r, "Minimum lag"); sub <- sub[!fl, , drop = FALSE]
@@ -606,11 +642,12 @@ filterDetections <- function(data,
   # only filters that actually ran are listed
   attr(results, "filters") <- crit
   attr(results, "input") <- list(detections = n_total, individuals = nfish,
-                                 stations = n_stations_in, station.col = st_col)
+                                 stations = n_stations_in, station.col = station.col)
   # per-filter removals under the FULL criterion names (the table abbreviates them for width)
   attr(results, "removals") <- list(n = colSums(removed_mat), ids = colSums(removed_mat > 0))
   attr(results, "parameters") <- list(
-    tagging.dates = tagging.dates, cutoff.dates = cutoff.dates, remove.duplicates = remove.duplicates,
+    tagging.dates = tagging.dates, cutoff.dates = cutoff.dates, station.col = station.col,
+    remove.duplicates = remove.duplicates,
     nominal.delay = nominal.delay, min.lag.factor = min.lag.factor, min.lag.threshold = min.lag.threshold,
     isolation.window = isolation.window, max.speed = max.speed, speed.unit = speed.unit,
     acoustic.range = acoustic.range, min.corroboration = min.corroboration, max.iterations = max.iterations,

@@ -51,6 +51,82 @@ test_that("duplicate removal drops exact duplicates and is toggleable", {
   expect_equal(nrow(r0$data_discarded), 0L)
 })
 
+test_that("duplicate removal distinguishes simultaneous receptions by station", {
+  d <- data.frame(
+    ID = factor(c("F", "F", "F")),
+    datetime = rep(as.POSIXct("2023-06-01 00:00", tz = "UTC"), 3),
+    lon = c(Alon, Blon, Alon), lat = 37,
+    receiver = c("SA", "SB", "SA"), stringsAsFactors = FALSE)
+
+  r <- suppressMessages(filterDetections(
+    d, station.col = "receiver", tagging.dates = tg, verbose = FALSE))
+
+  expect_equal(nrow(r$data), 2L)                         # SA and SB are distinct receptions
+  expect_equal(nrow(r$data_discarded), 1L)               # repeated SA record only
+  expect_equal(r$data_discarded$receiver, "SA")
+  expect_equal(attr(r, "parameters")$station.col, "receiver")
+
+  md <- as_moby(d, station.col = "receiver", tagging.dates = tg, verbose = FALSE)
+  inherited <- suppressMessages(filterDetections(md, verbose = FALSE))
+  expect_equal(nrow(inherited$data), 2L)                  # metadata resolution follows the same rule
+
+  speed_data <- d[1:2, , drop = FALSE]
+  speed_data$datetime[2] <- speed_data$datetime[2] + 3600
+  expect_no_error(suppressMessages(filterDetections(
+    speed_data, station.col = "receiver", tagging.dates = tg,
+    max.speed = 1000, verbose = FALSE)))                  # station.col is not forwarded through ...
+})
+
+test_that("missing station information uses the conservative exact-row fallback", {
+  same_time <- as.POSIXct("2023-06-01 00:00", tz = "UTC")
+  d <- data.frame(
+    ID = factor(c("F", "F")), datetime = rep(same_time, 2),
+    lon = c(Alon, Blon), lat = 37, receiver = c("SA", "SB"),
+    stringsAsFactors = FALSE)
+
+  expect_warning(
+    r <- suppressMessages(filterDetections(d, tagging.dates = tg, verbose = FALSE)),
+    "No station column found"
+  )
+  expect_equal(nrow(r$data), 2L)                          # distinct rows are not collapsed by ID + time
+  expect_equal(nrow(r$data_discarded), 0L)
+
+  md <- as_moby(d, tagging.dates = tg, verbose = FALSE)   # canonical 'station' mapping is absent
+  expect_warning(
+    r_md <- suppressMessages(filterDetections(md, verbose = FALSE)),
+    "No station column found"
+  )
+  expect_equal(nrow(r_md$data), 2L)                       # regression for the original mobyData case
+
+  expect_no_warning(suppressMessages(filterDetections(
+    d, tagging.dates = tg, remove.duplicates = FALSE, verbose = FALSE)))
+
+  exact <- rbind(d[1, , drop = FALSE], d[1, , drop = FALSE])
+  expect_warning(
+    r_exact <- suppressMessages(filterDetections(exact, tagging.dates = tg, verbose = FALSE)),
+    "limited to identical rows"
+  )
+  expect_equal(nrow(r_exact$data), 1L)
+  expect_equal(r_exact$data_discarded$reason, "duplicate detection")
+})
+
+test_that("missing station values use exact-row fallback without weakening complete station keys", {
+  same_time <- as.POSIXct("2023-06-01 00:00", tz = "UTC")
+  d <- data.frame(
+    ID = factor(rep("F", 5)), datetime = rep(same_time, 5),
+    lon = c(Alon, Alon, Alon, Blon, Blon), lat = 37,
+    station = c("SA", "SA", NA, NA, NA), marker = c(1, 2, 3, 4, 4),
+    stringsAsFactors = FALSE)
+
+  expect_warning(
+    r <- suppressMessages(filterDetections(d, station.col = "station",
+                                           tagging.dates = tg, verbose = FALSE)),
+    "Some station values are missing"
+  )
+  expect_equal(nrow(r$data), 3L)                          # one SA key duplicate + one exact NA row
+  expect_equal(nrow(r$data_discarded), 2L)
+})
+
 test_that("min_lag removes an uncorroborated lone decode and is off without nominal.delay", {
   d <- rbind(
     data.frame(ID = "F", datetime = as.POSIXct("2023-06-01 00:00", tz = "UTC") + (0:5) * 60,

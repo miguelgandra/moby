@@ -8,6 +8,7 @@ filterDetections(
   data,
   id.col = NULL,
   datetime.col = NULL,
+  station.col = NULL,
   lon.col = NULL,
   lat.col = NULL,
   land.shape = NULL,
@@ -37,6 +38,8 @@ filterDetections(
 
 \item{datetime.col}{Name of the column containing date-times in POSIXct format. Defaults to \code{"datetime"}.}
 
+\item{station.col}{Name of the column containing station/receiver IDs. Defaults to \code{"station"}.}
+
 \item{lon.col}{Name of the column containing longitude (or projected x) values. Defaults to \code{"lon"}.}
 
 \item{lat.col}{Name of the column containing latitude (or projected y) values. Defaults to \code{"lat"}.}
@@ -53,8 +56,11 @@ positions for the speed filter.}
 \item{cutoff.dates}{Optional. Cut-off date(s) beyond which detections are discarded (tag expiry,
 last download, etc.). A single POSIXct applied to all IDs, or a named POSIXct vector keyed by \code{id.col}.}
 
-\item{remove.duplicates}{Logical; drop exact-duplicate records (same animal ID, timestamp and
-station) before any other filter. Defaults to TRUE.}
+\item{remove.duplicates}{Logical; drop repeated receiver records (same animal ID, exact timestamp
+and station) before any other filter. Simultaneous detections at different stations are distinct.
+If the station column is absent, or its value is missing for a record, the function warns and uses
+a conservative fallback for the affected records: only rows identical across all input columns are
+removed. Defaults to TRUE.}
 
 \item{nominal.delay}{Transmitter nominal (mean) delay, in seconds, used to scale the min_lag
 false-detection window. A single value applied to all individuals, or a named numeric vector keyed
@@ -128,8 +134,10 @@ Filters are applied in this order (a filter is skipped when its controlling argu
 left at its "off" value):
 
 \enumerate{
-\item \strong{Duplicate removal} (\code{remove.duplicates}): exact-duplicate records (same animal,
-timestamp and station) are dropped up front so they cannot slip past the other filters.
+\item \strong{Duplicate removal} (\code{remove.duplicates}): repeated receiver records (same animal,
+exact timestamp and station) are dropped up front so they cannot slip past the other filters.
+Simultaneous detections at different stations are retained. If no usable station information is
+available, a warning is issued and only rows identical across all input columns are removed.
 \item \strong{Pre-tagging}: detections before an animal's \code{tagging.date}.
 \item \strong{Cut-off}: detections after an optional \code{cutoff.date}.
 \item \strong{False-detection (min_lag)}: the standard short-interval false-detection filter

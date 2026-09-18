@@ -4,7 +4,11 @@
 \alias{.validateArguments}
 \title{Validate Arguments}
 \usage{
-.validateArguments()
+.validateArguments(optional.cols = character())
+}
+\arguments{
+\item{optional.cols}{Column-role arguments whose mapped column may be absent because the calling
+function provides its own safe fallback. Other validation still applies.}
 }
 \value{
 A list containing potentially modified versions of \code{data}, \code{tagging.dates}, and \code{tag.durations}.
