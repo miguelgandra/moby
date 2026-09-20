@@ -5,12 +5,12 @@
 #' Calculate residency indices
 #'
 #' @description Computes individual residency indices and the temporal building blocks they are
-#' derived from, returning a tidy, fully numeric table (one row per animal) suitable for
+#' derived from, returning a typed table (one row per animal) suitable for
 #' plotting and downstream statistical analysis. This is the numeric core used internally by
 #' \code{\link{summaryTable}} (which formats these values for publication); use
 #' `calculateResidency()` directly when you need the raw values rather than a formatted table.
 #'
-#' Three indices, widely used in acoustic telemetry studies (Kraft et al. 2023; Appert et al. 2023),
+#' The following indices, used in acoustic telemetry studies (Kraft et al. 2023; Appert et al. 2023),
 #' are available:
 #' \itemize{
 #'   \item \strong{IR1} = Dd / Di, the proportion of days detected over the detection span
@@ -24,6 +24,11 @@
 #' }
 #' where Dd = number of days with detections, Di = detection span (days at liberty,
 #' first/release to last detection, inclusive), and Dt = study interval (release to monitoring end).
+#' Dd and Di use calendar dates in the detection timestamps' time zone. Dt counts calendar
+#' dates with positive monitoring time between tagging and the earlier of tag expiration and
+#' the end of receiver monitoring. A cutoff exactly at midnight does not count that new day.
+#' Detections before tagging or at/after a supplied monitoring cutoff cause an error; review
+#' the dates or filter those records before calling this function.
 #'
 #' @inheritParams as_moby
 #' @param data A data frame (or \code{\link{mobyData}}) of detections.
@@ -31,10 +36,11 @@
 #' Inherited from the `mobyData` metadata when available.
 #' @param tag.durations Optional numeric vector of tag battery durations (in days), used (with
 #' `last.monitoring.date`) to define the study interval Dt. Required (together with, or instead of,
-#' `last.monitoring.date`) when `IR2` or `IWR` are requested.
-#' @param last.monitoring.date Optional POSIXct value or named vector giving the last date data
-#' could be retrieved (last download / receivers operational). When both this and `tag.durations`
-#' are supplied, the shorter of the two defines the monitoring end per individual.
+#' `last.monitoring.date`) when `IR2`, `IWR`, or `IR2/IR1` are requested.
+#' @param last.monitoring.date Optional POSIXct value or named vector giving the end of
+#' receiver monitoring. The value is a cutoff timestamp, not an automatically counted final
+#' day (to include all of December 31, use January 1 at midnight). When both this and
+#' `tag.durations` are supplied, the earlier cutoff is used per individual.
 #' @param residency.index Character vector of indices to compute; any of `"IR1"`, `"IR2"`,
 #' `"IWR"`, `"IR2/IR1"`. Defaults to `c("IR1", "IR2", "IWR")`.
 #' @param start.point Starting point for the detection span: `"release"` (default) or
@@ -50,11 +56,13 @@
 #' `first_detection`, `last_detection`, `monitoring_end` (POSIXct); `days_detected` (Dd),
 #' `detection_span` (Di) and `monitoring_duration` (Dt) in days; one numeric column per requested
 #' index; and, if `residency.by` is set, additional `"<index> <level>"` partial-residency columns.
+#' If neither monitoring cutoff is provided, `monitoring_end` and `monitoring_duration` are `NA`;
+#' IR1 remains calculable, while indices using Dt require a known cutoff.
 #'
 #' @references
 #' Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
 #' Residency and space use estimation methods based on passive acoustic telemetry data.
-#' Movement Ecology, 11(1), 12. https://doi.org/10.1186/s40462-023-00349-y
+#' Movement Ecology, 11(1), 12. https://doi.org/10.1186/s40462-022-00364-z
 #'
 #' Appert, C., Udyawer, V., Simpfendorfer, C. A., et al. (2023). Use, misuse, and ambiguity of
 #' indices of residence in acoustic telemetry studies. Marine Ecology Progress Series, 714, 27-44.
@@ -101,8 +109,8 @@ calculateResidency <- function(data,
     errors <- c(errors, "Variable used to calculate partial residencies ('residency.by') not found in the data.")
   }
   if (!is.logical(cap) || length(cap) != 1 || is.na(cap)) errors <- c(errors, "'cap' must be a single logical value.")
-  if (any(residency.index %in% c("IR2", "IWR")) && is.null(tag.durations) && is.null(last.monitoring.date)) {
-    errors <- c(errors, "Indices 'IR2'/'IWR' require 'tag.durations' or 'last.monitoring.date' to define the study interval.")
+  if (any(residency.index %in% c("IR2", "IWR", "IR2/IR1")) && is.null(tag.durations) && is.null(last.monitoring.date)) {
+    errors <- c(errors, "Indices using the monitoring duration require 'tag.durations' or 'last.monitoring.date'.")
   }
   if (length(errors) > 0) {
     stop(paste0("\n", paste0("- ", errors, collapse = "\n")), call. = FALSE)
@@ -110,7 +118,7 @@ calculateResidency <- function(data,
 
   # ---- header -----------------------------------------------------------------------------------
   # Criteria are the choices that change what the numbers MEAN: which indices are computed, where the
-  # detection span starts (release vs first detection moves Di, and so every index value), whether
+  # detection span starts (release vs first detection moves Di and indices using it), whether
   # values are capped at their theoretical maximum, and the variable partial residencies are broken
   # down by. Everything else this function produces is read straight off the returned table.
   crit <- c(indices = paste(residency.index, collapse = paste0(" ", .mobyGlyph("mid"), " ")))
@@ -141,36 +149,58 @@ calculateResidency <- function(data,
   # start of the detection span
   start_dates <- if (start.point == "first.detection") first_detections else tagging.dates
 
-  # monitoring end (Dt): shortest of tag expiration / last monitoring date, else last detection
+  # Monitoring end: shortest of tag expiration / last monitoring date, if known.
   if (!is.null(tag.durations)) {
     end_dates <- as.POSIXct(rep(NA, length(tagging.dates)), tz = tz)
     tag_expiration_dates <- tagging.dates + tag.durations * 60 * 60 * 24
     for (e in seq_along(tagging.dates)) {
-      if (!is.null(last.monitoring.date)) end_dates[e] <- min(tag_expiration_dates[e], last.monitoring.date[e], na.rm = TRUE)
+      if (!is.null(last.monitoring.date)) {
+        bounds <- c(tag_expiration_dates[e], last.monitoring.date[e])
+        if (!all(is.na(bounds))) end_dates[e] <- min(bounds, na.rm = TRUE)
+      }
       else end_dates[e] <- tag_expiration_dates[e]
     }
   } else if (!is.null(last.monitoring.date)) {
     end_dates <- last.monitoring.date
   } else {
-    end_dates <- rep(max(data[, datetime.col], na.rm = TRUE), length(tagging.dates))
-    warning(paste(strwrap(paste("- Neither `tag.durations` nor `last.monitoring.date` were provided.",
-                                "Using the last detection date in the dataset as the monitoring end for all individuals."),
-                          width = getOption("width")), collapse = "\n"), call. = FALSE)
+    end_dates <- as.POSIXct(rep(NA, length(tagging.dates)), tz = tz)
   }
 
-  # days with detections (Dd)
-  data$.date <- strftime(data[, datetime.col], format = "%d-%m-%Y", tz = tz)
-  Dd <- stats::aggregate(data$.date, by = list(data[, id.col]), function(x) length(unique(x)), drop = FALSE)$x
+  # The daily index counts calendar dates in the detection data's time zone. An animal's
+  # detection dates must fall within the interval when its tag and the array could be active.
+  row_id <- match(as.character(data[, id.col]), ids)
+  before_tagging <- !is.na(data[, datetime.col]) & !is.na(tagging.dates[row_id]) &
+    data[, datetime.col] < tagging.dates[row_id]
+  after_monitoring <- !is.na(data[, datetime.col]) & !is.na(end_dates[row_id]) &
+    data[, datetime.col] >= end_dates[row_id]
+  invalid_ids <- unique(as.character(data[before_tagging | after_monitoring, id.col]))
+  if (length(invalid_ids)) {
+    stop("Detections outside the tagging-to-monitoring interval for ID(s): ",
+         paste(invalid_ids, collapse = ", "), ". Check tagging dates, tag durations, ",
+         "and the last monitoring date.", call. = FALSE)
+  }
+  if (any(residency.index %in% c("IR2", "IWR", "IR2/IR1")) && anyNA(end_dates)) {
+    stop("No monitoring endpoint for ID(s): ", paste(ids[is.na(end_dates)], collapse = ", "),
+         ". Supply 'tag.durations' or 'last.monitoring.date'.", call. = FALSE)
+  }
 
-  # detection span (Di) - days at liberty, inclusive of both endpoints
-  Di <- as.integer(difftime(last_detections, start_dates, units = "days")) + 1
-  Di[Di < 1] <- NA
+  # Days with detections (Dd), including each date at most once per individual.
+  data$.date <- as.Date(data[, datetime.col], tz = tz)
+  Dd <- stats::aggregate(data$.date, by = list(data[, id.col]),
+                         function(x) length(unique(x[!is.na(x)])), drop = FALSE)$x
 
-  # study interval (Dt) - the monitoring / tag-active duration, in days. Non-positive intervals
-  # (e.g. a monitoring end or tag expiration before tagging) become NA, so a bad input yields NA
-  # rather than a silently negative residency index that cap = TRUE would not floor.
-  Dt <- as.integer(difftime(end_dates, tagging.dates, units = "days"))
-  Dt[Dt <= 0] <- NA
+  # Detection span (Di): inclusive calendar dates, matching Dd's unit.
+  Di <- as.integer(as.Date(last_detections, tz = tz) - as.Date(start_dates, tz = tz)) + 1L
+  Di[!is.na(Di) & Di < 1] <- NA_integer_
+
+  # Monitoring days (Dt): dates with positive monitoring time in [tagging, end).
+  # If the tag/array stops exactly at midnight, that new date has no monitoring time.
+  end_day <- as.Date(end_dates, tz = tz)
+  end_clock <- as.POSIXlt(end_dates, tz = tz)
+  Dt <- as.integer(end_day - as.Date(tagging.dates, tz = tz)) +
+    as.integer(end_clock$hour > 0 | end_clock$min > 0 | end_clock$sec > 0)
+  Dt[is.na(end_dates) | is.na(tagging.dates) |
+       (!is.na(end_dates) & !is.na(tagging.dates) & end_dates <= tagging.dates)] <- NA_integer_
 
   # index calculator
   residencyValue <- function(Dd, Di, Dt, metric) {

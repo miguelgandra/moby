@@ -30,11 +30,12 @@ Inherited from the \code{mobyData} metadata when available.}
 
 \item{tag.durations}{Optional numeric vector of tag battery durations (in days), used (with
 \code{last.monitoring.date}) to define the study interval Dt. Required (together with, or instead of,
-\code{last.monitoring.date}) when \code{IR2} or \code{IWR} are requested.}
+\code{last.monitoring.date}) when \code{IR2}, \code{IWR}, or \code{IR2/IR1} are requested.}
 
-\item{last.monitoring.date}{Optional POSIXct value or named vector giving the last date data
-could be retrieved (last download / receivers operational). When both this and \code{tag.durations}
-are supplied, the shorter of the two defines the monitoring end per individual.}
+\item{last.monitoring.date}{Optional POSIXct value or named vector giving the end of
+receiver monitoring. The value is a cutoff timestamp, not an automatically counted final
+day (to include all of December 31, use January 1 at midnight). When both this and
+\code{tag.durations} are supplied, the earlier cutoff is used per individual.}
 
 \item{residency.index}{Character vector of indices to compute; any of \code{"IR1"}, \code{"IR2"},
 \code{"IWR"}, \code{"IR2/IR1"}. Defaults to \code{c("IR1", "IR2", "IWR")}.}
@@ -56,15 +57,17 @@ A data frame with one row per individual containing: the ID column, \code{taggin
 \code{first_detection}, \code{last_detection}, \code{monitoring_end} (POSIXct); \code{days_detected} (Dd),
 \code{detection_span} (Di) and \code{monitoring_duration} (Dt) in days; one numeric column per requested
 index; and, if \code{residency.by} is set, additional \code{"<index> <level>"} partial-residency columns.
+If neither monitoring cutoff is provided, \code{monitoring_end} and \code{monitoring_duration} are \code{NA};
+IR1 remains calculable, while indices using Dt require a known cutoff.
 }
 \description{
 Computes individual residency indices and the temporal building blocks they are
-derived from, returning a tidy, fully numeric table (one row per animal) suitable for
+derived from, returning a typed table (one row per animal) suitable for
 plotting and downstream statistical analysis. This is the numeric core used internally by
 \code{\link{summaryTable}} (which formats these values for publication); use
 \code{calculateResidency()} directly when you need the raw values rather than a formatted table.
 
-Three indices, widely used in acoustic telemetry studies (Kraft et al. 2023; Appert et al. 2023),
+The following indices, used in acoustic telemetry studies (Kraft et al. 2023; Appert et al. 2023),
 are available:
 \itemize{
 \item \strong{IR1} = Dd / Di, the proportion of days detected over the detection span
@@ -78,6 +81,11 @@ detection interval to the study interval.
 }
 where Dd = number of days with detections, Di = detection span (days at liberty,
 first/release to last detection, inclusive), and Dt = study interval (release to monitoring end).
+Dd and Di use calendar dates in the detection timestamps' time zone. Dt counts calendar
+dates with positive monitoring time between tagging and the earlier of tag expiration and
+the end of receiver monitoring. A cutoff exactly at midnight does not count that new day.
+Detections before tagging or at/after a supplied monitoring cutoff cause an error; review
+the dates or filter those records before calling this function.
 }
 \examples{
 data(rays)
@@ -89,7 +97,7 @@ head(res)
 \references{
 Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., & Abecasis, D. (2023).
 Residency and space use estimation methods based on passive acoustic telemetry data.
-Movement Ecology, 11(1), 12. https://doi.org/10.1186/s40462-023-00349-y
+Movement Ecology, 11(1), 12. https://doi.org/10.1186/s40462-022-00364-z
 
 Appert, C., Udyawer, V., Simpfendorfer, C. A., et al. (2023). Use, misuse, and ambiguity of
 indices of residence in acoustic telemetry studies. Marine Ecology Progress Series, 714, 27-44.
