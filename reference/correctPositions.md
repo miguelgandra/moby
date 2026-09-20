@@ -2,7 +2,9 @@
 
 This function relocates positions on land to the nearest marine cell
 using either a coastline shapefile or a raster containing land surfaces
-or bathymetry values.
+or bathymetry values. With polygon coastlines, corrected points are
+placed just outside the land boundary so they are not classified as land
+by boundary-inclusive spatial intersection checks.
 
 ## Usage
 
@@ -114,7 +116,8 @@ A list with two elements:
 - data:
 
   The original data frame with updated positions for the points that
-  were relocated from land.
+  were relocated from land. If the input is a `mobyData`, its class and
+  metadata are retained.
 
 - summary:
 
