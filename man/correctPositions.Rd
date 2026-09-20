@@ -65,7 +65,7 @@ Run \code{parallel::detectCores()} to check the number of available cores.}
 \value{
 A list with two elements:
 \describe{
-\item{data}{The original data frame with updated positions for the points that were relocated from land.}
+\item{data}{The original data frame with updated positions for the points that were relocated from land. If the input is a \code{mobyData}, its class and metadata are retained.}
 \item{summary}{A summary of the input data and changes made to the positions.}
 }
 }

@@ -8,6 +8,19 @@ test_that("calculateCOAs carries mobyData metadata forward so the pipeline stays
   expect_no_error(suppressWarnings(suppressMessages(calculateUDs(coas, method = "kde", bandwidth = 250))))
 })
 
+test_that("calculateCOAs preserves the land layer's display name", {
+  coast <- sf::st_sf(geometry = sf::st_sfc(sf::st_polygon(list(matrix(
+    c(0, 0, 1, 0, 1, 1, 0, 1, 0, 0), ncol = 2, byrow = TRUE))), crs = 4326))
+  md <- suppressWarnings(as_moby(rays, land.shape = coast, verbose = FALSE))
+  coas <- suppressWarnings(calculateCOAs(md, verbose = FALSE))
+
+  expect_true(is_moby(coas))
+  expect_identical(attr(coas, "moby.land.name"), attr(md, "moby.land.name"))
+  expect_identical(mobyMeta(coas)$land.shape, mobyMeta(md)$land.shape)
+  expect_identical(mobyMeta(coas)$tagging.dates, mobyMeta(md)$tagging.dates)
+  expect_null(mobyMeta(coas)$datetime.col)
+})
+
 test_that("calculateCOAs on a plain data frame returns a plain data frame", {
   plain <- as.data.frame(rays); attr(plain, "moby") <- NULL
   res <- suppressWarnings(suppressMessages(calculateCOAs(

@@ -39,7 +39,7 @@
 
 #' @return A list with two elements:
 #' \describe{
-#'   \item{data}{The original data frame with updated positions for the points that were relocated from land.}
+#'   \item{data}{The original data frame with updated positions for the points that were relocated from land. If the input is a `mobyData`, its class and metadata are retained.}
 #'   \item{summary}{A summary of the input data and changes made to the positions.}
 #' }
 #'
@@ -79,6 +79,17 @@ correctPositions <- function(data,
 
   # capture the original spatial.layer name
   spatial_layer_name <- deparse(substitute(spatial.layer))
+
+  # .validateArguments() demotes its working copy to a plain data frame. Keep the input's
+  # package metadata so the corrected data remains chainable; the report itself stays a list.
+  prev_meta <- attr(data, "moby")
+  prev_land_name <- attr(data, "moby.land.name")
+  restore_data <- function(x) {
+    x <- .restoreClass(x, prev_meta)
+    if (!is.null(prev_meta) && !is.null(prev_meta$land.shape))
+      attr(x, "moby.land.name") <- prev_land_name
+    x
+  }
 
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
@@ -243,7 +254,7 @@ correctPositions <- function(data,
     .mobyOk("No positions on land ", .mobyGlyph("mid"), " data returned unchanged", verbose = verbose)
 
     # return the original dataset
-    results <- list("data"=data)
+    results <- list("data"=restore_data(data))
 
     # add attributes to the results list to save relevant parameters
     attr(results, 'points.relocated') <- length(pointsOnLand_indexes)
@@ -480,7 +491,7 @@ correctPositions <- function(data,
   data[pointsOnLand_indexes, lat.col] <- pointsCorrected[,2]
 
   # prepare the final results to return, including the updated dataset and the summary table
-  results <- list("data"=data, "summary"=summary)
+  results <- list("data"=restore_data(data), "summary"=summary)
 
   # add attributes to the results list to save relevant parameters
   attr(results, 'points.relocated') <- length(relocated_indices)

@@ -56,6 +56,7 @@ calculateCOAs <- function(data,
 
   # capture the input's mobyData metadata (before coercion) to carry it forward onto the COAs
   prev_meta <- attr(data, "moby")
+  prev_land_name <- attr(data, "moby.land.name")
 
   # perform argument checks and return reviewed parameters
   reviewed_params <- .validateArguments()
@@ -130,6 +131,9 @@ calculateCOAs <- function(data,
   # metadata is carried over - otherwise it would point at a column that no longer exists.
   if(!is.null(prev_meta)) prev_meta$datetime.col <- NULL
   result <- .restoreClass(result, prev_meta)
+  # The land layer's print label is package-owned but lives outside the "moby" metadata.
+  if(!is.null(prev_meta) && !is.null(prev_meta$land.shape))
+    attr(result, "moby.land.name") <- prev_land_name
 
   # ---- outcome --------------------------------------------------------------------------------
   .mobyBlank(verbose)

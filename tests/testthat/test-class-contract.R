@@ -63,6 +63,44 @@ test_that("operations preserve the input's class in both directions", {
   }
 })
 
+test_that("correctPositions preserves the dataset class and metadata in both return paths", {
+  fx <- readRDS(test_path("_spatial", "fixtures.rds"))
+  coast <- fx$land_sf
+  tags <- setNames(as.POSIXct("2023-04-01", tz = "UTC"), "A01")
+  make_moby <- function(rows) {
+    d <- fx$onland[rows, , drop = FALSE]
+    names(d)[names(d) == "ID"] <- "transmitter"
+    names(d)[names(d) == "datetime"] <- "when"
+    names(d)[names(d) == "lon"] <- "longitude"
+    names(d)[names(d) == "lat"] <- "latitude"
+    d$timebin <- d$when
+    suppressWarnings(as_moby(d, id.col = "transmitter", datetime.col = "when",
+                             timebin.col = "timebin", lon.col = "longitude",
+                             lat.col = "latitude", tagging.dates = tags,
+                             epsg.code = fx$epsg, land.shape = coast, verbose = FALSE))
+  }
+
+  for (rows in list(seq_len(nrow(fx$onland)), c(2L, 4L, 6L))) {
+    md <- make_moby(rows)
+    out <- suppressWarnings(correctPositions(md, spatial.layer = coast, verbose = FALSE))
+
+    expect_identical(attr(md, "moby.land.name"), "coast")
+    expect_identical(class(out), "list")
+    expect_true(is_moby(out$data))
+    expect_identical(mobyMeta(out$data), mobyMeta(md))
+    expect_identical(attr(out$data, "moby.land.name"), attr(md, "moby.land.name"))
+    expect_identical(names(out$data), names(md))
+    expect_identical(attr(out, "points.relocated"), if (length(rows) == 6L) 3L else 0L)
+    expect_true(inherits(attr(out, "processing.date"), "POSIXct"))
+  }
+
+  plain <- as.data.frame(make_moby(c(2L, 4L, 6L)))
+  out_plain <- correctPositions(plain, spatial.layer = coast, lon.col = "longitude",
+                                lat.col = "latitude", epsg.code = fx$epsg, verbose = FALSE)
+  expect_identical(class(out_plain$data), "data.frame")
+  expect_null(mobyMeta(out_plain$data))
+})
+
 test_that("matchDeployments keeps the caller's column map instead of the canonical defaults", {
   d <- as.data.frame(rays_detections)
   names(d)[names(d) == "datetime"] <- "dt"
