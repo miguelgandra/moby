@@ -72,6 +72,8 @@ A list with two elements:
 \description{
 This function relocates positions on land to the nearest marine cell
 using either a coastline shapefile or a raster containing land surfaces or bathymetry values.
+With polygon coastlines, corrected points are placed just outside the land boundary so
+they are not classified as land by boundary-inclusive spatial intersection checks.
 }
 \examples{
 \donttest{

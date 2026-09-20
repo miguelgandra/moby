@@ -99,6 +99,88 @@ test_that("correctPositions SF path matches frozen golden (relocated set + coord
 })
 
 
+test_that("polygon relocation clears the calculateUDs land pre-flight check", {
+  cp <- suppressWarnings(suppressMessages(
+    correctPositions(fx$onland, spatial.layer = fx$land_sf,
+                     epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                     verbose = FALSE)))
+  land <- sf::st_transform(fx$land_sf, EPSG)
+  corrected <- sf::st_transform(
+    sf::st_as_sf(cp$data, coords = c("lon", "lat"), crs = 4326), EPSG)
+
+  expect_identical(attr(cp, "points.relocated"), 3L)
+  expect_true(all(lengths(sf::st_intersects(corrected, land)) == 0L))
+  expect_no_warning(.checkPositionsAgainstLand(corrected, "ID", land))
+
+  projected <- fx$onland
+  xy <- sf::st_coordinates(sf::st_transform(
+    sf::st_as_sf(projected, coords = c("lon", "lat"), crs = 4326), EPSG))
+  projected$lon <- xy[, "X"]
+  projected$lat <- xy[, "Y"]
+  land_projected <- sf::st_transform(fx$land_sf, EPSG)
+  cp_projected <- suppressWarnings(suppressMessages(
+    correctPositions(projected, spatial.layer = land_projected,
+                     epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                     verbose = FALSE)))
+  corrected_projected <- sf::st_as_sf(cp_projected$data,
+                                      coords = c("lon", "lat"), crs = EPSG)
+  expect_true(all(lengths(sf::st_intersects(corrected_projected, land_projected)) == 0L))
+})
+
+
+test_that("water-side offsets handle exact boundaries, holes and adjacent land", {
+  rect <- function(x0, x1, y0, y1) sf::st_polygon(list(rbind(
+    c(x0, y0), c(x1, y0), c(x1, y1), c(x0, y1), c(x0, y0))))
+  land <- sf::st_sf(geometry = sf::st_sfc(
+    rect(500000, 500001, 4256000, 4256001),
+    rect(500001.002, 500002, 4256000, 4256001), crs = EPSG))
+  origin <- sf::st_sfc(sf::st_point(c(500000.999, 4256000.5)), crs = EPSG)
+  boundary <- sf::st_sfc(sf::st_point(c(500001, 4256000.5)), crs = EPSG)
+  moved <- moby:::.nudgeToWater(origin, boundary, land, 1, TRUE)
+  expect_false(is.null(moved))
+  expect_equal(lengths(sf::st_intersects(moved, land)), 0L)
+  expect_equal(lengths(sf::st_intersects(
+    sf::st_transform(sf::st_transform(moved, 4326), EPSG), land)), 0L)
+
+  corner <- sf::st_sfc(sf::st_point(c(500001, 4256001)), crs = EPSG)
+  moved_corner <- moby:::.nudgeToWater(corner, corner, land, 1, TRUE)
+  expect_false(is.null(moved_corner))
+  expect_equal(lengths(sf::st_intersects(moved_corner, land)), 0L)
+
+  outer <- rbind(c(500010,4256010), c(500020,4256010),
+                 c(500020,4256020), c(500010,4256020), c(500010,4256010))
+  hole <- rbind(c(500013,4256013), c(500013,4256017),
+                c(500017,4256017), c(500017,4256013), c(500013,4256013))
+  island_with_hole <- sf::st_sf(geometry = sf::st_sfc(
+    sf::st_polygon(list(outer, hole)), crs = EPSG))
+  inside_land <- sf::st_sfc(sf::st_point(c(500012, 4256015)), crs = EPSG)
+  hole_edge <- sf::st_sfc(sf::st_point(c(500013, 4256015)), crs = EPSG)
+  moved_into_hole <- moby:::.nudgeToWater(inside_land, hole_edge, island_with_hole, 1, TRUE)
+  expect_false(is.null(moved_into_hole))
+  expect_equal(lengths(sf::st_intersects(moved_into_hole, island_with_hole)), 0L)
+
+  # A radius smaller than the minimum offset must not return a boundary point as a success.
+  expect_null(moby:::.nudgeToWater(corner, corner, land, 0.0000001, TRUE))
+})
+
+
+test_that("parallel polygon relocation matches the single-core result", {
+  skip_on_cran()
+  skip_if_not_installed("foreach")
+  skip_if_not_installed("doSNOW")
+
+  serial <- suppressWarnings(suppressMessages(
+    correctPositions(fx$onland, spatial.layer = fx$land_sf,
+                     epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                     cores = 1, verbose = FALSE)))
+  parallel <- suppressWarnings(suppressMessages(
+    correctPositions(fx$onland, spatial.layer = fx$land_sf,
+                     epsg.code = EPSG, lon.col = "lon", lat.col = "lat",
+                     cores = 2, verbose = FALSE)))
+  expect_equal(parallel$data[, c("lon", "lat")], serial$data[, c("lon", "lat")])
+})
+
+
 test_that("correctPositions searches the requested radius below 10 km", {
   land_rast <- terra::rast(test_path("_spatial", "land_raster.tif"))
   layers <- list(sf = fx$land_sf, raster = land_rast)
@@ -141,6 +223,9 @@ test_that("correctPositions converts a single relocated point back to geographic
   expect_true(all(abs(cp$data$lat) <= 90))
   expect_equal(cp$data$lon[2], one_on_land$lon[2])
   expect_equal(cp$data$lat[2], one_on_land$lat[2])
+  corrected <- sf::st_transform(
+    sf::st_as_sf(cp$data, coords = c("lon", "lat"), crs = 4326), EPSG)
+  expect_true(all(lengths(sf::st_intersects(corrected, sf::st_transform(fx$land_sf, EPSG))) == 0L))
 })
 
 

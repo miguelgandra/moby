@@ -6,6 +6,8 @@
 #'
 #' @description This function relocates positions on land to the nearest marine cell
 #' using either a coastline shapefile or a raster containing land surfaces or bathymetry values.
+#' With polygon coastlines, corrected points are placed just outside the land boundary so
+#' they are not classified as land by boundary-inclusive spatial intersection checks.
 #'
 #' @inheritParams as_moby
 #' @param data A data frame with animal positions, containing longitude and latitude values.
@@ -193,6 +195,7 @@ correctPositions <- function(data,
   ############################################################################
 
   # identify points that are on land based on the spatial layer
+  land_polygon <- NULL
   if(inherits(spatial.layer, "SpatRaster")){
     # terra::extract returns a data.frame (ID, value); column 2 holds the cell value
     point_values <- terra::extract(raster_layer, terra::vect(coords))[, 2]
@@ -202,6 +205,7 @@ correctPositions <- function(data,
     land_mask <- sf::st_as_sf(land_mask)
     land_mask <- sf::st_transform(land_mask, crs=epsg.code)
   }else if(inherits(spatial.layer, "sf")){
+    land_polygon <- spatial.layer
     spatial.layer <- sf::st_union(spatial.layer)
     pointsOnLand_indexes <- which(sf::st_intersects(coords, spatial.layer, sparse=FALSE))
     # get the boundary (coastline) of the land polygon
@@ -276,7 +280,8 @@ correctPositions <- function(data,
 
     # iterate over each spurious point to find the nearest in-water location
     for (i in seq_len(nrow(pointsOnLand))) {
-      results[[i]] <- .relocatePoint(i, pointsOnLand, land_mask, max.distance.km)
+      results[[i]] <- .relocatePoint(i, pointsOnLand, land_mask, max.distance.km,
+                                     land_polygon, coords_crs == "geographic", .nudgeToWater)
       .progressSet(pb, i)
     }
 
@@ -300,8 +305,9 @@ correctPositions <- function(data,
 
       # perform parallel computation over each individual's data using foreach
       results <- foreach::foreach(i=seq_len(nrow(pointsOnLand)), .options.snow=opts, .packages=c("sf"),
-                                  .export=c(".relocatePoint", ".setSearchRegion")) %dopar% {
-        .relocatePoint(i, pointsOnLand, land_mask, max.distance.km)
+                                  .export=c(".relocatePoint", ".setSearchRegion", ".nudgeToWater")) %dopar% {
+        .relocatePoint(i, pointsOnLand, land_mask, max.distance.km,
+                       land_polygon, coords_crs == "geographic", .nudgeToWater)
       }
   }
 
@@ -317,6 +323,7 @@ correctPositions <- function(data,
   # identify relocated and skipped indices
   relocated_indices <- which(!is.na(pointsCorrected[,1]) & !is.na(pointsCorrected[,2]))
   skipped_indices <- which(is.na(pointsCorrected[,1]) | is.na(pointsCorrected[,2]))
+  offset_failed <- which(vapply(results, function(x) identical(x$reason, "no water-side offset"), logical(1)))
 
 
   ##############################################################################
@@ -422,7 +429,7 @@ correctPositions <- function(data,
   .mobyOk(.fmtN(length(relocated_indices)), " positions relocated", verbose = verbose)
   # skipped points are worth a second look, and the reason (the search radius) is stated with them
   if(length(skipped_indices)>0)
-    .mobyAttention(.fmtN(length(skipped_indices)), " skipped - no water cell within ",
+    .mobyAttention(.fmtN(length(skipped_indices)), " skipped - no verified water position within ",
                    max.distance.km, " km", verbose = verbose)
   if(!is.infinite(mean_distance) && !is.na(mean_distance))
     .mobyNote("Mean distance: ", .fmtN(mean_distance), " m (", .fmtN(min_distance), "-",
@@ -434,8 +441,13 @@ correctPositions <- function(data,
     num_skipped <- length(skipped_indices)
     point_word <- ifelse(num_skipped == 1, "point", "points")
     this_or_these <- ifelse(num_skipped == 1, "this point", "these points")
-    warning_msg <- paste0("Maximum search radius of ", max.distance.km, " km reached without finding water areas for ",
-                         num_skipped, " ", point_word, ". Coordinates for ", this_or_these, " have been set to NA.")
+    warning_msg <- if(length(offset_failed)>0L) {
+      paste0("No verified water-side position could be found for ", num_skipped, " ", point_word,
+             " within ", max.distance.km, " km. Coordinates for ", this_or_these, " have been set to NA.")
+    } else {
+      paste0("Maximum search radius of ", max.distance.km, " km reached without finding water areas for ",
+             num_skipped, " ", point_word, ". Coordinates for ", this_or_these, " have been set to NA.")
+    }
     warning(paste(strwrap(warning_msg), collapse="\n"), call.=FALSE)
   }
 
@@ -548,11 +560,15 @@ correctPositions <- function(data,
 #' @param i An integer representing the index of the point in the `pointsOnLand` object to be relocated.
 #' @param pointsOnLand An `sf` object containing points that may be located on land.
 #' @param land_mask An `sf` object containing land geometries used to identify the nearest water feature.
+#' @param land.polygon Original land polygons, used to verify the seaward offset for vector inputs.
+#' @param geographic Whether corrected coordinates will be transformed back to longitude/latitude.
+#' @param nudge.fun Water-side offset helper (passed explicitly to parallel workers).
 #' @note This function is intended for internal use within the 'moby' package.
 #' @keywords internal
 #' @noRd
 
-.relocatePoint <- function(i, pointsOnLand, land.mask, max.distance.km){
+.relocatePoint <- function(i, pointsOnLand, land.mask, max.distance.km,
+                           land.polygon=NULL, geographic=FALSE, nudge.fun=.nudgeToWater){
 
   # retrieve current point
   point <- pointsOnLand[i,]
@@ -584,6 +600,16 @@ correctPositions <- function(data,
       nearest_point <- nearest_geom
     }
 
+    # For polygon coastlines, the nearest boundary itself still intersects land. Move a
+    # microscopic distance into verified water; raster targets are already water-cell centres.
+    if(!is.null(land.polygon)) {
+      nearest_point <- nudge.fun(point, nearest_point, land.polygon,
+                                 max.distance.km, geographic)
+      if(is.null(nearest_point))
+        return(list(coords=data.frame("X"=NA, "Y"=NA), dist=NA,
+                    reason="no water-side offset"))
+    }
+
     # return the nearest point coordinates and distance
     list(coords=sf::st_coordinates(nearest_point)[,c("X","Y")],
          dist=as.numeric(sf::st_distance(point, nearest_point)))
@@ -592,6 +618,50 @@ correctPositions <- function(data,
   } else {
     return(list(coords=data.frame("X"=NA, "Y"=NA), dist=NA))
   }
+}
+
+
+# Find a nearby point that does not intersect land. A fixed directional offset alone is unsafe
+# at corners, holes, or adjacent polygons, so every candidate is checked against the full land
+# geometry. Geographic output is round-tripped before checking to catch reprojection rounding.
+.nudgeToWater <- function(point, boundary.point, land.polygon, max.distance.km, geographic){
+  origin <- sf::st_coordinates(point)[1L, c("X", "Y")]
+  boundary <- sf::st_coordinates(boundary.point)[1L, c("X", "Y")]
+  outward <- boundary - origin
+  outward_length <- sqrt(sum(outward^2))
+  angles <- seq(0, 2*pi, length.out=65L)[-65L]
+  radial_directions <- cbind(cos(angles), sin(angles))
+
+  check_candidates <- function(directions, offset) {
+    xy <- sweep(directions * offset, 2L, boundary, `+`)
+    candidates <- sf::st_as_sf(data.frame(x=xy[,1L], y=xy[,2L]),
+                               coords=c("x", "y"), crs=sf::st_crs(point))
+    if(geographic) {
+      checked <- sf::st_transform(sf::st_transform(candidates, 4326), sf::st_crs(point))
+    } else checked <- candidates
+
+    in_water <- lengths(sf::st_intersects(checked, land.polygon))==0L
+    within_limit <- as.numeric(sf::st_distance(point, checked)) <= max.distance.km*1000
+    valid <- which(in_water & within_limit)
+    if(length(valid)>0L) {
+      nearest <- valid[which.min(as.numeric(sf::st_distance(point, candidates[valid, ])))]
+      return(sf::st_geometry(candidates[nearest, ]))
+    }
+    NULL
+  }
+
+  for(offset in c(0.001, 0.01, 0.1)) {
+    # Continuing from the original point through the nearest boundary is usually seaward.
+    # Check it first so ordinary relocations do not need the full radial search.
+    if(outward_length>0) {
+      candidate <- check_candidates(matrix(outward/outward_length, nrow=1L), offset)
+      if(!is.null(candidate)) return(candidate)
+    }
+    candidate <- check_candidates(radial_directions, offset)
+    if(!is.null(candidate)) return(candidate)
+  }
+
+  NULL
 }
 
 
