@@ -1,14 +1,14 @@
 # Calculate residency indices
 
 Computes individual residency indices and the temporal building blocks
-they are derived from, returning a tidy, fully numeric table (one row
-per animal) suitable for plotting and downstream statistical analysis.
-This is the numeric core used internally by
+they are derived from, returning a typed table (one row per animal)
+suitable for plotting and downstream statistical analysis. This is the
+numeric core used internally by
 [`summaryTable`](https://miguelgandra.github.io/moby/reference/summaryTable.md)
 (which formats these values for publication); use `calculateResidency()`
 directly when you need the raw values rather than a formatted table.
 
-Three indices, widely used in acoustic telemetry studies (Kraft et al.
+The following indices, used in acoustic telemetry studies (Kraft et al.
 2023; Appert et al. 2023), are available:
 
 - **IR1** = Dd / Di, the proportion of days detected over the detection
@@ -27,7 +27,13 @@ Three indices, widely used in acoustic telemetry studies (Kraft et al.
 
 where Dd = number of days with detections, Di = detection span (days at
 liberty, first/release to last detection, inclusive), and Dt = study
-interval (release to monitoring end).
+interval (release to monitoring end). Dd and Di use calendar dates in
+the detection timestamps' time zone. Dt counts calendar dates with
+positive monitoring time between tagging and the earlier of tag
+expiration and the end of receiver monitoring. A cutoff exactly at
+midnight does not count that new day. Detections before tagging or
+at/after a supplied monitoring cutoff cause an error; review the dates
+or filter those records before calling this function.
 
 ## Usage
 
@@ -73,15 +79,16 @@ calculateResidency(
 
   Optional numeric vector of tag battery durations (in days), used (with
   `last.monitoring.date`) to define the study interval Dt. Required
-  (together with, or instead of, `last.monitoring.date`) when `IR2` or
-  `IWR` are requested.
+  (together with, or instead of, `last.monitoring.date`) when `IR2`,
+  `IWR`, or `IR2/IR1` are requested.
 
 - last.monitoring.date:
 
-  Optional POSIXct value or named vector giving the last date data could
-  be retrieved (last download / receivers operational). When both this
-  and `tag.durations` are supplied, the shorter of the two defines the
-  monitoring end per individual.
+  Optional POSIXct value or named vector giving the end of receiver
+  monitoring. The value is a cutoff timestamp, not an automatically
+  counted final day (to include all of December 31, use January 1 at
+  midnight). When both this and `tag.durations` are supplied, the
+  earlier cutoff is used per individual.
 
 - residency.index:
 
@@ -117,14 +124,16 @@ A data frame with one row per individual containing: the ID column,
 (POSIXct); `days_detected` (Dd), `detection_span` (Di) and
 `monitoring_duration` (Dt) in days; one numeric column per requested
 index; and, if `residency.by` is set, additional `"<index> <level>"`
-partial-residency columns.
+partial-residency columns. If neither monitoring cutoff is provided,
+`monitoring_end` and `monitoring_duration` are `NA`; IR1 remains
+calculable, while indices using Dt require a known cutoff.
 
 ## References
 
 Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., &
 Abecasis, D. (2023). Residency and space use estimation methods based on
 passive acoustic telemetry data. Movement Ecology, 11(1), 12.
-https://doi.org/10.1186/s40462-023-00349-y
+https://doi.org/10.1186/s40462-022-00364-z
 
 Appert, C., Udyawer, V., Simpfendorfer, C. A., et al. (2023). Use,
 misuse, and ambiguity of indices of residence in acoustic telemetry

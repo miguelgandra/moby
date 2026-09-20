@@ -102,8 +102,8 @@ summaryTable(
 
 - residency.index:
 
-  A character string specifying the type of residency index to
-  calculate. Options include:
+  A character vector specifying the residency indices to calculate.
+  Options include:
 
   - "IR1": Residency Index 1, calculated as the number of days the
     animal was detected (Dd) divided by the detection interval (Di),
@@ -114,18 +114,18 @@ summaryTable(
 
   - "IR2": Residency Index 2, calculated as the number of days the
     animal was detected (Dd) divided by the study interval (Dt), i.e.,
-    the total number of days between release/first detection and last
-    data download or tag expiration date. This approach provides a
+    the calendar dates with monitoring opportunity from tagging to the
+    end of receiver monitoring or tag life. This approach provides a
     minimum residency value, assuming the animal was alive and
     detectable throughout the study period.
 
   - "IWR": Weighted Residency Index, which corresponds to the IR2 index
-    weighted by the ratio between the detection interval (Di, the number
-    of days between the first and last detection) and the study interval
-    (Dt, the total monitoring period). This accounts for the number of
-    days detected and the spread of detections within the monitoring
-    period, providing a measure of residency that balances the frequency
-    of detections with their temporal distribution.
+    weighted by the ratio between the detection interval (Di, from the
+    chosen `start.point` to last detection) and the study interval (Dt,
+    the total monitoring period). This accounts for the number of days
+    detected and the spread of detections within the monitoring period,
+    providing a measure of residency that balances the frequency of
+    detections with their temporal distribution.
 
   - "IR2/IR1": The ratio of IR2 to IR1, providing a measure of the gap
     between the last detection and the end of the monitoring period.
@@ -152,15 +152,15 @@ summaryTable(
 - last.monitoring.date:
 
   Optional. A POSIXct object or a named vector of POSIXct objects
-  specifying the last timestamp when data could be retrieved, typically
-  corresponding to the last data download date or the final day
-  receivers were operational. If a single value is provided, it will be
-  applied to all individuals. If a named vector is provided, the names
-  should correspond to individual IDs, allowing for unique timestamps
-  per individual. When `tag.durations` are also supplied, the total
-  monitoring duration for each individual will be estimated based on the
-  shortest of the two values: the tag expiration date or the last
-  monitoring day.
+  specifying the end of receiver monitoring as a cutoff timestamp. A
+  cutoff exactly at midnight does not count the new date as a monitoring
+  day (to include all of December 31, use January 1 at midnight). If a
+  single value is provided, it will be applied to all individuals. If a
+  named vector is provided, the names should correspond to individual
+  IDs, allowing for unique timestamps per individual. When
+  `tag.durations` are also supplied, the total monitoring duration for
+  each individual will be estimated based on the shortest of the two
+  values: the tag expiration date or the last monitoring day.
 
 - residency.by:
 
@@ -208,6 +208,9 @@ and `format(group.by=)` are keyed on; the publication headers live in
   `sensor.cols`
 
 - any columns carried over from `id.metadata`
+
+`monitoring_duration_d` is `NA` when only IR1 is requested without a
+monitoring cutoff.
 
 ## See also
 

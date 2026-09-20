@@ -231,18 +231,10 @@ res <- calculateResidency(rays, last.monitoring.date = max(rays$datetime))
 #>   • indices     IR1 · IR2 · IWR
 #>   • span start  release date
 #>   • cap         values capped at 1
+#> Error: Detections outside the tagging-to-monitoring interval for ID(s): D03. Check tagging dates, tag durations, and the last monitoring date.
 res$species <- rays_tags$species[match(res$ID, rays_tags$ID)]
+#> Error: object 'res' not found
 plotMetricComparison(res, metrics = c("IR1", "IR2"), split.by = "species",
                      paired = FALSE)
-#> Warning: Converting 'split.by' to a factor.
-#> ── plotMetricComparison() ────────────────────────────────────────────── moby ──
-#> 
-#> ℹ Comparing per-individual metrics across group levels
-#> • Metrics:    IR1, IR2
-#> • Groups:     species (independent groups): Dasyatis pastinaca, Raja clavata
-#> • Incomplete: 8/8 individuals dropped (max 100%); complete-case only
-#> 
-#> → Method
-#>   • Test  Mann-Whitney; correction: holm
-#> ! large data loss - non-detection may be informative; consider a mixed model.
+#> Error: object 'res' not found
 ```

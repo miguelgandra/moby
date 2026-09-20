@@ -278,7 +278,7 @@ better reflect biological relevance.
 Kraft, S., Gandra, M., Lennox, R. J., Mourier, J., Winkler, A. C., &
 Abecasis, D. (2023). Residency and space use estimation methods based on
 passive acoustic telemetry data. Movement Ecology, 11(1), 12.
-https://doi.org/10.1186/s40462-023-00349-y
+https://doi.org/10.1186/s40462-022-00364-z
 
 Niella, Y., Flávio, H., Smoothey, A. F., Aarestrup, K., Taylor, M. D.,
 Peddemors, V. M., & Harcourt, R. (2020). Refined Shortest Paths (RSP):
