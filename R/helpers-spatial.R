@@ -466,8 +466,8 @@
 #' Overlay a coastline/land polygon on the current map
 #' @keywords internal
 #' @noRd
-.drawLandOverlay <- function(land.shape, land.color) {
-  if (!is.null(land.shape)) graphics::plot(sf::st_geometry(land.shape), col = land.color, border = NA, add = TRUE)
+.drawLandOverlay <- function(land.shape, land.color, border = NA) {
+  if (!is.null(land.shape)) graphics::plot(sf::st_geometry(land.shape), col = land.color, border = border, add = TRUE)
 }
 
 #' Fetch a default coastline for the study area when the user supplies no `land.shape`

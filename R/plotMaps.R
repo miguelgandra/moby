@@ -35,8 +35,8 @@
 #' NULL, inferred from `land.shape`, then from `uds`.
 #' @param land.color Colour of land areas. Defaults to "gray50".
 #' @param background.layer Optional projected raster displayed behind the home range.
-#' @param background.color Solid background colour when no `background.layer` is supplied.
-#' Defaults to "#F3F7F7".
+#' @param background.color Water colour when no `background.layer` is supplied. Defaults to
+#' "#F3F7F7". If it matches `land.color`, a contrasting outline marks the land boundary.
 #' @param background.pal Colour palette for the `background.layer` raster. If NULL, a muted
 #' bathymetry palette is used.
 #' @param background.title Legend title for the background layer. Defaults to "Layer values".
@@ -64,7 +64,8 @@
 #' @param scale.color Colour of the scale-bar labels. Defaults to "black".
 #' @param scale.pos Keyword position of the scale bar. Defaults to "bottomright".
 #' @param scale.inset Inset of the scale bar from the plot edges. Defaults to 0.05.
-#' @param extent.factor Bounding-box expansion factor around the positions. Defaults to 1.1.
+#' @param extent.factor Bounding-box expansion factor around the positions and home range. Defaults
+#' to 1.1. The panel can show additional map area on one axis to maintain equal distance scales.
 #' @param main Optional overall title above the panel grid.
 #' @param cex Global expansion factor for all plot text (ID labels, legends, scale bar). Defaults to 1.
 #' @param ncol Number of panel columns. If NULL, set from the number of individuals.
@@ -256,11 +257,6 @@ plotMaps <- function(data,
               xmax = max(bbox["xmax"], terra::xmax(ke)), ymax = max(bbox["ymax"], terra::ymax(ke)))
   }
   bbox <- .expandBbox(bbox, extent.factor)
-  # coastline fallback: if the user supplied no land.shape, fetch a default coastline for the extent
-  if (is.null(land.shape) && !isFALSE(coastline))
-    land.shape <- .defaultCoastline(bbox, epsg.code, coastline, verbose = verbose)
-  if (!is.null(land.shape)) land.shape <- suppressWarnings(sf::st_crop(sf::st_geometry(land.shape), bbox))
-  if (!is.null(background.layer)) background.layer <- terra::crop(background.layer, .bboxToExtent(bbox))
   if (is.null(scale.km)) scale.km <- pretty((bbox["xmax"] - bbox["xmin"]) * 0.2 / 1000)[2]
 
   # layout: a shared legend slot when a UD or background legend is needed
@@ -312,10 +308,27 @@ plotMaps <- function(data,
     if (i <= length(ids)) {
       id <- ids[i]
       .newMapCanvas(bbox)
+      usr <- par("usr")
+      if (i == 1L) {
+        # All map panels share this window. asp = 1 can extend it beyond the requested bbox
+        # in either direction once the device, layout and margins are known.
+        panel_bbox <- c(xmin = usr[1], ymin = usr[3], xmax = usr[2], ymax = usr[4])
+        if (is.null(land.shape) && !isFALSE(coastline))
+          land.shape <- .defaultCoastline(panel_bbox, epsg.code, coastline, verbose = verbose)
+        if (!is.null(land.shape))
+          land.shape <- suppressWarnings(sf::st_crop(sf::st_geometry(land.shape), panel_bbox))
+        if (!is.null(background.layer))
+          background.layer <- terra::crop(background.layer, .bboxToExtent(panel_bbox), snap = "out")
+
+        land_border <- NA
+        if (!is.null(land.shape) && is.null(background.layer) && length(land.color) == 1L &&
+            all(col2rgb(land.color, alpha = TRUE) == col2rgb(background.color, alpha = TRUE)))
+          land_border <- .contrastColor(background.color)
+      }
 
       # background (raster or solid); drawn inline (legend is hand-drawn via .colorlegend)
       if (!is.null(background.layer)) terra::image(background.layer, col = background.pal, axes = FALSE, add = TRUE)
-      else rect(par("usr")[1], par("usr")[3], par("usr")[2], par("usr")[4], col = background.color, border = NA)
+      else rect(usr[1], usr[3], usr[2], usr[4], col = background.color, border = NA)
 
       # home range: KDE utilisation isopleths (getvolumeUD raster, masked at ud.contour), or AKDE
       # isopleth contours (sf) drawn with their confidence envelope
@@ -340,7 +353,7 @@ plotMaps <- function(data,
         }
       }
 
-      .drawLandOverlay(land.shape, land.color)
+      .drawLandOverlay(land.shape, land.color, border = land_border)
 
       # movement tracks
       if (!is.null(animal.tracks) && !is.null(animal.tracks[[id]]))

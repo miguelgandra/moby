@@ -101,3 +101,38 @@ test_that("plotMaps draws a default coastline when land.shape is NULL and coastl
   expect_no_error(suppressWarnings(suppressMessages(
     plotMaps(x$md, uds = x$kud, epsg.code = 32629, coastline = TRUE))))
 })
+
+test_that("plotMaps fills wide and tall panels and keeps a same-colour shoreline visible", {
+  skip_if_not(capabilities("tiff"))
+  # The requested extent is a square. Land covers everything west of the centre line.
+  offset <- rep(seq(-200, 200, 100), 2)
+  d <- data.frame(ID = factor(rep(c("A", "B"), each = 5)),
+                  lon = 500000 + offset, lat = 4100000 + offset)
+  land <- sf::st_as_sf(sf::st_as_sfc(sf::st_bbox(
+    c(xmin = 490000, ymin = 4090000, xmax = 500000, ymax = 4110000), crs = 32629)))
+  render_row <- function(width, height, ...) {
+    path <- tempfile(fileext = ".tif")
+    plotMaps(d, id.col = "ID", lon.col = "lon", lat.col = "lat", epsg.code = 32629,
+             land.shape = land, extent.factor = 1, ncol = 3, plot.detections = FALSE,
+             file = path, width = width, height = height, res = 96, verbose = FALSE, ...)
+    img <- suppressWarnings(terra::rast(path))  # a graphics device supplies no georeferencing
+    terra::values(img, row = round(nrow(img) / 5), nrows = 1)[, 1:3]
+  }
+  bathy <- terra::rast(nrows = 100, ncols = 100, xmin = 498000, xmax = 502000,
+                       ymin = 4098000, ymax = 4102000, crs = "EPSG:32629")
+  terra::values(bathy) <- seq_len(terra::ncell(bathy))
+  wide <- render_row(12, 2, land.color = "red", background.color = "blue")
+  tall <- render_row(6, 6, land.color = "red", background.layer = bathy, background.pal = rep("blue", 2))
+  matched <- render_row(12, 2, land.color = "white", background.color = "#FFFFFF")
+  for (panel in 0:1) {
+    for (row in list(wide, tall)) {
+      # Sample inside each frame, beyond the requested square on the expanded axis.
+      west <- row[round((panel + 0.1) * nrow(row) / 3), ]
+      east <- row[round((panel + 0.9) * nrow(row) / 3), ]
+      expect_gt(west[1] - west[3], 150)  # red land
+      expect_gt(east[3] - east[1], 150)  # blue water or raster
+    }
+    coast <- round((panel + 0.5) * nrow(matched) / 3)
+    expect_lt(min(matched[(coast - 3):(coast + 3), ]), 200)
+  }
+})

@@ -84,8 +84,8 @@ NULL, inferred from \code{land.shape}, then from \code{uds}.}
 
 \item{background.layer}{Optional projected raster displayed behind the home range.}
 
-\item{background.color}{Solid background colour when no \code{background.layer} is supplied.
-Defaults to "#F3F7F7".}
+\item{background.color}{Water colour when no \code{background.layer} is supplied. Defaults to
+"#F3F7F7". If it matches \code{land.color}, a contrasting outline marks the land boundary.}
 
 \item{background.pal}{Colour palette for the \code{background.layer} raster. If NULL, a muted
 bathymetry palette is used.}
@@ -132,7 +132,8 @@ Defaults to c(-0.08, 0).}
 
 \item{scale.inset}{Inset of the scale bar from the plot edges. Defaults to 0.05.}
 
-\item{extent.factor}{Bounding-box expansion factor around the positions. Defaults to 1.1.}
+\item{extent.factor}{Bounding-box expansion factor around the positions and home range. Defaults
+to 1.1. The panel can show additional map area on one axis to maintain equal distance scales.}
 
 \item{main}{Optional overall title above the panel grid.}
 
