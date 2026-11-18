@@ -127,8 +127,9 @@ plotMaps(
 
 - background.color:
 
-  Solid background colour when no `background.layer` is supplied.
-  Defaults to "#F3F7F7".
+  Water colour when no `background.layer` is supplied. Defaults to
+  "#F3F7F7". If it matches `land.color`, a contrasting outline marks the
+  land boundary.
 
 - background.pal:
 
@@ -218,7 +219,9 @@ plotMaps(
 
 - extent.factor:
 
-  Bounding-box expansion factor around the positions. Defaults to 1.1.
+  Bounding-box expansion factor around the positions and home range.
+  Defaults to 1.1. The panel can show additional map area on one axis to
+  maintain equal distance scales.
 
 - main:
 
