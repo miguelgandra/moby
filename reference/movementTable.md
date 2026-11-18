@@ -178,7 +178,7 @@ if (requireNamespace("adehabitatHR", quietly = TRUE)) {
 #>   • grouping   id.groups
 #> 
 #> ✔ 8 utilization distributions estimated
-#> ⏱ runtime: 1.5s
+#> ⏱ runtime: 1.3s
 #> ── movementTable() ───────────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Summarising distance, rate of movement and space use per individual

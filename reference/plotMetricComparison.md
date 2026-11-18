@@ -220,8 +220,10 @@ devices.
 
 ``` r
 # Compare per-individual residency indices between the two species
-res <- calculateResidency(rays, last.monitoring.date = max(rays$datetime))
-#> Warning: - 'id.col' converted to factor.
+detections <- rays
+detections$ID <- factor(detections$ID)
+monitoring_end <- max(rays_deployments$recover)
+res <- calculateResidency(detections, last.monitoring.date = monitoring_end)
 #> ── calculateResidency() ──────────────────────────────────────────────── moby ──
 #> 
 #> ℹ Computing residency indices per individual
@@ -231,10 +233,17 @@ res <- calculateResidency(rays, last.monitoring.date = max(rays$datetime))
 #>   • indices     IR1 · IR2 · IWR
 #>   • span start  release date
 #>   • cap         values capped at 1
-#> Error: Detections outside the tagging-to-monitoring interval for ID(s): D03. Check tagging dates, tag durations, and the last monitoring date.
-res$species <- rays_tags$species[match(res$ID, rays_tags$ID)]
-#> Error: object 'res' not found
+res$species <- factor(rays_tags$species[match(res$ID, rays_tags$ID)])
 plotMetricComparison(res, metrics = c("IR1", "IR2"), split.by = "species",
-                     paired = FALSE)
-#> Error: object 'res' not found
+                     paired = FALSE, discard.incomplete = FALSE)
+#> ── plotMetricComparison() ────────────────────────────────────────────── moby ──
+#> 
+#> ℹ Comparing per-individual metrics across group levels
+#> • Metrics:    IR1, IR2
+#> • Groups:     species (independent groups): Dasyatis pastinaca, Raja clavata
+#> • Incomplete: 8/8 individuals dropped (max 100%); complete-case only
+#> 
+#> → Method
+#>   • Test  Mann-Whitney; correction: holm
+#> ! large data loss - non-detection may be informative; consider a mixed model.
 ```
