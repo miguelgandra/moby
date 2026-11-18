@@ -71,10 +71,13 @@
 #' @seealso \code{\link{plotStationStats}}, \code{\link{plotGroupSizeDistribution}}
 #' @examples
 #' # Compare per-individual residency indices between the two species
-#' res <- calculateResidency(rays, last.monitoring.date = max(rays$datetime))
-#' res$species <- rays_tags$species[match(res$ID, rays_tags$ID)]
+#' detections <- rays
+#' detections$ID <- factor(detections$ID)
+#' monitoring_end <- max(rays_deployments$recover)
+#' res <- calculateResidency(detections, last.monitoring.date = monitoring_end)
+#' res$species <- factor(rays_tags$species[match(res$ID, rays_tags$ID)])
 #' plotMetricComparison(res, metrics = c("IR1", "IR2"), split.by = "species",
-#'                      paired = FALSE)
+#'                      paired = FALSE, discard.incomplete = FALSE)
 #' @export
 
 
